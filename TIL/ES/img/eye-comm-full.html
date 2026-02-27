@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>눈으로 말해요</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0b1220;
+  --card:#111e30;
+  --card2:#162540;
+  --border:#1e3050;
+  --border2:#253d60;
+  --accent:#4fc3f7;
+  --accent2:#81d4fa;
+  --red:#ff6b6b;
+  --red-bg:#2d1010;
+  --orange:#ffb74d;
+  --orange-bg:#2d1f00;
+  --green:#66bb6a;
+  --green-bg:#0d2010;
+  --yellow:#ffd54f;
+  --purple:#ce93d8;
+  --pink:#f48fb1;
+  --text:#e8f4ff;
+  --text2:#a0bcd8;
+  --muted:#4a6080;
+}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow:hidden;}
+
+#emergencyOverlay{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(200,0,0,0.92);
+  flex-direction:column;align-items:center;justify-content:center;
+  gap:24px;
+}
+#emergencyOverlay.show{display:flex;animation:emerPulse 0.8s ease infinite alternate;}
+@keyframes emerPulse{from{background:rgba(180,0,0,0.9);}to{background:rgba(255,50,50,0.95);}}
+.emergency-big{font-size:6rem;animation:shake 0.3s infinite;}
+@keyframes shake{0%,100%{transform:rotate(-3deg);}50%{transform:rotate(3deg);}}
+.emergency-text{font-size:2.2rem;font-weight:900;color:white;text-align:center;}
+.emergency-sub{font-size:1rem;color:rgba(255,255,255,0.8);text-align:center;line-height:1.6;}
+.emergency-cancel{background:white;color:#c00;border:none;border-radius:20px;padding:16px 40px;font-size:1.1rem;font-weight:900;cursor:pointer;font-family:inherit;margin-top:8px;}
+
+.topbar{background:linear-gradient(180deg,#0d1829,#0b1220);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-size:1.1rem;font-weight:900;color:var(--accent);}
+.online-dot{width:7px;height:7px;background:#34d399;border-radius:50%;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.topbar-time{font-size:0.88rem;color:var(--text2);margin-left:auto;}
+
+.emer-fab{
+  position:fixed;bottom:74px;right:16px;z-index:200;
+  width:66px;height:66px;border-radius:50%;
+  background:var(--red);border:3px solid rgba(255,107,107,0.4);
+  cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;
+  animation:emerRing 2.5s infinite;
+}
+@keyframes emerRing{0%,100%{box-shadow:0 0 0 0 rgba(255,107,107,0.4);}60%{box-shadow:0 0 0 14px rgba(255,107,107,0);}}
+.emer-icon{font-size:1.5rem;}
+.emer-label{font-size:0.55rem;font-weight:900;color:white;letter-spacing:0.5px;}
+
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab-btn{flex:1;min-width:64px;padding:10px 4px 8px;background:none;border:none;color:var(--muted);font-family:inherit;font-size:0.62rem;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:3px;border-bottom:3px solid transparent;letter-spacing:0.3px;}
+.tab-btn .ti{font-size:1.3rem;}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+
+.content{height:calc(100vh - 113px);overflow-y:auto;padding:16px;}
+.content::-webkit-scrollbar{width:3px;}
+.content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.tab-panel{display:none;animation:fadeIn 0.25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+.sec{font-size:0.68rem;font-weight:700;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+
+/* EMOTION */
+.emotion-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
+.ec{background:var(--card);border:2px solid var(--border);border-radius:16px;padding:16px 8px;cursor:pointer;transition:all 0.18s;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;}
+.ec:hover,.ec.sel{transform:scale(1.05);box-shadow:0 8px 20px rgba(0,0,0,0.35);}
+.ec .ei{font-size:2.3rem;}
+.ec .el{font-size:0.76rem;font-weight:700;color:var(--text2);}
+.ec[data-c="y"]:hover,.ec[data-c="y"].sel{border-color:var(--yellow);background:rgba(255,213,79,0.1);}
+.ec[data-c="g"]:hover,.ec[data-c="g"].sel{border-color:var(--green);background:rgba(102,187,106,0.1);}
+.ec[data-c="r"]:hover,.ec[data-c="r"].sel{border-color:var(--red);background:rgba(255,107,107,0.1);}
+.ec[data-c="p"]:hover,.ec[data-c="p"].sel{border-color:var(--purple);background:rgba(206,147,216,0.1);}
+.ec[data-c="pk"]:hover,.ec[data-c="pk"].sel{border-color:var(--pink);background:rgba(244,143,177,0.1);}
+.ec[data-c="o"]:hover,.ec[data-c="o"].sel{border-color:var(--orange);background:rgba(255,183,77,0.1);}
+.ec[data-c="b"]:hover,.ec[data-c="b"].sel{border-color:var(--accent);background:rgba(79,195,247,0.1);}
+
+.econfirm{background:var(--card2);border:2px solid var(--border2);border-radius:16px;padding:16px;display:none;flex-direction:column;gap:12px;margin-bottom:16px;}
+.econfirm.show{display:flex;}
+.econfirm-text{font-size:1rem;font-weight:700;}
+.urg-row{display:flex;gap:8px;}
+.ub{flex:1;border:2px solid var(--border2);background:transparent;border-radius:12px;padding:10px 6px;font-family:inherit;font-size:0.72rem;font-weight:700;color:var(--text2);cursor:pointer;transition:all 0.15s;text-align:center;}
+.ub[data-l="now"]:hover,.ub[data-l="now"].s{border-color:var(--red);color:var(--red);background:var(--red-bg);}
+.ub[data-l="soon"]:hover,.ub[data-l="soon"].s{border-color:var(--orange);color:var(--orange);background:var(--orange-bg);}
+.ub[data-l="later"]:hover,.ub[data-l="later"].s{border-color:var(--green);color:var(--green);background:var(--green-bg);}
+.esend{background:var(--accent);color:#000;border:none;border-radius:12px;padding:13px;font-family:inherit;font-size:0.9rem;font-weight:900;cursor:pointer;transition:all 0.15s;}
+.esend:hover{background:var(--accent2);}
+
+.elog-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;animation:fadeIn 0.3s ease;margin-bottom:6px;}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;gap:8px;}
+.qchips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;}
+.qchips::-webkit-scrollbar{display:none;}
+.qchip{flex-shrink:0;background:var(--card);border:1.5px solid var(--border2);border-radius:20px;padding:7px 14px;font-family:inherit;font-size:0.8rem;font-weight:700;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+.qchip:hover{background:var(--accent);color:#000;border-color:var(--accent);}
+.chat-area{display:flex;flex-direction:column;gap:10px;max-height:340px;overflow-y:auto;margin-bottom:12px;}
+.chat-area::-webkit-scrollbar{width:3px;}
+.chat-area::-webkit-scrollbar-thumb{background:var(--border2);}
+.mrow{display:flex;flex-direction:column;gap:3px;animation:fadeIn 0.3s ease;}
+.mrow.guardian{align-items:flex-end;}.mrow.patient{align-items:flex-start;}.mrow.system{align-items:center;}
+.mlabel{font-size:0.62rem;color:var(--muted);font-weight:700;padding:0 4px;}
+.bubble{max-width:82%;padding:11px 15px;border-radius:18px;font-size:0.92rem;line-height:1.5;}
+.gb{background:var(--card2);border:1px solid var(--border2);border-top-right-radius:4px;}
+.pb{background:var(--accent);color:#000;font-weight:700;border-top-left-radius:4px;}
+.sb{background:transparent;border:1px dashed var(--border2);color:var(--muted);font-size:0.72rem;border-radius:8px;padding:5px 12px;text-align:center;}
+.btime{font-size:0.58rem;opacity:0.5;margin-top:4px;display:block;}
+.aith{display:flex;align-items:center;gap:8px;background:rgba(79,195,247,0.07);border:1px solid rgba(79,195,247,0.2);border-radius:12px;padding:10px 14px;font-size:0.8rem;color:var(--accent);font-weight:600;}
+.dots span{width:5px;height:5px;background:var(--accent);border-radius:50%;display:inline-block;margin:0 2px;animation:bounce 1.2s infinite;}
+.dots span:nth-child(2){animation-delay:.2s;}.dots span:nth-child(3){animation-delay:.4s;}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-5px);}}
+.choices-box{background:rgba(79,195,247,0.05);border:1.5px solid rgba(79,195,247,0.2);border-radius:16px;padding:12px;}
+.choices-hdr{font-size:0.62rem;color:var(--accent);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;}
+.choices-list{display:flex;flex-direction:column;gap:6px;}
+.choice-btn{background:var(--card);border:2px solid var(--border2);border-radius:12px;padding:13px 15px;font-family:inherit;font-size:0.92rem;font-weight:700;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:all 0.15s;}
+.choice-btn:hover{border-color:var(--accent);background:rgba(79,195,247,0.1);transform:translateX(3px);}
+.gin-wrap{background:var(--card2);border:1px solid var(--border2);border-radius:14px;padding:10px;margin-bottom:8px;}
+.gin-label{font-size:0.62rem;color:var(--muted);font-weight:700;letter-spacing:1px;margin-bottom:6px;}
+.gin-row{display:flex;gap:8px;}
+.gin-row textarea{flex:1;background:var(--bg);border:2px solid var(--border2);border-radius:12px;padding:10px 14px;font-family:inherit;font-size:0.88rem;color:var(--text);resize:none;min-height:46px;outline:none;line-height:1.5;}
+.gin-row textarea:focus{border-color:var(--accent);}
+.sbtn{background:var(--accent);border:none;border-radius:12px;width:46px;height:46px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;color:#000;font-weight:900;flex-shrink:0;}
+.sbtn:hover{background:var(--accent2);}
+
+/* ROUTINE */
+.rdate-card{background:var(--card2);border:1px solid var(--border2);border-radius:16px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;}
+.rday-big{font-size:2rem;font-weight:900;color:var(--accent);}
+.rday-info{flex:1;}
+.rday-str{font-size:1rem;font-weight:700;}
+.rday-greet{font-size:0.78rem;color:var(--text2);}
+.rtimeline{display:flex;flex-direction:column;}
+.ritem{display:flex;align-items:stretch;gap:0;position:relative;}
+.ritem::before{content:'';position:absolute;left:42px;top:46px;bottom:-8px;width:2px;background:var(--border2);z-index:0;}
+.ritem:last-child::before{display:none;}
+.rtcol{width:68px;flex-shrink:0;padding:0 10px 0 0;font-size:0.76rem;font-weight:700;color:var(--muted);text-align:right;padding-top:20px;}
+.rdcol{width:20px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;padding-top:18px;position:relative;z-index:1;}
+.rdot{width:13px;height:13px;border-radius:50%;border:3px solid var(--border2);background:var(--bg);flex-shrink:0;}
+.rdot.done{background:var(--green);border-color:var(--green);}
+.rdot.now{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px var(--accent);}
+.rcard{flex:1;background:var(--card);border:1.5px solid var(--border2);border-radius:14px;padding:11px 13px;margin:7px 0 7px 12px;}
+.rcard.nowc{border-color:var(--accent);background:rgba(79,195,247,0.04);}
+.rcard.donec{opacity:0.5;}
+.rctop{display:flex;align-items:center;gap:7px;margin-bottom:3px;}
+.rcbadge{margin-left:auto;font-size:0.62rem;font-weight:700;padding:2px 7px;border-radius:8px;}
+.bd{background:var(--green-bg);color:var(--green);}
+.bn{background:rgba(79,195,247,0.12);color:var(--accent);}
+.bu{background:var(--card2);color:var(--muted);}
+.rcdesc{font-size:0.76rem;color:var(--text2);}
+
+/* CONTACTS */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.cc{background:var(--card);border:2px solid var(--border);border-radius:18px;padding:18px 12px;cursor:pointer;transition:all 0.2s;text-align:center;}
+.cc:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.3);}
+.ca{font-size:2.4rem;margin-bottom:7px;}
+.cn{font-size:0.88rem;font-weight:700;margin-bottom:3px;}
+.cr{font-size:0.7rem;color:var(--muted);margin-bottom:11px;}
+.cbtns{display:flex;gap:5px;justify-content:center;}
+.cbtn{background:var(--card2);border:1px solid var(--border2);border-radius:8px;padding:5px 10px;font-size:0.72rem;font-weight:700;color:var(--text2);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.cbtn:hover{background:var(--accent);color:#000;border-color:var(--accent);}
+.cbtn.vc{background:rgba(102,187,106,0.12);border-color:rgba(102,187,106,0.3);color:var(--green);}
+.cbtn.vc:hover{background:var(--green);color:#000;}
+.qmsg-list{display:flex;flex-direction:column;gap:8px;}
+.qmsg-btn{background:var(--card);border:1.5px solid var(--border2);border-radius:12px;padding:13px 15px;font-family:inherit;font-size:0.88rem;font-weight:700;color:var(--text);cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:all 0.15s;}
+.qmsg-btn:hover{border-color:var(--accent);background:rgba(79,195,247,0.07);}
+
+/* LOG */
+.log-filters{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;}
+.log-filters::-webkit-scrollbar{display:none;}
+.fchip{flex-shrink:0;background:var(--card);border:1.5px solid var(--border2);border-radius:20px;padding:6px 14px;font-family:inherit;font-size:0.76rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.fchip.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.log-list{display:flex;flex-direction:column;gap:8px;}
+.litem{background:var(--card);border:1.5px solid var(--border2);border-radius:14px;padding:12px 14px;display:flex;align-items:flex-start;gap:12px;animation:fadeIn 0.2s ease;}
+.licol{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.licol.emotion{background:rgba(206,147,216,0.15);}
+.licol.request{background:rgba(255,183,77,0.15);}
+.licol.chat{background:rgba(79,195,247,0.15);}
+.licol.emergency{background:rgba(255,107,107,0.15);}
+.lcont{flex:1;}
+.ltitle{font-size:0.86rem;font-weight:700;margin-bottom:2px;}
+.ldetail{font-size:0.74rem;color:var(--text2);}
+.lmeta{display:flex;gap:8px;align-items:center;margin-top:4px;}
+.ltime{font-size:0.66rem;color:var(--muted);}
+.lurg{font-size:0.63rem;font-weight:700;padding:2px 7px;border-radius:8px;}
+.un{background:var(--red-bg);color:var(--red);}
+.us{background:var(--orange-bg);color:var(--orange);}
+.ul{background:var(--green-bg);color:var(--green);}
+
+/* TOAST */
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--green);color:#000;font-weight:700;padding:11px 22px;border-radius:30px;font-size:0.88rem;opacity:0;transition:all 0.3s;z-index:500;white-space:nowrap;pointer-events:none;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div id="emergencyOverlay">
+  <div class="emergency-big">🚨</div>
+  <div class="emergency-text">긴급 호출 중...</div>
+  <div class="emergency-sub">보호자에게 알림을 보내고 있어요<br>잠시만 기다려주세요</div>
+  <button class="emergency-cancel" onclick="cancelEmergency()">✕ 취소</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="topbar">
+  <div class="topbar-logo">👁️ 눈으로 말해요</div>
+  <div class="online-dot" style="margin-left:6px;"></div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+    <div class="topbar-time" id="clockEl">--:--</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('emotion',this)"><span class="ti">😊</span>감정</button>
+  <button class="tab-btn" onclick="switchTab('chat',this)"><span class="ti">💬</span>대화</button>
+  <button class="tab-btn" onclick="switchTab('routine',this)"><span class="ti">📅</span>루틴</button>
+  <button class="tab-btn" onclick="switchTab('contacts',this)"><span class="ti">📞</span>연락처</button>
+  <button class="tab-btn" onclick="switchTab('log',this)"><span class="ti">📋</span>기록</button>
+</div>
+
+<div class="content">
+
+  <!-- EMOTION TAB -->
+  <div class="tab-panel active" id="tab-emotion">
+    <div class="sec">💭 지금 기분이 어때요?</div>
+    <div class="emotion-grid">
+      <div class="ec" data-c="y" onclick="pickEmotion(this,'😊','기분이 좋아요')"><div class="ei">😊</div><div class="el">좋아요</div></div>
+      <div class="ec" data-c="r" onclick="pickEmotion(this,'😣','힘들어요')"><div class="ei">😣</div><div class="el">힘들어요</div></div>
+      <div class="ec" data-c="p" onclick="pickEmotion(this,'😢','외로워요')"><div class="ei">😢</div><div class="el">외로워요</div></div>
+      <div class="ec" data-c="pk" onclick="pickEmotion(this,'❤️','고마워요')"><div class="ei">❤️</div><div class="el">고마워요</div></div>
+      <div class="ec" data-c="o" onclick="pickEmotion(this,'😴','피곤해요')"><div class="ei">😴</div><div class="el">피곤해요</div></div>
+      <div class="ec" data-c="b" onclick="pickEmotion(this,'😌','평온해요')"><div class="ei">😌</div><div class="el">평온해요</div></div>
+      <div class="ec" data-c="g" onclick="pickEmotion(this,'😄','신나요')"><div class="ei">😄</div><div class="el">신나요</div></div>
+      <div class="ec" data-c="o" onclick="pickEmotion(this,'😑','지루해요')"><div class="ei">😑</div><div class="el">지루해요</div></div>
+      <div class="ec" data-c="r" onclick="pickEmotion(this,'😠','짜증나요')"><div class="ei">😠</div><div class="el">짜증나요</div></div>
+      <div class="ec" data-c="p" onclick="pickEmotion(this,'🥺','불안해요')"><div class="ei">🥺</div><div class="el">불안해요</div></div>
+      <div class="ec" data-c="pk" onclick="pickEmotion(this,'🥰','사랑해요')"><div class="ei">🥰</div><div class="el">사랑해요</div></div>
+      <div class="ec" data-c="g" onclick="pickEmotion(this,'😤','답답해요')"><div class="ei">😤</div><div class="el">답답해요</div></div>
+    </div>
+
+    <div class="econfirm" id="econfirm">
+      <div class="econfirm-text" id="econfirmText"></div>
+      <div class="sec" style="margin-bottom:6px;">⏱️ 얼마나 급해요?</div>
+      <div class="urg-row">
+        <button class="ub" data-l="now" onclick="pickUrgency(this)">🔴 지금 당장</button>
+        <button class="ub" data-l="soon" onclick="pickUrgency(this)">🟡 조금 있다가</button>
+        <button class="ub" data-l="later" onclick="pickUrgency(this)">🟢 나중에</button>
+      </div>
+      <button class="esend" onclick="sendEmotion()">📤 보호자에게 전달하기</button>
+    </div>
+
+    <div class="sec" style="margin-top:4px;">🕐 오늘 감정 기록</div>
+    <div id="todayElog"></div>
+  </div>
+
+  <!-- CHAT TAB -->
+  <div class="tab-panel" id="tab-chat">
+    <div class="sec">💬 보호자와 대화</div>
+    <div class="qchips" id="qchips"></div>
+    <div class="chat-area" id="chatArea">
+      <div style="text-align:center;color:var(--muted);font-size:0.85rem;padding:20px;line-height:1.7;">
+        보호자가 메시지를 보내면<br>🤖 AI가 선택지를 만들어드려요
+      </div>
+    </div>
+    <div class="gin-wrap">
+      <div class="gin-label">📱 보호자 메시지 보내기 (시뮬레이션)</div>
+      <div class="gin-row">
+        <textarea id="ginput" placeholder="보호자 메시지 입력..." rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendGMsg();}"></textarea>
+        <button class="sbtn" onclick="sendGMsg()">↑</button>
+      </div>
+    </div>
+    <div class="sec" style="margin-bottom:8px;">⚡ 빠른 답장</div>
+    <div class="qchips" id="qchips2"></div>
+  </div>
+
+  <!-- ROUTINE TAB -->
+  <div class="tab-panel" id="tab-routine">
+    <div class="rdate-card">
+      <div class="rday-big" id="rdayNum"></div>
+      <div class="rday-info">
+        <div class="rday-str" id="rdayStr"></div>
+        <div class="rday-greet" id="rdayGreet"></div>
+      </div>
+      <div style="font-size:1.8rem;">🌤️</div>
+    </div>
+    <div class="sec">📋 오늘 일정</div>
+    <div class="rtimeline" id="rtimeline"></div>
+  </div>
+
+  <!-- CONTACTS TAB -->
+  <div class="tab-panel" id="tab-contacts">
+    <div class="sec">👨‍👩‍👧 가족 & 의료진</div>
+    <div class="cg" id="cgrid"></div>
+    <div class="sec">⚡ 빠른 메시지</div>
+    <div class="qmsg-list" id="qmsglist"></div>
+  </div>
+
+  <!-- LOG TAB -->
+  <div class="tab-panel" id="tab-log">
+    <div class="sec">📋 오늘의 기록</div>
+    <div class="log-filters">
+      <button class="fchip active" onclick="filterLog('all',this)">전체</button>
+      <button class="fchip" onclick="filterLog('emotion',this)">감정</button>
+      <button class="fchip" onclick="filterLog('request',this)">요청</button>
+      <button class="fchip" onclick="filterLog('chat',this)">대화</button>
+      <button class="fchip" onclick="filterLog('emergency',this)">긴급</button>
+    </div>
+    <div class="log-list" id="logList"></div>
+    <div style="margin-top:16px;text-align:center;">
+      <button onclick="exportLog()" style="background:var(--card);border:1.5px solid var(--border2);border-radius:12px;padding:10px 24px;font-family:inherit;font-size:0.82rem;font-weight:700;color:var(--text2);cursor:pointer;">
+        📊 의료진용 리포트 내보내기
+      </button>
+    </div>
+  </div>
+</div>
+
+<button class="emer-fab" onclick="triggerEmergency()">
+  <span class="emer-icon">🚨</span>
+  <span class="emer-label">긴급호출</span>
+</button>
+
+<script>
+// STATE
+const logs = [];
+let selEmotion = null, selUrgency = null, logFilter = 'all';
+
+// CLOCK
+function tick() {
+  const n = new Date();
+  document.getElementById('clockEl').textContent =
+    n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+tick(); setInterval(tick, 10000);
+
+// TABS
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// TOAST
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// LOG
+function addLog(type, title, detail, urgency) {
+  const n = new Date();
+  const ts = n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+  logs.unshift({type, title, detail, urgency, time: ts});
+  renderLog();
+}
+function renderLog() {
+  const el = document.getElementById('logList');
+  el.innerHTML = '';
+  const fl = logFilter === 'all' ? logs : logs.filter(l => l.type === logFilter);
+  if (!fl.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;font-size:0.85rem;">아직 기록이 없어요</div>'; return; }
+  const imap = {emotion:'💜', request:'🟡', chat:'💬', emergency:'🚨'};
+  fl.forEach(log => {
+    const urgmap = {now:'<span class="lurg un">지금당장</span>', soon:'<span class="lurg us">조금있다가</span>', later:'<span class="lurg ul">나중에</span>'};
+    const d = document.createElement('div');
+    d.className = 'litem';
+    d.innerHTML = `
+      <div class="licol ${log.type}">${imap[log.type]||'📌'}</div>
+      <div class="lcont">
+        <div class="ltitle">${log.title}</div>
+        <div class="ldetail">${log.detail}</div>
+        <div class="lmeta"><span class="ltime">🕐 ${log.time}</span>${log.urgency ? urgmap[log.urgency]||'' : ''}</div>
+      </div>`;
+    el.appendChild(d);
+  });
+}
+function filterLog(type, btn) {
+  logFilter = type;
+  document.querySelectorAll('.fchip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderLog();
+}
+function exportLog() {
+  const lines = logs.map(l => `[${l.time}] [${l.type}] ${l.title} — ${l.detail}`).join('\n');
+  const blob = new Blob([`눈으로 말해요 — 일일 기록\n생성: ${new Date().toLocaleString('ko-KR')}\n\n` + lines], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = '환자기록_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click(); toast('📊 기록 파일 다운로드됨');
+}
+
+// EMERGENCY
+function triggerEmergency() {
+  document.getElementById('emergencyOverlay').classList.add('show');
+  if (navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+  addLog('emergency','🚨 긴급 호출','보호자에게 긴급 알림 발송','now');
+}
+function cancelEmergency() {
+  document.getElementById('emergencyOverlay').classList.remove('show');
+  toast('✅ 긴급 호출 취소됨');
+}
+
+// EMOTION
+function pickEmotion(el, emoji, label) {
+  document.querySelectorAll('.ec').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  selEmotion = {emoji, label}; selUrgency = null;
+  document.querySelectorAll('.ub').forEach(b => b.classList.remove('s'));
+  document.getElementById('econfirmText').textContent = `${emoji}  "${label}" 을 전달할게요`;
+  document.getElementById('econfirm').classList.add('show');
+}
+function pickUrgency(btn) {
+  document.querySelectorAll('.ub').forEach(b => b.classList.remove('s'));
+  btn.classList.add('s'); selUrgency = btn.dataset.l;
+}
+function sendEmotion() {
+  if (!selEmotion) return;
+  const urg = selUrgency || 'later';
+  const urgL = {now:'지금 당장', soon:'조금 있다가', later:'나중에'}[urg];
+  addLog('emotion', selEmotion.emoji + ' ' + selEmotion.label, '긴급도: ' + urgL, urg);
+  const n = new Date();
+  const ts = n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+  const el = document.getElementById('todayElog');
+  const d = document.createElement('div');
+  d.className = 'elog-item';
+  d.innerHTML = `<span style="font-size:1.3rem">${selEmotion.emoji}</span><span style="font-size:0.88rem;font-weight:700;flex:1;">${selEmotion.label}</span><span class="lurg u${urg[0]}">${urgL}</span><span style="font-size:0.65rem;color:var(--muted)">${ts}</span>`;
+  el.prepend(d);
+  toast('💬 보호자에게 전달됐어요!');
+  document.getElementById('econfirm').classList.remove('show');
+  document.querySelectorAll('.ec').forEach(c => c.classList.remove('sel'));
+  selEmotion = null; selUrgency = null;
+}
+
+// CHAT
+const quickPhrases = [
+  {e:'✅', t:'네'},{e:'❌', t:'아니요'},{e:'😣', t:'아파요'},
+  {e:'💧', t:'물 주세요'},{e:'🙏', t:'고마워요'},{e:'😴', t:'졸려요'},
+];
+function buildQuickChips() {
+  ['qchips','qchips2'].forEach(id => {
+    const el = document.getElementById(id);
+    quickPhrases.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'qchip'; b.textContent = p.e + ' ' + p.t;
+      b.onclick = () => patientSend(p.t);
+      el.appendChild(b);
+    });
+  });
+}
+
+function now() {
+  const n = new Date();
+  return n.getHours().toString().padStart(2,'0') + ':' + n.getMinutes().toString().padStart(2,'0');
+}
+
+function addChatMsg(role, text) {
+  const ca = document.getElementById('chatArea');
+  const emp = ca.querySelector('div[style]');
+  if (emp) emp.remove();
+  const row = document.createElement('div');
+  row.className = 'mrow ' + role;
+  if (role === 'system') {
+    row.innerHTML = `<div class="bubble sb">${text}</div>`;
+  } else {
+    const label = role === 'guardian' ? '👨‍👩‍👧 보호자' : '🛏️ 나';
+    const bc = role === 'guardian' ? 'gb' : 'pb';
+    row.innerHTML = `<div class="mlabel">${label}</div><div class="bubble ${bc}">${text}<span class="btime">${now()}</span></div>`;
+  }
+  ca.appendChild(row); ca.scrollTop = ca.scrollHeight;
+}
+
+async function sendGMsg() {
+  const ta = document.getElementById('ginput');
+  const text = ta.value.trim(); if (!text) return;
+  ta.value = '';
+  addChatMsg('guardian', text);
+  addLog('chat','💬 보호자 메시지', text, null);
+  showAIThinking(text);
+}
+
+function showAIThinking(msg) {
+  const ca = document.getElementById('chatArea');
+  const el = document.createElement('div');
+  el.className = 'aith'; el.id = 'aith';
+  el.innerHTML = `🤖 AI가 선택지 생성 중 <div class="dots"><span></span><span></span><span></span></div>`;
+  ca.appendChild(el); ca.scrollTop = ca.scrollHeight;
+  generateChoices(msg).then(choices => { el.remove(); showChoices(choices); })
+    .catch(() => { el.remove(); showChoices(fallbackChoices(msg)); });
+}
+
+async function generateChoices(msg) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514', max_tokens:1000,
+      system:`당신은 신체가 불편한 환자의 의사소통 AI입니다.
+보호자 메시지에 대해 환자가 눈으로 선택할 응답 4~5개를 만들어주세요.
+반드시 JSON 배열만 반환: [{"emoji":"✅","text":"네 괜찮아요"},...]
+마지막은 항상 {"emoji":"✍️","text":"직접 입력하기"}
+짧고 명확하게, 한국어.`,
+      messages:[{role:'user', content:`보호자: "${msg}"`}]
+    })
+  });
+  const data = await res.json();
+  return JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+}
+
+function fallbackChoices(msg) {
+  if (msg.includes('어때')||msg.includes('컨디션')) return [
+    {emoji:'😊',text:'괜찮아요'},{emoji:'😣',text:'힘들어요'},
+    {emoji:'😴',text:'잘 못 잤어요'},{emoji:'🤕',text:'어디가 아파요'},{emoji:'✍️',text:'직접 입력하기'}];
+  if (msg.includes('밥')||msg.includes('먹')) return [
+    {emoji:'✅',text:'네 먹고 싶어요'},{emoji:'❌',text:'아직 괜찮아요'},
+    {emoji:'😐',text:'조금만 주세요'},{emoji:'⏰',text:'나중에 주세요'},{emoji:'✍️',text:'직접 입력하기'}];
+  return [{emoji:'✅',text:'네'},{emoji:'❌',text:'아니요'},{emoji:'😊',text:'괜찮아요'},{emoji:'🙏',text:'고마워요'},{emoji:'✍️',text:'직접 입력하기'}];
+}
+
+function showChoices(choices) {
+  const ca = document.getElementById('chatArea');
+  const box = document.createElement('div'); box.className = 'choices-box';
+  box.innerHTML = `<div class="choices-hdr">🤖 AI 선택지 — 눈으로 선택하세요</div><div class="choices-list"></div>`;
+  const list = box.querySelector('.choices-list');
+  choices.forEach(c => {
+    const btn = document.createElement('button'); btn.className = 'choice-btn';
+    btn.innerHTML = `<span style="font-size:1.1rem">${c.emoji}</span><span>${c.text}</span>`;
+    btn.onclick = () => {
+      if (c.text === '직접 입력하기') {
+        const t = prompt('전달하고 싶은 말:'); if (t) { box.remove(); patientSend(t); }
+      } else { box.remove(); patientSend(c.text); }
+    };
+    list.appendChild(btn);
+  });
+  ca.appendChild(box); ca.scrollTop = ca.scrollHeight;
+}
+
+function patientSend(text) {
+  addChatMsg('patient', text);
+  addLog('chat','💬 내 답장', text, null);
+  setTimeout(() => addChatMsg('system','📱 보호자에게 전달됨'), 500);
+}
+
+// ROUTINE
+const routineItems = [
+  {time:'07:00',icon:'🌅',title:'기상 & 세면',desc:'얼굴 닦기, 양치',s:'done'},
+  {time:'08:00',icon:'🍚',title:'아침 식사',desc:'죽 & 영양제',s:'done'},
+  {time:'09:00',icon:'💊',title:'오전 약 복용',desc:'혈압약, 비타민D',s:'done'},
+  {time:'10:30',icon:'🏥',title:'물리치료',desc:'담당: 김○○ 치료사',s:'now'},
+  {time:'12:00',icon:'🍱',title:'점심 식사',desc:'연식 식단',s:'upcoming'},
+  {time:'14:00',icon:'💊',title:'오후 약',desc:'소화제',s:'upcoming'},
+  {time:'15:00',icon:'🛁',title:'목욕 & 위생',desc:'주 3회 (월/수/금)',s:'upcoming'},
+  {time:'18:00',icon:'🍚',title:'저녁 식사',desc:'연식 식단',s:'upcoming'},
+  {time:'21:00',icon:'💊',title:'저녁 약',desc:'수면제, 혈압약',s:'upcoming'},
+  {time:'22:00',icon:'😴',title:'취침 준비',desc:'체위 변경, 조명 off',s:'upcoming'},
+];
+function buildRoutine() {
+  const n = new Date();
+  const days = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  const months = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  document.getElementById('rdayNum').textContent = n.getDate();
+  document.getElementById('rdayStr').textContent = months[n.getMonth()] + ' ' + days[n.getDay()];
+  const h = n.getHours();
+  document.getElementById('rdayGreet').textContent = h<12 ? '좋은 아침이에요 ☀️' : h<18 ? '좋은 오후예요 🌤️' : '좋은 저녁이에요 🌙';
+  const tl = document.getElementById('rtimeline');
+  routineItems.forEach(item => {
+    const row = document.createElement('div'); row.className = 'ritem';
+    const bmap = {done:'bd ✅ 완료', now:'bn ▶ 진행중', upcoming:'bu ⏳ 예정'};
+    const bp = bmap[item.s].split(' '); const bc = bp[0]; const bt = bp.slice(1).join(' ');
+    const cc = item.s==='now'?'nowc':item.s==='done'?'donec':'';
+    row.innerHTML = `
+      <div class="rtcol">${item.time}</div>
+      <div class="rdcol"><div class="rdot ${item.s}"></div></div>
+      <div class="rcard ${cc}">
+        <div class="rctop"><span>${item.icon}</span><span style="font-size:0.88rem;font-weight:700;">${item.title}</span><span class="rcbadge ${bc}">${bt}</span></div>
+        <div class="rcdesc">${item.desc}</div>
+      </div>`;
+    tl.appendChild(row);
+  });
+}
+
+// CONTACTS
+const contacts = [
+  {name:'엄마',role:'주 보호자',a:'👩'},{name:'아빠',role:'보호자',a:'👨'},
+  {name:'김○○ 간호사',role:'담당 간호사',a:'👩‍⚕️'},{name:'박○○ 의사',role:'담당 의사',a:'👨‍⚕️'},
+];
+const qmsgs = [
+  {e:'🙋',t:'지금 와줄 수 있어요?'},{e:'💊',t:'약 가져다줘요'},
+  {e:'💧',t:'물 주세요'},{e:'🚽',t:'화장실 도움이 필요해요'},
+  {e:'😣',t:'많이 아파요'},{e:'😊',t:'지금 괜찮아요'},
+];
+function buildContacts() {
+  const grid = document.getElementById('cgrid');
+  contacts.forEach(c => {
+    const card = document.createElement('div'); card.className = 'cc';
+    card.innerHTML = `<div class="ca">${c.a}</div><div class="cn">${c.name}</div><div class="cr">${c.role}</div>
+      <div class="cbtns">
+        <button class="cbtn" onclick="doCall('${c.name}','전화')">📞 전화</button>
+        <button class="cbtn vc" onclick="doCall('${c.name}','영상통화')">📹 영상</button>
+      </div>`;
+    grid.appendChild(card);
+  });
+  const qml = document.getElementById('qmsglist');
+  qmsgs.forEach(m => {
+    const b = document.createElement('button'); b.className = 'qmsg-btn';
+    b.innerHTML = `<span style="font-size:1.2rem">${m.e}</span>${m.t}`;
+    b.onclick = () => { addLog('request', m.e+' '+m.t,'빠른 메시지','soon'); toast('📤 '+m.t+' — 전달됨!'); };
+    qml.appendChild(b);
+  });
+}
+function doCall(name, type) {
+  toast(`📞 ${name}에게 ${type} 연결 중...`);
+  addLog('chat','📞 '+type+' 요청', name, 'now');
+}
+
+// INIT
+buildQuickChips();
+buildRoutine();
+buildContacts();
+addLog('emotion','😊 기분이 좋아요','오전 감정 전달','later');
+addLog('request','💊 약 가져다줘요','빠른 메시지','soon');
+renderLog();
+</script>
+</body>
+</html>
