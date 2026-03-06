@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gaze Calibration</title>
+  <style>
+    html,body{margin:0;height:100%;background:#0b0b0b;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+    #hud{position:fixed;top:14px;left:14px;right:14px;display:flex;gap:10px;align-items:center;z-index:10;}
+    button{background:#1f2937;color:#fff;border:1px solid rgba(255,255,255,.15);padding:10px 12px;border-radius:10px;cursor:pointer}
+    button:disabled{opacity:.5;cursor:not-allowed}
+    #status{opacity:.9}
+    #canvas{position:fixed;inset:0}
+    .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
+  </style>
+</head>
+<body>
+  <div id="hud">
+    <button id="btn4">Start 4-point</button>
+    <button id="btn9">Start 9-point</button>
+    <div class="pill" id="status">WS connecting...</div>
+    <div class="pill" id="progress">-</div>
+  </div>
+  <canvas id="canvas"></canvas>
+
+<script>
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const statusEl = document.getElementById('status');
+  const progressEl = document.getElementById('progress');
+  const btn4 = document.getElementById('btn4');
+  const btn9 = document.getElementById('btn9');
+
+  function resize(){
+    canvas.width = window.innerWidth * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  let ws;
+  let mode = null; // 4 or 9
+  let target = null; // {x,y,idx,total,hold_ms}
+
+  function draw(){
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0,0,W,H);
+
+    // grid lines (optional)
+    if(mode === 4 || mode === 9){
+      const n = (mode === 4) ? 2 : 3;
+      ctx.globalAlpha = 0.25;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2 * devicePixelRatio;
+      for(let i=1;i<n;i++){
+        const x = W * (i/n);
+        const y = H * (i/n);
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // target dot
+    if(target){
+      const x = target.x * W;
+      const y = target.y * H;
+      const r = 10 * devicePixelRatio;
+
+      ctx.beginPath();
+      ctx.fillStyle = '#00ff7a';
+      ctx.arc(x, y, r, 0, Math.PI*2);
+      ctx.fill();
+
+      // ring
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(0,255,122,.45)';
+      ctx.lineWidth = 10 * devicePixelRatio;
+      ctx.arc(x, y, r+16*devicePixelRatio, 0, Math.PI*2);
+      ctx.stroke();
+    }
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  function setButtons(disabled){
+    btn4.disabled = disabled;
+    btn9.disabled = disabled;
+  }
+
+  function connect(){
+    ws = new WebSocket("ws://localhost:8765");
+    ws.onopen = () => {
+      statusEl.textContent = "WS connected";
+      setButtons(false);
+      ws.send(JSON.stringify({type:"client_ready"}));
+    };
+    ws.onclose = () => {
+      statusEl.textContent = "WS disconnected (retrying...)";
+      setButtons(true);
+      target = null;
+      setTimeout(connect, 800);
+    };
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+
+      if(msg.type === "status"){
+        statusEl.textContent = msg.text;
+      }
+      if(msg.type === "target"){
+        mode = msg.mode;
+        target = {x: msg.x, y: msg.y, idx: msg.idx, total: msg.total, hold_ms: msg.hold_ms};
+        progressEl.textContent = `mode=${mode} | ${msg.idx+1}/${msg.total} | hold=${msg.hold_ms}ms`;
+        setButtons(true);
+      }
+      if(msg.type === "done"){
+        target = null;
+        progressEl.textContent = `saved: ${msg.path}`;
+        statusEl.textContent = "done";
+        setButtons(false);
+      }
+      if(msg.type === "error"){
+        statusEl.textContent = "error: " + msg.text;
+        setButtons(false);
+      }
+    };
+  }
+  connect();
+
+  btn4.onclick = () => {
+    if(!ws || ws.readyState !== 1) return;
+    ws.send(JSON.stringify({type:"start", mode:4}));
+    statusEl.textContent = "starting 4-point...";
+    setButtons(true);
+  };
+
+  btn9.onclick = () => {
+    if(!ws || ws.readyState !== 1) return;
+    ws.send(JSON.stringify({type:"start", mode:9}));
+    statusEl.textContent = "starting 9-point...";
+    setButtons(true);
+  };
+</script>
+</body>
+</html>
