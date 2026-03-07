@@ -1,4 +1,3 @@
-
 # 👁️ GAZE_GRID — Webcam Gaze(4/9-grid) + Blink Click (Training & Demo)
 
 웹캠 입력만으로 **시선 기반 구역 선택(4/9-grid)** 과 **더블블링크 클릭**을 구현하기 위한 최소 학습/실행 파이프라인입니다.
