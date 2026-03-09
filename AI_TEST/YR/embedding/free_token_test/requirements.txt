@@ -1,0 +1,11 @@
+# 공통
+faiss-cpu>=1.7.4
+pandas>=2.0.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+
+# 로컬 전용 (USE_GMS=false) + Cross-encoder (항상 필요)
+sentence-transformers>=2.2.0
+
+# GMS 전용 (USE_GMS=true)
+openai>=1.0.0
