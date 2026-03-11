@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보호자와 대화 (카테고리 개선)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; background: #f0f4f8; }
+
+  .container {
+    max-width: 800px; margin: 20px auto; background: white;
+    border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+
+  /* 헤더 */
+  .header {
+    background: #2c5282; color: white; padding: 18px 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .home-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    padding: 10px 18px; border-radius: 8px; font-size: 15px; cursor: pointer;
+  }
+  .home-btn:hover { background: rgba(255,255,255,0.35); }
+  .header h1 { font-size: 22px; flex: 1; }
+
+  /* 대화 영역 */
+  .conversation {
+    padding: 16px 24px; background: #f7fafc;
+    border-bottom: 2px solid #e2e8f0; min-height: 80px; overflow: hidden;
+  }
+  .caregiver-msg {
+    background: #718096; color: white;
+    padding: 10px 14px; border-radius: 16px 16px 16px 4px;
+    font-size: 15px; line-height: 1.5; max-width: 80%; float: left; clear: both;
+  }
+  .patient-msg {
+    background: #2c5282; color: white;
+    padding: 10px 14px; border-radius: 16px 16px 4px 16px;
+    font-size: 15px; line-height: 1.5; max-width: 80%; float: right; clear: both; margin-top: 8px;
+  }
+  .selected-words {
+    background: #c6f6d5; color: #22543d; float: right; clear: both;
+    padding: 7px 12px; border-radius: 10px; font-size: 13px; margin-top: 6px;
+  }
+  .selected-words .tag {
+    display: inline-block; background: #9ae6b4;
+    padding: 2px 8px; border-radius: 5px; margin: 2px; font-weight: 600;
+  }
+  .clearfix::after { content: ''; display: block; clear: both; }
+
+  /* 입력 섹션 */
+  .input-section {
+    padding: 14px 24px; background: #edf2f7; border-bottom: 2px solid #cbd5e0;
+  }
+  .mode-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+  }
+  .mode-tab {
+    padding: 9px; font-size: 14px; font-weight: 600;
+    border: 2px solid #cbd5e0; border-radius: 8px;
+    background: white; color: #4a5568; cursor: pointer; transition: all 0.2s;
+  }
+  .mode-tab.active { background: #2c5282; color: white; border-color: #2c5282; }
+  .caregiver-input { display: flex; gap: 10px; }
+  .caregiver-input select {
+    flex: 1; padding: 10px 12px; font-size: 15px;
+    border: 2px solid #cbd5e0; border-radius: 8px; background: white;
+  }
+  .process-btn {
+    background: #2c5282; color: white; border: none;
+    padding: 10px 20px; font-size: 15px; font-weight: 600;
+    border-radius: 8px; cursor: pointer; white-space: nowrap;
+  }
+  .process-btn:hover { background: #2a4a7f; }
+  .process-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+  /* 메인 콘텐츠 */
+  .main-content { padding: 22px; }
+
+  /* 추천 문장 리스트 */
+  .answer-list { display: flex; flex-direction: column; gap: 11px; }
+  .answer-btn {
+    width: 100%; padding: 20px; border-radius: 12px;
+    font-size: 19px; font-weight: 600; cursor: pointer;
+    text-align: left; transition: all 0.15s; border: 3px solid;
+    min-height: 70px; display: flex; align-items: center;
+  }
+  .answer-btn.ai { background: #2c5282; color: white; border-color: #2c5282; }
+  .answer-btn.ai:hover { background: #2a4a7f; transform: translateX(4px); }
+  .answer-btn.manual { background: #f7fafc; color: #2c5282; border-color: #90cdf4; font-size: 17px; }
+  .answer-btn.manual:hover { background: #ebf8ff; border-color: #4299e1; }
+
+  /* 6타일 그리드 */
+  .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .back-btn {
+    background: #e2e8f0; border: none; padding: 9px 14px;
+    border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600;
+  }
+  .back-btn:hover { background: #cbd5e0; }
+  .step-title { font-size: 17px; font-weight: 700; color: #2d3748; }
+  .step-progress { font-size: 13px; color: #a0aec0; margin-left: auto; }
+
+  .grid-6 {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr); gap: 12px;
+  }
+  .tile {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    text-align: center; font-size: 20px; font-weight: 600;
+    border-radius: 14px; cursor: pointer; transition: all 0.15s;
+    padding: 12px; word-break: keep-all; line-height: 1.3; border: 3px solid transparent;
+  }
+  .tile.word  { background: #4a5568; color: white; border-color: #4a5568; }
+  .tile.word:hover  { background: #2d3748; transform: scale(1.04); }
+  .tile.punct { background: #553c9a; color: white; border-color: #553c9a; font-size: 28px; }
+  .tile.punct:hover { background: #44337a; transform: scale(1.04); }
+  .tile.none  { background: #718096; color: white; border-color: #718096; font-size: 16px; }
+  .tile.none:hover  { background: #4a5568; }
+  .tile.action { background: #bee3f8; color: #1a365d; border-color: #90cdf4; font-size: 15px; }
+  .tile.action:hover { background: #90cdf4; }
+  .tile.patient-cat {
+    background: #2c5282; color: white; border-color: #2c5282;
+    font-size: 17px; flex-direction: column;
+  }
+  .tile.patient-cat:hover { background: #2a4a7f; transform: scale(1.04); }
+  .tile-sub { font-size: 11px; opacity: 0.8; margin-top: 5px; }
+  .tile.caregiver-cat { background: #4a6fa5; color: white; border-color: #4a6fa5; }
+  .tile.caregiver-cat:hover { background: #3a5a8a; transform: scale(1.04); }
+
+  /* 카테고리 개수별 동적 그리드 */
+  .grid-2 {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+  }
+  .grid-3 {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  .grid-2 .tile, .grid-3 .tile { aspect-ratio: 1.5; }
+
+  /* 공통 */
+  .loading { text-align: center; padding: 50px 20px; font-size: 17px; color: #718096; }
+  .spinner {
+    display: inline-block; width: 24px; height: 24px;
+    border: 3px solid #e2e8f0; border-top-color: #2c5282;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg {
+    background: #fff5f5; border: 1px solid #fed7d7; color: #c53030;
+    padding: 14px 20px; border-radius: 10px; font-size: 14px;
+  }
+  #toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #2d3748; color: white; padding: 13px 26px;
+    border-radius: 10px; font-size: 16px; font-weight: 500;
+    transition: transform 0.3s ease; z-index: 999; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <button class="home-btn" onclick="goHome()">🏠 홈</button>
+    <h1>보호자와 소통</h1>
+  </div>
+
+  <div class="conversation clearfix" id="conversation"></div>
+
+  <div class="input-section">
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-patient"   onclick="setMode('patient')">환자가 먼저 시작</button>
+      <button class="mode-tab"        id="tab-caregiver" onclick="setMode('caregiver')">보호자가 먼저 시작</button>
+    </div>
+    <div class="caregiver-input" id="caregiver-input" style="display:none;">
+      <select id="stt-input">
+        <option>이대호 선수 어때?</option>
+        <option>저녁 뭐 먹고 싶어?</option>
+        <option>배고파?</option>
+        <option>물 마실래?</option>
+        <option>오늘 기분 어때?</option>
+        <option>오렌지 주스 맛이 어때?</option>
+        <option>어깨 아직도 아파?</option>
+      </select>
+      <button class="process-btn" id="process-btn" onclick="startCaregiverProcess()">처리하기</button>
+    </div>
+  </div>
+
+  <div class="main-content" id="main-content"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+// ===== 앱 상태 =====
+let currentMode        = 'patient';
+let caregiverQuestion  = '';
+let selectedWords      = [];
+let currentStep        = 0;
+let lastSentences      = [];
+let todayData          = null;   // /today API에서 받아옴
+let currentSentimentMap = {};    // 카테고리 → sentiment 매핑
+
+const STEPS       = ['subjects', 'objects', 'verbs', 'punctuation'];
+const STEP_LABELS = ['주어', '목적어', '서술어', '문장 부호'];
+
+// =====================================================================
+// Flask API 호출 래퍼
+// =====================================================================
+async function api(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+
+// =====================================================================
+// UI 유틸
+// =====================================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setLoading(msg = 'AI가 준비하고 있어요...') {
+  document.getElementById('main-content').innerHTML =
+    `<div class="loading"><span class="spinner"></span>${msg}</div>`;
+}
+
+function showError(msg) {
+  document.getElementById('main-content').innerHTML =
+    `<div class="error-msg">⚠️ 오류: ${msg}</div>`;
+}
+
+function updateConversation() {
+  let html = '';
+  if (caregiverQuestion) html += `<div class="caregiver-msg">${caregiverQuestion}</div>`;
+  if (selectedWords.length > 0) {
+    const tags = selectedWords.map(w => `<span class="tag">${w}</span>`).join('');
+    html += `<div class="selected-words">${tags}</div>`;
+  }
+  document.getElementById('conversation').innerHTML = html;
+}
+
+function addPatientMessage(text) {
+  const conv = document.getElementById('conversation');
+  const ph   = conv.querySelector('p');
+  if (ph) ph.remove();
+  const div  = document.createElement('div');
+  div.className   = 'patient-msg';
+  div.textContent = text;
+  conv.appendChild(div);
+  const cl = document.createElement('div');
+  cl.style.clear = 'both';
+  conv.appendChild(cl);
+  conv.scrollTop = conv.scrollHeight;
+}
+
+// =====================================================================
+// 모드 전환
+// =====================================================================
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('tab-patient').classList.toggle('active', mode === 'patient');
+  document.getElementById('tab-caregiver').classList.toggle('active', mode === 'caregiver');
+  document.getElementById('caregiver-input').style.display = mode === 'caregiver' ? 'flex' : 'none';
+  caregiverQuestion = '';
+  selectedWords     = [];
+  currentStep       = 0;
+  document.getElementById('conversation').innerHTML = '';
+  if (mode === 'patient') showPatientStart();
+  else document.getElementById('main-content').innerHTML = '';
+}
+
+// =====================================================================
+// [환자 먼저] 시작 화면
+// =====================================================================
+function showPatientStart() {
+  if (!todayData) { setLoading('환자 데이터 로딩 중...'); return; }
+  const t = todayData;
+  const cats = [
+    { label:'오늘의 기분',  sub: t.mood,                      fn: "patientCat('mood')" },
+    { label:'오늘 일정',    sub: t.schedule[0].event,          fn: "patientCat('schedule')" },
+    { label:'자주 쓴 표현', sub: t.mostUsedToday.expression,   fn: "patientCat('mostUsed')" },
+    { label:'직전 사용',    sub: t.lastUsedFeature.expression,  fn: "patientCat('lastUsed')" },
+  ];
+  const tiles = cats.map(({label, sub, fn}) =>
+    `<div class="tile patient-cat" onclick="${fn}">
+      <div>${label}</div><div class="tile-sub">${sub}</div>
+    </div>`
+  ).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="grid-6">
+      ${tiles}
+      <div class="tile action" onclick="showPatientStart()">↺ 새로고침</div>
+      <div class="tile action" onclick="openKeyboard()">⌨ 키보드</div>
+    </div>`;
+}
+
+async function patientCat(type) {
+  const t = todayData;
+  let query = '';
+  if      (type === 'mood')     query = `오늘 기분이 ${t.mood}해`;
+  else if (type === 'schedule') query = t.schedule[0].event;
+  else if (type === 'mostUsed') query = t.mostUsedToday.expression;
+  else if (type === 'lastUsed') query = t.lastUsedFeature.expression;
+
+  caregiverQuestion = query;
+  setLoading('관련 표현을 찾고 있어요...');
+  try {
+    const data = await api('/recommend', { question: query });
+    lastSentences = data.sentences;
+    renderRecommendScreen(data.sentences, showPatientStart);
+  } catch (e) { showError(e.message); }
+}
+
+// =====================================================================
+// [보호자 먼저] 처리하기 → 카테고리 → 추천
+// =====================================================================
+async function startCaregiverProcess() {
+  caregiverQuestion  = document.getElementById('stt-input').value;
+  selectedWords      = [];
+  currentStep        = 0;
+  updateConversation();
+  document.getElementById('process-btn').disabled = true;
+  setLoading('카테고리를 생성하고 있어요...');
+  try {
+    const data = await api('/categories', { question: caregiverQuestion });
+    currentSentimentMap = data.sentimentMap || {};
+    renderCategoryScreen(data.categories);
+  } catch (e) { showError(e.message); }
+  finally { document.getElementById('process-btn').disabled = false; }
+}
+
+function renderCategoryScreen(cats) {
+  // 카테고리 개수에 따라 그리드 클래스 결정
+  const gridClass = cats.length <= 2 ? 'grid-2' : cats.length === 3 ? 'grid-3' : 'grid-6';
+
+  const tiles = cats.map(cat =>
+    `<div class="tile caregiver-cat" onclick="selectCategory('${cat.replace(/'/g,"\\'")}')">
+      ${cat}
+    </div>`
+  ).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="step-header">
+      <span class="step-title">어떤 방향으로 답변하시겠어요?</span>
+    </div>
+    <div class="${gridClass}">
+      ${tiles}
+      <div class="tile action" onclick="startCaregiverProcess()">↺ 새로고침</div>
+      <div class="tile action" onclick="openKeyboard()">⌨ 키보드</div>
+    </div>`;
+}
+
+async function selectCategory(cat) {
+  setLoading('관련 표현을 찾고 있어요...');
+  try {
+    const sentiment = currentSentimentMap[cat] || null;
+    console.log(`[카테고리 선택] ${cat} → sentiment: ${sentiment}`);
+    const data = await api('/recommend', {
+      question:  caregiverQuestion,
+      sentiment: sentiment
+    });
+    lastSentences = data.sentences;
+    renderRecommendScreen(data.sentences, () => renderCategoryScreen(Object.keys(currentSentimentMap)));
+  } catch (e) { showError(e.message); }
+}
+
+// =====================================================================
+// 추천 문장 화면 (공용)
+// =====================================================================
+function renderRecommendScreen(sentences, backFn) {
+  const btns = sentences.map(s =>
+    `<button class="answer-btn ai" onclick="sendMessage('${s.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">
+      ${s}
+    </button>`
+  ).join('');
+  document.getElementById('main-content').innerHTML = `
+    <div class="answer-list">
+      ${btns}
+      <button class="answer-btn manual" onclick="startWordMode()">🔤 단어로 직접 표현할래요!</button>
+    </div>`;
+  window._backToRecommend = () => renderRecommendScreen(lastSentences, backFn);
+}
+
+// =====================================================================
+// 단어 모드 (주어→목적어→서술어→문장부호 4단계)
+// =====================================================================
+async function startWordMode() {
+  selectedWords = [];
+  currentStep   = 1;
+  updateConversation();
+  await renderWordStep(1);
+}
+
+async function renderWordStep(step) {
+  setLoading();
+  const category = STEPS[step - 1];
+  const label    = STEP_LABELS[step - 1];
+  try {
+    const data = await api('/words', { question: caregiverQuestion, category });
+    renderGrid(step, label, category, data.words);
+  } catch (e) { showError(e.message); }
+}
+
+function renderGrid(step, label, category, words) {
+  const isPunct = category === 'punctuation';
+  const tiles = words.map(w => {
+    const cls = isPunct ? (w === '없음' ? 'none' : 'punct') : 'word';
+    const fn  = isPunct ? 'selectPunct' : 'selectWord';
+    return `<div class="tile ${cls}" onclick="${fn}('${w.replace(/'/g,"\\'")}')"> ${w}</div>`;
+  }).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="step-header">
+      <button class="back-btn" onclick="wordBack(${step})">← 뒤로</button>
+      <span class="step-title">${label}를 선택하세요</span>
+      <span class="step-progress">${step} / 4</span>
+    </div>
+    <div class="grid-6">
+      ${tiles}
+      <div class="tile action" onclick="wordRefresh(${step},'${category}')">새로<br>고침</div>
+      <div class="tile action" onclick="wordSkip(${step})">건너<br>뛰기</div>
+    </div>`;
+}
+
+async function selectWord(word) {
+  selectedWords.push(word);
+  updateConversation();
+  currentStep++;
+  if (currentStep <= 4) await renderWordStep(currentStep);
+}
+
+async function selectPunct(punct) {
+  if (punct !== '없음') selectedWords.push(punct);
+  updateConversation();
+  await generateAndRenderFinal();
+}
+
+async function wordSkip(step) {
+  currentStep = step + 1;
+  if (currentStep <= 4) await renderWordStep(currentStep);
+  else await generateAndRenderFinal();
+}
+
+async function wordBack(step) {
+  if (step === 1) {
+    selectedWords = [];
+    updateConversation();
+    if (window._backToRecommend) window._backToRecommend();
+  } else {
+    selectedWords.pop();
+    currentStep = step - 1;
+    updateConversation();
+    await renderWordStep(currentStep);
+  }
+}
+
+async function wordRefresh(step, category) {
+  setLoading();
+  const label = STEP_LABELS[step - 1];
+  try {
+    const data = await api('/words_all', { question: caregiverQuestion, category });
+    renderGrid(step, label, category, data.words);
+  } catch (e) { showError(e.message); }
+}
+
+async function generateAndRenderFinal() {
+  setLoading('문장을 만들고 있어요...');
+  try {
+    const data = await api('/generate', { words: selectedWords, question: caregiverQuestion });
+    lastSentences = data.sentences;
+    renderFinalScreen(data.sentences);
+  } catch (e) { showError(e.message); }
+}
+
+function renderFinalScreen(sentences) {
+  const btns = sentences.map(s =>
+    `<button class="answer-btn ai" onclick="sendMessage('${s.replace(/'/g,"\\'").replace(/"/g,"&quot;")}')">
+      ${s}
+    </button>`
+  ).join('');
+  document.getElementById('main-content').innerHTML = `
+    <div class="answer-list">
+      ${btns}
+      <button class="answer-btn manual" onclick="openKeyboard()">⌨️ 키보드로 소통할래요</button>
+    </div>`;
+}
+
+// =====================================================================
+// 문장 전송
+// =====================================================================
+function sendMessage(text) {
+  addPatientMessage(text);
+  showToast(`✅ 전송됨: "${text}"`);
+  selectedWords     = [];
+  currentStep       = 0;
+  caregiverQuestion = '';
+  if (currentMode === 'patient') showPatientStart();
+  else document.getElementById('main-content').innerHTML = '';
+}
+
+function goHome()       { showToast('🏠 홈으로 이동'); }
+function openKeyboard() { showToast('⌨️ 키보드로 이동'); }
+
+// =====================================================================
+// 초기화: /today 로 todayData 로드
+// =====================================================================
+window.onload = async () => {
+  try {
+    const res  = await fetch('/today');
+    todayData  = await res.json();
+  } catch {
+    todayData  = {
+      mood: '행복', schedule: [{event:'손녀딸 방문'}],
+      mostUsedToday: {expression:'어깨 아파'},
+      lastUsedFeature: {expression:'물 좀 줘'}
+    };
+  }
+  showPatientStart();
+};
+</script>
+</body>
+</html>
