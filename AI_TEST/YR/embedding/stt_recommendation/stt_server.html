@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보호자와 대화</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif; background: #f0f4f8; }
+
+  .container {
+    max-width: 800px; margin: 20px auto; background: white;
+    border-radius: 20px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+
+  /* 헤더 */
+  .header {
+    background: #2c5282; color: white; padding: 18px 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .home-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    padding: 10px 18px; border-radius: 8px; font-size: 16px; cursor: pointer;
+  }
+  .home-btn:hover { background: rgba(255,255,255,0.35); }
+  .header h1 { font-size: 22px; flex: 1; }
+
+  /* 대화 영역 */
+  .conversation {
+    padding: 18px 24px; background: #f7fafc;
+    border-bottom: 2px solid #e2e8f0; min-height: 90px; overflow: hidden;
+  }
+  .caregiver-msg {
+    display: inline-block; background: #718096; color: white;
+    padding: 12px 16px; border-radius: 16px 16px 16px 4px;
+    font-size: 15px; line-height: 1.5; max-width: 80%; float: left; clear: both;
+  }
+  .selected-words {
+    background: #c6f6d5; color: #22543d; float: right; clear: both;
+    padding: 8px 12px; border-radius: 10px; font-size: 13px; margin-top: 6px;
+  }
+  .selected-words .tag {
+    display: inline-block; background: #9ae6b4;
+    padding: 3px 8px; border-radius: 5px; margin: 2px; font-weight: 600;
+  }
+  .clearfix::after { content: ''; display: block; clear: both; }
+
+  /* 입력 섹션 */
+  .input-section {
+    padding: 14px 24px; background: #edf2f7; border-bottom: 2px solid #cbd5e0;
+  }
+  .input-group { display: flex; gap: 10px; }
+  .input-group select {
+    flex: 1; padding: 11px 14px; font-size: 15px;
+    border: 2px solid #cbd5e0; border-radius: 8px; background: white;
+  }
+  .process-btn {
+    background: #2c5282; color: white; border: none;
+    padding: 11px 22px; font-size: 15px; font-weight: 600;
+    border-radius: 8px; cursor: pointer; white-space: nowrap;
+  }
+  .process-btn:hover { background: #2a4a7f; }
+  .process-btn:disabled { background: #a0aec0; cursor: not-allowed; }
+
+  /* 메인 콘텐츠 */
+  .main-content { padding: 24px; }
+
+  /* ── 첫 화면: 4개 버튼 리스트 ── */
+  .answer-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .answer-btn {
+    width: 100%; padding: 22px 20px; border-radius: 14px;
+    font-size: 20px; font-weight: 600; cursor: pointer;
+    text-align: left; transition: all 0.15s; border: 3px solid;
+    min-height: 80px; display: flex; align-items: center;
+  }
+  .answer-btn.ai {
+    background: #2c5282; color: white; border-color: #2c5282;
+  }
+  .answer-btn.ai:hover { background: #2a4a7f; transform: translateX(4px); }
+  .answer-btn.manual {
+    background: #f7fafc; color: #2c5282; border-color: #90cdf4;
+    font-size: 18px;
+  }
+  .answer-btn.manual:hover { background: #ebf8ff; border-color: #4299e1; }
+
+  /* ── 단어 선택 화면: 6타일 그리드 ── */
+  .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .back-btn {
+    background: #e2e8f0; border: none; padding: 10px 16px;
+    border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: 600;
+  }
+  .back-btn:hover { background: #cbd5e0; }
+  .step-title { font-size: 17px; font-weight: 700; color: #2d3748; }
+  .step-progress { font-size: 13px; color: #a0aec0; margin-left: auto; }
+
+  .grid-6 {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr); gap: 12px;
+  }
+  .tile {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    text-align: center; font-size: 22px; font-weight: 600;
+    border-radius: 14px; cursor: pointer; transition: all 0.15s;
+    padding: 12px; word-break: keep-all; line-height: 1.3; border: 3px solid transparent;
+  }
+  .tile.word { background: #4a5568; color: white; border-color: #4a5568; }
+  .tile.word:hover { background: #2d3748; transform: scale(1.04); }
+  .tile.punct { background: #553c9a; color: white; border-color: #553c9a; font-size: 28px; }
+  .tile.punct:hover { background: #44337a; transform: scale(1.04); }
+  .tile.none { background: #718096; color: white; border-color: #718096; font-size: 16px; }
+  .tile.none:hover { background: #4a5568; }
+  .tile.action { background: #bee3f8; color: #1a365d; border-color: #90cdf4; font-size: 15px; }
+  .tile.action:hover { background: #90cdf4; }
+
+  /* 공통 */
+  .loading { text-align: center; padding: 50px 20px; font-size: 17px; color: #718096; }
+  .spinner {
+    display: inline-block; width: 26px; height: 26px;
+    border: 3px solid #e2e8f0; border-top-color: #2c5282;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    vertical-align: middle; margin-right: 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg {
+    background: #fff5f5; border: 1px solid #fed7d7; color: #c53030;
+    padding: 14px 20px; border-radius: 10px; font-size: 14px;
+  }
+  #toast {
+    position: fixed; bottom: 30px; left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #2d3748; color: white; padding: 14px 28px;
+    border-radius: 10px; font-size: 16px; font-weight: 500;
+    transition: transform 0.3s ease; z-index: 999; white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <button class="home-btn" onclick="goHome()">🏠 홈</button>
+    <h1>보호자와 소통</h1>
+  </div>
+
+  <div class="conversation clearfix" id="conversation"></div>
+
+  <div class="input-section">
+    <div class="input-group">
+      <select id="stt-input">
+        <option>이대호 선수 어때?</option>
+        <option>저녁 뭐 먹고 싶어?</option>
+        <option>배고파?</option>
+        <option>물 마실래?</option>
+        <option>오늘 기분 어때?</option>
+        <option>뭐 보고 싶어?</option>
+      </select>
+      <button class="process-btn" id="process-btn" onclick="startProcess()">처리하기</button>
+    </div>
+  </div>
+
+  <div class="main-content" id="main-content"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+let caregiverQuestion = '';
+let selectedWords = [];
+let currentStep = 0;
+
+const STEPS = ['subjects', 'objects', 'verbs', 'punctuation'];
+const STEP_LABELS = ['주어', '목적어', '서술어', '문장 부호'];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function setLoading(msg = 'AI가 준비하고 있어요...') {
+  document.getElementById('main-content').innerHTML =
+    `<div class="loading"><span class="spinner"></span>${msg}</div>`;
+}
+
+function updateConversation() {
+  let html = '';
+  if (caregiverQuestion) {
+    html += `<div class="caregiver-msg">${caregiverQuestion}</div>`;
+  }
+  if (selectedWords.length > 0) {
+    const tags = selectedWords.map(w => `<span class="tag">${w}</span>`).join('');
+    html += `<div class="selected-words">${tags}</div>`;
+  }
+  document.getElementById('conversation').innerHTML = html;
+}
+
+// ── 처리하기 클릭 → 첫 화면 ──
+async function startProcess() {
+  caregiverQuestion = document.getElementById('stt-input').value;
+  selectedWords = [];
+  currentStep = 0;
+  updateConversation();
+  document.getElementById('process-btn').disabled = true;
+  setLoading('AI 추천 문장을 준비하고 있어요...');
+
+  try {
+    const res = await fetch('/recommend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: caregiverQuestion })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderFirstScreen(data.sentences);
+  } catch (e) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="error-msg">오류: ${e.message}</div>`;
+  } finally {
+    document.getElementById('process-btn').disabled = false;
+  }
+}
+
+// ── 첫 화면: AI 추천 3개 + 단어 직접 만들기 ──
+function renderFirstScreen(sentences) {
+  const btns = sentences.map(s =>
+    `<button class="answer-btn ai" onclick="sendMessage('${s.replace(/'/g,"\\'")}')">
+      ${s}
+    </button>`
+  ).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="answer-list">
+      ${btns}
+      <button class="answer-btn manual" onclick="startWordMode()">
+        🔤 단어로 직접 표현할래요!
+      </button>
+    </div>`;
+}
+
+// ── 단어 모드 시작 ──
+async function startWordMode() {
+  selectedWords = [];
+  currentStep = 1;
+  updateConversation();
+  await renderWordStep(1);
+}
+
+// ── 단어 선택 화면 렌더링 ──
+async function renderWordStep(step) {
+  setLoading();
+  const category = STEPS[step - 1];
+  const label = STEP_LABELS[step - 1];
+
+  try {
+    const res = await fetch('/words', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: caregiverQuestion, category })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderGrid(step, label, category, data.words);
+  } catch (e) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="error-msg">오류: ${e.message}</div>`;
+  }
+}
+
+function renderGrid(step, label, category, words) {
+  const isPunct = category === 'punctuation';
+  const tiles = words.map(w => {
+    const cls = isPunct ? (w === '없음' ? 'none' : 'punct') : 'word';
+    const fn = isPunct ? 'selectPunct' : 'selectWord';
+    return `<div class="tile ${cls}" onclick="${fn}('${w.replace(/'/g,"\\'")}')"> ${w}</div>`;
+  }).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="step-header">
+      <button class="back-btn" onclick="goBack(${step})">← 뒤로</button>
+      <span class="step-title">${label}를 선택하세요</span>
+      <span class="step-progress">${step} / 4</span>
+    </div>
+    <div class="grid-6">
+      ${tiles}
+      <div class="tile action" onclick="refreshStep(${step},'${category}')">새로<br>고침</div>
+      <div class="tile action" onclick="skipStep(${step})">건너<br>뛰기</div>
+    </div>`;
+}
+
+async function selectWord(word) {
+  selectedWords.push(word);
+  updateConversation();
+  currentStep++;
+  if (currentStep <= 4) await renderWordStep(currentStep);
+}
+
+async function selectPunct(punct) {
+  if (punct !== '없음') selectedWords.push(punct);
+  updateConversation();
+  await generateSentence();
+}
+
+async function skipStep(step) {
+  currentStep = step + 1;
+  if (currentStep <= 4) await renderWordStep(currentStep);
+  else await generateSentence();
+}
+
+async function goBack(step) {
+  if (step === 1) {
+    setLoading('AI 추천 문장을 준비하고 있어요...');
+    try {
+      const res = await fetch('/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: caregiverQuestion })
+      });
+      const data = await res.json();
+      selectedWords = [];
+      currentStep = 0;
+      updateConversation();
+      renderFirstScreen(data.sentences);
+    } catch (e) {
+      document.getElementById('main-content').innerHTML =
+        `<div class="error-msg">오류: ${e.message}</div>`;
+    }
+  } else {
+    selectedWords.pop();
+    currentStep = step - 1;
+    updateConversation();
+    await renderWordStep(currentStep);
+  }
+}
+
+async function refreshStep(step, category) {
+  setLoading();
+  const label = STEP_LABELS[step - 1];
+  try {
+    const res = await fetch('/words_all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: caregiverQuestion, category })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderGrid(step, label, category, data.words);
+  } catch (e) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="error-msg">오류: ${e.message}</div>`;
+  }
+}
+
+async function generateSentence() {
+  setLoading('문장을 만들고 있어요...');
+  try {
+    const res = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ words: selectedWords, question: caregiverQuestion })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    renderFinalScreen(data.sentences);
+  } catch (e) {
+    document.getElementById('main-content').innerHTML =
+      `<div class="error-msg">오류: ${e.message}</div>`;
+  }
+}
+
+function renderFinalScreen(sentences) {
+  const btns = sentences.map(s =>
+    `<button class="answer-btn ai" onclick="sendMessage('${s.replace(/'/g,"\\'")}')">
+      ${s}
+    </button>`
+  ).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="answer-list">
+      ${btns}
+      <button class="answer-btn manual" onclick="openKeyboard()">
+        ⌨️ 키보드를 사용해서 소통할래요
+      </button>
+    </div>`;
+}
+
+function sendMessage(text) {
+  showToast('✅ 전송됨: "' + text + '"');
+  resetProcess();
+}
+
+function resetProcess() {
+  selectedWords = [];
+  caregiverQuestion = '';
+  currentStep = 0;
+  document.getElementById('main-content').innerHTML = '';
+  document.getElementById('conversation').innerHTML = '';
+}
+
+function goHome() { showToast('🏠 홈으로 이동'); }
+function openKeyboard() { showToast('⌨️ 키보드로 이동'); }
+</script>
+</body>
+</html>
