@@ -1,17 +1,60 @@
+# 로컬 개발용 override
+# 사용: docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml up -d
+# MySQL/Redis/RabbitMQ: 호스트에서 localhost로 접근 가능. data-net 내부에서는 서비스명(db-local, redis-local, rabbitmq-local)으로 접속.
 version: '3.8'
+
 services:
   db-local:
     image: mysql:8.0
     container_name: eyespeak-db-local
     environment:
-      MYSQL_ROOT_PASSWORD: root1234
-      MYSQL_DATABASE: eyespeak
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
       MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
     ports:
       - "3306:3306"
     volumes:
       - mysql-local-data:/var/lib/mysql
+    networks:
+      - data-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis-local:
+    image: redis:7-alpine
+    container_name: eyespeak-redis-local
+    ports:
+      - "6379:6379"
+    networks:
+      - data-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq-local:
+    image: rabbitmq:management
+    container_name: eyespeak-rabbitmq-local
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - "5672:5672"   # AMQP 애플리케이션이 실제로 RabbitMQ 와 통신하는 포트
+      - "15672:15672" # Management UI 관리자 웹 인터페이스를 통해 RabbitMQ 관리 가능
+    networks:
+      - data-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   mysql-local-data:
