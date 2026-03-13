@@ -1,0 +1,46 @@
+# 프론트엔드 공통 설정 (기본)
+# 환경별 URL: Local  프론트 localhost:8000      API localhost:8080/api/v1
+#             Dev    https://dev.j14e205.p.ssafy.io   https://dev.j14e205.p.ssafy.io/api/v1
+#             Prod   https://j14e205.p.ssafy.io        https://j14e205.p.ssafy.io/api/v1
+# 사용: docker-compose -f docker-compose.yml -f docker-compose.{local|dev|prod}.yml up -d
+# - Local: -f docker-compose.local.yml → front-local (8000)
+# - Dev:   -f docker-compose.dev.yml --profile blue → front-blue
+# - Prod:  -f docker-compose.prod.yml --profile blue --profile green → front-blue + front-green
+version: '3.8'
+
+networks:
+  frontend-net:
+    driver: bridge
+
+services:
+  front-blue:
+    build: .
+    container_name: eyespeak-front-blue
+    ports:
+      - "8000:80"
+    profiles:
+      - "blue"
+    networks:
+      - frontend-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  front-green:
+    build: .
+    container_name: eyespeak-front-green
+    ports:
+      - "8001:80"
+    profiles:
+      - "green"
+    networks:
+      - frontend-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

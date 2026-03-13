@@ -1,0 +1,22 @@
+# 로컬 개발용 override (단일 프론트 컨테이너)
+# 환경: Local | 프론트 http://localhost:8000 | 백엔드 API http://localhost:8080/api/v1
+# 사용: docker-compose -f docker-compose.yml -f docker-compose.local.yml up -d
+version: '3.8'
+
+services:
+  front-local:
+    build:
+      context: .
+      args:
+        - VITE_API_BASE_URL=http://localhost:8080/api/v1
+    container_name: eyespeak-front-local
+    ports:
+      - "8000:80"
+    networks:
+      - frontend-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

@@ -1,0 +1,16 @@
+# 운영 서버(Prod)용 override
+# 환경: Prod | 프론트 https://j14e205.p.ssafy.io | 백엔드 API https://j14e205.p.ssafy.io/api/v1
+# 사용: docker-compose -f docker-compose.yml -f docker-compose.prod.yml --profile blue --profile green up -d
+version: '3.8'
+
+services:
+  front-blue:
+    build:
+      context: .
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://j14e205.p.ssafy.io/api/v1}
+  front-green:
+    build:
+      context: .
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://j14e205.p.ssafy.io/api/v1}
