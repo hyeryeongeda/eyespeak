@@ -6,8 +6,6 @@
 # - Local: -f docker-compose.local.yml → front-local (8000)
 # - Dev:   -f docker-compose.dev.yml --profile blue → front-blue
 # - Prod:  -f docker-compose.prod.yml --profile blue --profile green → front-blue + front-green
-version: '3.8'
-
 networks:
   frontend-net:
     driver: bridge

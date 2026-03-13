@@ -1,10 +1,10 @@
 # 개발 서버(Dev)용 override
 # 환경: Dev | 프론트 https://dev.j14e205.p.ssafy.io | 백엔드 API https://dev.j14e205.p.ssafy.io/api/v1
 # 사용: docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile blue up -d
-version: '3.8'
-
 services:
   front-blue:
+    ports:
+      - "8010:80"
     build:
       context: .
       args:

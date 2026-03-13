@@ -5,8 +5,6 @@
 # - Local: profile 없이 up → WAS 안 띄움 (DB/Redis/RabbitMQ만)
 # - Dev:  --profile blue  → was-blue만
 # - Prod: --profile blue --profile green  → was-blue + was-green
-version: '3.8'
-
 networks:
   data-net:
     driver: bridge

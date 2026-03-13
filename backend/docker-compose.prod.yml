@@ -2,16 +2,17 @@
 # 사용: docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml --profile blue --profile green up -d
 #
 # [배포] Prod = Blue + Green (--profile blue --profile green). was-blue 8081, was-green 8082 는 base 에서 정의.
-version: '3.8'
-
 services:
   was-blue:
     env_file: .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://db-prod:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks:
+      - data-net
     depends_on:
       db-prod:
         condition: service_healthy
@@ -25,8 +26,11 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:mysql://db-prod:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+    networks:
+      - data-net
     depends_on:
       db-prod:
         condition: service_healthy
@@ -43,6 +47,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_CHARACTER_SET_SERVER: utf8mb4
       MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
     volumes:
@@ -58,13 +64,14 @@ services:
 
   redis-prod:
     image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     container_name: eyespeak-redis-prod
     expose:
       - "6379"   # 내부 전용 (data-net 에서만 접근)
     networks:
       - data-net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -77,8 +84,7 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     expose:
       - "5672"   # AMQP 내부 전용
-    ports:
-      - "15672:15672"   # Management UI 외부 노출
+      - "15672"   # Management UI 외부 노출
     networks:
       - data-net
     healthcheck:

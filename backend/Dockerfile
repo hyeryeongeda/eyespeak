@@ -6,7 +6,7 @@ COPY gradlew .
 COPY gradle gradle
 COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
-RUN ./gradlew dependencies --no-daemon || true
+RUN ./gradlew dependencies --no-daemon # 의존성만 다운로드, build 안함, 에러 숨기지 않음
 
 COPY src src
 RUN ./gradlew bootJar --no-daemon -x test
