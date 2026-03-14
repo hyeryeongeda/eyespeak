@@ -177,10 +177,12 @@
     </div>
     <div class="caregiver-input" id="caregiver-input" style="display:none;">
       <select id="stt-input">
-        <option>이대호 선수 어때?</option>
+        <option>오늘 무릎 많이 아팠어?</option>
         <option>저녁 뭐 먹고 싶어?</option>
         <option>배고파?</option>
         <option>물 마실래?</option>
+        <option>오늘 기분 어때?</option>
+        <option>가장 좋아하는 음식이 뭐야?</option>
         <option>오늘 기분 어때?</option>
         <option>오렌지 주스 맛이 어때?</option>
         <option>어깨 아직도 아파?</option>
@@ -202,6 +204,9 @@ let currentStep        = 0;
 let lastSentences      = [];
 let todayData          = null;   // /today API에서 받아옴
 let currentSentimentMap = {};    // 카테고리 → sentiment 매핑
+let currentIntentMap    = {};    // 카테고리 → intent 매핑 (/categories 응답)
+let lastSelectedSentiment = null; // 마지막으로 선택한 카테고리의 sentiment (사용 기록 전송용)
+let lastSelectedIntent   = null; // 마지막으로 선택한 카테고리의 intent (사용 기록 전송용)
 
 const STEPS       = ['subjects', 'objects', 'verbs', 'punctuation'];
 const STEP_LABELS = ['주어', '목적어', '서술어', '문장 부호'];
@@ -281,14 +286,36 @@ function setMode(mode) {
 }
 
 // =====================================================================
-// [환자 먼저] 시작 화면
+// [환자 먼저] 시작 화면 — 현재 시간대에 맞는 일정 표시
 // =====================================================================
+/** "09:00" → 0시 기준 분 단위 (540). timeEnd 없으면 1시간 구간으로 간주 */
+function parseTimeToMinutes(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return 0;
+  const [h, m] = timeStr.trim().split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+/** schedule 배열에서 지금 시간이 들어가는 일정 1개 반환. time ~ timeEnd 구간. 없으면 첫 번째 */
+function getCurrentScheduleItem(schedule) {
+  if (!schedule || !schedule.length) return null;
+  const now = new Date();
+  const currentMin = now.getHours() * 60 + now.getMinutes();
+  for (let i = 0; i < schedule.length; i++) {
+    const s = schedule[i];
+    const start = parseTimeToMinutes(s.time);
+    const end = s.timeEnd != null ? parseTimeToMinutes(s.timeEnd) : start + 60;
+    if (currentMin >= start && currentMin < end) return s;
+  }
+  return schedule[0];
+}
+
 function showPatientStart() {
   if (!todayData) { setLoading('환자 데이터 로딩 중...'); return; }
   const t = todayData;
+  const currentSchedule = getCurrentScheduleItem(t.schedule);
+  const scheduleSub = currentSchedule ? currentSchedule.event : (t.schedule && t.schedule[0] ? t.schedule[0].event : '오늘 일정');
   const cats = [
     { label:'오늘의 기분',  sub: t.mood,                      fn: "patientCat('mood')" },
-    { label:'오늘 일정',    sub: t.schedule[0].event,          fn: "patientCat('schedule')" },
+    { label:'오늘 일정',    sub: scheduleSub,                 fn: "patientCat('schedule')" },
     { label:'자주 쓴 표현', sub: t.mostUsedToday.expression,   fn: "patientCat('mostUsed')" },
     { label:'직전 사용',    sub: t.lastUsedFeature.expression,  fn: "patientCat('lastUsed')" },
   ];
@@ -306,18 +333,39 @@ function showPatientStart() {
     </div>`;
 }
 
+// 오늘의 기분 표시값 → 검색용 자연스러운 문장 (문법 보정)
+function moodToQuery(mood) {
+  var map = { '기분 좋음': '오늘 기분이 좋아', '행복': '오늘 기분이 행복해', '슬픔': '오늘 기분이 슬퍼', '그저그래': '오늘 기분이 그저그래해', '우울': '오늘 기분이 우울해', '화남': '오늘 기분이 화나' };
+  return map[mood] || ('오늘 기분이 ' + mood + '해');
+}
+// 오늘의 기분 → API sentiment 필터 (해당 감정 문장만 검색)
+function moodToSentiment(mood) {
+  var positive = ['기분 좋음', '행복', '기쁨', '신남'];
+  var negative = ['슬픔', '우울', '화남', '불안'];
+  if (positive.indexOf(mood) !== -1) return '긍정';
+  if (negative.indexOf(mood) !== -1) return '부정';
+  return '중립';
+}
+
 async function patientCat(type) {
-  const t = todayData;
-  let query = '';
-  if      (type === 'mood')     query = `오늘 기분이 ${t.mood}해`;
-  else if (type === 'schedule') query = t.schedule[0].event;
+  var t = todayData;
+  var query = '';
+  var sentiment = null;
+  if (type === 'mood')      { query = moodToQuery(t.mood); sentiment = moodToSentiment(t.mood); }
+  else if (type === 'schedule') {
+    var currentSchedule = getCurrentScheduleItem(t.schedule);
+    query = currentSchedule ? currentSchedule.event : (t.schedule && t.schedule[0] ? t.schedule[0].event : '오늘 일정');
+  }
   else if (type === 'mostUsed') query = t.mostUsedToday.expression;
   else if (type === 'lastUsed') query = t.lastUsedFeature.expression;
 
   caregiverQuestion = query;
+  lastSelectedSentiment = sentiment;
   setLoading('관련 표현을 찾고 있어요...');
   try {
-    const data = await api('/recommend', { question: query });
+    var payload = { question: query };
+    if (sentiment) payload.sentiment = sentiment;
+    var data = await api('/recommend', payload);
     lastSentences = data.sentences;
     renderRecommendScreen(data.sentences, showPatientStart);
   } catch (e) { showError(e.message); }
@@ -336,6 +384,7 @@ async function startCaregiverProcess() {
   try {
     const data = await api('/categories', { question: caregiverQuestion });
     currentSentimentMap = data.sentimentMap || {};
+    currentIntentMap    = data.intentMap || {};
     renderCategoryScreen(data.categories);
   } catch (e) { showError(e.message); }
   finally { document.getElementById('process-btn').disabled = false; }
@@ -366,10 +415,14 @@ async function selectCategory(cat) {
   setLoading('관련 표현을 찾고 있어요...');
   try {
     const sentiment = currentSentimentMap[cat] || null;
-    console.log(`[카테고리 선택] ${cat} → sentiment: ${sentiment}`);
+    const intent    = currentIntentMap[cat] || null;
+    lastSelectedSentiment = sentiment;
+    lastSelectedIntent   = intent;
+    console.log(`[카테고리 선택] ${cat} → sentiment: ${sentiment}, intent: ${intent}`);
     const data = await api('/recommend', {
-      question:  caregiverQuestion,
-      sentiment: sentiment
+      question: caregiverQuestion,
+      sentiment: sentiment,
+      selected_category: cat
     });
     lastSentences = data.sentences;
     renderRecommendScreen(data.sentences, () => renderCategoryScreen(Object.keys(currentSentimentMap)));
@@ -403,12 +456,24 @@ async function startWordMode() {
   await renderWordStep(1);
 }
 
+function getSelectedWordsPayload() {
+  return {
+    subjects: selectedWords[0] || '',
+    objects:  selectedWords[1] || '',
+    verbs:    selectedWords[2] || ''
+  };
+}
+
 async function renderWordStep(step) {
   setLoading();
   const category = STEPS[step - 1];
   const label    = STEP_LABELS[step - 1];
   try {
-    const data = await api('/words', { question: caregiverQuestion, category });
+    const data = await api('/words', {
+      question: caregiverQuestion,
+      category,
+      selected_words: getSelectedWordsPayload()
+    });
     renderGrid(step, label, category, data.words);
   } catch (e) { showError(e.message); }
 }
@@ -470,7 +535,11 @@ async function wordRefresh(step, category) {
   setLoading();
   const label = STEP_LABELS[step - 1];
   try {
-    const data = await api('/words_all', { question: caregiverQuestion, category });
+    const data = await api('/words_all', {
+      question: caregiverQuestion,
+      category,
+      selected_words: getSelectedWordsPayload()
+    });
     renderGrid(step, label, category, data.words);
   } catch (e) { showError(e.message); }
 }
@@ -503,9 +572,20 @@ function renderFinalScreen(sentences) {
 function sendMessage(text) {
   addPatientMessage(text);
   showToast(`✅ 전송됨: "${text}"`);
-  selectedWords     = [];
-  currentStep       = 0;
-  caregiverQuestion = '';
+  // 실시간 사용 기록: sentiment, intent 함께 전송 (intent → pastExpressions.categories 저장)
+  var body = { text: text };
+  if (lastSelectedSentiment) body.sentiment = lastSelectedSentiment;
+  if (lastSelectedIntent)    body.intent    = lastSelectedIntent;
+  fetch('/expressions/use', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).catch(function () {});
+  selectedWords       = [];
+  currentStep         = 0;
+  caregiverQuestion   = '';
+  lastSelectedSentiment = null;
+  lastSelectedIntent   = null;
   if (currentMode === 'patient') showPatientStart();
   else document.getElementById('main-content').innerHTML = '';
 }
