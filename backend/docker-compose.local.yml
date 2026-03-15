@@ -1,21 +1,61 @@
-# 로컬 개발용 override
-# 사용: docker-compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml up -d
-# MySQL/Redis/RabbitMQ: 호스트에서 localhost로 접근 가능. data-net 내부에서는 서비스명(db-local, redis-local, rabbitmq-local)으로 접속.
+# =============================================================================
+# 로컬 개발용 - 독립 실행 (base 파일 필요 없음, 올인원)
+# =============================================================================
+# 사용: docker compose --env-file .env.local -f docker-compose.local.yml up -d --build
+#
+# DB/Redis/RabbitMQ + WAS 모두 포함 (로컬은 infra 분리 불필요)
+# 호스트에서 localhost로 모든 서비스 접근 가능
+# =============================================================================
+
 services:
+  # ===========================================================================
+  # WAS (로컬용 - 단일 인스턴스)
+  # ===========================================================================
+  local-was:
+    build: .
+    container_name: eyespeak-was-local
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file: .env.local
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-local:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JAVA_OPTS: -Xms256m -Xmx512m
+    networks:
+      - local-net
+    depends_on:
+      db-local:
+        condition: service_healthy
+      redis-local:
+        condition: service_healthy
+      rabbitmq-local:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ===========================================================================
+  # MySQL (로컬용)
+  # ===========================================================================
   db-local:
     image: mysql:8.0
     container_name: eyespeak-db-local
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
-    ports:
-      - "3306:3306"
     volumes:
       - mysql-local-data:/var/lib/mysql
     networks:
-      - data-net
+      - local-net
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
       interval: 10s
@@ -23,19 +63,25 @@ services:
       retries: 5
       start_period: 30s
 
+  # ===========================================================================
+  # Redis (로컬용)
+  # ===========================================================================
   redis-local:
     image: redis:7-alpine
     container_name: eyespeak-redis-local
     ports:
       - "6379:6379"
     networks:
-      - data-net
+      - local-net
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  # ===========================================================================
+  # RabbitMQ (로컬용)
+  # ===========================================================================
   rabbitmq-local:
     image: rabbitmq:management
     container_name: eyespeak-rabbitmq-local
@@ -43,10 +89,10 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
     ports:
-      - "5672:5672"   # AMQP 애플리케이션이 실제로 RabbitMQ 와 통신하는 포트
-      - "15672:15672" # Management UI 관리자 웹 인터페이스를 통해 RabbitMQ 관리 가능
+      - "5672:5672"
+      - "15672:15672"
     networks:
-      - data-net
+      - local-net
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -54,5 +100,15 @@ services:
       retries: 5
       start_period: 30s
 
+# =============================================================================
+# Networks - 로컬은 자체 네트워크 생성 (infra 불필요)
+# =============================================================================
+networks:
+  local-net:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   mysql-local-data:

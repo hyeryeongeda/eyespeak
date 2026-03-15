@@ -15,10 +15,13 @@ RUN ./gradlew bootJar --no-daemon -x test
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# healthcheck에서 curl을 사용하므로 설치
+RUN apk add --no-cache curl
+
 RUN adduser -D -g "" appuser
 USER appuser
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -jar app.jar"]

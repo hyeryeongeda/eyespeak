@@ -1,33 +1,48 @@
-# 백엔드 공통 설정 (기본)
-# 사용: docker-compose -f docker-compose.yml -f docker-compose.{local|dev|prod}.yml up -d
+# =============================================================================
+# Backend Production Base - Blue/Green WAS
+# =============================================================================
+# 사용: docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
-# Blue/Green 포트: Blue=8081, Green=8082 (공통).
-# - Local: profile 없이 up → WAS 안 띄움 (DB/Redis/RabbitMQ만)
-# - Dev:  --profile blue  → was-blue만
-# - Prod: --profile blue --profile green  → was-blue + was-green
-networks:
-  data-net:
-    driver: bridge
+# [전제조건] infra/docker-compose.data.prod.yml 로 DB/Redis/RabbitMQ 먼저 실행
+# [네트워크] prod-net (external) — Nginx가 컨테이너명으로 접근
+# [포트] 외부 포트 없음 (Nginx 경유)
+#
+# ⚠️ Dev, Local은 이 파일을 사용하지 않습니다.
+#   - Dev:   docker compose -f docker-compose.dev.yml up -d --build
+#   - Local: docker compose -f docker-compose.local.yml up -d --build
+# =============================================================================
 
 services:
-  was-blue:
+  prod-was-blue:
     build: .
     container_name: eyespeak-was-blue
-    ports:
-      - "8081:8080"
-    profiles:
-      - "blue"
+    restart: always
+    expose:
+      - "8080"
     networks:
-      - data-net
-    # env, env_file, depends_on 은 환경별 override에서 설정
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
 
-  was-green:
+  prod-was-green:
     build: .
     container_name: eyespeak-was-green
-    ports:
-      - "8082:8080"
-    profiles:
-      - "green"
+    restart: always
+    expose:
+      - "8080"
     networks:
-      - data-net
-    # env, env_file, depends_on 은 환경별 override에서 설정
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+networks:
+  prod-net:
+    external: true

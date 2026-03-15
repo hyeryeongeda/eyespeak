@@ -1,18 +1,14 @@
 # =============================================================================
 # 운영 서버(Prod)용 override
 # =============================================================================
-# 사용: docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml --profile blue --profile green up -d --build
+# 사용: docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 #
 # [전제조건] infra/docker-compose.data.prod.yml 로 DB/Redis/RabbitMQ 먼저 실행
 # [네트워크] prod-net (external) — Nginx가 컨테이너명(eyespeak-was-blue/green)으로 접근
-# [포트] 외부 포트 없음 (Nginx 경유)
 # =============================================================================
-networks:
-  prod-net:
-    external: true
 
 services:
-  was-blue:
+  prod-was-blue:
     env_file: .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -20,10 +16,22 @@ services:
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-    networks:
-      - prod-net
+      JAVA_OPTS: -Xms1024m -Xmx2048m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
 
-  was-green:
+  prod-was-green:
     env_file: .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
@@ -31,5 +39,17 @@ services:
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
-    networks:
-      - prod-net
+      JAVA_OPTS: -Xms1024m -Xmx2048m
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
