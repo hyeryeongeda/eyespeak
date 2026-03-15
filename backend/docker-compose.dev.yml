@@ -1,77 +1,24 @@
-# 개발 서버(Dev-Net)용 override
-# 사용: docker-compose --env-file .env.dev -f docker-compose.yml -f docker-compose.dev.yml up -d
+# =============================================================================
+# 개발 서버(Dev)용 override
+# =============================================================================
+# 사용: docker compose --env-file .env.dev -f docker-compose.yml -f docker-compose.dev.yml --profile blue up -d --build
 #
-# [배포] Dev = Blue만 (--profile blue). Prod = Blue+Green (--profile blue --profile green).
-# [포트] Dev 서버: MySQL/Redis/RabbitMQ(AMQP)는 외부 비노출. RabbitMQ Management UI(15672)만 노출.
-# was-blue 포트 8081은 base(docker-compose.yml) 정의 그대로 사용.
+# [전제조건] infra/docker-compose.data.dev.yml 로 DB/Redis/RabbitMQ 먼저 실행
+# [네트워크] dev-net (external) — Nginx가 컨테이너명(eyespeak-was-dev)으로 접근
+# [포트] 외부 포트 없음 (Nginx 경유)
+# =============================================================================
+networks:
+  dev-net:
+    external: true
+
 services:
   was-blue:
+    container_name: eyespeak-was-dev
     env_file: .env.dev
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:mysql://db-dev:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-dev:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    depends_on:
-      db-dev:
-        condition: service_healthy
-      redis-dev:
-        condition: service_healthy
-      rabbitmq-dev:
-        condition: service_healthy
-
-  db-dev:
-    image: mysql:8.0
-    container_name: eyespeak-db-dev
-    expose:
-      - "3306"   # 내부 전용 (data-net 에서만 접근, 호스트 포트 미노출)
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
-    volumes:
-      - mysql-dev-data:/var/lib/mysql
     networks:
-      - data-net
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  redis-dev:
-    image: redis:7-alpine
-    container_name: eyespeak-redis-dev
-    expose:
-      - "6379"   # 내부 전용 (data-net 에서만 접근, 호스트 포트 미노출)
-    networks:
-      - data-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  rabbitmq-dev:
-    image: rabbitmq:management
-    container_name: eyespeak-rabbitmq-dev
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
-    expose:
-      - "5672"   # AMQP 내부 전용 (data-net 에서만 접근)
-    ports:
-      - "15672:15672"   # Management UI만 외부 노출
-    networks:
-      - data-net
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-volumes:
-  mysql-dev-data:
+      - dev-net

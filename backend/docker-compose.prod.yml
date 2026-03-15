@@ -1,98 +1,35 @@
-# 운영 서버(Prod-Net)용 override
-# 사용: docker-compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml --profile blue --profile green up -d
+# =============================================================================
+# 운영 서버(Prod)용 override
+# =============================================================================
+# 사용: docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml --profile blue --profile green up -d --build
 #
-# [배포] Prod = Blue + Green (--profile blue --profile green). was-blue 8081, was-green 8082 는 base 에서 정의.
+# [전제조건] infra/docker-compose.data.prod.yml 로 DB/Redis/RabbitMQ 먼저 실행
+# [네트워크] prod-net (external) — Nginx가 컨테이너명(eyespeak-was-blue/green)으로 접근
+# [포트] 외부 포트 없음 (Nginx 경유)
+# =============================================================================
+networks:
+  prod-net:
+    external: true
+
 services:
   was-blue:
     env_file: .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://db-prod:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-prod:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
-      - data-net
-    depends_on:
-      db-prod:
-        condition: service_healthy
-      redis-prod:
-        condition: service_healthy
-      rabbitmq-prod:
-        condition: service_healthy
+      - prod-net
 
   was-green:
     env_file: .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:mysql://db-prod:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-prod:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
       SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
       SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
     networks:
-      - data-net
-    depends_on:
-      db-prod:
-        condition: service_healthy
-      redis-prod:
-        condition: service_healthy
-      rabbitmq-prod:
-        condition: service_healthy
-
-  db-prod:
-    image: mysql:8.0
-    container_name: eyespeak-db-prod
-    expose:
-      - "3306"   # 내부 전용 (data-net 에서만 접근)
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_CHARACTER_SET_SERVER: utf8mb4
-      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
-    volumes:
-      - mysql-prod-data:/var/lib/mysql
-    networks:
-      - data-net
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  redis-prod:
-    image: redis:7-alpine
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    container_name: eyespeak-redis-prod
-    expose:
-      - "6379"   # 내부 전용 (data-net 에서만 접근)
-    networks:
-      - data-net
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  rabbitmq-prod:
-    image: rabbitmq:management
-    container_name: eyespeak-rabbitmq-prod
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
-    expose:
-      - "5672"   # AMQP 내부 전용
-      - "15672"   # Management UI 외부 노출
-    networks:
-      - data-net
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-volumes:
-  mysql-prod-data:
+      - prod-net

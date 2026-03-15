@@ -1,0 +1,70 @@
+# =============================================================================
+# Infra Stack - Nginx Reverse Proxy (+ 추후 Jenkins, Monitoring 추가)
+# =============================================================================
+# 사용법:
+#   docker compose up -d
+#
+# 전제 조건:
+#   - docker-compose.data.dev.yml 로 dev-net 먼저 생성
+#   - docker-compose.data.prod.yml 로 prod-net 먼저 생성
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Nginx Reverse Proxy
+  # ===========================================================================
+  # 역할:
+  #   - 모든 외부 트래픽의 단일 진입점
+  #   - 경로 기반 라우팅: / → Prod, /dev → Dev
+  #   - SSL 종료 (HTTPS)
+  # ===========================================================================
+  nginx-proxy:
+    image: nginx:latest
+    container_name: eyespeak-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    networks:
+      - infra-net
+      - prod-net
+      - dev-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ===========================================================================
+  # Jenkins (추후 추가 예정)
+  # ===========================================================================
+  # jenkins:
+  #   build:
+  #     context: ./jenkins
+  #     dockerfile: Dockerfile
+  #   container_name: eyespeak-jenkins
+  #   ...
+
+  # ===========================================================================
+  # Monitoring (추후 추가 예정)
+  # ===========================================================================
+  # grafana, prometheus, loki, promtail 등
+  # profiles: [monitoring] 으로 선택적 실행
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  # infra-net: 이 파일이 생성 (Nginx, Jenkins 등 인프라 도구 간 통신)
+  infra-net:
+    name: infra-net
+    driver: bridge
+
+  # prod-net, dev-net: data compose에서 이미 생성됨, 여기서는 참조만
+  prod-net:
+    external: true
+  dev-net:
+    external: true
