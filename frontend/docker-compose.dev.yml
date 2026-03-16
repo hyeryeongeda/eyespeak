@@ -1,11 +1,44 @@
-# 개발 서버(Dev)용 override
-# 환경: Dev | 프론트 https://dev.j14e205.p.ssafy.io | 백엔드 API https://dev.j14e205.p.ssafy.io/api/v1
-# 사용: docker-compose -f docker-compose.yml -f docker-compose.dev.yml --profile blue up -d
+# =============================================================================
+# 개발 서버(Dev)용 - 독립 실행 (base 파일 필요 없음)
+# =============================================================================
+# 사용: docker compose -f docker-compose.dev.yml up -d --build
+#
+# [전제조건] infra/docker-compose.data.dev.yml 로 dev-net 먼저 생성
+# [네트워크] dev-net (external) — Nginx가 컨테이너명(eyespeak-front-dev)으로 접근
+# =============================================================================
+
 services:
-  front-blue:
-    ports:
-      - "8010:80"
-    build:
-      context: .
-      args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://dev.j14e205.p.ssafy.io/api/v1}
+  dev-front:
+    build: .
+    container_name: eyespeak-front-dev
+    restart: always
+    expose:
+      - "5173"
+    environment:
+      - VITE_API_BASE_URL=/dev/api/v1
+      - VITE_BASE_URL=/dev/
+    networks:
+      - dev-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5173/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+networks:
+  dev-net:
+    external: true
