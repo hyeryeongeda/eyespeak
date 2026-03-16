@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">eyespeak</string>
+    <string name="title_activity_main">eyespeak</string>
+    <string name="package_name">com.e205.eyespeak</string>
+    <string name="custom_url_scheme">com.e205.eyespeak</string>
+</resources>
