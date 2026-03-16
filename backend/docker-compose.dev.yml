@@ -1,0 +1,49 @@
+# =============================================================================
+# 개발 서버(Dev)용 - 독립 실행 (base 파일 필요 없음)
+# =============================================================================
+# 사용: docker compose --env-file .env.dev -f docker-compose.dev.yml up -d --build
+#
+# [전제조건] infra/docker-compose.data.dev.yml 로 DB/Redis/RabbitMQ 먼저 실행
+# [네트워크] dev-net (external) — Nginx가 컨테이너명(eyespeak-was-dev)으로 접근
+# [포트] 외부 포트 없음 (Nginx 경유)
+# =============================================================================
+
+services:
+  dev-was:
+    build: .
+    container_name: eyespeak-was-dev
+    restart: always
+    expose:
+      - "8080"
+    env_file: .env.dev
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-dev:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JAVA_OPTS: -Xms512m -Xmx1024m
+    networks:
+      - dev-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1536M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+networks:
+  dev-net:
+    external: true

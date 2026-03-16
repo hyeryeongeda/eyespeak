@@ -1,114 +1,132 @@
 # =============================================================================
-# 로컬 개발용 - 독립 실행 (base 파일 필요 없음, 올인원)
+# Development Data Services - Stateful (거의 재시작 안함)
 # =============================================================================
-# 사용: docker compose --env-file .env.local -f docker-compose.local.yml up -d --build
+# 사용법:
+#   docker compose -f docker-compose.data.dev.yml up -d
 #
-# DB/Redis/RabbitMQ + WAS 모두 포함 (로컬은 infra 분리 불필요)
-# 호스트에서 localhost로 모든 서비스 접근 가능
+# 이 파일이 dev-net 네트워크를 생성합니다.
+# backend, frontend, nginx 등은 dev-net을 external로 참조합니다.
 # =============================================================================
 
 services:
   # ===========================================================================
-  # WAS (로컬용 - 단일 인스턴스)
+  # MySQL Database (Dev)
   # ===========================================================================
-  local-was:
-    build: .
-    container_name: eyespeak-was-local
-    restart: always
-    ports:
-      - "8080:8080"
-    env_file: .env.local
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-local:3306/${MYSQL_DATABASE}?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      JAVA_OPTS: -Xms256m -Xmx512m
-    networks:
-      - local-net
-    depends_on:
-      db-local:
-        condition: service_healthy
-      redis-local:
-        condition: service_healthy
-      rabbitmq-local:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 40s
-
-  # ===========================================================================
-  # MySQL (로컬용)
-  # ===========================================================================
-  db-local:
+  dev-mysql:
     image: mysql:8.0
-    container_name: eyespeak-db-local
+    container_name: eyespeak-db-dev
+    restart: always
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
     environment:
+      TZ: Asia/Seoul
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
-      - mysql-local-data:/var/lib/mysql
+      - dev-mysql-data:/var/lib/mysql
     networks:
-      - local-net
+      - dev-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
   # ===========================================================================
-  # Redis (로컬용)
+  # Redis Cache (Dev)
   # ===========================================================================
-  redis-local:
+  dev-redis:
     image: redis:7-alpine
-    container_name: eyespeak-redis-local
-    ports:
-      - "6379:6379"
+    container_name: eyespeak-redis-dev
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    expose:
+      - "6379"
+    environment:
+      TZ: Asia/Seoul
     networks:
-      - local-net
+      - dev-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
   # ===========================================================================
-  # RabbitMQ (로컬용)
+  # RabbitMQ Message Broker (Dev)
   # ===========================================================================
-  rabbitmq-local:
+  dev-rabbitmq:
     image: rabbitmq:management
-    container_name: eyespeak-rabbitmq-local
+    container_name: eyespeak-rabbitmq-dev
+    restart: always
     environment:
+      TZ: Asia/Seoul
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    expose:
+      - "5672"
+      - "15672"
     networks:
-      - local-net
+      - dev-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
 
 # =============================================================================
-# Networks - 로컬은 자체 네트워크 생성 (infra 불필요)
+# Networks - dev-net 생성 담당
 # =============================================================================
 networks:
-  local-net:
+  dev-net:
+    name: dev-net
     driver: bridge
 
 # =============================================================================
 # Volumes
 # =============================================================================
 volumes:
-  mysql-local-data:
+  dev-mysql-data:
+    name: dev-mysql-data
