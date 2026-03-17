@@ -12,6 +12,10 @@ export const ROUTE_PATHS = {
   AUTH_RESET_PASSWORD: '/auth/reset-password',
   CARE_HOME: '/care/home',
   PATIENT_MAIN: '/patient/main',
+  PATIENT_TALK_MAIN: '/patient/talk',
+  PATIENT_BODY_MIND: '/patient/body-mind',
+  PATIENT_FAVORITES: '/patient/favorites',
+  PATIENT_CUSTOM_TALK: '/patient/custom-talk',
 } as const
 
 export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
