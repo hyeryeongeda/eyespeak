@@ -1,7 +1,14 @@
-import type { CSSProperties } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../hooks/useAuth'
+import PatientCallOverlay from './components/PatientCallOverlay'
+import {
+  getPatientCallCooldownSeconds,
+  getRemainingPatientCallCooldownMs,
+  requestMockPatientCall,
+} from '../../services/patientCallService'
+import type { PatientCallFlowStatus } from '../../types/patientCall'
 
 type FeatureCardProps = {
   badge: string
@@ -9,8 +16,9 @@ type FeatureCardProps = {
   description: string
   background: string
   className: string
+  onSelect?: () => void
+  disabled?: boolean
   centered?: boolean
-  onClick?: () => void
 }
 
 function FeatureCard({
@@ -19,27 +27,14 @@ function FeatureCard({
   description,
   background,
   className,
+  onSelect,
+  disabled = false,
   centered = false,
-  onClick,
 }: FeatureCardProps) {
-  return (
-    <section
-      className={className}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
-      onKeyDown={onClick ? e => e.key === 'Enter' && onClick() : undefined}
-      style={{
-        ...featureCardBase,
-        background,
-        height: '100%',
-        minHeight: 0,
-        alignItems: centered ? 'center' : 'flex-start',
-        justifyContent: centered ? 'center' : 'flex-start',
-        textAlign: centered ? 'center' : 'left',
-        cursor: onClick ? 'pointer' : undefined,
-      }}
-    >
+  const isInteractive = typeof onSelect === 'function'
+  const cardClassName = isInteractive ? `${className} patient-main-interactive` : className
+  const content = (
+    <>
       <span style={{ ...badgeStyle, alignSelf: centered ? 'center' : 'flex-start' }}>{badge}</span>
       <h2
         style={{
@@ -68,7 +63,53 @@ function FeatureCard({
       >
         {description}
       </p>
-    </section>
+    </>
+  )
+
+  if (!isInteractive) {
+    return (
+      <section
+        className={cardClassName}
+        style={{
+          ...featureCardBase,
+          background,
+          height: '100%',
+          minHeight: 0,
+          width: '100%',
+          alignItems: centered ? 'center' : 'flex-start',
+          justifyContent: centered ? 'center' : 'flex-start',
+          textAlign: centered ? 'center' : 'left',
+        }}
+      >
+        {content}
+      </section>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className={cardClassName}
+      onClick={onSelect}
+      disabled={disabled}
+      aria-label={`${title} 카드`}
+      style={{
+        ...featureCardBase,
+        background,
+        height: '100%',
+        minHeight: 0,
+        width: '100%',
+        appearance: 'none',
+        textDecoration: 'none',
+        cursor: isInteractive && !disabled ? 'pointer' : 'default',
+        opacity: disabled ? 0.7 : 1,
+        alignItems: centered ? 'center' : 'flex-start',
+        justifyContent: centered ? 'center' : 'flex-start',
+        textAlign: centered ? 'center' : 'left',
+      }}
+    >
+      {content}
+    </button>
   )
 }
 
@@ -134,6 +175,7 @@ const featureCardBase: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  transition: 'transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease',
 }
 
 const badgeStyle: CSSProperties = {
@@ -157,6 +199,17 @@ const responsiveStyle = `
   .patient-main-grid {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+
+  .patient-main-interactive:hover:not(:disabled),
+  .patient-main-interactive:focus-visible:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 28px 46px rgba(121, 139, 176, 0.18);
+    outline: none;
+  }
+
+  .patient-main-interactive:active:not(:disabled) {
+    transform: translateY(0);
   }
 
   .patient-main-full {
@@ -197,11 +250,92 @@ const responsiveStyle = `
 export default function PatientMainPage() {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
+  const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
+  const [cooldownSeconds, setCooldownSeconds] = useState(0)
+
+  const patientId = user?.id ?? 'patient-guest'
+  const isOverlayVisible =
+    callStatus === 'requesting' || callStatus === 'success' || callStatus === 'cooldown'
+  const overlayStatus = isOverlayVisible ? callStatus : null
 
   const handleLogout = () => {
     logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
+
+  const closeCallOverlay = () => {
+    setCallStatus('idle')
+    setCooldownSeconds(0)
+  }
+
+  const requestPatientCall = async () => {
+    const result = await requestMockPatientCall(patientId)
+
+    if (!result.success) {
+      setCooldownSeconds(Math.ceil(result.remainingMs / 1000))
+      setCallStatus('cooldown')
+      return
+    }
+
+    setCallStatus('success')
+  }
+
+  const handleSelectCall = () => {
+    const remainingMs = getRemainingPatientCallCooldownMs(patientId)
+
+    if (remainingMs > 0) {
+      setCooldownSeconds(getPatientCallCooldownSeconds(patientId))
+      setCallStatus('cooldown')
+      return
+    }
+
+    setCallStatus('requesting')
+
+    window.setTimeout(() => {
+      void requestPatientCall()
+    }, 0)
+  }
+
+  useEffect(() => {
+    if (callStatus !== 'cooldown') {
+      return
+    }
+
+    const syncCooldown = () => {
+      const nextCooldownSeconds = getPatientCallCooldownSeconds(patientId)
+
+      if (nextCooldownSeconds <= 0) {
+        setCallStatus('idle')
+        setCooldownSeconds(0)
+        return
+      }
+
+      setCooldownSeconds(nextCooldownSeconds)
+    }
+
+    syncCooldown()
+
+    const timerId = window.setInterval(syncCooldown, 500)
+
+    return () => {
+      window.clearInterval(timerId)
+    }
+  }, [callStatus, patientId])
+
+  useEffect(() => {
+    if (callStatus !== 'success') {
+      return
+    }
+
+    const timerId = window.setTimeout(() => {
+      setCallStatus('idle')
+      setCooldownSeconds(0)
+    }, 2500)
+
+    return () => {
+      window.clearTimeout(timerId)
+    }
+  }, [callStatus])
 
   return (
     <>
@@ -223,7 +357,7 @@ export default function PatientMainPage() {
               description="렛츠고우!"
               background="linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)"
               centered
-              onClick={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}
+              onSelect={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}
             />
 
             <FeatureCard
@@ -232,6 +366,8 @@ export default function PatientMainPage() {
               title="호출"
               description="보호자를 호출해요"
               background="linear-gradient(135deg, #fff6d7 0%, #fff1bf 100%)"
+              onSelect={handleSelectCall}
+              disabled={callStatus === 'requesting'}
               centered
             />
 
@@ -246,6 +382,15 @@ export default function PatientMainPage() {
           </div>
         </div>
       </main>
+
+      {overlayStatus ? (
+        <PatientCallOverlay
+          status={overlayStatus}
+          message="보호자에게 호출 신호가 전송되었습니다."
+          cooldownSeconds={cooldownSeconds}
+          onClose={closeCallOverlay}
+        />
+      ) : null}
     </>
   )
 }

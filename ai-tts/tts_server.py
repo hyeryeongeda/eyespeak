@@ -1,5 +1,5 @@
 """
-TTS API 서버 (FastAPI) - 다중 환자 모델 지원
+TTS API 서버 (FastAPI) - 다중 환자 모델 지원 + 응답 캐싱
 학습된 XTTS v2 모델로 텍스트 → 음성 변환 후 wav/base64 반환.
 
 실행: uvicorn tts_server:app --host 0.0.0.0 --port 8000
@@ -7,6 +7,7 @@ TTS API 서버 (FastAPI) - 다중 환자 모델 지원
 
 환경변수:
   TTS_MAX_LOADED_MODELS  동시에 GPU에 올릴 최대 환자 모델 수 (기본값: 3, LRU 방식)
+  TTS_CACHE_MAX_SIZE     인메모리 캐시 최대 항목 수 (기본값: 200, LRU 방식)
 
 체크포인트 디렉토리 구조:
   checkpoints/{patient_id}/best_model.pth
@@ -38,6 +39,8 @@ OUTPUT_SAMPLE_RATE = 24000
 
 # 동시에 GPU에 올릴 수 있는 최대 환자 모델 수 (LRU 방식으로 초과 시 오래된 모델 언로드)
 MAX_LOADED_MODELS = int(os.environ.get("TTS_MAX_LOADED_MODELS", "3"))
+# 인메모리 TTS 캐시 최대 항목 수 (patient_id + text) → wav bytes
+CACHE_MAX_SIZE = int(os.environ.get("TTS_CACHE_MAX_SIZE", "200"))
 
 app = FastAPI(title="TTS API", description="XTTS v2 파인튜닝 모델 음성 합성 (다중 환자 지원)")
 
@@ -45,6 +48,51 @@ app = FastAPI(title="TTS API", description="XTTS v2 파인튜닝 모델 음성 �
 # OrderedDict: 마지막으로 사용된 항목이 뒤에 위치 → LRU 구현
 _model_registry: OrderedDict = OrderedDict()
 _registry_lock = threading.Lock()
+
+# ---------------------------------------------------------------------------
+# TTS 캐시 — (patient_id, text) → wav_bytes, LRU 방식
+# ---------------------------------------------------------------------------
+
+# { (patient_id, text): wav_bytes }
+_tts_cache: OrderedDict = OrderedDict()
+_cache_lock = threading.Lock()
+_cache_hits = 0
+_cache_misses = 0
+
+
+def _cache_get(patient_id: str, text: str):
+    """캐시 조회. 히트 시 LRU 갱신 후 wav_bytes 반환, 미스 시 None."""
+    global _cache_hits, _cache_misses
+    key = (patient_id, text)
+    with _cache_lock:
+        if key in _tts_cache:
+            _tts_cache.move_to_end(key)
+            _cache_hits += 1
+            return _tts_cache[key]
+        _cache_misses += 1
+        return None
+
+
+def _cache_put(patient_id: str, text: str, wav_bytes: bytes):
+    """캐시 저장. CACHE_MAX_SIZE 초과 시 가장 오래된 항목 제거."""
+    key = (patient_id, text)
+    with _cache_lock:
+        if key in _tts_cache:
+            _tts_cache.move_to_end(key)
+        else:
+            if len(_tts_cache) >= CACHE_MAX_SIZE:
+                _tts_cache.popitem(last=False)
+            _tts_cache[key] = wav_bytes
+
+
+def _cache_clear_patient(patient_id: str):
+    """특정 환자의 캐시 항목 전체 삭제 (모델 재로드 시 호출)."""
+    with _cache_lock:
+        keys = [k for k in _tts_cache if k[0] == patient_id]
+        for k in keys:
+            del _tts_cache[k]
+    if keys:
+        print(f" > 캐시 삭제: patient_id='{patient_id}' ({len(keys)}개)")
 
 
 # ---------------------------------------------------------------------------
@@ -155,6 +203,7 @@ def _load_model_for_patient(patient_id: str):
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             print(f" > 모델 언로드 (LRU): patient_id='{evict_id}'")
+            _cache_clear_patient(evict_id)  # 언로드된 환자 캐시 제거
 
         _model_registry[patient_id] = {
             "model": model,
@@ -183,7 +232,14 @@ def _get_or_load(patient_id: str) -> dict:
 # 음성 합성
 # ---------------------------------------------------------------------------
 
-def _synthesize_wav_bytes(text: str, patient_id: str) -> bytes:
+def _synthesize_wav_bytes(text: str, patient_id: str) -> tuple[bytes, bool]:
+    """wav_bytes 와 캐시 히트 여부(bool) 반환."""
+    # 캐시 조회
+    cached = _cache_get(patient_id, text)
+    if cached is not None:
+        return cached, True
+
+    # 캐시 미스 → GPU 추론
     entry = _get_or_load(patient_id)
     model = entry["model"]
     config = entry["config"]
@@ -222,7 +278,10 @@ def _synthesize_wav_bytes(text: str, patient_id: str) -> bytes:
 
     buf = io.BytesIO()
     torchaudio.save(buf, torch.from_numpy(wav), OUTPUT_SAMPLE_RATE, format="wav")
-    return buf.getvalue()
+    wav_bytes = buf.getvalue()
+
+    _cache_put(patient_id, text, wav_bytes)
+    return wav_bytes, False
 
 
 # ---------------------------------------------------------------------------
@@ -258,6 +317,8 @@ def root():
         "endpoints": {
             "tts": "POST /tts",
             "patients": "GET /patients",
+            "cache_stats": "GET /cache/stats",
+            "cache_clear": "DELETE /cache",
         },
     }
 
@@ -275,19 +336,55 @@ def list_patients():
     }
 
 
+@app.get("/cache/stats")
+def cache_stats():
+    """캐시 히트율 및 현재 크기 반환."""
+    with _cache_lock:
+        size = len(_tts_cache)
+        total_bytes = sum(len(v) for v in _tts_cache.values())
+    total = _cache_hits + _cache_misses
+    hit_rate = round(_cache_hits / total * 100, 1) if total > 0 else 0.0
+    return {
+        "hits": _cache_hits,
+        "misses": _cache_misses,
+        "hit_rate_pct": hit_rate,
+        "size": size,
+        "max_size": CACHE_MAX_SIZE,
+        "memory_bytes": total_bytes,
+    }
+
+
+@app.delete("/cache")
+def clear_cache(patient_id: str = None):
+    """캐시 전체 또는 특정 환자 캐시 삭제.
+    - patient_id 미지정: 전체 삭제
+    - patient_id 지정: 해당 환자 항목만 삭제
+    """
+    global _cache_hits, _cache_misses
+    if patient_id:
+        _cache_clear_patient(patient_id)
+        return {"deleted": "patient", "patient_id": patient_id}
+    with _cache_lock:
+        count = len(_tts_cache)
+        _tts_cache.clear()
+        _cache_hits = 0
+        _cache_misses = 0
+    return {"deleted": "all", "count": count}
+
+
 @app.post("/tts")
 def tts(request: TTSRequest, format: str = "wav"):
     """
     텍스트를 음성으로 변환합니다.
     - patient_id: 환자 식별자 (기본값: "default")
     - format=wav  (기본): wav 파일 반환 (Content-Type: audio/wav)
-    - format=base64: JSON { "audio_base64": "...", "sample_rate": 24000, "patient_id": "..." } 반환
+    - format=base64: JSON { "audio_base64": "...", "sample_rate": 24000, "patient_id": "...", "cached": bool } 반환
     """
     text = (request.text or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="text 필드가 비어 있습니다.")
 
-    wav_bytes = _synthesize_wav_bytes(text, request.patient_id)
+    wav_bytes, from_cache = _synthesize_wav_bytes(text, request.patient_id)
 
     if format == "base64":
         b64 = base64.b64encode(wav_bytes).decode("ascii")
@@ -295,6 +392,7 @@ def tts(request: TTSRequest, format: str = "wav"):
             "audio_base64": b64,
             "sample_rate": OUTPUT_SAMPLE_RATE,
             "patient_id": request.patient_id,
+            "cached": from_cache,
         })
 
     return Response(
@@ -303,6 +401,7 @@ def tts(request: TTSRequest, format: str = "wav"):
         headers={
             "Content-Disposition": "inline; filename=tts.wav",
             "Content-Length": str(len(wav_bytes)),
+            "X-Cache": "HIT" if from_cache else "MISS",
         },
     )
 
