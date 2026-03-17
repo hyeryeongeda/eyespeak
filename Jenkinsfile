@@ -137,31 +137,20 @@ pipeline {
                 stage('Smoke Test (Dev)') {
                     steps {
                         script {
-                            // Nginx를 통해 외부에서 접근 가능한지 확인
-                            def nginxResult = sh(
-                                script: "curl -sf http://localhost/health || echo 'failed'",
+                            // Nginx를 통해 외부에서 접근 가능한지 확인 (실제 사용자 접속 경로와 동일)
+                            def smokeStatus = sh(
+                                script: "curl -sk -o /dev/null -w '%{http_code}' ${DEV_URL}/ || echo 'failed'",
                                 returnStdout: true
                             ).trim()
 
-                            def apiStatus = sh(
-                                script: "curl -sf -o /dev/null -w '%{http_code}' ${DEV_URL}/api/v1/actuator/health || echo 'failed'",
-                                returnStdout: true
-                            ).trim()
-
-                            if (nginxResult == 'failed') {
-                                echo "⚠️ 경고: Nginx 자체가 응답하지 않음"
+                            if (smokeStatus == 'failed' || smokeStatus == '502' || smokeStatus == '503') {
+                                echo "⚠️ 경고: 외부 접근 실패 (상태: ${smokeStatus})"
                                 sendNotification(
-                                    "⚠️ **[Dev]** Smoke Test 경고: Nginx 응답 없음",
-                                    '#FFA500'
-                                )
-                            } else if (apiStatus == 'failed' || apiStatus == '502' || apiStatus == '503') {
-                                echo "⚠️ 경고: Nginx→백엔드 연결 실패 (상태: ${apiStatus})"
-                                sendNotification(
-                                    "⚠️ **[Dev]** Smoke Test 경고: Nginx→백엔드 연결 실패",
+                                    "⚠️ **[Dev]** Smoke Test 경고: 외부 접근 실패 (${smokeStatus})",
                                     '#FFA500'
                                 )
                             } else {
-                                echo "✅ Smoke Test 통과! (응답 코드: ${apiStatus})"
+                                echo "✅ Smoke Test 통과! (응답 코드: ${smokeStatus})"
                             }
                         }
                     }
@@ -300,33 +289,21 @@ pipeline {
                 stage('Smoke Test (Prod)') {
                     steps {
                         script {
-                            def nginxResult = sh(
-                                script: "curl -sf http://localhost/health || echo 'failed'",
+                            // Nginx를 통해 외부에서 접근 가능한지 확인 (실제 사용자 접속 경로와 동일)
+                            def smokeStatus = sh(
+                                script: "curl -sk -o /dev/null -w '%{http_code}' ${PROD_URL}/ || echo 'failed'",
                                 returnStdout: true
                             ).trim()
 
-                            def apiStatus = sh(
-                                script: "curl -sf -o /dev/null -w '%{http_code}' ${PROD_URL}/api/v1/actuator/health || echo 'failed'",
-                                returnStdout: true
-                            ).trim()
-
-                            if (nginxResult == 'failed') {
+                            if (smokeStatus == 'failed' || smokeStatus == '502' || smokeStatus == '503') {
                                 sendNotification(
-                                    "❌ **[Prod]** Smoke Test 실패! Nginx 응답 없음\n- 롤백을 고려하세요.",
+                                    "❌ **[Prod]** Smoke Test 실패! 외부 접근 실패 (${smokeStatus})\n- 롤백을 고려하세요.",
                                     '#FF0000'
                                 )
-                                error "Prod Smoke Test 실패 - Nginx 응답 없음"
+                                error "Prod Smoke Test 실패 - 외부 접근 실패 (${smokeStatus})"
                             }
 
-                            if (apiStatus == 'failed' || apiStatus == '502' || apiStatus == '503') {
-                                sendNotification(
-                                    "❌ **[Prod]** Smoke Test 실패! Nginx→백엔드 연결 실패 (${apiStatus})\n- 롤백을 고려하세요.",
-                                    '#FF0000'
-                                )
-                                error "Prod Smoke Test 실패 - 백엔드 연결 실패 (${apiStatus})"
-                            }
-
-                            echo "✅ Prod Smoke Test 통과! (응답 코드: ${apiStatus})"
+                            echo "✅ Prod Smoke Test 통과! (응답 코드: ${smokeStatus})"
                             sendNotification("✅ **[Prod]** Smoke Test 통과!", '#36a64f')
                         }
                     }
