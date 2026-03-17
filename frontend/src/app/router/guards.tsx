@@ -1,30 +1,37 @@
 import type { ReactNode } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import type { UserRole } from '../../types/auth'
 import { getAuthPathByRole, getHomePathByRole } from './routePaths'
 
 interface ProtectedRouteProps {
   allowedRole: UserRole
-  children: ReactNode
+  children?: ReactNode
 }
 
 interface PublicOnlyRouteProps {
-  children: ReactNode
+  children?: ReactNode
 }
 
 export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuth()
+  const location = useLocation()
 
   if (!isAuthenticated || !user) {
-    return <Navigate to={getAuthPathByRole('login', allowedRole)} replace />
+    return (
+      <Navigate
+        to={getAuthPathByRole('login', allowedRole)}
+        replace
+        state={{ from: location }}
+      />
+    )
   }
 
   if (user.role !== allowedRole) {
     return <Navigate to={getHomePathByRole(user.role)} replace />
   }
 
-  return <>{children}</>
+  return children ? <>{children}</> : <Outlet />
 }
 
 export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
@@ -34,5 +41,5 @@ export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
     return <Navigate to={getHomePathByRole(user.role)} replace />
   }
 
-  return <>{children}</>
+  return children ? <>{children}</> : <Outlet />
 }

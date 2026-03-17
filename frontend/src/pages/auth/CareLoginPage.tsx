@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { getHomePathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../hooks/useAuth'
 import { setStoredEntryMode, setStoredRole } from '../../services/authService'
 import {
@@ -48,7 +48,7 @@ export default function CareLoginPage() {
       return
     }
 
-    navigate(ROUTE_PATHS.CARE_HOME, { replace: true })
+    navigate(getHomePathByRole(result.user.role), { replace: true })
   }
 
   return (
