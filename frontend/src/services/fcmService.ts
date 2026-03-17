@@ -69,6 +69,18 @@ export const initFcm = async (): Promise<void> => {
     console.error('[FCM] 토큰 발급 실패:', error);
   });
 
+  // 앱 포그라운드 상태에서 알림 수신
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    console.log('[FCM] 포그라운드 알림 수신: ', notification.data);
+    // TODO) ex. 인앱 toast 띄우기, 배지 업데이트
+  })
+
+  // 사용자가 알림 탭해서 앱 진입
+  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    console.log('[FCM] 알림 탭: ', action.notification.data);
+
+  })
+
   // 4. 푸시 알림 등록 시작 (토큰 발급 요청)
   await PushNotifications.register();
 };
