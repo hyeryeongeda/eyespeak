@@ -111,3 +111,30 @@ HELP.md
 
 # Firebase
 **/google-services.json
+
+
+# ========================
+# AI / TTS (Voice Banking)
+# ========================
+
+# 학습된 모델 체크포인트 (대용량)
+*.pth
+*.ckpt
+checkpoints/
+run/
+
+# 음성 데이터 (환자 개인정보)
+wavs/
+wavs_new/
+tmp_wavs/
+data/
+save/
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.flac
+
+# Python 캐시
+__pycache__/
+*.py[cod]
