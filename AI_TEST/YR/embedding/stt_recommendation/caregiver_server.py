@@ -105,8 +105,8 @@ def _load_user_data(user_id: str) -> dict | None:
             "text": item["text"],
             "source": "user",
             "sentiment": item.get("sentiment", "중립"),
-            "categories": item.get("categories", []),
-            "keywords": item.get("keywords", []),
+            "categories": item.get("categories") or [],
+            "keywords": item.get("keywords") or [],
             "weight": 1.0 + math.log(item.get("usageCount", 1) + 1),
             "lastUsed": item.get("lastUsed"),  # 시간대 가중치용
         }
@@ -131,10 +131,12 @@ def _load_user_data(user_id: str) -> dict | None:
     word_usage_freq = {}
     for item in expressions:
         weight = item.get("usageCount", 1)
-        for kw in item.get("keywords", []):
+        keywords = item.get("keywords") or []
+        for kw in keywords:
             if kw in all_words_set:
                 word_usage_freq[kw] = word_usage_freq.get(kw, 0) + weight
-        for token in item.get("text", "").replace("?", " ").replace(".", " ").split():
+        text = item.get("text") or ""
+        for token in text.replace("?", " ").replace(".", " ").split():
             if token in all_words_set:
                 word_usage_freq[token] = word_usage_freq.get(token, 0) + weight
     result = {
@@ -222,7 +224,7 @@ def _search_sentences(question: str, user_db: list, sentiment_filter: str | None
         sim = cosine_sim(q_vec, get_embedding(item["text"]))
         base_score = sim * item["weight"]
         temporal_weight = _calculate_temporal_boost(item, current_hour, current_weekday)
-        intent_boost = 1.5 if (intent_filter and item.get("categories") and intent_filter in item["categories"]) else 1.0
+        intent_boost = 1.5 if (intent_filter and intent_filter in (item.get("categories") or [])) else 1.0
         results.append({
             "text":   item["text"],
             "score":  base_score * temporal_weight * intent_boost,
@@ -288,8 +290,76 @@ def _search_sentences_mixed(question: str, user_db: list, sentiment_filter: str 
 # 동사 판별: keywords에서 "다"로 끝나면 동사/형용사
 VERB_SUFFIXES = ("다",)
 
-# 형태소 분석 불용어
-_NOUN_STOPWORDS = frozenset({"것", "수", "때", "거", "등", "데", "지", "게"})
+# 형태소 분석 / pastWords 축적 시 불용어 (pastWords에 넣지 않음)
+_NOUN_STOPWORDS = frozenset({
+    "것", "수", "때", "거", "등", "데", "지", "게",
+    "뿐", "줄", "리", "바", "셈", "탓", "채", "척", "만큼", "대로",
+    "오늘", "내일", "어제", "지금", "아까", "나중", "항상", "매일",
+    "많이", "조금", "아주", "너무", "정말", "진짜", "좀", "다시", "또",
+    "이거", "그거", "저거", "여기", "거기", "저기",
+    "안", "못", "잘", "더", "덜", "다",
+})
+
+# pastWords 자동 축적: 카테고리별 최대 단어 수
+MAX_WORDS_PER_CATEGORY = 50
+
+# 주어로 허용할 단어만 (나머지 명사는 objects)
+_SUBJECT_WHITELIST = frozenset({
+    "나", "우리", "저", "너", "여보", "엄마", "아빠", "아들", "딸",
+    "손녀딸", "손자", "할머니", "할아버지", "언니", "오빠", "동생",
+    "형", "누나", "아내", "남편", "선생님", "간호사", "의사",
+    "친구", "이웃", "가족", "사람",
+})
+
+# "다"로 끝나지만 명사인 단어 (Okt 없을 때 verbs 오분류 방지)
+_FALSE_VERB_NOUNS = frozenset({
+    "데이터", "소다", "캐나다", "레이더", "리더", "젠더", "폴더",
+    "라벤더", "블렌더", "칼렌다", "팬더", "렌더", "텐더",
+})
+
+
+def _update_past_words(user_raw: dict, new_keywords: list, word_usage_freq: dict) -> None:
+    """새 표현의 keywords를 pastWords(subjects/objects/verbs)에 분류해 추가. user_raw를 직접 수정.
+    punctuation은 건드리지 않음. 중복·불용어·1글자(주어 화이트리스트 제외) 제외. 최대 MAX_WORDS_PER_CATEGORY 유지."""
+    past_words = user_raw.get("pastWords")
+    if not isinstance(past_words, dict):
+        past_words = {"subjects": [], "objects": [], "verbs": [], "punctuation": [".", "!", "?"]}
+        user_raw["pastWords"] = past_words
+    for cat in ("subjects", "objects", "verbs"):
+        if cat not in past_words or not isinstance(past_words[cat], list):
+            past_words[cat] = []
+
+    for kw in new_keywords:
+        if not kw or not isinstance(kw, str):
+            continue
+        kw = kw.strip()
+        if kw in _NOUN_STOPWORDS:
+            continue
+        if len(kw) < 2 and kw not in _SUBJECT_WHITELIST:
+            continue
+
+        if _okt is not None:
+            is_verb = kw.endswith("다")
+            if is_verb:
+                category = "verbs"
+            else:
+                category = "subjects" if kw in _SUBJECT_WHITELIST else "objects"
+        else:
+            if kw.endswith("다") and kw not in _FALSE_VERB_NOUNS:
+                category = "verbs"
+            else:
+                category = "subjects" if kw in _SUBJECT_WHITELIST else "objects"
+
+        lst = past_words[category]
+        if kw in lst:
+            continue
+        while len(lst) >= MAX_WORDS_PER_CATEGORY:
+            min_freq = min(word_usage_freq.get(w, 0) for w in lst)
+            candidates = [w for w in lst if word_usage_freq.get(w, 0) == min_freq]
+            remove_w = candidates[0]
+            lst.remove(remove_w)
+        lst.append(kw)
+
 
 # LLM 단어 필터 캐시: (질문, 카테고리) → 필터링된 단어 리스트
 _word_filter_cache: dict = {}
@@ -304,7 +374,7 @@ def _extract_keywords_from_similar(similar_results: list, user_db: list, categor
     counter = Counter()
     for item in user_db:
         if item["text"] in similar_texts:
-            for kw in item.get("keywords", []):
+            for kw in (item.get("keywords") or []):
                 if not kw:
                     continue
                 is_verb = any(kw.endswith(s) for s in VERB_SUFFIXES)
@@ -566,6 +636,75 @@ def _infer_sentiment(category_label: str) -> str:
     return "중립"
 
 
+# 문장 저장 시 문장 자체의 sentiment/intent 분류 (카테고리 감정 ≠ 문장 감정 대응)
+# intent 키워드: 문장에 포함되면 해당 의도로 분류. 순서대로 매칭(먼저 걸린 것 사용)
+_INTENT_KEYWORD_ORDER = ("통증", "욕구", "음식", "요청", "감정", "일상", "기타")
+_INTENT_KEYWORDS = {
+    "통증": {"아파", "쑤시", "아프", "뻐근", "저리", "불편", "아픈", "쑤셔"},
+    "욕구": {"먹고 싶", "마시고 싶", "하고 싶", "줘", "볼래", "주세요", "보고 싶"},
+    "음식": {"밥", "물", "약", "간식", "맛", "배고파", "목말라", "먹었"},
+    "요청": {"도와", "해줘", "바꿔", "켜줘", "꺼줘", "올려", "내려", "좀 줘"},
+    "감정": {"좋아", "싫어", "슬프", "행복", "화나", "기쁘", "우울", "별로", "괜찮", "그저"},
+    "일상": {"잘 잤", "피곤", "심심", "같이", "오늘"},
+}
+
+
+def _classify_sentence_keywords(text: str) -> tuple[str, str]:
+    """문장에서 키워드 규칙으로 sentiment, intent 추정. (sentiment, intent) 반환."""
+    sentiment = _infer_sentiment(text)
+    text_norm = (text or "").strip()
+    for intent_label in _INTENT_KEYWORD_ORDER:
+        if intent_label == "기타":
+            continue
+        keywords = _INTENT_KEYWORDS.get(intent_label, set())
+        for kw in keywords:
+            if kw in text_norm:
+                return sentiment, intent_label
+    return sentiment, "기타"
+
+
+def _classify_sentence_llm(text: str) -> tuple[str, str]:
+    """문장을 LLM으로 sentiment/intent 분류. 실패 시 (중립, 기타)."""
+    prompt = f"""다음 문장의 sentiment(긍정/부정/중립)와 intent(통증/욕구/감정/음식/요청/일상/기타 중 하나)를 분류하세요.
+문장: "{text}"
+JSON만 출력: {{"sentiment": "부정", "intent": "감정"}}"""
+    try:
+        resp = llm_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "JSON만 출력하세요."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=50,
+            temperature=0.1,
+        )
+        raw = (resp.choices[0].message.content or "").strip()
+        for prefix in ("```json", "```"):
+            if raw.startswith(prefix):
+                raw = raw[len(prefix):].strip()
+        if raw.endswith("```"):
+            raw = raw[:-3].strip()
+        result = json.loads(raw)
+        sent = result.get("sentiment") or "중립"
+        if sent not in ("긍정", "부정", "중립"):
+            sent = "중립"
+        intent = result.get("intent") or "기타"
+        if intent not in _INTENT_KEYWORD_ORDER:
+            intent = "기타"
+        return sent, intent
+    except Exception as e:
+        print(f"[문장 분류 LLM 실패] {e}")
+    return "중립", "기타"
+
+
+def _classify_sentence_for_storage(text: str) -> tuple[str, str]:
+    """문장 저장용 sentiment/intent. 키워드 1차 → (중립, 기타)일 때만 LLM."""
+    sentiment, intent = _classify_sentence_keywords(text)
+    if sentiment == "중립" and intent == "기타":
+        sentiment, intent = _classify_sentence_llm(text)
+    return sentiment, intent
+
+
 def _generate_categories(question: str, user_db: list | None = None, max_categories: int = 4) -> dict:
     """
     보호자 질문 → LLM이 질문 유형(닫힌/개방형)을 판별하고 카테고리+sentimentMap 생성. 호출 1회로 통합.
@@ -584,7 +723,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
         seen = set()
         for item in user_db:
             if item["text"] in similar_texts:
-                for kw in item.get("keywords", []):
+                for kw in (item.get("keywords") or []):
                     if kw and kw not in seen:
                         seen.add(kw)
                         all_keywords.append(kw)
@@ -722,13 +861,14 @@ def _auto_generate_keywords(text: str) -> list:
 @app.route("/expressions/use", methods=["POST"])
 def record_expression_use():
     """표현 사용 기록 → 파일 갱신 + 캐시 무효화.
-    body: user_id(선택), text(필수), sentiment(선택), intent(선택).
-    intent가 있으면 pastExpressions 항목의 categories에 저장되어 이후 intent_boost 검색에 반영됨."""
+    문장 자체의 sentiment/intent를 키워드(1차) + LLM(중립·기타일 때만)로 분류하여 저장.
+    body: user_id(선택), text(필수)."""
     data = request.json or {}
     user_id = data.get("user_id", DEFAULT_USER_ID)
     text = (data.get("text") or "").strip()
     if not text:
         return jsonify({"error": "text 필수"}), 400
+
     path = _get_user_file_path(user_id)
     if not path:
         return jsonify({"error": "user not found", "user_id": user_id}), 404
@@ -744,22 +884,41 @@ def record_expression_use():
         if (item.get("text") or "").strip() == text:
             item["usageCount"] = item.get("usageCount", 0) + 1
             item["lastUsed"] = now_iso
-            if data.get("sentiment"):
-                item["sentiment"] = data["sentiment"]
-            if data.get("intent") and data["intent"] not in item.get("categories", []):
-                item.setdefault("categories", []).append(data["intent"])
+            # 기존 표현은 sentiment·categories 유지 (분류/LLM 호출 안 함)
             found = True
             break
     if not found:
+        # 새 표현일 때만 분류 → categories에 intent 1개만 저장
+        stored_sentiment, stored_intent = _classify_sentence_for_storage(text)
+        new_keywords = _auto_generate_keywords(text)
         expressions.append({
             "text": text,
-            "sentiment": data.get("sentiment", "중립"),
-            "categories": [data["intent"]] if data.get("intent") else [],
-            "keywords": _auto_generate_keywords(text),
+            "sentiment": stored_sentiment,
+            "categories": [stored_intent],
+            "keywords": new_keywords,
             "usageCount": 1,
             "lastUsed": now_iso,
         })
     user_raw["pastExpressions"] = expressions
+    # pastWords 자동 축적: 새 표현일 때만 keywords를 pastWords에 분류·추가
+    if not found:
+        past_words = user_raw.get("pastWords") or {}
+        all_words_set = set()
+        for cat in ("subjects", "objects", "verbs"):
+            for w in (past_words.get(cat) or []):
+                if isinstance(w, str):
+                    all_words_set.add(w)
+        word_usage_freq = {}
+        for item in expressions:
+            weight = item.get("usageCount", 1)
+            for kw in (item.get("keywords") or []):
+                if kw in all_words_set:
+                    word_usage_freq[kw] = word_usage_freq.get(kw, 0) + weight
+            raw_text = item.get("text") or ""
+            for token in raw_text.replace("?", " ").replace(".", " ").split():
+                if token in all_words_set:
+                    word_usage_freq[token] = word_usage_freq.get(token, 0) + weight
+        _update_past_words(user_raw, new_keywords, word_usage_freq)
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(user_raw, f, ensure_ascii=False, indent=2)
