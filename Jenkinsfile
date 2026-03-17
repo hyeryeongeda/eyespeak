@@ -286,6 +286,11 @@ pipeline {
                 stage('Switch Traffic') {
                     steps {
                         script {
+                            // Nginx가 재시작 루프일 수 있으므로 먼저 restart 후 안정화 대기
+                            echo "Nginx 재시작 중..."
+                            sh "docker restart eyespeak-nginx || true"
+                            sleep(time: 5, unit: 'SECONDS')
+
                             echo "트래픽 전환: ${deployTarget}..."
                             sh "./scripts/switch-upstream.sh ${deployTarget}"
                             sendNotification(
@@ -359,6 +364,8 @@ pipeline {
                     echo "자동 롤백: ${rollbackTarget}로 전환 중..."
 
                     try {
+                        sh "docker restart eyespeak-nginx || true"
+                        sleep 5
                         sh "./scripts/switch-upstream.sh ${rollbackTarget}"
                         sendNotification(
                             "🔄 **자동 롤백 완료!** 트래픽이 **${rollbackTarget.toUpperCase()}**로 전환되었습니다.",
