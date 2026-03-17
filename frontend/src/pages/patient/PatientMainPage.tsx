@@ -357,6 +357,7 @@ export default function PatientMainPage() {
               description="렛츠고우!"
               background="linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)"
               centered
+              onSelect={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}
             />
 
             <FeatureCard
