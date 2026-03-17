@@ -1,21 +1,77 @@
 import type { AuthEntryMode, UserRole } from '../../types/auth'
+import type { BodyMindCategoryKey } from '../../types/communication'
+
+export const ROUTE_SEGMENTS = {
+  AUTH: {
+    ROOT: 'auth',
+    ROLE: 'role',
+    LOGIN: 'login',
+    LOGIN_CARE: 'login/care',
+    LOGIN_PATIENT: 'login/patient',
+    SIGNUP: 'signup',
+    SIGNUP_CARE: 'signup/care',
+    SIGNUP_PATIENT: 'signup/patient',
+    RESET_PASSWORD: 'reset-password',
+  },
+  PATIENT: {
+    ROOT: 'patient',
+    MAIN: 'main',
+    TALK_MAIN: 'talk',
+    BODY_MIND: 'body-mind',
+    BODY_MIND_SECRETION: 'body-mind/secretion',
+    BODY_MIND_BREATHING: 'body-mind/breathing',
+    BODY_MIND_PAIN_AREA: 'body-mind/pain/area',
+    BODY_MIND_PAIN_DETAIL: 'body-mind/pain/detail',
+    BODY_MIND_POSTURE: 'body-mind/posture',
+    BODY_MIND_CATEGORIES: 'body-mind/categories',
+    BODY_MIND_CATEGORY_DETAIL: 'body-mind/categories/:categoryKey',
+    FAVORITES: 'favorites',
+    CUSTOM_TALK: 'custom-talk',
+  },
+  CARE: {
+    ROOT: 'care',
+    HOME: 'home',
+  },
+} as const
+
+export const AUTH_ROUTE_PATHS = {
+  AUTH_ROOT: `/${ROUTE_SEGMENTS.AUTH.ROOT}`,
+  AUTH_ROLE: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.ROLE}`,
+  AUTH_LOGIN: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.LOGIN}`,
+  AUTH_LOGIN_CARE: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.LOGIN_CARE}`,
+  AUTH_LOGIN_PATIENT: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.LOGIN_PATIENT}`,
+  AUTH_SIGNUP: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.SIGNUP}`,
+  AUTH_SIGNUP_CARE: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.SIGNUP_CARE}`,
+  AUTH_SIGNUP_PATIENT: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.SIGNUP_PATIENT}`,
+  AUTH_RESET_PASSWORD: `/${ROUTE_SEGMENTS.AUTH.ROOT}/${ROUTE_SEGMENTS.AUTH.RESET_PASSWORD}`,
+} as const
+
+export const PATIENT_ROUTE_PATHS = {
+  PATIENT_ROOT: `/${ROUTE_SEGMENTS.PATIENT.ROOT}`,
+  PATIENT_MAIN: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.MAIN}`,
+  PATIENT_TALK_MAIN: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.TALK_MAIN}`,
+  PATIENT_BODY_MIND: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND}`,
+  PATIENT_BODY_MIND_SECRETION: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_SECRETION}`,
+  PATIENT_BODY_MIND_BREATHING: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_BREATHING}`,
+  PATIENT_BODY_MIND_PAIN_AREA: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_AREA}`,
+  PATIENT_BODY_MIND_PAIN_DETAIL: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_DETAIL}`,
+  PATIENT_BODY_MIND_POSTURE: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_POSTURE}`,
+  PATIENT_BODY_MIND_CATEGORIES: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_CATEGORIES}`,
+  PATIENT_BODY_MIND_CATEGORY_DETAIL: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_CATEGORY_DETAIL}`,
+  PATIENT_FAVORITES: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.FAVORITES}`,
+  PATIENT_CUSTOM_TALK: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK}`,
+} as const
+
+export const CARE_ROUTE_PATHS = {
+  CARE_ROOT: `/${ROUTE_SEGMENTS.CARE.ROOT}`,
+  CARE_HOME: `/${ROUTE_SEGMENTS.CARE.ROOT}/${ROUTE_SEGMENTS.CARE.HOME}`,
+} as const
 
 export const ROUTE_PATHS = {
   HOME: '/',
-  AUTH_ROLE: '/auth/role',
-  AUTH_LOGIN: '/auth/login',
-  AUTH_LOGIN_CARE: '/auth/login/care',
-  AUTH_LOGIN_PATIENT: '/auth/login/patient',
-  AUTH_SIGNUP: '/auth/signup',
-  AUTH_SIGNUP_CARE: '/auth/signup/care',
-  AUTH_SIGNUP_PATIENT: '/auth/signup/patient',
-  AUTH_RESET_PASSWORD: '/auth/reset-password',
-  CARE_HOME: '/care/home',
-  PATIENT_MAIN: '/patient/main',
-  PATIENT_TALK_MAIN: '/patient/talk',
-  PATIENT_BODY_MIND: '/patient/body-mind',
-  PATIENT_FAVORITES: '/patient/favorites',
-  PATIENT_CUSTOM_TALK: '/patient/custom-talk',
+  ...AUTH_ROUTE_PATHS,
+  ...PATIENT_ROUTE_PATHS,
+  ...CARE_ROUTE_PATHS,
 } as const
 
 export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
@@ -28,4 +84,8 @@ export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
 
 export function getHomePathByRole(role: UserRole) {
   return role === 'caregiver' ? ROUTE_PATHS.CARE_HOME : ROUTE_PATHS.PATIENT_MAIN
+}
+
+export function getPatientBodyMindCategoryDetailPath(categoryKey: BodyMindCategoryKey) {
+  return ROUTE_PATHS.PATIENT_BODY_MIND_CATEGORY_DETAIL.replace(':categoryKey', categoryKey)
 }
