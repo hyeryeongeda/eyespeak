@@ -5,7 +5,11 @@ import CareLoginPage from '../../pages/auth/CareLoginPage'
 import CareSignupPage from '../../pages/auth/CareSignupPage'
 import LoginPage from '../../pages/auth/LoginPage'
 import PatientLoginPage from '../../pages/auth/PatientLoginPage'
+import TalkMainPage from '../../pages/patient/TalkMainPage'
 import PatientMainPage from '../../pages/patient/PatientMainPage'
+import BodyMindPage from '../../pages/patient/BodyMindPage'
+import FavoritesPage from '../../pages/patient/FavoritesPage'
+import CustomTalkDirectionPage from '../../pages/patient/CustomTalkDirectionPage'
 import PatientSignupPage from '../../pages/auth/PatientSignupPage'
 import ResetPasswordPage from '../../pages/auth/ResetPasswordPage'
 import RoleSelectPage from '../../pages/auth/RoleSelectPage'
@@ -101,6 +105,38 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRole="patient">
         <PatientMainPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTE_PATHS.PATIENT_TALK_MAIN,
+    element: (
+      <ProtectedRoute allowedRole="patient">
+        <TalkMainPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTE_PATHS.PATIENT_BODY_MIND,
+    element: (
+      <ProtectedRoute allowedRole="patient">
+        <BodyMindPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTE_PATHS.PATIENT_FAVORITES,
+    element: (
+      <ProtectedRoute allowedRole="patient">
+        <FavoritesPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: ROUTE_PATHS.PATIENT_CUSTOM_TALK,
+    element: (
+      <ProtectedRoute allowedRole="patient">
+        <CustomTalkDirectionPage />
       </ProtectedRoute>
     ),
   },

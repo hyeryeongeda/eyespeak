@@ -24,11 +24,11 @@ const backBtn: CSSProperties = {
   cursor: 'pointer',
 }
 
-export default function FavoritesPage() {
+export default function CustomTalkDirectionPage() {
   const navigate = useNavigate()
   return (
     <div style={wrap}>
-      <h1 style={title}>즐겨찾기 (PAT-FAV-001)</h1>
+      <h1 style={title}>맞춤대화 (PAT-CUSTOM-001)</h1>
       <button type="button" style={backBtn} onClick={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}>
         대화하기로 돌아가기
       </button>

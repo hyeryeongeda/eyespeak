@@ -10,6 +10,7 @@ type FeatureCardProps = {
   background: string
   className: string
   centered?: boolean
+  onClick?: () => void
 }
 
 function FeatureCard({
@@ -19,10 +20,15 @@ function FeatureCard({
   background,
   className,
   centered = false,
+  onClick,
 }: FeatureCardProps) {
   return (
     <section
       className={className}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={onClick ? e => e.key === 'Enter' && onClick() : undefined}
       style={{
         ...featureCardBase,
         background,
@@ -31,6 +37,7 @@ function FeatureCard({
         alignItems: centered ? 'center' : 'flex-start',
         justifyContent: centered ? 'center' : 'flex-start',
         textAlign: centered ? 'center' : 'left',
+        cursor: onClick ? 'pointer' : undefined,
       }}
     >
       <span style={{ ...badgeStyle, alignSelf: centered ? 'center' : 'flex-start' }}>{badge}</span>
@@ -216,6 +223,7 @@ export default function PatientMainPage() {
               description="렛츠고우!"
               background="linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)"
               centered
+              onClick={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}
             />
 
             <FeatureCard
