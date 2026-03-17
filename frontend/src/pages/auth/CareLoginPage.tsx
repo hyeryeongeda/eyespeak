@@ -62,15 +62,6 @@ export default function CareLoginPage() {
         </div>
 
         <h1 style={pageTitle}>보호자 로그인</h1>
-        <p style={pageDesc}>보호자 전용 목업 계정으로 로그인할 수 있습니다.</p>
-
-        <div style={infoBox}>
-          <p style={{ margin: '0 0 8px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
-            목업 계정
-          </p>
-          <p style={{ margin: '0 0 4px', color: '#6d7f8f', fontSize: '13px' }}>ID: care123</p>
-          <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px' }}>PW: e205e205@</p>
-        </div>
 
         <form onSubmit={handleSubmit} style={formStack}>
           <input
