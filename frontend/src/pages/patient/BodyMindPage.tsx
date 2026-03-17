@@ -1,32 +1,10 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BodyMindUiStatus } from '../../types/communication'
-import { bodyMindMainCards } from './bodyMindMock'
+import { getBodyMindMainCardByKey } from './bodyMindMock'
+import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
-
-const gridStyle: CSSProperties = {
-  flex: 1,
-  minHeight: 0,
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
-  gridTemplateAreas: `
-    "secretion breathing categories"
-    "posture pain back"
-  `,
-  gap: '12px',
-}
-
-const mainGridResponsiveStyle = `
-  @media (max-width: 720px) {
-    .body-mind-main-grid {
-      gap: 10px;
-    }
-  }
-`
-
-const getCardMinHeight = () => 'clamp(148px, 30vh, 280px)'
 
 function getMainFeedbackText(status: BodyMindUiStatus) {
   return status === 'transitioning'
@@ -37,10 +15,27 @@ function getMainFeedbackText(status: BodyMindUiStatus) {
 export default function BodyMindPage() {
   const navigate = useNavigate()
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
+  const secretionCard = getBodyMindMainCardByKey('secretion')
+  const breathingCard = getBodyMindMainCardByKey('breathing')
+  const postureCard = getBodyMindMainCardByKey('posture')
+  const painCard = getBodyMindMainCardByKey('pain')
+  const categoriesCard = getBodyMindMainCardByKey('categories')
+  const backCard = getBodyMindMainCardByKey('back')
 
   const handleSelectCard = (route: string) => {
     setStatus('transitioning')
     navigate(route)
+  }
+
+  if (
+    !secretionCard ||
+    !breathingCard ||
+    !postureCard ||
+    !painCard ||
+    !categoriesCard ||
+    !backCard
+  ) {
+    return null
   }
 
   return (
@@ -52,21 +47,54 @@ export default function BodyMindPage() {
       contextLabel="클릭 기반 · dwell 연동 준비"
       feedbackText={getMainFeedbackText(status)}
     >
-      <style>{mainGridResponsiveStyle}</style>
-
-      <div className="body-mind-main-grid" style={gridStyle}>
-        {bodyMindMainCards.map(card => (
-          <div key={card.key} style={{ gridArea: card.gridArea, minWidth: 0 }}>
-            <BodyMindOptionCard
-              title={card.label}
-              description={card.description}
-              tone={card.tone}
-              style={{ height: '100%', minHeight: getCardMinHeight() }}
-              onSelect={() => handleSelectCard(card.route)}
-            />
-          </div>
-        ))}
-      </div>
+      <BodyMindFixedGrid
+        primaryCards={[
+          <BodyMindOptionCard
+            key={secretionCard.key}
+            title={secretionCard.label}
+            description={secretionCard.description}
+            tone={secretionCard.tone}
+            onSelect={() => handleSelectCard(secretionCard.route)}
+          />,
+          <BodyMindOptionCard
+            key={breathingCard.key}
+            title={breathingCard.label}
+            description={breathingCard.description}
+            tone={breathingCard.tone}
+            onSelect={() => handleSelectCard(breathingCard.route)}
+          />,
+          <BodyMindOptionCard
+            key={postureCard.key}
+            title={postureCard.label}
+            description={postureCard.description}
+            tone={postureCard.tone}
+            onSelect={() => handleSelectCard(postureCard.route)}
+          />,
+          <BodyMindOptionCard
+            key={painCard.key}
+            title={painCard.label}
+            description={painCard.description}
+            tone={painCard.tone}
+            onSelect={() => handleSelectCard(painCard.route)}
+          />,
+        ]}
+        topRightCard={
+          <BodyMindOptionCard
+            title="다음"
+            description={categoriesCard.label}
+            tone={categoriesCard.tone}
+            onSelect={() => handleSelectCard(categoriesCard.route)}
+          />
+        }
+        bottomRightCard={
+          <BodyMindOptionCard
+            title={backCard.label}
+            description={backCard.description}
+            tone={backCard.tone}
+            onSelect={() => handleSelectCard(backCard.route)}
+          />
+        }
+      />
     </BodyMindLayout>
   )
 }

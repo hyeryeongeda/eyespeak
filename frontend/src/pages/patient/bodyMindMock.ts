@@ -6,6 +6,7 @@ import type {
   BodyMindCardOption,
   BodyMindCategoryKey,
   BodyMindMainCardOption,
+  BodyMindMainKey,
   BreathingOptionKey,
   PainAreaGroup,
   PainAreaKey,
@@ -67,11 +68,11 @@ export const bodyMindMainCards: BodyMindMainCardOption[] = [
 export const secretionOptions: BodyMindCardOption<SecretionOptionKey>[] = [
   { key: 'remove_sputum', label: '가래 빼줘', tone: 'sky' },
   { key: 'remove_saliva', label: '침 빼줘', tone: 'sky' },
-  { key: 'more', label: '더 해줘', tone: 'sand' },
-  { key: 'stop_or_done', label: '그만 / 됐어', tone: 'slate' },
-  { key: 'sticky_or_blocked', label: '끈적해 / 안 나와', tone: 'rose' },
   { key: 'drooling', label: '침 흘러', tone: 'mint' },
   { key: 'cough_assist', label: '기침유발기 해줘', tone: 'sand' },
+  { key: 'sticky_or_blocked', label: '끈적해 / 안 나와', tone: 'rose' },
+  { key: 'more', label: '더 해줘', tone: 'sand' },
+  { key: 'stop_or_done', label: '그만 / 됐어', tone: 'slate' },
 ]
 
 export const breathingOptions: BodyMindCardOption<BreathingOptionKey>[] = [
@@ -169,14 +170,38 @@ export const bodyMindCategoryOptions: BodyMindCardOption<BodyMindCategoryKey>[] 
   },
 ]
 
+const BODY_MIND_PAGE_SIZE = 4
+
+export const painAreaOptions = painAreaGroups.flatMap(group => group.options)
+
+export function chunkBodyMindOptions<T>(options: T[], pageSize = BODY_MIND_PAGE_SIZE) {
+  const pages: T[][] = []
+
+  for (let index = 0; index < options.length; index += pageSize) {
+    pages.push(options.slice(index, index + pageSize))
+  }
+
+  return pages
+}
+
+export const secretionOptionPages = chunkBodyMindOptions(secretionOptions)
+export const breathingOptionPages = chunkBodyMindOptions(breathingOptions)
+export const painAreaOptionPages = chunkBodyMindOptions(painAreaOptions)
+export const painDetailOptionPages = chunkBodyMindOptions(painDetailOptions)
+export const bodyMindCategoryOptionPages = chunkBodyMindOptions(bodyMindCategoryOptions)
+
 const painAreaOptionMap = new Map<PainAreaKey, BodyMindCardOption<PainAreaKey>>(
-  painAreaGroups.flatMap(group => group.options).map(option => [option.key, option]),
+  painAreaOptions.map(option => [option.key, option]),
 )
 
 const bodyMindCategoryOptionMap = new Map<
   BodyMindCategoryKey,
   BodyMindCardOption<BodyMindCategoryKey>
 >(bodyMindCategoryOptions.map(option => [option.key, option]))
+
+const bodyMindMainCardMap = new Map<BodyMindMainKey, BodyMindMainCardOption>(
+  bodyMindMainCards.map(card => [card.key, card]),
+)
 
 export function getPainAreaOptionByKey(key: PainAreaKey | null | undefined) {
   if (!key) {
@@ -196,4 +221,8 @@ export function getBodyMindCategoryOptionByKey(key: string | undefined) {
 
 export function getBodyMindCategoryPath(categoryKey: BodyMindCategoryKey) {
   return getPatientBodyMindCategoryDetailPath(categoryKey)
+}
+
+export function getBodyMindMainCardByKey(key: BodyMindMainKey) {
+  return bodyMindMainCardMap.get(key) ?? null
 }

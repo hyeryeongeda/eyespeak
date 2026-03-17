@@ -7,6 +7,9 @@ import LoginPage from '../../pages/auth/LoginPage'
 import PatientLoginPage from '../../pages/auth/PatientLoginPage'
 import TalkMainPage from '../../pages/patient/TalkMainPage'
 import PatientMainPage from '../../pages/patient/PatientMainPage'
+import LeisureMainPage from '../../pages/patient/LeisureMainPage'
+import LeisureCategoryPage from '../../pages/patient/LeisureCategoryPage'
+import LeisurePlayerPage from '../../pages/patient/LeisurePlayerPage'
 import BodyMindPage from '../../pages/patient/BodyMindPage'
 import BodyMindSecretionPage from '../../pages/patient/BodyMindSecretionPage'
 import BodyMindBreathingPage from '../../pages/patient/BodyMindBreathingPage'
@@ -79,6 +82,18 @@ const patientRoutes = [
   {
     path: ROUTE_SEGMENTS.PATIENT.TALK_MAIN,
     element: <TalkMainPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.LEISURE,
+    element: <LeisureMainPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.LEISURE_CATEGORY,
+    element: <LeisureCategoryPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.LEISURE_PLAYER,
+    element: <LeisurePlayerPage />,
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND,
