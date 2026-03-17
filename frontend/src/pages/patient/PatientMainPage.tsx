@@ -378,6 +378,7 @@ export default function PatientMainPage() {
               description="음악 · 유튜브 · 뉴스"
               background="linear-gradient(135deg, #eff7f0 0%, #ebf8f6 100%)"
               centered
+              onSelect={() => navigate(ROUTE_PATHS.PATIENT_LEISURE)}
             />
           </div>
         </div>

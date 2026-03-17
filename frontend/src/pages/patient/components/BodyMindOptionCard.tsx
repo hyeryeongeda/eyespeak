@@ -25,19 +25,20 @@ const toneStyleMap: Record<BodyMindCardTone, { background: string; accent: strin
 }
 
 const baseStyle: CSSProperties = {
+  flex: 1,
   width: '100%',
   borderRadius: '24px',
   border: '1px solid rgba(204, 216, 226, 0.95)',
-  boxShadow: '0 20px 48px rgba(40, 66, 90, 0.12)',
-  padding: '18px 16px',
+  boxShadow: '0 16px 36px rgba(40, 66, 90, 0.08)',
+  padding: '20px 18px',
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '8px',
+  gap: '10px',
   textAlign: 'center',
-  minHeight: '132px',
+  minHeight: 'clamp(148px, 28vh, 280px)',
   transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
 }
 

@@ -1,5 +1,6 @@
 import type { AuthEntryMode, UserRole } from '../../types/auth'
 import type { BodyMindCategoryKey } from '../../types/communication'
+import type { LeisureCategoryId } from '../../types/leisure'
 
 export const ROUTE_SEGMENTS = {
   AUTH: {
@@ -17,6 +18,9 @@ export const ROUTE_SEGMENTS = {
     ROOT: 'patient',
     MAIN: 'main',
     TALK_MAIN: 'talk',
+    LEISURE: 'leisure',
+    LEISURE_CATEGORY: 'leisure/category/:categoryId',
+    LEISURE_PLAYER: 'leisure/player/:contentId',
     BODY_MIND: 'body-mind',
     BODY_MIND_SECRETION: 'body-mind/secretion',
     BODY_MIND_BREATHING: 'body-mind/breathing',
@@ -50,6 +54,9 @@ export const PATIENT_ROUTE_PATHS = {
   PATIENT_ROOT: `/${ROUTE_SEGMENTS.PATIENT.ROOT}`,
   PATIENT_MAIN: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.MAIN}`,
   PATIENT_TALK_MAIN: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.TALK_MAIN}`,
+  PATIENT_LEISURE: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.LEISURE}`,
+  PATIENT_LEISURE_CATEGORY: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.LEISURE_CATEGORY}`,
+  PATIENT_LEISURE_PLAYER: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.LEISURE_PLAYER}`,
   PATIENT_BODY_MIND: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND}`,
   PATIENT_BODY_MIND_SECRETION: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_SECRETION}`,
   PATIENT_BODY_MIND_BREATHING: `/${ROUTE_SEGMENTS.PATIENT.ROOT}/${ROUTE_SEGMENTS.PATIENT.BODY_MIND_BREATHING}`,
@@ -88,4 +95,12 @@ export function getHomePathByRole(role: UserRole) {
 
 export function getPatientBodyMindCategoryDetailPath(categoryKey: BodyMindCategoryKey) {
   return ROUTE_PATHS.PATIENT_BODY_MIND_CATEGORY_DETAIL.replace(':categoryKey', categoryKey)
+}
+
+export function getPatientLeisureCategoryPath(categoryId: LeisureCategoryId | string) {
+  return ROUTE_PATHS.PATIENT_LEISURE_CATEGORY.replace(':categoryId', categoryId)
+}
+
+export function getPatientLeisurePlayerPath(contentId: string) {
+  return ROUTE_PATHS.PATIENT_LEISURE_PLAYER.replace(':contentId', contentId)
 }

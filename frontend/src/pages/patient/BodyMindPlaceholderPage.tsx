@@ -1,14 +1,9 @@
-import { useState, type CSSProperties } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BodyMindUiStatus } from '../../types/communication'
+import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
-
-const gridStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-  gap: '12px',
-}
 
 interface BodyMindPlaceholderPageProps {
   code: string
@@ -46,21 +41,33 @@ export default function BodyMindPlaceholderPage({
       contextLabel={contextLabel}
       feedbackText={note}
     >
-      <div style={gridStyle}>
-        <BodyMindOptionCard
-          title="상세 화면 준비 중"
-          description="세부 항목과 API 연결 전까지 스텁 라우트로 유지합니다."
-          tone="slate"
-          style={{ minHeight: '180px' }}
-        />
-
-        <BodyMindOptionCard
-          title="뒤로가기"
-          description={backDescription}
-          tone="slate"
-          onSelect={handleBack}
-        />
-      </div>
+      <BodyMindFixedGrid
+        primaryCards={[
+          <BodyMindOptionCard
+            key="placeholder"
+            title="상세 화면 준비 중"
+            description="세부 항목과 API 연결 전까지 스텁 라우트로 유지합니다."
+            tone="slate"
+          />,
+        ]}
+        topRightCard={
+          <BodyMindOptionCard
+            title="다음"
+            description="마지막 항목입니다"
+            tone="mint"
+            disabled
+            onSelect={() => undefined}
+          />
+        }
+        bottomRightCard={
+          <BodyMindOptionCard
+            title="뒤로가기"
+            description={backDescription}
+            tone="slate"
+            onSelect={handleBack}
+          />
+        }
+      />
     </BodyMindLayout>
   )
 }
