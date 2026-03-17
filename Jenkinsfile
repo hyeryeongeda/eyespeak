@@ -137,11 +137,24 @@ pipeline {
                 stage('Smoke Test (Dev)') {
                     steps {
                         script {
-                            // Nginx를 통해 외부에서 접근 가능한지 확인 (실제 사용자 접속 경로와 동일)
-                            def smokeStatus = sh(
-                                script: "curl -sk -o /dev/null -w '%{http_code}' ${DEV_URL}/ || echo 'failed'",
-                                returnStdout: true
-                            ).trim()
+                            // 프론트엔드 컨테이너가 완전히 뜰 때까지 대기 후 외부 접근 확인
+                            def maxRetries = 10
+                            def smokeStatus = ''
+
+                            for (int i = 1; i <= maxRetries; i++) {
+                                smokeStatus = sh(
+                                    script: "curl -sk -o /dev/null -w '%{http_code}' ${DEV_URL}/ || echo 'failed'",
+                                    returnStdout: true
+                                ).trim()
+
+                                if (smokeStatus != 'failed' && smokeStatus != '502' && smokeStatus != '503') {
+                                    echo "✅ Smoke Test 통과! (응답 코드: ${smokeStatus}, ${i}/${maxRetries})"
+                                    break
+                                }
+
+                                echo "⏳ 외부 접근 대기 중... (${i}/${maxRetries}, 상태: ${smokeStatus})"
+                                sleep(time: 3, unit: 'SECONDS')
+                            }
 
                             if (smokeStatus == 'failed' || smokeStatus == '502' || smokeStatus == '503') {
                                 echo "⚠️ 경고: 외부 접근 실패 (상태: ${smokeStatus})"
@@ -149,8 +162,6 @@ pipeline {
                                     "⚠️ **[Dev]** Smoke Test 경고: 외부 접근 실패 (${smokeStatus})",
                                     '#FFA500'
                                 )
-                            } else {
-                                echo "✅ Smoke Test 통과! (응답 코드: ${smokeStatus})"
                             }
                         }
                     }
