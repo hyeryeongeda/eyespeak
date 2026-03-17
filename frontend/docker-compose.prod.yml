@@ -1,0 +1,44 @@
+# =============================================================================
+# 운영 서버(Prod)용 override
+# =============================================================================
+# 사용: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# [전제조건] infra/docker-compose.data.prod.yml 로 prod-net 먼저 생성
+# =============================================================================
+
+services:
+  prod-front-blue:
+    build:
+      args:
+        - VITE_API_BASE_URL=/api/v1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  prod-front-green:
+    build:
+      args:
+        - VITE_API_BASE_URL=/api/v1
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"

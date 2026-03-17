@@ -1,0 +1,140 @@
+# ========================
+# 공통
+# ========================
+
+# Claude 관련 파일
+CLAUDE.md
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 환경변수 (민감 정보)
+.env
+.env.*
+
+# FCM 키 (보안)
+google-services.json
+*.pem
+*.p12
+*.keystore
+
+
+# ========================
+# Frontend (React + Vite)
+# ========================
+
+# 의존성
+node_modules
+
+# 빌드 결과물
+dist
+dist-ssr
+
+# 로컬 전용 설정
+*.local
+
+# 로그
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+# ========================
+# Backend (Spring Boot)
+# ========================
+
+# Gradle
+.gradle/
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# 환경별 설정 (민감 정보 포함)
+application-prod.yml
+application-dev.yml
+
+# 빌드 바이너리
+bin/
+out/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# Spring Boot 도움말 (불필요)
+HELP.md
+
+
+# ========================
+# IDE
+# ========================
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# STS (Spring Tool Suite)
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+
+# 기타 IDE
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Firebase
+**/google-services.json
+
+
+# ========================
+# AI / TTS (Voice Banking)
+# ========================
+
+# 학습된 모델 체크포인트 (대용량)
+*.pth
+*.ckpt
+checkpoints/
+run/
+
+# 음성 데이터 (환자 개인정보)
+wavs/
+wavs_new/
+tmp_wavs/
+data/
+save/
+*.wav
+*.mp3
+*.mp4
+*.m4a
+*.flac
+
+# Python 캐시
+__pycache__/
+*.py[cod]

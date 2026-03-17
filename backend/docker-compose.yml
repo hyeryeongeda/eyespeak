@@ -1,0 +1,48 @@
+# =============================================================================
+# Backend Production Base - Blue/Green WAS
+# =============================================================================
+# 사용: docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# [전제조건] infra/docker-compose.data.prod.yml 로 DB/Redis/RabbitMQ 먼저 실행
+# [네트워크] prod-net (external) — Nginx가 컨테이너명으로 접근
+# [포트] 외부 포트 없음 (Nginx 경유)
+#
+# ⚠️ Dev, Local은 이 파일을 사용하지 않습니다.
+#   - Dev:   docker compose -f docker-compose.dev.yml up -d --build
+#   - Local: docker compose -f docker-compose.local.yml up -d --build
+# =============================================================================
+
+services:
+  prod-was-blue:
+    build: .
+    container_name: eyespeak-was-blue
+    restart: always
+    expose:
+      - "8080"
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  prod-was-green:
+    build: .
+    container_name: eyespeak-was-green
+    restart: always
+    expose:
+      - "8080"
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+networks:
+  prod-net:
+    external: true

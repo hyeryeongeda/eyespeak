@@ -1,0 +1,134 @@
+# =============================================================================
+# Production Data Services - Stateful (거의 재시작 안함)
+# =============================================================================
+# 사용법:
+#   docker compose --env-file .env.prod -f docker-compose.data.prod.yml up -d
+#
+# 이 파일이 prod-net 네트워크를 생성합니다.
+# backend, frontend, nginx 등은 prod-net을 external로 참조합니다.
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # MySQL Database (Prod)
+  # ===========================================================================
+  prod-mysql:
+    image: mysql:8.0
+    container_name: eyespeak-db-prod
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    expose:
+      - "3306"
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - prod-mysql-data:/var/lib/mysql
+    networks:
+      - prod-net
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  # ===========================================================================
+  # Redis Cache (Prod) - 비밀번호 보호
+  # ===========================================================================
+  prod-redis:
+    image: redis:7-alpine
+    container_name: eyespeak-redis-prod
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes --maxmemory 1gb --maxmemory-policy allkeys-lru
+    expose:
+      - "6379"
+    environment:
+      TZ: Asia/Seoul
+    networks:
+      - prod-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a $$REDIS_PASSWORD ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ===========================================================================
+  # RabbitMQ Message Broker (Prod)
+  # ===========================================================================
+  prod-rabbitmq:
+    image: rabbitmq:management
+    container_name: eyespeak-rabbitmq-prod
+    restart: always
+    environment:
+      TZ: Asia/Seoul
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    expose:
+      - "5672"
+      - "15672"
+    networks:
+      - prod-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+# =============================================================================
+# Networks - prod-net 생성 담당
+# =============================================================================
+networks:
+  prod-net:
+    name: prod-net
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  prod-mysql-data:
+    name: prod-mysql-data

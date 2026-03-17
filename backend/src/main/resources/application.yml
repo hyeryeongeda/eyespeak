@@ -1,0 +1,9 @@
+# 모든 환경에서 공통으로 적용되는 설정
+spring:
+  application:
+    name: eyespeak
+
+  # 활성 프로필 설정 — 실행할 때 어떤 환경 설정을 쓸지 결정
+  # VM 옵션이나 환경변수로 덮어쓸 수 있음
+  profiles:
+    active: local

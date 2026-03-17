@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>눈으로 말해요</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0f1e;
+    --card: #111827;
+    --accent: #38bdf8;
+    --accent2: #f472b6;
+    --accent3: #34d399;
+    --text: #f0f9ff;
+    --muted: #94a3b8;
+    --zone: rgba(56, 189, 248, 0.15);
+    --zone-hover: rgba(56, 189, 248, 0.4);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  header {
+    width: 100%;
+    padding: 24px 32px 16px;
+    text-align: center;
+    background: linear-gradient(180deg, #0d1526 0%, transparent 100%);
+  }
+
+  header h1 {
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(56, 189, 248, 0.5);
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 4px;
+  }
+
+  .main {
+    display: flex;
+    gap: 32px;
+    padding: 24px 32px;
+    width: 100%;
+    max-width: 1000px;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  /* BODY MAP */
+  .body-container {
+    position: relative;
+    width: 260px;
+    flex-shrink: 0;
+  }
+
+  .body-container svg.body-outline {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 0 20px rgba(56,189,248,0.2));
+  }
+
+  /* clickable zones overlay */
+  .zones {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .zone {
+    position: absolute;
+    border-radius: 50%;
+    background: var(--zone);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-align: center;
+    line-height: 1.2;
+    user-select: none;
+  }
+
+  .zone:hover, .zone.active {
+    background: var(--zone-hover);
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(56,189,248,0.5);
+    transform: scale(1.08);
+    z-index: 10;
+  }
+
+  /* zone positions (% of container) */
+  .zone-head    { top: 1%;  left: 50%; transform: translateX(-50%); width: 52px; height: 52px; }
+  .zone-neck    { top: 18%; left: 50%; transform: translateX(-50%); width: 30px; height: 22px; border-radius: 8px; }
+  .zone-shoulder-l { top: 21%; left: 5%;  width: 40px; height: 28px; border-radius: 12px; }
+  .zone-shoulder-r { top: 21%; right: 5%; width: 40px; height: 28px; border-radius: 12px; }
+  .zone-chest   { top: 26%; left: 50%; transform: translateX(-50%); width: 70px; height: 50px; border-radius: 16px; }
+  .zone-back    { top: 30%; left: 50%; transform: translateX(-50%); width: 60px; height: 40px; border-radius: 16px; opacity: 0.6; }
+  .zone-arm-l   { top: 35%; left: 2%;  width: 32px; height: 60px; border-radius: 14px; }
+  .zone-arm-r   { top: 35%; right: 2%; width: 32px; height: 60px; border-radius: 14px; }
+  .zone-hand-l  { top: 56%; left: 0%;  width: 34px; height: 30px; border-radius: 10px; }
+  .zone-hand-r  { top: 56%; right: 0%; width: 34px; height: 30px; border-radius: 10px; }
+  .zone-abdomen { top: 46%; left: 50%; transform: translateX(-50%); width: 60px; height: 40px; border-radius: 14px; }
+  .zone-hip     { top: 60%; left: 50%; transform: translateX(-50%); width: 72px; height: 34px; border-radius: 14px; }
+  .zone-thigh-l { top: 67%; left: 18%; width: 36px; height: 60px; border-radius: 14px; }
+  .zone-thigh-r { top: 67%; right: 18%; width: 36px; height: 60px; border-radius: 14px; }
+  .zone-knee-l  { top: 81%; left: 18%; width: 32px; height: 24px; border-radius: 10px; }
+  .zone-knee-r  { top: 81%; right: 18%; width: 32px; height: 24px; border-radius: 10px; }
+  .zone-leg-l   { top: 87%; left: 19%; width: 30px; height: 44px; border-radius: 12px; }
+  .zone-leg-r   { top: 87%; right: 19%; width: 30px; height: 44px; border-radius: 12px; }
+
+  .zone-head:hover    { transform: translateX(-50%) scale(1.08); }
+  .zone-neck:hover    { transform: translateX(-50%) scale(1.08); }
+  .zone-chest:hover   { transform: translateX(-50%) scale(1.08); }
+  .zone-back:hover    { transform: translateX(-50%) scale(1.08); }
+  .zone-abdomen:hover { transform: translateX(-50%) scale(1.08); }
+  .zone-hip:hover     { transform: translateX(-50%) scale(1.08); }
+  .zone-head.active    { transform: translateX(-50%) scale(1.08); }
+  .zone-neck.active    { transform: translateX(-50%) scale(1.08); }
+  .zone-chest.active   { transform: translateX(-50%) scale(1.08); }
+  .zone-back.active    { transform: translateX(-50%) scale(1.08); }
+  .zone-abdomen.active { transform: translateX(-50%) scale(1.08); }
+  .zone-hip.active     { transform: translateX(-50%) scale(1.08); }
+
+  /* RIGHT PANEL */
+  .panel {
+    flex: 1;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .selected-label {
+    background: linear-gradient(135deg, #1e3a5f, #0f2040);
+    border: 1px solid var(--accent);
+    border-radius: 16px;
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 0 20px rgba(56,189,248,0.1);
+  }
+
+  .selected-label .icon { font-size: 1.5rem; }
+  .selected-label .hint { font-size: 0.8rem; color: var(--muted); font-weight: 400; margin-left: auto; }
+
+  .actions-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .action-btn {
+    background: var(--card);
+    border: 2px solid #1e2d40;
+    border-radius: 14px;
+    padding: 14px 12px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    text-align: left;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    line-height: 1.4;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .action-btn .emoji { font-size: 1.4rem; }
+  .action-btn .label { font-size: 0.85rem; }
+  .action-btn .desc  { font-size: 0.72rem; color: var(--muted); font-weight: 400; }
+
+  .action-btn:hover {
+    border-color: var(--accent);
+    background: #162032;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(56,189,248,0.15);
+  }
+
+  .action-btn.pain    { border-color: rgba(244,114,182,0.3); }
+  .action-btn.pain:hover  { border-color: var(--accent2); box-shadow: 0 8px 24px rgba(244,114,182,0.2); }
+  .action-btn.move    { border-color: rgba(52,211,153,0.3); }
+  .action-btn.move:hover  { border-color: var(--accent3); box-shadow: 0 8px 24px rgba(52,211,153,0.2); }
+
+  .confirm-bar {
+    background: linear-gradient(135deg, #0d2d1a, #0a1f30);
+    border: 2px solid var(--accent3);
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent3);
+    animation: slideIn 0.3s ease;
+  }
+
+  .confirm-bar.show { display: flex; }
+  .confirm-bar .msg { flex: 1; font-size: 1.1rem; }
+  .confirm-bar .back-btn {
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .confirm-bar .back-btn:hover { border-color: var(--text); color: var(--text); }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .placeholder {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    gap: 12px;
+    text-align: center;
+    padding: 40px;
+    border: 2px dashed #1e2d40;
+    border-radius: 20px;
+  }
+
+  .placeholder .big { font-size: 3rem; }
+  .placeholder p { font-size: 0.9rem; line-height: 1.6; }
+
+  /* back button top */
+  .back-area {
+    display: none;
+    width: 100%;
+    max-width: 1000px;
+    padding: 0 32px;
+    margin-top: -8px;
+  }
+  .back-area.show { display: block; }
+  .back-area button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+  }
+  .back-area button:hover { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>👁️ 눈으로 말해요</h1>
+  <p>불편한 부위를 바라보거나 클릭하세요</p>
+</header>
+
+<div class="back-area" id="backArea">
+  <button onclick="resetAll()">← 처음으로 돌아가기</button>
+</div>
+
+<div class="main">
+  <!-- BODY MAP -->
+  <div class="body-container">
+    <!-- Simple body SVG -->
+    <svg class="body-outline" viewBox="0 0 200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- head -->
+      <ellipse cx="100" cy="44" rx="28" ry="34" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- neck -->
+      <rect x="88" y="76" width="24" height="22" rx="6" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- body -->
+      <path d="M55 98 Q40 102 36 120 L32 180 Q30 195 40 200 L60 205 L58 310 L68 310 L72 240 L128 240 L132 310 L142 310 L140 205 L160 200 Q170 195 168 180 L164 120 Q160 102 145 98 L130 95 Q115 90 100 90 Q85 90 70 95 Z" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- left arm -->
+      <path d="M55 98 L30 100 L22 160 L20 210 L32 212 L38 165 L50 120" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- left hand -->
+      <ellipse cx="26" cy="222" rx="14" ry="12" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- right arm -->
+      <path d="M145 98 L170 100 L178 160 L180 210 L168 212 L162 165 L150 120" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- right hand -->
+      <ellipse cx="174" cy="222" rx="14" ry="12" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- left leg -->
+      <path d="M68 310 L62 380 L58 450 L58 510 L74 510 L78 450 L84 380 L88 310" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+      <!-- right leg -->
+      <path d="M132 310 L138 380 L142 450 L142 510 L126 510 L122 450 L116 380 L112 310" stroke="#38bdf8" stroke-width="2" fill="#111827"/>
+    </svg>
+
+    <!-- Clickable Zones -->
+    <div class="zones">
+      <div class="zone zone-head"     data-zone="head"       onclick="selectZone(this)">머리</div>
+      <div class="zone zone-neck"     data-zone="neck"       onclick="selectZone(this)">목</div>
+      <div class="zone zone-shoulder-l" data-zone="shoulder" onclick="selectZone(this)">어깨<br>L</div>
+      <div class="zone zone-shoulder-r" data-zone="shoulder" onclick="selectZone(this)">어깨<br>R</div>
+      <div class="zone zone-chest"    data-zone="chest"      onclick="selectZone(this)">가슴</div>
+      <div class="zone zone-arm-l"    data-zone="arm"        onclick="selectZone(this)">팔</div>
+      <div class="zone zone-arm-r"    data-zone="arm"        onclick="selectZone(this)">팔</div>
+      <div class="zone zone-hand-l"   data-zone="hand"       onclick="selectZone(this)">손</div>
+      <div class="zone zone-hand-r"   data-zone="hand"       onclick="selectZone(this)">손</div>
+      <div class="zone zone-abdomen"  data-zone="abdomen"    onclick="selectZone(this)">배</div>
+      <div class="zone zone-hip"      data-zone="hip"        onclick="selectZone(this)">엉덩이</div>
+      <div class="zone zone-thigh-l"  data-zone="thigh"      onclick="selectZone(this)">허벅지</div>
+      <div class="zone zone-thigh-r"  data-zone="thigh"      onclick="selectZone(this)">허벅지</div>
+      <div class="zone zone-knee-l"   data-zone="knee"       onclick="selectZone(this)">무릎</div>
+      <div class="zone zone-knee-r"   data-zone="knee"       onclick="selectZone(this)">무릎</div>
+      <div class="zone zone-leg-l"    data-zone="leg"        onclick="selectZone(this)">종아리</div>
+      <div class="zone zone-leg-r"    data-zone="leg"        onclick="selectZone(this)">종아리</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel" id="panel">
+    <div class="placeholder" id="placeholder">
+      <div class="big">👆</div>
+      <p>신체 부위를 <strong>클릭</strong>하거나<br><strong>응시</strong>해서 선택하세요</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const zoneData = {
+  head: {
+    label: '머리',
+    icon: '🧠',
+    actions: [
+      { emoji:'😣', label:'머리가 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'머리 위치 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'💊', label:'머리 약 줘', desc:'약', type:'med' },
+      { emoji:'🧴', label:'머리 글어줘', desc:'관리', type:'move' },
+      { emoji:'🤕', label:'어지러워요', desc:'증상', type:'pain' },
+      { emoji:'😴', label:'눈 연고 발라줘', desc:'처치', type:'med' },
+    ]
+  },
+  neck: {
+    label: '목',
+    icon: '🔵',
+    actions: [
+      { emoji:'😣', label:'목이 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'목 위치 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'💊', label:'목 약 줘', desc:'약', type:'med' },
+      { emoji:'🧣', label:'목 따뜻하게 해줘', desc:'처치', type:'move' },
+      { emoji:'🫧', label:'목 호스 확인해줘', desc:'기기', type:'med' },
+    ]
+  },
+  shoulder: {
+    label: '어깨',
+    icon: '💪',
+    actions: [
+      { emoji:'😣', label:'어깨가 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'어깨 위치 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'💆', label:'어깨 주물러줘', desc:'처치', type:'move' },
+      { emoji:'🩹', label:'어깨 파스 붙여줘', desc:'약', type:'med' },
+    ]
+  },
+  chest: {
+    label: '가슴',
+    icon: '❤️',
+    actions: [
+      { emoji:'😣', label:'가슴이 아파요', desc:'통증', type:'pain' },
+      { emoji:'👊', label:'가슴 두드려줘', desc:'처치', type:'move' },
+      { emoji:'😮‍💨', label:'숨쉬기 힘들어요', desc:'증상', type:'pain' },
+      { emoji:'🔄', label:'자세 바꿔줘', desc:'자세', type:'move' },
+    ]
+  },
+  arm: {
+    label: '팔',
+    icon: '💪',
+    actions: [
+      { emoji:'😣', label:'팔이 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'팔 위치 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'🩹', label:'팔 파스 붙여줘', desc:'약', type:'med' },
+      { emoji:'👁️', label:'팔꿈치 봐줘', desc:'확인', type:'move' },
+    ]
+  },
+  hand: {
+    label: '손',
+    icon: '✋',
+    actions: [
+      { emoji:'😣', label:'손이 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'손 위치 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'👁️', label:'손 봐줘', desc:'확인', type:'move' },
+      { emoji:'🧤', label:'손에 뭔가 올려줘', desc:'요청', type:'move' },
+      { emoji:'💊', label:'손 약 발라줘', desc:'약', type:'med' },
+    ]
+  },
+  abdomen: {
+    label: '배',
+    icon: '🫃',
+    actions: [
+      { emoji:'😣', label:'배가 아파요', desc:'통증', type:'pain' },
+      { emoji:'🚽', label:'소변 마려워요', desc:'급함', type:'pain' },
+      { emoji:'💩', label:'변봤어요', desc:'배변', type:'pain' },
+      { emoji:'🔄', label:'자세 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'💊', label:'배 약 줘', desc:'약', type:'med' },
+    ]
+  },
+  hip: {
+    label: '엉덩이',
+    icon: '🍑',
+    actions: [
+      { emoji:'😣', label:'엉덩이 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'엉덩이 이옆약 발라줘', desc:'처치', type:'med' },
+      { emoji:'🩲', label:'기저귀 바꿔줘', desc:'요청', type:'move' },
+      { emoji:'🛏️', label:'하체 틀어줘', desc:'자세', type:'move' },
+      { emoji:'🪑', label:'방석 바꿔줘', desc:'환경', type:'move' },
+    ]
+  },
+  thigh: {
+    label: '허벅지',
+    icon: '🦵',
+    actions: [
+      { emoji:'😣', label:'허벅지 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'다리 위치 바꿔줘', desc:'자세', type:'move' },
+      { emoji:'🩹', label:'허벅지 파스 붙여줘', desc:'약', type:'med' },
+      { emoji:'💆', label:'허벅지 주물러줘', desc:'처치', type:'move' },
+    ]
+  },
+  knee: {
+    label: '무릎',
+    icon: '🦿',
+    actions: [
+      { emoji:'😣', label:'무릎 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'다리 펴줘', desc:'자세', type:'move' },
+      { emoji:'🩹', label:'무릎 파스 붙여줘', desc:'약', type:'med' },
+      { emoji:'🔄', label:'반대쪽 들어줘', desc:'자세', type:'move' },
+    ]
+  },
+  leg: {
+    label: '종아리',
+    icon: '🦵',
+    actions: [
+      { emoji:'😣', label:'종아리 아파요', desc:'통증', type:'pain' },
+      { emoji:'🔄', label:'다리 세워줘', desc:'자세', type:'move' },
+      { emoji:'💆', label:'종아리 주물러줘', desc:'처치', type:'move' },
+      { emoji:'🩹', label:'종아리 파스 붙여줘', desc:'약', type:'med' },
+    ]
+  },
+};
+
+let currentZone = null;
+let currentZoneEl = null;
+
+function selectZone(el) {
+  const zone = el.dataset.zone;
+
+  // reset previous
+  if (currentZoneEl) currentZoneEl.classList.remove('active');
+  document.querySelectorAll('.zone[data-zone="' + (currentZone || '') + '"]')
+    .forEach(z => z.classList.remove('active'));
+
+  currentZone = zone;
+  currentZoneEl = el;
+  el.classList.add('active');
+
+  // also highlight same zone on other side
+  document.querySelectorAll('.zone[data-zone="' + zone + '"]').forEach(z => z.classList.add('active'));
+
+  showActions(zone);
+  document.getElementById('backArea').classList.add('show');
+}
+
+function showActions(zone) {
+  const data = zoneData[zone];
+  if (!data) return;
+
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `
+    <div class="selected-label">
+      <span class="icon">${data.icon}</span>
+      <span>${data.label} 부위를 선택했어요</span>
+      <span class="hint">아래에서 필요한 것을 선택하세요</span>
+    </div>
+    <div class="actions-title">무엇이 필요한가요?</div>
+    <div class="actions-grid" id="actionsGrid"></div>
+    <div class="confirm-bar" id="confirmBar">
+      <span>✅</span>
+      <span class="msg" id="confirmMsg"></span>
+      <button class="back-btn" onclick="resetAll()">처음으로</button>
+    </div>
+  `;
+
+  const grid = document.getElementById('actionsGrid');
+  data.actions.forEach(action => {
+    const btn = document.createElement('button');
+    btn.className = 'action-btn ' + action.type;
+    btn.innerHTML = `<span class="emoji">${action.emoji}</span><span class="label">${action.label}</span><span class="desc">${action.desc}</span>`;
+    btn.onclick = () => confirmAction(action.label);
+    grid.appendChild(btn);
+  });
+}
+
+function confirmAction(msg) {
+  const bar = document.getElementById('confirmBar');
+  const msgEl = document.getElementById('confirmMsg');
+  if (!bar || !msgEl) return;
+  msgEl.textContent = '"' + msg + '"';
+  bar.classList.add('show');
+  // scroll into view
+  bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function resetAll() {
+  currentZone = null;
+  if (currentZoneEl) currentZoneEl.classList.remove('active');
+  document.querySelectorAll('.zone').forEach(z => z.classList.remove('active'));
+  currentZoneEl = null;
+
+  document.getElementById('panel').innerHTML = `
+    <div class="placeholder" id="placeholder">
+      <div class="big">👆</div>
+      <p>신체 부위를 <strong>클릭</strong>하거나<br><strong>응시</strong>해서 선택하세요</p>
+    </div>`;
+  document.getElementById('backArea').classList.remove('show');
+}
+</script>
+</body>
+</html>

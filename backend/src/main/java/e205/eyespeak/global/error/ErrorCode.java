@@ -1,0 +1,122 @@
+package e205.eyespeak.global.error;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+/*
+ * 애플리케이션의 모든 에러 코드를 한 곳에서 관리
+ *
+ * - 에러 코드가 여기저기 흩어져 있으면 중복되거나 일관성이 깨짐
+ * - 에러 코드, HTTP 상태, 메시지를 한 곳에서 관리하면 새 에러 추가 시 여기만 보면 됨
+ * - 프론트엔드와 에러 코드표 공유 시 에러 처리 편해짐
+ */
+
+@Getter
+@RequiredArgsConstructor
+public enum ErrorCode {
+    // ====== COMMON (공통) ======
+
+    INVALID_INPUT(HttpStatus.BAD_REQUEST, "COMMON-101",
+            "입력값이 올바르지 않습니다"),
+    // → @Valid 유효성 검사 실패 시. 예: 이름 빈칸, 전화번호 형식 틀림
+
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON-102",
+            "요청한 리소스를 찾을 수 없습니다"),
+    // → 도메인 특화 에러코드가 없을 때 범용으로 사용
+
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER-001",
+            "서버 내부 오류가 발생하였습니다"),
+    // → 예상하지 못한 에러. catch 안 된 예외가 여기로 옴
+
+    // ====== AUTH (인증/인가) ======
+
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH-201",
+            "토큰이 만료되었습니다"),
+    // → Access Token 30분 지남. 프론트에서 이거 받으면 refresh 요청 보내야 함
+
+    TOKEN_INVALID(HttpStatus.UNAUTHORIZED, "AUTH-202",
+            "유효하지 않은 토큰입니다"),
+    // → 토큰 위조, 형식 오류 등
+
+    ACCESS_DENIED(HttpStatus.FORBIDDEN, "AUTH-203",
+            "접근 권한이 없습니다"),
+    // → 환자가 보호자 전용 API 호출했을 때 등. 인증은 됐지만 권한이 없음
+
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "AUTH-204",
+            "이미 등록된 이메일입니다"),
+    // → 회원가입 시 이메일 중복
+
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "AUTH-205",
+            "이메일 또는 비밀번호가 일치하지 않습니다"),
+    // → 로그인 실패. "이메일이 없다" vs "비밀번호 틀림"을 구분 안 하는 게 보안상 좋음
+
+    // ====== PATIENT (환자) ======
+
+    PATIENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PATIENT-301",
+            "환자를 찾을 수 없습니다"),
+    // → 없는 환자 ID로 조회/수정 시
+
+    PATIENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PATIENT-302",
+            "이미 등록된 환자입니다"),
+    // → 같은 환자 중복 등록 시도
+
+    // ====== GUARDIAN (보호자) ======
+
+    GUARDIAN_NOT_FOUND(HttpStatus.NOT_FOUND, "GUARDIAN-401",
+            "보호자를 찾을 수 없습니다"),
+
+    GUARDIAN_ALREADY_LINKED(HttpStatus.CONFLICT, "GUARDIAN-402",
+            "이미 연결된 보호자입니다"),
+    // → 같은 보호자를 같은 환자에 또 연결하려 할 때
+
+    // ====== CALL (SOS 호출) ======
+
+    CALL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "CALL-501",
+            "호출 전송에 실패하였습니다"),
+    // → FCM 전송 실패 등
+
+    CALL_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "CALL-502",
+            "호출 빈도 제한을 초과하였습니다"),
+    // → 30초 이내 재호출. 환자 실수 연타 방지. 첫 호출은 항상 통과
+
+    CALL_NOT_FOUND(HttpStatus.NOT_FOUND, "CALL-503",
+            "호출 정보를 찾을 수 없습니다"),
+    // → 호출 수락/거절 시 해당 호출이 없을 때
+
+    // ====== COMMUNICATION (의사소통) ======
+    // 특화소통 카테고리, 표현, 불편부위
+
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-601",
+            "카테고리를 찾을 수 없습니다"),
+
+    EXPRESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-602",
+            "표현을 찾을 수 없습니다"),
+
+    PAIN_AREA_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-603",
+            "불편 부위를 찾을 수 없습니다"),
+
+    // ====== AI (추천/문장 생성) ======
+
+    AI_RECOMMENDATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI-701",
+            "AI 추천 생성에 실패하였습니다"),
+    // → FastAPI 서버에서 추천 생성 실패
+
+    AI_SERVER_TIMEOUT(HttpStatus.BAD_GATEWAY, "AI-702",
+            "AI 서버 응답 시간이 초과되었습니다"),
+    // → FastAPI 서버가 안 응답. 이때 콜드스타트 기본 추천으로 폴백해야 함
+
+    // ====== CUSTOM (커스텀 슬롯) ======
+
+    CUSTOM_SLOT_NOT_FOUND(HttpStatus.NOT_FOUND, "CUSTOM-901",
+            "커스텀 슬롯을 찾을 수 없습니다"),
+
+    CUSTOM_SLOT_LIMIT(HttpStatus.BAD_REQUEST, "CUSTOM-902",
+            "커스텀 슬롯은 최대 4개까지 등록할 수 있습니다");
+    // → 프로토타입에서 커스텀 칸이 4개니까 4개 제한
+
+    // enum 필드: 각 에러 코드는 이 3가지를 가짐
+    private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)
+    private final String code;        // 우리가 정한 에러 코드 문자열 ("PATIENT-301")
+    private final String message;     // 사람이 읽을 메시지
+}
