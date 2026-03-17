@@ -1,6 +1,6 @@
-import { useState, type CSSProperties } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ROUTE_PATHS } from '../../app/router/routePaths';
+import { useState, type CSSProperties } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { getAuthPathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
 import {
   backButton,
   card,
@@ -17,54 +17,65 @@ import {
   roleGrid,
   roleTitle,
   subtitle,
-} from './authPageStyles';
+} from './authPageStyles'
+import {
+  getStoredEntryMode,
+  getStoredRole,
+  setStoredEntryMode,
+  setStoredRole,
+} from '../../services/authService'
+import type { AuthEntryMode } from '../../types/auth'
 
-type AuthRole = 'caregiver' | 'patient';
-
-const STORAGE_KEY = 'selectedRole';
+type AuthRole = 'caregiver' | 'patient'
 
 const selectedStyle: CSSProperties = {
   ...roleCard,
   ...roleCardSelected,
-};
+}
 
 export default function RoleSelectPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const mode = searchParams.get('mode') === 'signup' ? 'signup' : 'login';
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const savedMode = getStoredEntryMode()
+  const modeParam = searchParams.get('mode')
+  const mode: AuthEntryMode =
+    modeParam === 'signup' || modeParam === 'login'
+      ? modeParam
+      : savedMode === 'signup' || savedMode === 'login'
+        ? savedMode
+        : 'login'
 
-  const [selectedRole, setSelectedRole] = useState<AuthRole | null>(() => {
-    const saved = sessionStorage.getItem(STORAGE_KEY);
-    return saved === 'caregiver' || saved === 'patient' ? saved : null;
-  });
+  const [selectedRole, setSelectedRoleState] = useState<AuthRole | null>(() => {
+    return getStoredRole()
+  })
 
   const handleSelect = (role: AuthRole) => {
-    setSelectedRole(role);
-    sessionStorage.setItem(STORAGE_KEY, role);
-  };
+    setSelectedRoleState(role)
+    setStoredRole(role)
+  }
 
   const handleContinue = () => {
-    if (!selectedRole) return;
-
-    if (mode === 'login') {
-      navigate(ROUTE_PATHS.AUTH_LOGIN);
-      return;
+    if (!selectedRole) {
+      return
     }
 
-    navigate(ROUTE_PATHS.AUTH_SIGNUP);
-  };
+    setStoredEntryMode(mode)
+    navigate(getAuthPathByRole(mode, selectedRole))
+  }
 
   return (
     <div style={pageWrapper}>
       <div style={card}>
         <div style={logoWrap}>
           <p style={logoText}>eyespeak</p>
-          <p style={subtitle}>가입 유형 선택</p>
+          <p style={subtitle}>역할 선택</p>
         </div>
 
-        <h1 style={pageTitle}>사용자 유형을 선택해주세요</h1>
+        <h1 style={pageTitle}>이용할 역할을 선택해주세요</h1>
         <p style={pageDesc}>
-          {mode === 'login' ? '로그인' : '회원가입'} 전에 현재 역할을 먼저 선택합니다.
+          {mode === 'login'
+            ? '로그인 전에 사용할 역할을 먼저 선택합니다.'
+            : '회원가입 전에 사용할 역할을 먼저 선택합니다.'}
         </p>
 
         <div style={roleGrid}>
@@ -74,11 +85,7 @@ export default function RoleSelectPage() {
             style={selectedRole === 'patient' ? selectedStyle : roleCard}
           >
             <p style={roleTitle}>환자</p>
-            <p style={roleDesc}>
-              팀코드 인증 후
-              <br />
-              서비스를 이용합니다
-            </p>
+            <p style={roleDesc}>팀코드를 확인한 뒤 환자 전용 계정을 생성하거나 로그인합니다.</p>
           </button>
 
           <button
@@ -87,28 +94,38 @@ export default function RoleSelectPage() {
             style={selectedRole === 'caregiver' ? selectedStyle : roleCard}
           >
             <p style={roleTitle}>보호자</p>
-            <p style={roleDesc}>
-              환자 연결 및
-              <br />
-              관리 기능을 사용합니다
-            </p>
+            <p style={roleDesc}>환자 연결과 관리 기능을 사용하는 보호자 계정으로 진입합니다.</p>
           </button>
         </div>
 
         <p style={helperText}>
-          현재 선택: {selectedRole === 'patient' ? '환자' : selectedRole === 'caregiver' ? '보호자' : '선택 전'}
+          현재 선택:{' '}
+          {selectedRole === 'patient'
+            ? '환자'
+            : selectedRole === 'caregiver'
+              ? '보호자'
+              : '선택 전'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <button type="button" style={primaryButton} onClick={handleContinue} disabled={!selectedRole}>
-            {mode === 'login' ? '로그인 계속' : '회원가입 계속'}
+          <button
+            type="button"
+            style={
+              !selectedRole
+                ? { ...primaryButton, opacity: 0.5, cursor: 'not-allowed' }
+                : primaryButton
+            }
+            onClick={handleContinue}
+            disabled={!selectedRole}
+          >
+            {mode === 'login' ? '로그인 계속하기' : '회원가입 계속하기'}
           </button>
 
           <button type="button" style={backButton} onClick={() => navigate(ROUTE_PATHS.HOME)}>
-            이전
+            이전으로
           </button>
         </div>
       </div>
     </div>
-  );
+  )
 }
