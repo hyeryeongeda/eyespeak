@@ -138,19 +138,30 @@ pipeline {
                     steps {
                         script {
                             // Nginx를 통해 외부에서 접근 가능한지 확인
-                            def apiResult = sh(
-                                script: "curl -sf ${DEV_URL}/api/v1/actuator/health || echo 'failed'",
+                            def nginxResult = sh(
+                                script: "curl -sf http://localhost/health || echo 'failed'",
                                 returnStdout: true
                             ).trim()
 
-                            if (apiResult == 'failed') {
-                                echo "⚠️ 경고: Nginx 경유 API 응답 없음 (nginx 재시작 필요할 수 있음)"
+                            def apiStatus = sh(
+                                script: "curl -sf -o /dev/null -w '%{http_code}' ${DEV_URL}/api/v1/actuator/health || echo 'failed'",
+                                returnStdout: true
+                            ).trim()
+
+                            if (nginxResult == 'failed') {
+                                echo "⚠️ 경고: Nginx 자체가 응답하지 않음"
                                 sendNotification(
-                                    "⚠️ **[Dev]** Smoke Test 경고: API 응답 없음",
+                                    "⚠️ **[Dev]** Smoke Test 경고: Nginx 응답 없음",
+                                    '#FFA500'
+                                )
+                            } else if (apiStatus == 'failed' || apiStatus == '502' || apiStatus == '503') {
+                                echo "⚠️ 경고: Nginx→백엔드 연결 실패 (상태: ${apiStatus})"
+                                sendNotification(
+                                    "⚠️ **[Dev]** Smoke Test 경고: Nginx→백엔드 연결 실패",
                                     '#FFA500'
                                 )
                             } else {
-                                echo "✅ Smoke Test 통과!"
+                                echo "✅ Smoke Test 통과! (응답 코드: ${apiStatus})"
                             }
                         }
                     }
@@ -289,20 +300,33 @@ pipeline {
                 stage('Smoke Test (Prod)') {
                     steps {
                         script {
-                            def apiResult = sh(
-                                script: "curl -sf ${PROD_URL}/api/v1/actuator/health || echo 'failed'",
+                            def nginxResult = sh(
+                                script: "curl -sf http://localhost/health || echo 'failed'",
                                 returnStdout: true
                             ).trim()
 
-                            if (apiResult == 'failed' || !apiResult.contains('UP')) {
+                            def apiStatus = sh(
+                                script: "curl -sf -o /dev/null -w '%{http_code}' ${PROD_URL}/api/v1/actuator/health || echo 'failed'",
+                                returnStdout: true
+                            ).trim()
+
+                            if (nginxResult == 'failed') {
                                 sendNotification(
-                                    "⚠️ **[Prod]** Smoke Test 실패!\n- 롤백을 고려하세요.",
+                                    "❌ **[Prod]** Smoke Test 실패! Nginx 응답 없음\n- 롤백을 고려하세요.",
                                     '#FF0000'
                                 )
-                                error "Prod Smoke Test 실패!"
+                                error "Prod Smoke Test 실패 - Nginx 응답 없음"
                             }
 
-                            echo "✅ Prod Smoke Test 통과!"
+                            if (apiStatus == 'failed' || apiStatus == '502' || apiStatus == '503') {
+                                sendNotification(
+                                    "❌ **[Prod]** Smoke Test 실패! Nginx→백엔드 연결 실패 (${apiStatus})\n- 롤백을 고려하세요.",
+                                    '#FF0000'
+                                )
+                                error "Prod Smoke Test 실패 - 백엔드 연결 실패 (${apiStatus})"
+                            }
+
+                            echo "✅ Prod Smoke Test 통과! (응답 코드: ${apiStatus})"
                             sendNotification("✅ **[Prod]** Smoke Test 통과!", '#36a64f')
                         }
                     }
