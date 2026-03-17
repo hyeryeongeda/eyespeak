@@ -1,6 +1,8 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 import { useFcmStore } from '../stores/fcmStore';
+import { useNotificationStore } from '../stores/notificationStore';
+import type { FcmType } from '../stores/notificationStore';
 
 /**
  * FCM 토큰을 서버에 등록합니다.
@@ -71,15 +73,34 @@ export const initFcm = async (): Promise<void> => {
 
   // 앱 포그라운드 상태에서 알림 수신
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[FCM] 포그라운드 알림 수신: ', notification.data);
-    // TODO) ex. 인앱 toast 띄우기, 배지 업데이트
-  })
+    const data = notification.data;
+    console.log('[FCM] 포그라운드 알림 수신:', data);
+
+    const type = data?.type as FcmType | undefined;
+    if (type) {
+      useNotificationStore.getState().showNotification({
+        type,
+        title: data.title ?? '',
+        body: data.body ?? '',
+        teamCode: data.teamCode,
+        senderId: data.senderId,
+        senderRole: data.senderRole,
+        messageId: data.messageId,
+      });
+    }
+  });
 
   // 사용자가 알림 탭해서 앱 진입
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('[FCM] 알림 탭: ', action.notification.data);
+    const data = action.notification.data;
+    console.log('[FCM] 알림 탭:', data);
 
-  })
+    const type = data?.type as FcmType | undefined;
+    // TODO: type별 화면 이동 (라우터 연동 후)
+    if (type) {
+      console.log(`[FCM] ${type} 알림 탭 → 화면 이동 예정`);
+    }
+  });
 
   // 4. 푸시 알림 등록 시작 (토큰 발급 요청)
   await PushNotifications.register();
