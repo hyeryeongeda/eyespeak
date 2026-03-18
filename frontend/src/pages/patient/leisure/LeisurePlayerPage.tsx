@@ -154,18 +154,6 @@ const iframeWrapStyle: CSSProperties = {
   backgroundColor: '#dde8f8',
 }
 
-const responsiveStyle = `
-  @media (max-width: 960px) {
-    .leisure-player-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .leisure-player-side-actions {
-      grid-template-rows: repeat(2, minmax(180px, auto));
-    }
-  }
-`
-
 export default function LeisurePlayerPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -337,8 +325,6 @@ export default function LeisurePlayerPage() {
       contextLabel="대표 영상 재생 화면"
       hideHeader
     >
-      <style>{responsiveStyle}</style>
-
       <section className="leisure-player-grid" style={playerPanelStyle}>
         <div style={playerVisualPanelStyle}>
           <div style={categoryBadgeWrapStyle}>
