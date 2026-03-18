@@ -1,7 +1,7 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuth } from '../../../features/auth/hooks/useAuth'
 import PatientCallOverlay from './PatientCallOverlay'
 import {
   getPatientCallCooldownSeconds,
@@ -220,30 +220,6 @@ const responsiveStyle = `
   .patient-main-half {
     grid-column: span 6;
     grid-row: 2;
-  }
-
-  @media (max-width: 900px) {
-    .patient-main-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(3, minmax(0, 1fr));
-    }
-
-    .patient-main-full,
-    .patient-main-half {
-      grid-column: auto;
-      grid-row: auto;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .patient-main-page {
-      padding: 8px;
-    }
-
-    .patient-main-card {
-      padding: 18px;
-      border-radius: 24px;
-    }
   }
 `
 

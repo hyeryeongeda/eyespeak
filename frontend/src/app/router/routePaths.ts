@@ -1,5 +1,5 @@
 import type { AuthEntryMode, UserRole } from '../../types/auth'
-import type { BodyMindCategoryKey } from '../../types/communication'
+import type { BodyMindCategoryKey } from '../../features/patient/types/communication'
 import type { LeisureCategoryId } from '../../types/leisure'
 
 export const ROUTE_SEGMENTS = {

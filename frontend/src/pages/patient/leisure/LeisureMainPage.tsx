@@ -12,7 +12,6 @@ import type { LeisureMainStatus } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureCategoryCard from './components/LeisureCategoryCard'
 import LeisureLayout from './components/LeisureLayout'
-import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 
 function getMainStatusText(status: LeisureMainStatus) {
   switch (status) {
@@ -36,26 +35,38 @@ const contentWrapStyle: CSSProperties = {
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: '14px',
+  gap: '10px',
+}
+
+const noticeWrapStyle: CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: '6px 12px',
+  flexShrink: 0,
 }
 
 const noticeStyle: CSSProperties = {
-  minHeight: '46px',
-  padding: '11px 16px',
-  borderRadius: '18px',
+  margin: 0,
+  padding: '8px 16px',
+  borderRadius: '999px',
   backgroundColor: 'rgba(255, 255, 255, 0.88)',
   border: '1px solid rgba(215, 224, 235, 0.88)',
+  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
   color: '#61758b',
-  fontSize: '14px',
-  fontWeight: 800,
-  lineHeight: 1.5,
+  fontSize: '13px',
+  fontWeight: 700,
+  lineHeight: 1.4,
+  textAlign: 'center',
+  maxWidth: '100%',
 }
 
 const mainGridShellStyle: CSSProperties = {
-  ...leisurePanelSurfaceStyle,
   flex: 1,
   minHeight: 0,
   padding: '12px',
+  width: '100%',
+  boxSizing: 'border-box',
 }
 
 const mainGridStyle: CSSProperties = {
@@ -64,18 +75,9 @@ const mainGridStyle: CSSProperties = {
   minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateRows: '1fr auto 1fr',
   gap: '16px',
 }
-
-const responsiveStyle = `
-  @media (max-width: 920px) {
-    .leisure-main-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(6, minmax(160px, auto));
-    }
-  }
-`
 
 export default function LeisureMainPage() {
   const navigate = useNavigate()
@@ -160,18 +162,14 @@ export default function LeisureMainPage() {
       title="여가 카테고리 선택"
       description="카테고리를 누르면 대표 영상을 먼저 보여주고, 이후 다른 콘텐츠 목록으로 이동할 수 있습니다."
       statusText={getMainStatusText(status)}
-      contextLabel="3 x 2 고정 카드 레이아웃"
+      contextLabel="6칸 + 가운데 pill 레이아웃"
       hideHeader
     >
-      <style>{responsiveStyle}</style>
-
       <div style={contentWrapStyle}>
-        <div style={noticeStyle}>{noticeMessage}</div>
-
         <section style={mainGridShellStyle}>
           <div className="leisure-main-grid" style={mainGridStyle}>
-            {categoryCards.map(category => (
-              <div key={category.id} style={{ minHeight: 0 }}>
+            {categoryCards.slice(0, 3).map(category => (
+              <div key={category.id} style={{ minHeight: 0, height: '100%' }}>
                 <LeisureCategoryCard
                   category={category}
                   contentCount={6}
@@ -184,7 +182,24 @@ export default function LeisureMainPage() {
               </div>
             ))}
 
-            <div style={{ minHeight: 0 }}>
+            <div style={{ gridColumn: '1 / -1', ...noticeWrapStyle }} aria-live="polite">
+              <p style={noticeStyle}>{noticeMessage}</p>
+            </div>
+
+            {categoryCards.slice(3, 5).map(category => (
+              <div key={category.id} style={{ minHeight: 0, height: '100%' }}>
+                <LeisureCategoryCard
+                  category={category}
+                  contentCount={6}
+                  badge="여가"
+                  variant="hero"
+                  disabled={status === 'transitioning'}
+                  slotId={`main-category-${category.id}`}
+                  onSelect={() => handleSelectCategory(category.id)}
+                />
+              </div>
+            ))}
+            <div style={{ minHeight: 0, height: '100%' }}>
               <LeisureActionCard
                 title="뒤로가기"
                 description="메인으로"

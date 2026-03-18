@@ -153,9 +153,6 @@ const messageLabel: CSSProperties = {
 const cardHoverStyle = `
   .talk-main-card:hover { transform: scale(1.02); box-shadow: 0 24px 56px rgba(40, 66, 90, 0.16); }
   .talk-main-card:focus-visible { outline: 2px solid #5d8ec7; outline-offset: 2px; }
-  @media (max-width: 900px) {
-    .talk-main-three-col { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto auto; grid-template-areas: "left-top" "left-bottom" "center" "right-top" "right-bottom"; }
-  }
 `
 
 export default function TalkMainPage() {

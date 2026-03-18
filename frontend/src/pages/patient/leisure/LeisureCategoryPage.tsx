@@ -16,7 +16,6 @@ import LeisureEmptyState from './components/LeisureEmptyState'
 import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
-import LeisureSectionHeader from './components/LeisureSectionHeader'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 
 function getCategoryStatusText(status: LeisureCategoryStatus) {
@@ -44,7 +43,8 @@ const pagePanelStyle: CSSProperties = {
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px',
+  gap: 0,
+  padding: 0,
 }
 
 const gridStyle: CSSProperties = {
@@ -79,20 +79,6 @@ const noticeStyle: CSSProperties = {
   fontWeight: 800,
   lineHeight: 1.45,
 }
-
-const responsiveStyle = `
-  @media (max-width: 1080px) {
-    .leisure-category-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(6, minmax(180px, auto));
-    }
-
-    .leisure-category-state {
-      grid-column: auto;
-      grid-row: auto;
-    }
-  }
-`
 
 export default function LeisureCategoryPage() {
   const navigate = useNavigate()
@@ -268,15 +254,9 @@ export default function LeisureCategoryPage() {
       description={`${category.description} 기준으로 YouTube mock 추천 영상을 4개씩 보여줍니다.`}
       statusText={getCategoryStatusText(status)}
       contextLabel="6분할 화면 · refresh mock 지원"
+      hideHeader
     >
-      <style>{responsiveStyle}</style>
-
       <section style={pagePanelStyle}>
-        <LeisureSectionHeader
-          title={`${category.label} 영상`}
-          description="추천 영상 4개와 새로고침/뒤로가기 액션을 함께 배치했습니다."
-        />
-
         {noticeMessage ? <div style={noticeStyle}>{noticeMessage}</div> : null}
 
         <div className="leisure-category-grid" style={gridStyle}>

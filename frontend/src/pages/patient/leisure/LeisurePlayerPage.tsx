@@ -15,7 +15,7 @@ import LeisureEmptyState from './components/LeisureEmptyState'
 import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
-import { leisurePanelSurfaceStyle, leisurePillStyle } from './components/leisureTheme'
+import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {
@@ -45,16 +45,7 @@ const playerVisualPanelStyle: CSSProperties = {
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '18px',
-  padding: '16px 20px 28px',
-}
-
-const categoryBadgeWrapStyle: CSSProperties = {
-  width: '100%',
-  display: 'flex',
-  justifyContent: 'center',
+  padding: 0,
 }
 
 const videoOuterWrapStyle: CSSProperties = {
@@ -62,14 +53,15 @@ const videoOuterWrapStyle: CSSProperties = {
   width: '100%',
   minHeight: 0,
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  alignItems: 'stretch',
+  justifyContent: 'stretch',
 }
 
 const videoInnerWrapStyle: CSSProperties = {
   position: 'relative',
-  width: 'min(100%, 740px)',
-  aspectRatio: '16 / 9',
+  width: '100%',
+  height: '100%',
+  minHeight: 0,
   borderRadius: '26px',
   overflow: 'hidden',
   background: 'linear-gradient(180deg, #e9f1ff 0%, #dfeafa 100%)',
@@ -101,40 +93,6 @@ const playTriangleStyle: CSSProperties = {
   marginLeft: '4px',
 }
 
-const contentCopyStyle: CSSProperties = {
-  width: '100%',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '10px',
-  textAlign: 'center',
-}
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: '#203042',
-  fontSize: 'clamp(1.9rem, 2.8vw, 2.45rem)',
-  fontWeight: 900,
-  letterSpacing: '-0.03em',
-  lineHeight: 1.08,
-}
-
-const subtitleStyle: CSSProperties = {
-  margin: 0,
-  maxWidth: '680px',
-  color: '#647a90',
-  fontSize: '15px',
-  fontWeight: 700,
-  lineHeight: 1.5,
-}
-
-const tagWrapStyle: CSSProperties = {
-  display: 'flex',
-  gap: '8px',
-  flexWrap: 'wrap',
-  justifyContent: 'center',
-}
-
 const sideActionWrapStyle: CSSProperties = {
   display: 'grid',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
@@ -153,18 +111,6 @@ const iframeWrapStyle: CSSProperties = {
   border: 0,
   backgroundColor: '#dde8f8',
 }
-
-const responsiveStyle = `
-  @media (max-width: 960px) {
-    .leisure-player-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .leisure-player-side-actions {
-      grid-template-rows: repeat(2, minmax(180px, auto));
-    }
-  }
-`
 
 export default function LeisurePlayerPage() {
   const navigate = useNavigate()
@@ -337,14 +283,8 @@ export default function LeisurePlayerPage() {
       contextLabel="대표 영상 재생 화면"
       hideHeader
     >
-      <style>{responsiveStyle}</style>
-
       <section className="leisure-player-grid" style={playerPanelStyle}>
         <div style={playerVisualPanelStyle}>
-          <div style={categoryBadgeWrapStyle}>
-            <span style={leisurePillStyle}>{currentCategory?.label ?? '여가'}</span>
-          </div>
-
           <div style={videoOuterWrapStyle}>
             <div style={videoInnerWrapStyle}>
               <iframe
@@ -358,15 +298,6 @@ export default function LeisurePlayerPage() {
               <div aria-hidden style={playOverlayStyle}>
                 <div style={playTriangleStyle} />
               </div>
-            </div>
-          </div>
-
-          <div style={contentCopyStyle}>
-            <h2 style={titleStyle}>{content.title}</h2>
-            <p style={subtitleStyle}>{content.description}</p>
-            <div style={tagWrapStyle}>
-              <span style={leisurePillStyle}>{content.channelName}</span>
-              {content.durationLabel ? <span style={leisurePillStyle}>{content.durationLabel}</span> : null}
             </div>
           </div>
         </div>

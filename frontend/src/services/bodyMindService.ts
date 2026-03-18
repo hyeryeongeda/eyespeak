@@ -3,7 +3,7 @@ import type {
   BodyMindStoredState,
   PainAreaKey,
   SubmitBodyMindExpressionResult,
-} from '../types/communication'
+} from '../features/patient/types/communication'
 
 const BODY_MIND_STORAGE_PREFIX = 'bodyMindState'
 

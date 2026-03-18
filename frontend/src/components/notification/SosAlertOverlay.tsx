@@ -1,4 +1,4 @@
-import { useNotificationStore } from '../../stores/notificationStore';
+import { useNotificationStore } from '../../shared/stores/notificationStore';
 
 export default function SosAlertOverlay() {
   const notification = useNotificationStore((s) => s.notification);

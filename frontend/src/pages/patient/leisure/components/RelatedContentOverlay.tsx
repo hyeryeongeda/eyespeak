@@ -75,20 +75,6 @@ const stateAreaStyle: CSSProperties = {
   gridRow: '1 / span 2',
 }
 
-const responsiveStyle = `
-  @media (max-width: 1080px) {
-    .related-content-overlay-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(6, minmax(180px, auto));
-    }
-
-    .related-content-overlay-state {
-      grid-column: auto;
-      grid-row: auto;
-    }
-  }
-`
-
 interface RelatedContentOverlayProps {
   title: string
   categoryLabel: string
@@ -143,8 +129,6 @@ export default function RelatedContentOverlay({
 
   return (
     <div style={overlayBackdropStyle} role="dialog" aria-modal="true" aria-label="연관 콘텐츠 보기">
-      <style>{responsiveStyle}</style>
-
       <div style={overlayPanelStyle}>
         <LeisureSectionHeader
           title={title}

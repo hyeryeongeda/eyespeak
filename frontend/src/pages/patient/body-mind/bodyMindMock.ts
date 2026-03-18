@@ -12,7 +12,7 @@ import type {
   PainAreaKey,
   PainDetailKey,
   SecretionOptionKey,
-} from '../../../types/communication'
+} from '../../../features/patient/body-mind/types/bodyMind'
 
 export const bodyMindMainCards: BodyMindMainCardOption[] = [
   {

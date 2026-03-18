@@ -1,8 +1,8 @@
 import { PushNotifications } from '@capacitor/push-notifications';
 import { Capacitor } from '@capacitor/core';
 import { useFcmStore } from '../stores/fcmStore';
-import { useNotificationStore } from '../stores/notificationStore';
-import type { FcmType } from '../stores/notificationStore';
+import { useNotificationStore } from '../shared/stores/notificationStore';
+import type { FcmType } from '../shared/stores/notificationStore';
 
 /**
  * FCM 토큰을 서버에 등록합니다.

@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuth } from '../../../features/auth/hooks/useAuth'
 import {
   getStoredPainAreaSelection,
   storePainAreaSelection,
 } from '../../../services/bodyMindService'
-import type { BodyMindUiStatus, PainAreaKey, PainAreaRouteState } from '../../../types/communication'
+import type { BodyMindUiStatus, PainAreaKey, PainAreaRouteState } from '../../../features/patient/body-mind/types/bodyMind'
 import { getPainAreaOptionByKey, painAreaOptionPages } from './bodyMindMock'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
