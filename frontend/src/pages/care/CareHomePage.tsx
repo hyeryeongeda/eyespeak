@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { CARE_ROUTE_PATHS, ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../features/auth/hooks/useAuth'
 import eyespeakLogo from '../../assets/eyespeak_logo.svg'
 
 const MENU_ITEMS = [
