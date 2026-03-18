@@ -138,42 +138,54 @@ export default function FavoritesPage() {
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
 
-  const [status, setStatus] = useState<FavoritesStatus>('idle')
+  const [status, setStatus] = useState<FavoritesStatus>('loading')
   const [list, setList] = useState<FavoriteItem[]>([])
   const [pageIndex, setPageIndex] = useState(0)
   const [feedbackText, setFeedbackText] = useState('')
   const [errorKind, setErrorKind] = useState<FavoritesErrorKind | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const [reloadToken, setReloadToken] = useState(0)
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
   const currentItems = paginate(list, pageIndex, PAGE_SIZE)
   const showPagination = list.length > PAGE_SIZE
 
-  const loadFavorites = useCallback(async () => {
-    setStatus('loading')
+  const loadFavorites = useCallback(() => {
+    setFeedbackText('')
     setErrorKind(null)
     setErrorMessage('')
-    try {
-      const data = await fetchFavorites(patientId, SORT_KEY)
-      setList(data)
-      setPageIndex(0)
-      if (data.length === 0) {
-        setStatus('empty')
-      } else {
-        setStatus('visible')
-      }
-    } catch {
-      setErrorKind('fetch')
-      setErrorMessage('목록을 불러오지 못했어요. 다시 시도해 주세요.')
-      setStatus('error')
-    }
-  }, [patientId])
+    setStatus('loading')
+    setReloadToken(token => token + 1)
+  }, [])
 
   useEffect(() => {
-    if (status === 'idle') {
-      void loadFavorites()
+    let isActive = true
+
+    async function loadInitialFavorites() {
+      try {
+        const data = await fetchFavorites(patientId, SORT_KEY)
+        if (!isActive) {
+          return
+        }
+        setList(data)
+        setPageIndex(0)
+        setStatus(data.length === 0 ? 'empty' : 'visible')
+      } catch {
+        if (!isActive) {
+          return
+        }
+        setErrorKind('fetch')
+        setErrorMessage('목록을 불러오지 못했어요. 다시 시도해 주세요.')
+        setStatus('error')
+      }
     }
-  }, [status, loadFavorites])
+
+    void loadInitialFavorites()
+
+    return () => {
+      isActive = false
+    }
+  }, [patientId, reloadToken])
 
   const handleBack = useCallback(() => {
     setStatus('transitioning')
