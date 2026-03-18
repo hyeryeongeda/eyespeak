@@ -13,8 +13,8 @@ services:
     build: .
     container_name: eyespeak-was-dev
     restart: always
-    ports:
-      - "8004:8080"
+    expose:
+      - "8080"
     env_file: .env.dev
     environment:
       SPRING_PROFILES_ACTIVE: dev
