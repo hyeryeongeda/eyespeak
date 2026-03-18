@@ -15,9 +15,10 @@ import type {
   FavoritesStatus,
 } from '../../../types/favorites'
 import FavoriteCard from './components/FavoriteCard'
+import FavoritesActionCard from './components/FavoritesActionCard'
 import FavoritesEmptyState from './components/FavoritesEmptyState'
 import FavoritesErrorState from './components/FavoritesErrorState'
-import FavoritesPagination from './components/FavoritesPagination'
+import FavoritesPaginationCard from './components/FavoritesPaginationCard'
 
 const PAGE_CODE = 'PAT-FAV-001'
 
@@ -44,13 +45,30 @@ const headerStyle: CSSProperties = {
   color: '#203042',
 }
 
+/** 3열 x 2행: 좌측 4칸 콘텐츠, 우측 상단 페이지네이션, 우측 하단 뒤로가기 */
 const gridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
+  gridTemplateAreas: `
+    "slot-1 slot-2 pagination"
+    "slot-3 slot-4 back"
+  `,
   gap: '14px',
+}
+
+const slotWrapStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: 0,
+  display: 'flex',
+}
+
+const placeholderStyle: CSSProperties = {
+  flex: 1,
+  visibility: 'hidden',
+  pointerEvents: 'none',
 }
 
 const bottomBarStyle: CSSProperties = {
@@ -268,40 +286,54 @@ export default function FavoritesPage() {
       </div>
 
       {status === 'error' && errorKind === 'submit' ? (
-        <FavoritesErrorState
-          title="선택을 반영하지 못했어요"
-          description={errorMessage}
-          onRetry={() => setStatus('visible')}
-          retryLabel="다시 선택하기"
-        />
+        <>
+          <FavoritesErrorState
+            title="선택을 반영하지 못했어요"
+            description={errorMessage}
+            onRetry={() => setStatus('visible')}
+            retryLabel="다시 선택하기"
+          />
+          <div style={bottomBarStyle}>
+            <button type="button" style={backBtnStyle} onClick={handleBack}>
+              대화하기로 돌아가기
+            </button>
+          </div>
+        </>
       ) : (
         <section style={gridStyle} aria-label="즐겨찾기 목록">
-          {currentItems.map(item => (
-            <FavoriteCard
-              key={item.id}
-              id={item.id}
-              text={item.text}
-              category={item.category}
-              disabled={status === 'selecting' || status === 'transitioning'}
-              onSelect={() => handleSelect(item)}
-            />
+          {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => (
+            <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
+              {currentItems[index] ? (
+                <FavoriteCard
+                  key={currentItems[index].id}
+                  id={currentItems[index].id}
+                  text={currentItems[index].text}
+                  category={currentItems[index].category}
+                  disabled={status === 'selecting' || status === 'transitioning'}
+                  onSelect={() => handleSelect(currentItems[index])}
+                />
+              ) : (
+                <div aria-hidden style={placeholderStyle} />
+              )}
+            </div>
           ))}
+          <div style={{ ...slotWrapStyle, gridArea: 'pagination' }}>
+            <FavoritesPaginationCard
+              pageIndex={pageIndex}
+              totalPages={totalPages}
+              onPrev={handlePrevPage}
+              onNext={handleNextPage}
+            />
+          </div>
+          <div style={{ ...slotWrapStyle, gridArea: 'back' }}>
+            <FavoritesActionCard
+              primaryText="뒤로가기"
+              description="메인 화면으로"
+              onClick={handleBack}
+            />
+          </div>
         </section>
       )}
-
-      <div style={bottomBarStyle}>
-        {showPagination ? (
-          <FavoritesPagination
-            pageIndex={pageIndex}
-            totalPages={totalPages}
-            onPrev={handlePrevPage}
-            onNext={handleNextPage}
-          />
-        ) : null}
-        <button type="button" style={backBtnStyle} onClick={handleBack}>
-          대화하기로 돌아가기
-        </button>
-      </div>
     </main>
   )
 }
