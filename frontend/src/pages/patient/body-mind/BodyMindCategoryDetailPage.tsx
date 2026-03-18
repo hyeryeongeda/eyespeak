@@ -1,4 +1,4 @@
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useParams } from 'react-router-dom'
 import { getBodyMindCategoryOptionByKey } from './bodyMindMock'
 import BodyMindPlaceholderPage from './BodyMindPlaceholderPage'

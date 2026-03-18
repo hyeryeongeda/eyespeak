@@ -1,41 +1,25 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../hooks/useAuth'
-import { submitBodyMindExpression } from '../../services/bodyMindService'
-import type { BodyMindUiStatus, SecretionOptionKey } from '../../types/communication'
-import { secretionOptionPages } from './bodyMindMock'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import type { BodyMindUiStatus } from '../../../types/communication'
+import {
+  bodyMindCategoryOptionPages,
+  getBodyMindCategoryPath,
+} from './bodyMindMock'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
 
-export default function BodyMindSecretionPage() {
+export default function BodyMindCategoryListPage() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const patientId = user?.id ?? 'patient-guest'
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
-  const [selectedKey, setSelectedKey] = useState<SecretionOptionKey | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
-  const [feedbackText, setFeedbackText] = useState(
-    '항목을 선택하면 현재 화면에서 선택 상태를 유지합니다.',
-  )
-  const currentOptions = secretionOptionPages[pageIndex] ?? []
-  const hasNextPage = pageIndex < secretionOptionPages.length - 1
+  const currentOptions = bodyMindCategoryOptionPages[pageIndex] ?? []
+  const hasNextPage = pageIndex < bodyMindCategoryOptionPages.length - 1
 
-  const handleSelectOption = async (key: SecretionOptionKey, label: string) => {
-    setStatus('selecting')
-
-    const result = await submitBodyMindExpression({
-      patientId,
-      type: 'secretion',
-      optionKey: key,
-    })
-
-    setSelectedKey(key)
-    setStatus('completed')
-    setFeedbackText(
-      `${label} 선택 완료 · ${result.source === 'mock' ? 'mock 저장 완료' : 'API 전송 완료'}`,
-    )
+  const handleSelectCategory = (categoryKey: (typeof currentOptions)[number]['key']) => {
+    setStatus('transitioning')
+    navigate(getBodyMindCategoryPath(categoryKey))
   }
 
   const handleNext = () => {
@@ -62,12 +46,12 @@ export default function BodyMindSecretionPage() {
 
   return (
     <BodyMindLayout
-      code="PAT-BM-002"
-      title="가래/침 빼줘"
-      description="가래, 침, 석션 관련 불편과 돌봄 요청을 구체적으로 전달합니다."
+      code="PAT-BM-006"
+      title="카테고리 목록"
+      description="생활·돌봄 관련 세부 카테고리로 진입할 수 있습니다."
       status={status}
-      feedbackText={feedbackText}
-      contextLabel={`페이지 ${pageIndex + 1} / ${secretionOptionPages.length}`}
+      feedbackText="하위 상세가 없는 항목은 placeholder 화면으로 연결됩니다."
+      contextLabel={`페이지 ${pageIndex + 1} / ${bodyMindCategoryOptionPages.length}`}
     >
       <BodyMindFixedGrid
         primaryCards={currentOptions.map(option => (
@@ -76,8 +60,7 @@ export default function BodyMindSecretionPage() {
             title={option.label}
             description={option.description}
             tone={option.tone}
-            selected={selectedKey === option.key}
-            onSelect={() => handleSelectOption(option.key, option.label)}
+            onSelect={() => handleSelectCategory(option.key)}
           />
         ))}
         topRightCard={

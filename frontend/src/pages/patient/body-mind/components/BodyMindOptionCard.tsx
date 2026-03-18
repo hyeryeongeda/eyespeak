@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { BodyMindCardTone } from '../../../types/communication'
+import type { BodyMindCardTone } from '../../../../types/communication'
 
 const toneStyleMap: Record<BodyMindCardTone, { background: string; accent: string }> = {
   sky: {

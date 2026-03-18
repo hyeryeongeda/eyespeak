@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import {
   TALK_MAIN_MOCK_MESSAGES,
   TALK_MAIN_STATUS_LABEL,
