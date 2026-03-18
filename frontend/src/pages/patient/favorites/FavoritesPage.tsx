@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuth } from '../../../features/auth/hooks/useAuth'
 import {
   fetchFavorites,
   submitFavoriteSelection,

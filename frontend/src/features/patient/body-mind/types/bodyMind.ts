@@ -1,0 +1,21 @@
+/** Body-mind 전용 타입 (공통은 features/patient/types/communication.ts) */
+export type {
+  BodyMindUiStatus,
+  BodyMindCardTone,
+  BodyMindMainKey,
+  SecretionOptionKey,
+  BreathingOptionKey,
+  PainAreaKey,
+  PainDetailKey,
+  BodyMindCategoryKey,
+  BodyMindExpressionType,
+  BodyMindExpressionOptionKey,
+  BodyMindCardOption,
+  BodyMindMainCardOption,
+  PainAreaGroup,
+  BodyMindExpressionDraft,
+  BodyMindExpressionPayload,
+  BodyMindStoredState,
+  SubmitBodyMindExpressionResult,
+  PainAreaRouteState,
+} from '../../types/communication'

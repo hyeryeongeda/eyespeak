@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuth } from '../../../features/auth/hooks/useAuth'
 import {
   getStoredPainAreaSelection,
   submitBodyMindExpression,
@@ -11,7 +11,7 @@ import type {
   PainAreaKey,
   PainAreaRouteState,
   PainDetailKey,
-} from '../../../types/communication'
+} from '../../../features/patient/body-mind/types/bodyMind'
 import { getPainAreaOptionByKey, painDetailOptionPages } from './bodyMindMock'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
