@@ -3,19 +3,19 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ROUTE_PATHS,
   getPatientLeisureCategoryPath,
-} from '../../app/router/routePaths'
+} from '../../../app/router/routePaths'
 import {
   fetchLeisureContentDetail,
   getLeisureCategoryById,
   parseLeisureMockScenario,
-} from '../../services/leisureService'
-import type { LeisureContent, LeisurePlayerRouteState, LeisurePlayerStatus } from '../../types/leisure'
-import LeisureActionCard from './leisure/components/LeisureActionCard'
-import LeisureEmptyState from './leisure/components/LeisureEmptyState'
-import LeisureErrorState from './leisure/components/LeisureErrorState'
-import LeisureLayout from './leisure/components/LeisureLayout'
-import LeisureLoadingState from './leisure/components/LeisureLoadingState'
-import { leisurePanelSurfaceStyle, leisurePillStyle } from './leisure/components/leisureTheme'
+} from '../../../services/leisureService'
+import type { LeisureContent, LeisurePlayerRouteState, LeisurePlayerStatus } from '../../../types/leisure'
+import LeisureActionCard from './components/LeisureActionCard'
+import LeisureEmptyState from './components/LeisureEmptyState'
+import LeisureErrorState from './components/LeisureErrorState'
+import LeisureLayout from './components/LeisureLayout'
+import LeisureLoadingState from './components/LeisureLoadingState'
+import { leisurePanelSurfaceStyle, leisurePillStyle } from './components/leisureTheme'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {

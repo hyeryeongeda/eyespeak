@@ -1,14 +1,14 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../hooks/useAuth'
-import PatientCallOverlay from './components/PatientCallOverlay'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { useAuth } from '../../../hooks/useAuth'
+import PatientCallOverlay from './PatientCallOverlay'
 import {
   getPatientCallCooldownSeconds,
   getRemainingPatientCallCooldownMs,
   requestMockPatientCall,
-} from '../../services/patientCallService'
-import type { PatientCallFlowStatus } from '../../types/patientCall'
+} from '../../../services/patientCallService'
+import type { PatientCallFlowStatus } from '../../../types/patientCall'
 
 type FeatureCardProps = {
   badge: string

@@ -1,18 +1,18 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../app/router/routePaths'
+import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
 import {
   fetchLeisureMain,
   getLeisureCategoryById,
   getLeisureEntryContentByCategory,
   getLeisureCategories,
   parseLeisureMockScenario,
-} from '../../services/leisureService'
-import type { LeisureMainStatus } from '../../types/leisure'
-import LeisureActionCard from './leisure/components/LeisureActionCard'
-import LeisureCategoryCard from './leisure/components/LeisureCategoryCard'
-import LeisureLayout from './leisure/components/LeisureLayout'
-import { leisurePanelSurfaceStyle } from './leisure/components/leisureTheme'
+} from '../../../services/leisureService'
+import type { LeisureMainStatus } from '../../../types/leisure'
+import LeisureActionCard from './components/LeisureActionCard'
+import LeisureCategoryCard from './components/LeisureCategoryCard'
+import LeisureLayout from './components/LeisureLayout'
+import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 
 function getMainStatusText(status: LeisureMainStatus) {
   switch (status) {

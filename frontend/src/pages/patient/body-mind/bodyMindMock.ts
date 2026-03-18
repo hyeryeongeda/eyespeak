@@ -1,7 +1,7 @@
 import {
   ROUTE_PATHS,
   getPatientBodyMindCategoryDetailPath,
-} from '../../app/router/routePaths'
+} from '../../../app/router/routePaths'
 import type {
   BodyMindCardOption,
   BodyMindCategoryKey,
@@ -12,7 +12,7 @@ import type {
   PainAreaKey,
   PainDetailKey,
   SecretionOptionKey,
-} from '../../types/communication'
+} from '../../../types/communication'
 
 export const bodyMindMainCards: BodyMindMainCardOption[] = [
   {
