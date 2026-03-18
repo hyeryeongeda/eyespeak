@@ -1,0 +1,1564 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Gaze Emoji Board (9-Grid + Center Rest + Double Blink Back + Dwell Select)</title>
+  <style>
+    :root{
+      --bg:#ffffff;
+      --fg:#111;
+      --muted:#444;
+      --panel:#e6e6e6;
+      --panel2:#f3f3f3;
+      --line:rgba(0,0,0,.12);
+      --hotLine:rgba(46, 180, 76, .78);
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0; background:var(--bg); color:var(--fg);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      overflow:hidden;
+    }
+
+    /* ===== Layout: 3x3 grid (9 split) ===== */
+    #stage{
+      position:fixed; inset:0;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      gap: 26px;
+      padding: 92px 52px 104px;
+      align-items:stretch;
+      justify-items:stretch;
+    }
+
+    .tile{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius: 0px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: clamp(18px, 2.6vw, 32px);
+      font-weight: 780;
+      user-select:none;
+      letter-spacing: -0.02em;
+      position:relative;
+      overflow:hidden;
+      text-align:center;
+      padding: 10px 10px;
+      line-height: 1.15;
+    }
+    .tile.hot{
+      outline: 6px solid var(--hotLine);
+      outline-offset:-6px;
+      box-shadow: inset 0 0 0 999px rgba(124,255,124,.10);
+    }
+    .tile .sub{
+      position:absolute;
+      left:14px; bottom:12px;
+      font-size: 12px;
+      color: rgba(0,0,0,.55);
+      font-weight:650;
+    }
+
+    /* Center camera tile */
+    #t4{
+      background: transparent;
+      border: none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 0;
+    }
+    #camCircle{
+      width: min(380px, 36vw);
+      aspect-ratio: 1 / 1;
+      border-radius: 999px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      overflow:hidden;
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    #camLabel{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: clamp(14px, 1.8vw, 22px);
+      font-weight: 800;
+      color: rgba(0,0,0,.78);
+      text-align:center;
+      padding: 18px;
+      pointer-events:none;
+      mix-blend-mode:multiply;
+      text-shadow: 0 1px 0 rgba(255,255,255,.5);
+    }
+    #input_video{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      filter: contrast(1.02) saturate(1.02);
+    }
+    #overlay{
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+    }
+
+    /* ===== HUD ===== */
+    .hud{
+      position: fixed; left: 14px; top: 14px; z-index: 50;
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.35;
+      min-width: 320px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.08);
+    }
+    .hud b{ color: #1b7f39; }
+    .hud code{ background: rgba(0,0,0,.06); padding:2px 6px; border-radius:6px; }
+    .hud .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      background: rgba(0,0,0,.05);
+      border:1px solid rgba(0,0,0,.08);
+      padding:6px 10px;
+      border-radius:999px;
+      font-weight:750;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:999px;
+      background:#999;
+    }
+    .dot.ok{ background:#1b7f39; }
+    .dot.bad{ background:#d33; }
+
+    /* ===== Output bar ===== */
+    #outputBar{
+      position: fixed;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      z-index: 70;
+      width: min(980px, 92vw);
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 12px;
+      box-shadow: 0 16px 44px rgba(0,0,0,.10);
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+    #outputLabel{
+      flex: 0 0 auto;
+      font-weight: 900;
+      font-size: 12px;
+      color: rgba(0,0,0,.70);
+      padding-top: 2px;
+      user-select:none;
+    }
+    #outputText{
+      flex: 1 1 auto;
+      font-size: 18px;
+      font-weight: 780;
+      letter-spacing: -0.01em;
+      line-height: 1.35;
+      color:#111;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    #outputHint{
+      flex: 0 0 auto;
+      font-size: 12px;
+      color: rgba(0,0,0,.55);
+      user-select:none;
+      padding-top: 3px;
+      white-space: nowrap;
+    }
+
+    /* ===== Dwell ring ===== */
+    #ring{
+      position: fixed;
+      width: 56px; height: 56px;
+      transform: translate(-50%,-50%);
+      border-radius: 999px;
+      pointer-events:none;
+      z-index: 80;
+      background: conic-gradient(rgba(46,180,76,.95) 0deg, rgba(46,180,76,.95) 0deg, rgba(0,0,0,.10) 0deg);
+      -webkit-mask: radial-gradient(circle, transparent 64%, #000 65%);
+      mask: radial-gradient(circle, transparent 64%, #000 65%);
+      opacity: .95;
+      display:none;
+      transition: left 140ms linear, top 140ms linear;
+    }
+
+    /* ===== Toast ===== */
+    #toast{
+      position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+      z-index: 60;
+      background: rgba(0,0,0,.78);
+      color:#fff;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 15px;
+      box-shadow: 0 12px 36px rgba(0,0,0,.18);
+      opacity:0;
+      transition: opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+      max-width: min(760px, 92vw);
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    #toast.show{ opacity:1; transform: translateX(-50%) translateY(-6px); }
+
+    /* ===== Start overlay ===== */
+    #startOverlay{
+      position:fixed; inset:0; z-index: 120;
+      background: rgba(255,255,255,.94);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 22px;
+    }
+    #startCard{
+      width:min(740px, 92vw);
+      border:1px solid var(--line);
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px 18px 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.10);
+    }
+    #startCard h1{ margin:0 0 8px 0; font-size: 18px; letter-spacing:-0.02em; }
+    #startCard p{ margin: 0 0 12px 0; color: var(--muted); line-height: 1.45; font-size: 14px; }
+    #startCard .tips{
+      background: var(--panel2);
+      border:1px solid rgba(0,0,0,.08);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+      color:#222;
+      margin-bottom: 14px;
+    }
+    #startBtn{
+      width:100%;
+      border:none;
+      background:#111;
+      color:#fff;
+      font-weight: 850;
+      padding: 14px 14px;
+      border-radius: 14px;
+      cursor:pointer;
+      font-size: 15px;
+      letter-spacing:-0.01em;
+    }
+    #startBtn:active{ transform: scale(.99); }
+
+    /* ===== Calibration overlay ===== */
+    #calib{
+      position: fixed; inset:0; z-index: 110;
+      background: rgba(255,255,255,.35);
+      display:none;
+      pointer-events:none;
+    }
+    #calibDot{
+      position:absolute;
+      width: 20px; height: 20px;
+      border-radius: 999px;
+      background: rgba(0,122,255,.18);
+      border: 3px solid rgba(0,122,255,1);
+      transform: translate(-50%,-50%);
+      box-shadow: 0 0 0 14px rgba(0,122,255,.10);
+    }
+    #calibText{
+      position:absolute;
+      left: 50%; top: 10%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,.92);
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      text-align:center;
+      box-shadow: 0 12px 36px rgba(0,0,0,.08);
+      max-width: min(820px, 92vw);
+    }
+
+    @media (max-width: 900px){
+      #stage{ gap: 16px; padding: 92px 18px 104px; }
+      .hud{ min-width: 280px; }
+      #camCircle{ width: min(300px, 54vw); }
+    }
+  </style>
+
+  <!-- MediaPipe (classic) -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+</head>
+<body>
+
+  <div class="hud">
+    <div>상태: <b id="status">대기</b></div>
+    <div class="row">
+      <span class="pill"><span class="dot" id="dotFace"></span>Face</span>
+      <span class="pill"><span class="dot" id="dotIris"></span>Iris</span>
+      <span class="pill" id="irisInfo">L/R px: - / -</span>
+      <span class="pill" id="openInfo">Open: -</span>
+    </div>
+    <div class="row">
+      <span class="pill">Dwell <code id="dwellLabel">1600</code>ms</span>
+      <span class="pill">로그 <code>D</code></span>
+      <span class="pill">재캘리 <code>C</code></span>
+      <span class="pill"><code>[</code>/<code>]</code> 조절</span>
+    </div>
+  </div>
+
+  <div id="stage">
+    <div class="tile" id="t0" data-idx="0">감정</div>
+    <div class="tile" id="t1" data-idx="1">요청</div>
+    <div class="tile" id="t2" data-idx="2">통증</div>
+
+    <div class="tile" id="t3" data-idx="3">기호</div>
+    <div class="tile" id="t4" data-idx="4">
+      <div id="camCircle">
+        <video id="input_video" playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div id="camLabel">내 모습 카메라 화면<br><span style="font-size:12px;font-weight:800;opacity:.86">가운데는 “휴식(선택 없음)”</span></div>
+      </div>
+    </div>
+    <div class="tile" id="t5" data-idx="5">후보</div>
+
+    <div class="tile" id="t6" data-idx="6">삭제</div>
+    <div class="tile" id="t7" data-idx="7">전체 지우기</div>
+    <div class="tile" id="t8" data-idx="8">SOS</div>
+  </div>
+
+  <div id="outputBar">
+    <div id="outputLabel">이모지 문장</div>
+    <div id="outputText">-</div>
+    <div id="outputHint">응시(게이지): 선택 · 더블 블링크: 뒤로</div>
+  </div>
+
+  <div id="ring"></div>
+  <div id="toast"></div>
+
+  <div id="calib">
+    <div id="calibText"></div>
+    <div id="calibDot"></div>
+  </div>
+
+  <div id="startOverlay">
+    <div id="startCard">
+      <h1>Gaze Emoji Board (9분할)</h1>
+      <p>
+        시작 버튼을 누르면 카메라가 켜지고, <b>더블 블링크</b>를 하면 <b>2초 후</b> <b>25점 캘리브레이션</b>이 시작됩니다.
+      </p>
+      <div class="tips">
+        <div>• 권장: 카메라-얼굴 거리 <b>45~70cm</b>, 카메라는 <b>눈높이</b>에 두기</div>
+        <div>• 캘리브레이션: 5×5 그리드 <b>25점</b>을 순서대로 응시 (각 점 0.5s+1.2s, 총 약 42초)</div>
+        <div>• 선택 트리거: <b>dwell(게이지)</b> · 뒤로: <b>더블 블링크</b></div>
+        <div>• 가운데(카메라)는 기본값 <b>휴식 영역</b> (선택 없음)</div>
+        <div>• 단축: <b>SOS</b>는 “도와주세요”를 바로 추가</div>
+      </div>
+      <button id="startBtn">시작</button>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ===== DOM =====
+  const statusEl = document.getElementById('status');
+  const dotFace  = document.getElementById('dotFace');
+  const dotIris  = document.getElementById('dotIris');
+  const irisInfo = document.getElementById('irisInfo');
+  const openInfo = document.getElementById('openInfo');
+  const dwellLabel = document.getElementById('dwellLabel');
+
+  const videoEl  = document.getElementById('input_video');
+  const overlay  = document.getElementById('overlay');
+  const octx     = overlay.getContext('2d');
+
+  const ring     = document.getElementById('ring');
+  const toast    = document.getElementById('toast');
+
+  const startOverlay = document.getElementById('startOverlay');
+  const startBtn     = document.getElementById('startBtn');
+
+  const calib     = document.getElementById('calib');
+  const calibDot  = document.getElementById('calibDot');
+  const calibText = document.getElementById('calibText');
+
+  const tiles = [
+    document.getElementById('t0'),
+    document.getElementById('t1'),
+    document.getElementById('t2'),
+    document.getElementById('t3'),
+    document.getElementById('t4'), // center (rest)
+    document.getElementById('t5'),
+    document.getElementById('t6'),
+    document.getElementById('t7'),
+    document.getElementById('t8'),
+  ];
+
+  // ===== Tunables =====
+  let dwellMs = 1600;
+  let settleMs = 500;   // longer settle: enough time for eye to physically reach target
+  const DBL_BLINK_LOCK_MS = 650;
+  let inputLockUntil = 0;
+  let collectMs = 1200; // 25-point calib: 0.5s settle + 1.2s collect = 1.7s/pt ≈ 42s total
+  const stableHoldMs = 320;
+
+  const ACTION_COOLDOWN_MS = 1400;
+  let cooldownUntil = 0;
+
+  // Double blink detection
+  const blinkCooldownMs = 250;
+  const dblBlinkWindowMs = 800;
+  const blinkClosedRatio = 0.55;
+  const minCollectMs = 250;
+  const minFrames = 10;
+
+  const START_DELAY_MS = 2000;
+
+  // ===== Indices =====
+  const L_IRIS = [468, 469, 470, 471];
+  const R_IRIS = [473, 474, 475, 476];
+  const L_CORNER_A = 33,  L_CORNER_B = 133, L_TOP = 159, L_BOT = 145;
+  const R_CORNER_A = 362, R_CORNER_B = 263, R_TOP = 386, R_BOT = 374;
+
+  // ===== Utils =====
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const dist = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
+
+  function setStatus(s){ statusEl.textContent = s; }
+  function setDot(el, ok){
+    el.classList.remove('ok','bad');
+    el.classList.add(ok ? 'ok' : 'bad');
+  }
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 900);
+  }
+  function setRingAt(x,y){ ring.style.left = x+'px'; ring.style.top  = y+'px'; }
+  function setRingProgress(p){
+    const deg = clamp(p,0,1)*360;
+    ring.style.background = `conic-gradient(rgba(46,180,76,.95) 0deg, rgba(46,180,76,.95) ${deg}deg, rgba(0,0,0,.10) ${deg}deg)`;
+  }
+  function ringHide(){ ring.style.display = 'none'; setRingProgress(0); }
+  function ringShow(){ ring.style.display = 'block'; }
+
+  function median(arr){
+    const a = arr.slice().sort((x,y)=>x-y);
+    const n = a.length;
+    if (!n) return 0;
+    const m = Math.floor(n/2);
+    return (n%2) ? a[m] : (a[m-1]+a[m])/2;
+  }
+  function centroidMedian(samples){
+    const d = samples[0].length;
+    const out = new Array(d).fill(0);
+    for (let j=0;j<d;j++) out[j] = median(samples.map(v => v[j]));
+    return out;
+  }
+  function sqDist(a,b){
+    let s=0;
+    for (let i=0;i<a.length;i++){
+      const t = a[i]-b[i];
+      s += t*t;
+    }
+    return s;
+  }
+
+  // ===== Linear regression (least squares via Gauss-Jordan on normal equations) =====
+  function lstsq(A, b) {
+    // A: m×n matrix (rows=samples, cols=features), b: m-vector
+    // Returns: n-vector w that minimizes ||Aw - b||^2
+    const m = A.length, n = A[0].length;
+    // Form normal equations: (A'A)w = A'b
+    const AtA = Array.from({length:n}, (_,i) =>
+      Array.from({length:n}, (_,j) => { let s=0; for(let k=0;k<m;k++) s+=A[k][i]*A[k][j]; return s; })
+    );
+    const Atb = Array.from({length:n}, (_,i) => { let s=0; for(let k=0;k<m;k++) s+=A[k][i]*b[k]; return s; });
+    // Augmented matrix [AtA | Atb], solve via Gauss-Jordan with partial pivoting
+    const aug = AtA.map((row,i) => [...row, Atb[i]]);
+    for(let col=0;col<n;col++){
+      let maxRow=col, maxVal=Math.abs(aug[col][col]);
+      for(let row=col+1;row<n;row++){
+        const v=Math.abs(aug[row][col]);
+        if(v>maxVal){maxVal=v;maxRow=row;}
+      }
+      if(maxRow!==col)[aug[col],aug[maxRow]]=[aug[maxRow],aug[col]];
+      const piv=aug[col][col];
+      if(Math.abs(piv)<1e-12) continue;
+      for(let j=col;j<=n;j++) aug[col][j]/=piv;
+      for(let row=0;row<n;row++){
+        if(row===col) continue;
+        const f=aug[row][col];
+        for(let j=col;j<=n;j++) aug[row][j]-=f*aug[col][j];
+      }
+    }
+    return aug.map(row=>row[n]);
+  }
+
+  // ===== RBF (Radial Basis Function) gaze interpolation =====
+  // Uses 4D iris features [lnx, lny, rnx, rny] as input space.
+  // Gaussian RBF: exactly interpolates calibration points, smoothly interpolates between them.
+  function irisFeats(f) { return [f[0], f[1], f[2], f[3]]; }
+
+  function rbfDist(a, b) {
+    let s = 0;
+    for (let i = 0; i < a.length; i++) { const d = a[i]-b[i]; s += d*d; }
+    return Math.sqrt(s);
+  }
+
+  function rbfKernel(r, sigma) { return Math.exp(-(r*r) / (2*sigma*sigma)); }
+
+  // Direct Gauss-Jordan solve for square system Ax = b (more stable than normal equations for RBF)
+  function solveLinear(A, b) {
+    const n = A.length;
+    const aug = A.map((row, i) => [...row, b[i]]);
+    for (let col = 0; col < n; col++) {
+      let maxRow = col, maxVal = Math.abs(aug[col][col]);
+      for (let row = col+1; row < n; row++) {
+        const v = Math.abs(aug[row][col]);
+        if (v > maxVal) { maxVal = v; maxRow = row; }
+      }
+      if (maxRow !== col) [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+      const piv = aug[col][col];
+      if (Math.abs(piv) < 1e-12) continue;
+      for (let j = col; j <= n; j++) aug[col][j] /= piv;
+      for (let row = 0; row < n; row++) {
+        if (row === col) continue;
+        const f = aug[row][col];
+        for (let j = col; j <= n; j++) aug[row][j] -= f * aug[col][j];
+      }
+    }
+    return aug.map(row => row[n]);
+  }
+
+  function buildRBFWeights(centers, y, sigma) {
+    const n = centers.length;
+    const K = Array.from({length:n}, (_, i) =>
+      Array.from({length:n}, (_, j) => rbfKernel(rbfDist(centers[i], centers[j]), sigma))
+    );
+    const lam = 1e-4; // Tikhonov regularization for stability
+    for (let i = 0; i < n; i++) K[i][i] += lam;
+    return solveLinear(K, y);
+  }
+
+  function predictGazeXY(features) {
+    if (!rbfCenters || !rbfWeightsX) return [0, 0];
+    const c = irisFeats(features);
+    let px = 0, py = 0;
+    for (let i = 0; i < rbfCenters.length; i++) {
+      const k = rbfKernel(rbfDist(c, rbfCenters[i]), rbfSigma);
+      px += rbfWeightsX[i] * k;
+      py += rbfWeightsY[i] * k;
+    }
+    return [px, py];
+  }
+
+  // ===== Feature extraction =====
+  function meanPoint(landmarks, idxs) {
+    let x=0,y=0;
+    for (const i of idxs) { x += landmarks[i].x; y += landmarks[i].y; }
+    return { x: x/idxs.length, y: y/idxs.length };
+  }
+  function normInEyeBox(landmarks, irisIdxs, cA, cB, topI, botI) {
+    const iris = meanPoint(landmarks, irisIdxs);
+    const a = landmarks[cA], b = landmarks[cB];
+    const t = landmarks[topI], bo = landmarks[botI];
+    const xMin = Math.min(a.x, b.x), xMax = Math.max(a.x, b.x);
+    const yMin = Math.min(t.y, bo.y), yMax = Math.max(t.y, bo.y);
+    const w = Math.max(1e-6, xMax - xMin);
+    const h = Math.max(1e-6, yMax - yMin);
+    const nx = (iris.x - xMin) / w;
+    const ny = (iris.y - yMin) / h;
+    // Wide clamp: allow iris to go outside eye-box bounds (critical for extreme upward/downward gaze)
+    return { nx: clamp(nx, -0.5, 1.5), ny: clamp(ny, -0.5, 1.5) };
+  }
+  function eyeOpenness(landmarks, cornerA, cornerB, topI, botI) {
+    const a = landmarks[cornerA], b = landmarks[cornerB];
+    const t = landmarks[topI], bo = landmarks[botI];
+    const horiz = Math.max(1e-6, dist(a,b));
+    const vert  = dist(t,bo);
+    return vert / horiz;
+  }
+  function faceBoxFeatures(landmarks) {
+    let xMin=1, xMax=0, yMin=1, yMax=0;
+    for (const p of landmarks) {
+      xMin = Math.min(xMin, p.x); xMax = Math.max(xMax, p.x);
+      yMin = Math.min(yMin, p.y); yMax = Math.max(yMax, p.y);
+    }
+    const faceCx = (xMin + xMax) / 2;
+    const faceCy = (yMin + yMax) / 2;
+    const faceW  = (xMax - xMin);
+    const faceH  = (yMax - yMin);
+    const aL = landmarks[L_CORNER_A], bL = landmarks[L_CORNER_B];
+    const aR = landmarks[R_CORNER_A], bR = landmarks[R_CORNER_B];
+    const leftCenter  = { x:(aL.x+bL.x)/2, y:(aL.y+bL.y)/2 };
+    const rightCenter = { x:(aR.x+bR.x)/2, y:(aR.y+bR.y)/2 };
+    const eyeDist = Math.hypot(leftCenter.x - rightCenter.x, leftCenter.y - rightCenter.y);
+    return [faceCx, faceCy, faceW, faceH, eyeDist];
+  }
+  function extractFeatures(landmarks) {
+    const L = normInEyeBox(landmarks, L_IRIS, L_CORNER_A, L_CORNER_B, L_TOP, L_BOT);
+    const R = normInEyeBox(landmarks, R_IRIS, R_CORNER_A, R_CORNER_B, R_TOP, R_BOT);
+    const openL = eyeOpenness(landmarks, L_CORNER_A, L_CORNER_B, L_TOP, L_BOT);
+    const openR = eyeOpenness(landmarks, R_CORNER_A, R_CORNER_B, R_TOP, R_BOT);
+    const fb = faceBoxFeatures(landmarks);
+    return [L.nx, L.ny, R.nx, R.ny, openL, openR, ...fb];
+  }
+
+  function irisRadiusPx(landmarks, idxs, w, h){
+    const c = meanPoint(landmarks, idxs);
+    let r=0;
+    for (const i of idxs){
+      const p = landmarks[i];
+      const dx = (p.x - c.x) * w;
+      const dy = (p.y - c.y) * h;
+      r += Math.hypot(dx,dy);
+    }
+    return r / idxs.length;
+  }
+
+  // ===== Double blink =====
+  let openBase = null;
+  let isClosed = false;
+  let closedAt = 0;
+  let lastBlinkAt = 0;
+  let firstBlinkAt = 0;
+
+  function resetBlinkState(){
+    openBase = null; isClosed=false; closedAt=0; lastBlinkAt=0; firstBlinkAt=0;
+  }
+
+  function detectDoubleBlink(now, openVal){
+    if (openVal == null || !Number.isFinite(openVal)) return false;
+    if (openBase == null) openBase = openVal;
+
+    if (openVal > openBase * 0.75){
+      openBase = openBase * 0.98 + openVal * 0.02;
+    }
+
+    const closed = openVal < openBase * blinkClosedRatio;
+
+    if (!isClosed && closed && (now - lastBlinkAt > blinkCooldownMs)){
+      isClosed = true;
+      closedAt = now;
+    }
+
+    if (isClosed && !closed){
+      const dur = now - closedAt;
+      isClosed = false;
+      if (dur >= 60 && dur <= 600){
+        lastBlinkAt = now;
+        if (firstBlinkAt && (now - firstBlinkAt <= dblBlinkWindowMs)){
+          firstBlinkAt = 0;
+          return true;
+        } else {
+          firstBlinkAt = now;
+        }
+      }
+    }
+
+    if (firstBlinkAt && now - firstBlinkAt > dblBlinkWindowMs) firstBlinkAt = 0;
+    return false;
+  }
+
+  // ===== Feature smoothing (EMA) =====
+  const FEATURE_EMA_ALPHA = 0.25;
+  let smoothedFeatures = null;
+  function smoothFeatures(raw){
+    if (!smoothedFeatures){ smoothedFeatures = [...raw]; return smoothedFeatures; }
+    for (let i=0;i<raw.length;i++){
+      smoothedFeatures[i] = smoothedFeatures[i]*(1-FEATURE_EMA_ALPHA) + raw[i]*FEATURE_EMA_ALPHA;
+    }
+    return [...smoothedFeatures];
+  }
+
+  // ===== State =====
+  const LS_MODEL = 'gaze_rbf_25pt_v3';
+
+  let mode = 'INIT'; // INIT | WAIT_DBLBLINK | COUNTDOWN | CALIB | RUN
+  let rbfCenters  = null;  // CALIB_N×4 iris feature vectors from calibration
+  let rbfWeightsX = null;  // CALIB_N-vector: RBF weights for screen-x
+  let rbfWeightsY = null;  // CALIB_N-vector: RBF weights for screen-y
+  let rbfSigma    = 0.15;  // Gaussian kernel bandwidth (auto-set at calibration end)
+
+  let latestFeatures = null;   // EMA-smoothed (for prediction)
+  let rawFeatures = null;      // no smoothing (for calibration)
+  let hasFace = false;
+  let irisOk = false;
+  let irisLPx = 0, irisRPx = 0;
+  let openAvg = 0;
+
+  // calibration runner
+  let calibIdx = 0;
+  let collecting = false;
+  let collectStart = 0;
+  let perPointSamples = [];
+  let tmpCentroids = [];
+
+  // dwell runner
+  let hotIdx = -1;
+  let hotSince = 0;
+  let dwellStart = 0;
+  let dwellArmed = false;
+
+  // ===== Inertia / smoothing (reduce fast jumping) =====
+  const DIST_EMA_ALPHA = 0.14;
+  const SWITCH_HOLD_MS = 260;
+  const SWITCH_MARGIN  = 0.10;
+
+  let smoothedDists = null;
+  let lockedIdx = -1;
+  let candIdx = -1;
+  let candSince = 0;
+
+  function resetInertia(){
+    smoothedDists = null;
+    lockedIdx = -1;
+    candIdx = -1;
+    candSince = 0;
+    smoothedFeatures = null;
+  }
+
+  function inertiaPickIdx(centroids, f, now){
+    const d = centroids.map(c => sqDist(c, f));
+    if (!smoothedDists){
+      smoothedDists = d.slice();
+    } else {
+      for (let i=0;i<d.length;i++){
+        smoothedDists[i] = smoothedDists[i]*(1 - DIST_EMA_ALPHA) + d[i]*DIST_EMA_ALPHA;
+      }
+    }
+    let best = 0;
+    for (let i=1;i<smoothedDists.length;i++){
+      if (smoothedDists[i] < smoothedDists[best]) best = i;
+    }
+    if (lockedIdx < 0){
+      lockedIdx = best;
+      candIdx = -1;
+      return lockedIdx;
+    }
+    if (best === lockedIdx){
+      candIdx = -1;
+      return lockedIdx;
+    }
+    const currD = smoothedDists[lockedIdx];
+    const bestD = smoothedDists[best];
+
+    if (!(bestD < currD * (1 - SWITCH_MARGIN))){
+      candIdx = -1;
+      return lockedIdx;
+    }
+
+    if (candIdx !== best){
+      candIdx = best;
+      candSince = now;
+      return lockedIdx;
+    }
+
+    if (now - candSince >= SWITCH_HOLD_MS){
+      lockedIdx = best;
+      candIdx = -1;
+    }
+
+    return lockedIdx;
+  }
+
+  function resetDwell(){
+    hotIdx = -1;
+    hotSince = 0;
+    dwellStart = 0;
+    dwellArmed = false;
+    ringHide();
+    tiles.forEach(t => t.classList.remove('hot'));
+  }
+
+  function setHot(idx){
+    tiles.forEach((t,i) => t.classList.toggle('hot', i===idx));
+  }
+
+  // ===== Calibration targets: 5×5=25 grid covering full tile area (includes inter-tile gaps) =====
+  function getCalibTargets(){
+    // Compute bounding box of all 9 tiles
+    let minX=Infinity, minY=Infinity, maxX=-Infinity, maxY=-Infinity;
+    tiles.forEach(t => {
+      const r = t.getBoundingClientRect();
+      minX = Math.min(minX, r.left);   minY = Math.min(minY, r.top);
+      maxX = Math.max(maxX, r.right);  maxY = Math.max(maxY, r.bottom);
+    });
+    const N = 5;
+    const pts = [];
+    for (let row=0; row<N; row++){
+      for (let col=0; col<N; col++){
+        pts.push({
+          x: minX + (maxX-minX)*col/(N-1),
+          y: minY + (maxY-minY)*row/(N-1)
+        });
+      }
+    }
+    return pts;
+  }
+  function showCalibDotAt(pt){
+    calibDot.style.left = pt.x+'px';
+    calibDot.style.top  = pt.y+'px';
+  }
+
+  function startCalibrationWithCountdown(){
+    mode = 'COUNTDOWN';
+    setStatus('캘리브레이션 대기 (2초 후 시작)');
+    calib.style.display = 'block';
+    const startAt = performance.now();
+
+    const tickCountdown = () => {
+      const now = performance.now();
+      const left = Math.max(0, START_DELAY_MS - (now - startAt));
+      const sec = Math.ceil(left / 1000);
+      calibText.innerHTML =
+        `곧 시작합니다… <b>${sec}</b>초 후 캘리브레이션 시작<br>` +
+        `<span style="font-size:12px;opacity:.85">팁: 고개는 고정하고 눈만 이동하세요. (더블 블링크로 점 스킵 가능)</span>`;
+      if (left <= 0){ startCalibration(); return; }
+      requestAnimationFrame(tickCountdown);
+    };
+    requestAnimationFrame(tickCountdown);
+  }
+
+  function startCalibration(){
+    mode = 'CALIB';
+    calibIdx = 0;
+    collecting = false;
+    perPointSamples = [];
+    tmpCentroids = [];
+    resetBlinkState();
+    resetDwell();
+
+    calib.style.display = 'block';
+    const targets = getCalibTargets();
+    showCalibDotAt(targets[calibIdx]);
+    calibText.innerHTML =
+      `캘리브레이션: 25점을 <b>순서대로 응시</b>하세요 (점당 1.7초: 0.5s 고정+1.2s 수집, 총 약 42초)<br>` +
+      `더블 블링크(0.8초 내 2번)로 <b>즉시 다음 점</b> &nbsp;|&nbsp; <span id="calibProgress">1 / 25</span>`;
+    setStatus('캘리브레이션 중…');
+  }
+
+  const CALIB_N = 25; // 5×5 grid
+  function finishCalibration(){
+    if (tmpCentroids.length !== CALIB_N){
+      calibText.innerHTML = '샘플이 부족합니다. 다시 시도하세요.';
+      setStatus('캘리브레이션 실패');
+      return;
+    }
+    // RBF 보간: 25개 캘리브레이션 점을 정확히 통과하는 Gaussian RBF 모델
+    const targets = getCalibTargets();
+    const centers = tmpCentroids.map(irisFeats);  // 25×4 iris feature vectors
+    // sigma = 데이터 기반 자동 추정 (쌍별 거리의 중앙값 × 0.8)
+    const pairDists = [];
+    for (let i = 0; i < centers.length; i++)
+      for (let j = i+1; j < centers.length; j++)
+        pairDists.push(rbfDist(centers[i], centers[j]));
+    rbfSigma    = median(pairDists) * 0.8;
+    rbfCenters  = centers;
+    rbfWeightsX = buildRBFWeights(centers, targets.map(t => t.x), rbfSigma);
+    rbfWeightsY = buildRBFWeights(centers, targets.map(t => t.y), rbfSigma);
+    persistModel();
+    calib.style.display = 'none';
+    mode = 'RUN';
+    resetInertia();
+    resetBlinkState();
+    kbSetMode('ROOT');
+    setStatus('준비 완료 (응시로 선택)');
+    showToast('캘리브레이션 완료');
+  }
+
+  function runCalibrationTick(now){
+    if (!hasFace || !rawFeatures){
+      collecting = false;
+      return null;
+    }
+
+    if (!collecting){
+      collecting = true;
+      collectStart = now;
+      perPointSamples = [];
+      smoothedFeatures = null; // reset EMA so prediction doesn't carry over previous gaze
+      return null;
+    }
+
+    const dt = now - collectStart;
+    const targets = getCalibTargets();
+    showCalibDotAt(targets[calibIdx]);
+
+    if (dt > settleMs && dt < (settleMs + collectMs)){
+      perPointSamples.push(rawFeatures.slice()); // raw features — no EMA contamination
+
+      const dbl = detectDoubleBlink(now, openAvg);
+      if (dbl && dt > (settleMs + minCollectMs) && perPointSamples.length >= minFrames){
+        const centroid = centroidMedian(perPointSamples);
+        collecting = false;
+        perPointSamples = [];
+        return centroid;
+      }
+    }
+
+    if (dt >= (settleMs + collectMs)){
+      const centroid = perPointSamples.length ? centroidMedian(perPointSamples) : null;
+      collecting = false;
+      perPointSamples = [];
+      return centroid;
+    }
+    return null;
+  }
+
+  // ===== Output / Emoji Composer =====
+  const outputTextEl  = document.getElementById('outputText');
+  const outputHintEl  = document.getElementById('outputHint');
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#39;");
+  }
+
+  const composer = { emojis: [], punct: '', final: '' };
+
+  const EMOJI_CATS = [
+    {
+      label: '감정',
+      groups: [
+        { label: '기분',  items: ['😀','😐','😢','😡','😴'] },
+        { label: '긍정',  items: ['👍','👌','🙏','❤️','🥰'] },
+        { label: '불편',  items: ['😣','😖','😤','😭','😫'] },
+        { label: '증상',  items: ['😷','🤒','🤢','🤧','🤕'] },
+      ],
+    },
+    {
+      label: '요청',
+      groups: [
+        { label: '기본',  items: ['🍚','💧','🚽','🛏️'] },
+        { label: '도움',  items: ['🆘','📞','👩‍⚕️','👨‍👩‍👧‍👦'] },
+        { label: '취미',  items: ['📺','🎵','📖','🪟'] },
+        { label: '위생',  items: ['🛁','🧼','🧻','🧴','🧦'] },
+      ],
+    },
+    {
+      label: '통증',
+      groups: [
+        { label: '부위1', items: ['🧠','👁️','👂','🦷','🫀'] },
+        { label: '부위2', items: ['🫁','🦵','🦶','🖐️','🧍'] },
+        { label: '느낌',  items: ['🤕','😣','🔥','❄️','💢'] },
+        { label: '처치',  items: ['💊','💉','🩹','🌡️','😷'] },
+      ],
+    },
+  ];
+
+  const EMOJI_WORD = {
+    '🍚':'밥', '💧':'물', '🚽':'화장실', '🛏️':'쉬고 싶어요',
+    '📞':'전화', '🆘':'도움', '👩‍⚕️':'간호사(선생님)', '👨‍👩‍👧‍👦':'가족',
+    '📺':'TV', '🎵':'음악', '📖':'책', '🪟':'환기',
+    '🛁':'샤워', '🧼':'씻기', '🧻':'휴지', '🧴':'로션', '🧦':'양말',
+    '😀':'기분 좋아요', '😐':'괜찮아요', '😢':'슬퍼요', '😡':'화나요', '😴':'졸려요',
+    '👍':'좋아요', '👌':'오케이', '🙏':'부탁해요', '❤️':'고마워요', '🥰':'좋아요(행복해요)',
+    '😣':'힘들어요', '😖':'불편해요', '😤':'답답해요', '😭':'울고 싶어요', '😫':'너무 힘들어요',
+    '😷':'몸이 안 좋아요', '🤒':'열이 있는 것 같아요', '🤢':'메스꺼워요', '🤧':'콧물/재채기', '🤕':'아파요',
+    '🧠':'머리', '👁️':'눈', '👂':'귀', '🦷':'이', '🫀':'가슴',
+    '🫁':'숨', '🦵':'다리', '🦶':'발', '🖐️':'손', '🧍':'몸',
+    '🔥':'뜨거워요', '❄️':'차가워요', '💢':'통증',
+    '💊':'약', '💉':'주사', '🩹':'밴드', '🌡️':'체온',
+  };
+  const BODY_PREFIX = {
+    '🧠':'머리가', '👁️':'눈이', '👂':'귀가', '🦷':'이가', '🫀':'가슴이',
+    '🫁':'숨쉬기가', '🦵':'다리가', '🦶':'발이', '🖐️':'손이', '🧍':'몸이',
+  };
+
+  function applyPunct(s){
+    const p = composer.punct;
+    if (!p) return s;
+    s = s.replace(/[.!?]+$/,'');
+    return s + p;
+  }
+  function uniq(arr){
+    const out = [];
+    const seen = new Set();
+    for (const x of arr){
+      const k = (x ?? '').toString().trim();
+      if (!k) continue;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
+    }
+    return out;
+  }
+  function inferCandidates(){
+    const ems = composer.emojis.slice();
+    if (ems.length === 0) return [];
+
+    const hasHelp   = ems.includes('🆘');
+    const hasToilet = ems.includes('🚽');
+    const hasWater  = ems.includes('💧');
+    const hasFood   = ems.includes('🍚');
+    const hasCall   = ems.includes('📞');
+    const hasNurse  = ems.includes('👩‍⚕️');
+
+    let body = '';
+    for (const e of ems){
+      if (BODY_PREFIX[e]) { body = BODY_PREFIX[e]; break; }
+    }
+    const hasPain = ems.includes('🤕') || ems.includes('💢') || ems.includes('😣') || ems.includes('😫');
+    const hasHot  = ems.includes('🔥');
+    const hasCold = ems.includes('❄️');
+
+    let primary = '';
+    if (hasHelp) primary = '도와주세요';
+    else if (hasToilet) primary = '화장실 가고 싶어요';
+    else if (hasWater) primary = '물 주세요';
+    else if (hasFood) primary = '밥 주세요';
+    else if (hasCall) primary = '전화하고 싶어요';
+    else if (hasNurse) primary = '간호사(선생님) 불러주세요';
+    else if (body && (hasPain || hasHot || hasCold)){
+      if (hasHot) primary = `${body} 뜨거워요`;
+      else if (hasCold) primary = `${body} 차가워요`;
+      else primary = `${body} 아파요`;
+    } else {
+      const words = ems.map(e => EMOJI_WORD[e] || '').filter(Boolean);
+      primary = words.length ? words.join(' ') : '말하고 싶어요';
+    }
+
+    const polite = primary.endsWith('요') || primary.endsWith('주세요') ? primary : (primary + '요');
+    const polite2 = polite.includes('주세요') ? polite.replace('주세요','부탁해요') : (polite + ' 부탁해요');
+    const ask = primary.replace(/(요|주세요|불러주세요)$/,'') + ' 가능할까요';
+    const shorty = primary.replace(/(고 싶어요|부탁해요|주세요|불러주세요)$/,'').trim();
+
+    const raw = [polite, polite2, ask, shorty || '', hasHelp ? '지금 바로 와주세요' : ''];
+    return uniq(raw).slice(0,5).map(applyPunct);
+  }
+
+  function imeUpdate(){
+    const emojiStr = composer.emojis.join(' ');
+    const punctStr = composer.punct || '';
+    const line1 = emojiStr ? `${emojiStr}${punctStr}` : '-';
+    const line2 = composer.final ? `문장: ${composer.final}` : '';
+    outputTextEl.innerHTML =
+      `<div style="font-size:18px;font-weight:900">${escapeHtml(line1)}</div>` +
+      (line2 ? `<div style="margin-top:4px;font-size:14px;opacity:.85">${escapeHtml(line2)}</div>` : '');
+  }
+
+  // ===== 9-grid UI state machine =====
+  const Opt = {
+    cat:   (idx) => ({ kind:'cat', idx, label: EMOJI_CATS[idx].label }),
+    group: (idx) => ({ kind:'group', idx, label: EMOJI_CATS[KB.cat].groups[idx].label }),
+    emoji: (ch)  => ({ kind:'emoji', value: ch, label: ch }),
+    act:   (key, label) => ({ kind:'act', key, label }),
+    sugg:  (text, n) => ({ kind:'sugg', value:text, label:`${n}) ${text}` }),
+    punct: (p) => ({ kind:'punct', value:p, label:(p===''?'없음':p) }),
+  };
+
+  const KB = { mode:'ROOT', cat:0, group:0, sugg:[] };
+
+  const optByIdx = new Array(9).fill(null);
+  function setTileLabel(tileIdx, main, sub=''){
+    const t = tiles[tileIdx];
+    const m = escapeHtml(main ?? '');
+    const s = sub ? `<div class="sub">${escapeHtml(sub)}</div>` : '';
+    t.innerHTML = `${m}${s}`;
+  }
+  function clearTile(tileIdx){
+    if (tileIdx === 4) return; // keep camera tile intact
+    tiles[tileIdx].innerHTML = '';
+  }
+  function setOptions(map){
+    for (let i=0;i<9;i++) optByIdx[i] = map[i] ?? null;
+    // render labels for non-center tiles
+    for (let i=0;i<9;i++){
+      if (i === 4) continue;
+      const o = optByIdx[i];
+      if (!o){ clearTile(i); continue; }
+      if (o.kind === 'sugg'){
+        const body = (o.value.length > 16) ? (o.value.slice(0,16)+'…') : o.value;
+        setTileLabel(i, `${o.label.slice(0,2)} ${body}`, '선택');
+      } else if (o.kind === 'emoji'){
+        setTileLabel(i, o.label, '추가');
+      } else {
+        setTileLabel(i, o.label, '');
+      }
+    }
+  }
+
+  function kbSetMode(mode){
+    KB.mode = mode;
+    kbRender();
+    imeUpdate();
+  }
+
+  function kbBackOne(){
+    if (KB.mode === 'PICK'){ KB.mode = 'GROUP'; kbRender(); showToast('그룹'); return; }
+    if (KB.mode === 'GROUP'){ KB.mode = 'ROOT'; kbRender(); showToast('메뉴'); return; }
+    if (KB.mode === 'PUNCT' || KB.mode === 'SUGGEST'){ KB.mode = 'ROOT'; kbRender(); showToast('메뉴'); return; }
+  }
+
+  function kbRender(){
+    outputHintEl.textContent = (KB.mode === 'ROOT')
+      ? '응시: 선택 · 더블 블링크: 뒤로(없음)'
+      : '응시: 선택 · 더블 블링크: 뒤로';
+
+    if (KB.mode === 'ROOT'){
+      setOptions({
+        0: Opt.cat(0), 1: Opt.cat(1), 2: Opt.cat(2),
+        3: Opt.act('PUNCT','기호'),
+        5: Opt.act('SUGGEST','후보'),
+        6: Opt.act('DEL','삭제'),
+        7: Opt.act('CLEAR','전체 지우기'),
+        8: Opt.act('SOS','SOS'),
+      });
+      return;
+    }
+
+    if (KB.mode === 'GROUP'){
+      const gs = EMOJI_CATS[KB.cat].groups;
+      setOptions({
+        0: { kind:'group', idx:0, label: gs[0].label },
+        1: { kind:'group', idx:1, label: gs[1].label },
+        2: { kind:'group', idx:2, label: gs[2].label },
+        3: { kind:'group', idx:3, label: gs[3].label },
+        5: Opt.act('MENU','메뉴'),
+        6: Opt.act('DEL','삭제'),
+        7: Opt.act('SUGGEST','후보'),
+        8: Opt.act('SOS','SOS'),
+      });
+      // hint on some tiles
+      setTileLabel(5, '메뉴', '뒤로');
+      return;
+    }
+
+    if (KB.mode === 'PICK'){
+      const items = EMOJI_CATS[KB.cat].groups[KB.group].items.slice();
+      // put up to 5 emojis in 0,1,2,3,5
+      const pos = [0,1,2,3,5];
+      const map = {
+        6: Opt.act('DEL','삭제'),
+        7: Opt.act('SUGGEST','후보'),
+        8: Opt.act('MENU','메뉴'),
+      };
+      for (let k=0;k<pos.length;k++){
+        if (items[k]) map[pos[k]] = Opt.emoji(items[k]);
+      }
+      setOptions(map);
+      return;
+    }
+
+    if (KB.mode === 'PUNCT'){
+      setOptions({
+        0: Opt.punct('.'),
+        1: Opt.punct('?'),
+        2: Opt.punct('!'),
+        3: Opt.punct(''),
+        5: Opt.act('MENU','메뉴'),
+        6: Opt.act('DEL','삭제'),
+        7: Opt.act('SUGGEST','후보'),
+        8: Opt.act('SOS','SOS'),
+      });
+      return;
+    }
+
+    if (KB.mode === 'SUGGEST'){
+      const sugg = KB.sugg || [];
+      const pos = [0,1,2,3,5];
+      const map = {
+        6: Opt.act('MENU','메뉴'),
+        7: Opt.act('DEL','삭제'),
+        8: Opt.act('SOS','SOS'),
+      };
+      for (let k=0;k<pos.length;k++){
+        if (sugg[k]) map[pos[k]] = Opt.sugg(sugg[k], k+1);
+      }
+      setOptions(map);
+      return;
+    }
+  }
+
+  function kbHandleSelect(idx){
+    if (idx === 4) return; // center rest
+    const opt = optByIdx[idx];
+    if (!opt) return;
+
+    if (opt.kind === 'cat'){
+      KB.cat = opt.idx;
+      KB.mode = 'GROUP';
+      kbRender();
+      showToast(EMOJI_CATS[KB.cat].label);
+      return;
+    }
+    if (opt.kind === 'group'){
+      KB.group = opt.idx;
+      KB.mode = 'PICK';
+      kbRender();
+      showToast('이모지');
+      return;
+    }
+    if (opt.kind === 'emoji'){
+      composer.emojis.push(opt.value);
+      composer.final = '';
+      showToast('추가');
+      imeUpdate();
+      return;
+    }
+    if (opt.kind === 'punct'){
+      composer.punct = opt.value;
+      composer.final = '';
+      showToast('기호 설정');
+      KB.mode = 'ROOT';
+      kbRender();
+      imeUpdate();
+      return;
+    }
+    if (opt.kind === 'sugg'){
+      composer.final = opt.value;
+      showToast('선택');
+      KB.mode = 'ROOT';
+      kbRender();
+      imeUpdate();
+      try { navigator.clipboard?.writeText(composer.final); } catch(e){}
+      return;
+    }
+    if (opt.kind === 'act'){
+      if (opt.key === 'MENU'){ KB.mode = 'ROOT'; kbRender(); showToast('메뉴'); return; }
+      if (opt.key === 'PUNCT'){ KB.mode = 'PUNCT'; kbRender(); showToast('기호'); return; }
+      if (opt.key === 'SUGGEST'){
+        KB.sugg = inferCandidates();
+        KB.mode = 'SUGGEST';
+        kbRender();
+        showToast('후보');
+        return;
+      }
+      if (opt.key === 'DEL'){
+        if (composer.emojis.length){
+          composer.emojis.pop();
+          composer.final = '';
+          showToast('삭제');
+          imeUpdate();
+        } else if (composer.punct){
+          composer.punct = '';
+          composer.final = '';
+          showToast('기호 삭제');
+          imeUpdate();
+        }
+        return;
+      }
+      if (opt.key === 'CLEAR'){
+        composer.emojis = [];
+        composer.punct = '';
+        composer.final = '';
+        KB.sugg = [];
+        showToast('전체 지움');
+        kbRender();
+        imeUpdate();
+        return;
+      }
+      if (opt.key === 'SOS'){
+        composer.emojis.push('🆘');
+        composer.final = applyPunct('도와주세요');
+        showToast('SOS');
+        kbSetMode('ROOT');
+        imeUpdate();
+        return;
+      }
+    }
+  }
+
+  // init
+  kbSetMode('ROOT');
+  imeUpdate();
+
+  // ===== MediaPipe setup =====
+  const faceMesh = new FaceMesh({ locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}` });
+  faceMesh.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.5,
+    minTrackingConfidence: 0.5,
+  });
+
+  faceMesh.onResults((res) => {
+    const rect = overlay.getBoundingClientRect();
+    if (overlay.width !== Math.round(rect.width) || overlay.height !== Math.round(rect.height)){
+      overlay.width = Math.round(rect.width);
+      overlay.height = Math.round(rect.height);
+    }
+    octx.clearRect(0,0,overlay.width, overlay.height);
+
+    if (!res.multiFaceLandmarks || res.multiFaceLandmarks.length === 0){
+      hasFace = false;
+      latestFeatures = null;
+      rawFeatures = null;
+      irisOk = false;
+      return;
+    }
+
+    hasFace = true;
+    const lm = res.multiFaceLandmarks[0];
+
+    // mirror landmarks to match mirrored video
+    const mirrored = lm.map(p => ({ x: 1 - p.x, y: p.y, z: p.z }));
+    rawFeatures = extractFeatures(mirrored);          // raw — used for calibration samples
+    latestFeatures = smoothFeatures(rawFeatures);     // EMA-smoothed — used for prediction
+
+    const openL = latestFeatures[4];
+    const openR = latestFeatures[5];
+    openAvg = (openL + openR) / 2;
+    openInfo.textContent = `Open: ${openAvg.toFixed(3)}`;
+
+    irisLPx = irisRadiusPx(mirrored, L_IRIS, overlay.width, overlay.height);
+    irisRPx = irisRadiusPx(mirrored, R_IRIS, overlay.width, overlay.height);
+    irisInfo.textContent = `L/R px: ${irisLPx.toFixed(1)} / ${irisRPx.toFixed(1)}`;
+    irisOk = (irisLPx >= 3.0 && irisRPx >= 3.0);
+  });
+
+  let cam = null;
+
+  async function startCamera(){
+    setStatus('웹캠 시작…');
+    cam = new Camera(videoEl, {
+      onFrame: async () => { await faceMesh.send({ image: videoEl }); },
+      width: 640,
+      height: 480,
+    });
+    await cam.start();
+    setStatus('얼굴을 정면으로 보세요');
+  }
+
+  function loadModel(){
+    const saved = localStorage.getItem(LS_MODEL);
+    if (!saved) return;
+    try{
+      const j = JSON.parse(saved);
+      if (Array.isArray(j.rbfCenters) && j.rbfCenters.length === CALIB_N){
+        rbfCenters  = j.rbfCenters;
+        rbfWeightsX = j.rbfWeightsX;
+        rbfWeightsY = j.rbfWeightsY;
+        rbfSigma    = typeof j.rbfSigma === 'number' ? j.rbfSigma : 0.15;
+      }
+      if (typeof j.dwellMs === 'number') dwellMs = j.dwellMs;
+      dwellLabel.textContent = String(dwellMs);
+    }catch{}
+  }
+  function persistModel(){
+    if (!rbfCenters) return;
+    localStorage.setItem(LS_MODEL, JSON.stringify({ rbfCenters, rbfWeightsX, rbfWeightsY, rbfSigma, dwellMs }));
+  }
+
+  // ===== Main loop =====
+  function tick(){
+    const now = performance.now();
+
+    setDot(dotFace, hasFace);
+    setDot(dotIris, irisOk);
+
+    if (mode === 'WAIT_DBLBLINK'){
+      if (hasFace && latestFeatures){
+        const dbl = detectDoubleBlink(now, openAvg);
+        if (dbl){
+          const targets = getCalibTargets();
+          calib.style.display = 'block';
+          showCalibDotAt(targets[0]);
+          startCalibrationWithCountdown();
+          inputLockUntil = now + DBL_BLINK_LOCK_MS;
+        }
+      }
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    if (mode === 'CALIB'){
+      const centroid = runCalibrationTick(now);
+      if (centroid){
+        tmpCentroids.push(centroid);
+        calibIdx++;
+        if (calibIdx >= CALIB_N){
+          finishCalibration();
+        } else {
+          const targets = getCalibTargets();
+          showCalibDotAt(targets[calibIdx]);
+          const pg = document.getElementById('calibProgress');
+          if (pg) pg.textContent = `${calibIdx+1} / ${CALIB_N}`;
+        }
+      }
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    if (mode === 'RUN'){
+      if (!rbfCenters || !rbfWeightsX || !hasFace || !latestFeatures){
+        resetInertia();
+        resetDwell();
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      // 선형 회귀로 화면 (x,y) 예측 → 가장 가까운 타일 선택
+      const [predX, predY] = predictGazeXY(latestFeatures);
+      const tileCenters2d = tiles.map(t => {
+        const r = t.getBoundingClientRect();
+        return [r.left + r.width/2, r.top + r.height/2];
+      });
+      const idx = inertiaPickIdx(tileCenters2d, [predX, predY], now);
+
+      const dblRun = detectDoubleBlink(now, openAvg);
+      if (dblRun && now >= cooldownUntil){
+        kbBackOne();
+        inputLockUntil = now + DBL_BLINK_LOCK_MS;
+        cooldownUntil = now + 900;
+        resetDwell();
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      setHot(idx);
+
+      const r = tiles[idx].getBoundingClientRect();
+      const cx = r.left + r.width/2;
+      const cy = r.top + r.height/2;
+
+      // center rest zone (idx=4)
+      if (idx === 4){
+        resetDwell();
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      if (now < cooldownUntil){
+        ringShow();
+        setRingAt(cx, cy);
+        setRingProgress(0);
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      ringShow();
+      setRingAt(cx, cy);
+
+      if (idx !== hotIdx){
+        hotIdx = idx;
+        hotSince = now;
+        dwellArmed = false;
+        setRingProgress(0);
+      } else {
+        if (!dwellArmed){
+          if (now - hotSince >= stableHoldMs){
+            dwellArmed = true;
+            dwellStart = now;
+          }
+          setRingProgress(0);
+        } else {
+          const p = (now - dwellStart) / dwellMs;
+          setRingProgress(p);
+          if (p >= 1){
+            cooldownUntil = now + ACTION_COOLDOWN_MS;
+            resetDwell();
+            if (now >= inputLockUntil){
+              kbHandleSelect(idx);
+            }
+          }
+        }
+      }
+
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  // ===== Controls =====
+  window.addEventListener('keydown', (e) => {
+    if (e.key === '['){
+      dwellMs = Math.max(350, dwellMs - 100);
+      dwellLabel.textContent = String(dwellMs);
+      persistModel();
+      showToast(`Dwell ${dwellMs}ms`);
+    }
+    if (e.key === ']'){
+      dwellMs = Math.min(2200, dwellMs + 100);
+      dwellLabel.textContent = String(dwellMs);
+      persistModel();
+      showToast(`Dwell ${dwellMs}ms`);
+    }
+    if (e.key.toLowerCase() === 'c'){
+      if (mode !== 'INIT'){
+        tmpCentroids = [];
+        calib.style.display = 'block';
+        calibText.innerHTML = `더블 블링크하면 2초 후 25점 캘리브레이션을 시작합니다.`;
+        mode = 'WAIT_DBLBLINK';
+        resetBlinkState();
+        resetDwell();
+        showToast('더블 블링크 대기');
+      }
+    }
+    if (e.key.toLowerCase() === 'd'){
+      // minimal: no console spam toggle (kept for parity)
+      showToast('디버그 로그 없음');
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    if (mode === 'CALIB'){
+      const targets = getCalibTargets();
+      showCalibDotAt(targets[Math.min(calibIdx, CALIB_N-1)]);
+    }
+  });
+
+  // ===== Boot =====
+  loadModel();
+
+  startBtn.addEventListener('click', async () => {
+    startBtn.disabled = true;
+    startBtn.textContent = '카메라 시작 중…';
+    try{
+      await startCamera();
+      startOverlay.style.display = 'none';
+
+      if (rbfCenters && rbfWeightsX){
+        mode = 'RUN';
+        resetBlinkState();
+        kbSetMode('ROOT');
+        setStatus('저장된 캘리브레이션 로드됨 (응시로 선택)');
+        showToast('모델 로드됨');
+      } else {
+        mode = 'WAIT_DBLBLINK';
+        calib.style.display = 'block';
+        calibText.innerHTML = `준비 완료. <b>더블 블링크</b>하면 <b>2초 후</b> 25점 캘리브레이션이 시작됩니다.`;
+        setStatus('더블 블링크 대기');
+      }
+
+      requestAnimationFrame(tick);
+    }catch(err){
+      console.error(err);
+      setStatus('실패: ' + (err?.message || String(err)));
+      alert('웹캠 시작 실패: ' + (err?.message || String(err)) + '\n\n1) localhost로 열었는지\n2) 카메라 권한 허용했는지\n3) 다른 앱이 카메라 점유 중인지 확인');
+      startBtn.disabled = false;
+      startBtn.textContent = '시작';
+    }
+  });
+
+})();
+</script>
+</body>
+</html>

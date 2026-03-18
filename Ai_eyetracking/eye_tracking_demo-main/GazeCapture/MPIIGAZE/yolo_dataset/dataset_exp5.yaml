@@ -1,0 +1,9 @@
+# MPIIGaze Eye Detection (exp5) - full dataset
+path: C:/Users/SSAFY/Desktop/GAZE-CAPTURE/GazeCapture/MPIIGAZE/yolo_dataset
+train: train.txt
+val:   val.txt
+
+nc: 2
+names:
+  0: right_eye
+  1: left_eye

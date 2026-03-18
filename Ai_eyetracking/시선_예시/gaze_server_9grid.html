@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EYESPEAK - 시선 선택 (2×3)</title>
+  <style>
+    :root { --bg:#0a0a1a; --fg:#eee; --panel:#111; --line:#222; --hot:#3b82f6; --sel:#22c55e; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--fg);
+      height: 100vh; overflow: hidden; user-select: none;
+      display: flex; flex-direction: column;
+    }
+
+    #topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 12px; background: #111; font-size: 13px; flex-shrink: 0;
+      z-index: 10;
+    }
+    #topbar button {
+      padding: 5px 14px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 12px; font-weight: 600;
+    }
+    #btnCal { background: #2563eb; color: #fff; }
+    #btnCal:disabled { opacity: .4; }
+    #btnReset { background: #333; color: #ccc; margin-left: 6px; }
+    #debug { font-family: monospace; font-size: 12px; color: #888; }
+
+    #grid {
+      flex: 1; display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(2, 1fr);
+      gap: 6px; padding: 4px;
+    }
+    .cell {
+      position: relative;
+      border: 3px solid var(--line); border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: min(10vw, 72px); font-weight: 700; color: #555;
+      background: var(--panel);
+      transition: background .12s, border-color .12s, color .12s;
+      overflow: hidden;
+    }
+    .cell.hot { background: #1e3a5f; border-color: var(--hot); color: #fff; }
+    .cell.selected { background: #16a34a; border-color: var(--sel); color: #fff; }
+    .cell .progress {
+      position: absolute; bottom: 0; left: 0; height: 5px;
+      background: #f59e0b; border-radius: 0 0 12px 12px;
+      transition: width .08s linear; width: 0%;
+    }
+
+    /* 캘리브레이션 오버레이 */
+    #calib {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.92); display: none;
+    }
+    #calib.show { display: block; }
+    #calibDot {
+      position: fixed; width: 24px; height: 24px; border-radius: 50%;
+      background: #ff6b00; box-shadow: 0 0 30px #ff6b00, 0 0 60px rgba(255,107,0,0.3);
+      transform: translate(-50%, -50%); pointer-events: none;
+    }
+    #calibDot::before {
+      content: ''; position: absolute; top: 50%; left: 50%;
+      width: 6px; height: 6px; background: #fff; border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+    #calibText {
+      position: fixed; left: 50%; top: 5%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8); border: 1px solid #333;
+      padding: 10px 18px; border-radius: 12px;
+      font-size: 15px; text-align: center; color: #eee;
+      z-index: 201;
+    }
+
+    /* 토스트 */
+    #toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 10px 20px; background: var(--hot); color: #fff;
+      border-radius: 8px; font-weight: 600; font-size: 15px;
+      display: none; z-index: 150;
+    }
+    #toast.show { display: block; animation: fade 2s ease-out; }
+    @keyframes fade { 0%,70%{opacity:1} 100%{opacity:0} }
+
+    /* 웹캠 */
+    #camWrap {
+      position: fixed; bottom: 6px; right: 6px; width: 120px;
+      border-radius: 8px; overflow: hidden; border: 1px solid #333; z-index: 50;
+    }
+    #cam { width: 100%; display: block; transform: scaleX(-1); }
+    #status {
+      position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+      font-size: 14px; color: #f59e0b; z-index: 50;
+    }
+  </style>
+  <script src="calibration_6_to_9.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="topbar">
+    <div>
+      <button id="btnCal">캘리브레이션</button>
+      <button id="btnReset">초기화</button>
+    </div>
+    <div id="debug">대기 중…</div>
+  </div>
+
+  <div id="grid">
+    <div class="cell" data-i="0">1<div class="progress"></div></div>
+    <div class="cell" data-i="1">2<div class="progress"></div></div>
+    <div class="cell" data-i="2">3<div class="progress"></div></div>
+    <div class="cell" data-i="3">4<div class="progress"></div></div>
+    <div class="cell" data-i="4">5<div class="progress"></div></div>
+    <div class="cell" data-i="5">6<div class="progress"></div></div>
+  </div>
+
+  <div id="calib">
+    <div id="calibDot"></div>
+    <div id="calibText"></div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="camWrap"><video id="cam" autoplay playsinline muted></video></div>
+  <div id="status"></div>
+
+<script>
+(function() {
+  // ===== DOM =====
+  const debugEl   = document.getElementById('debug');
+  const statusEl  = document.getElementById('status');
+  const calibEl   = document.getElementById('calib');
+  const calibDot  = document.getElementById('calibDot');
+  const calibText = document.getElementById('calibText');
+  const videoEl   = document.getElementById('cam');
+  const cells     = Array.from(document.querySelectorAll('#grid .cell'));
+  const toastEl   = document.getElementById('toast');
+
+  // ===== 설정 =====
+  const CALIB_N        = 9;       // 9포인트 캘리브레이션
+  const CALIB_COLLECT_MS = 2000;  // 점당 2초 수집
+  const DWELL_MS       = 800;     // dwell 선택 시간
+  const INERTIA_HOLD_MS = 260;    // 관성 전환 홀드
+
+  // ===== 랜드마크 인덱스 =====
+  const L_IRIS = [468,469,470,471,472];
+  const R_IRIS = [473,474,475,476,477];
+  const L_CA = 33, L_CB = 133, L_TOP = 159, L_BOT = 145;
+  const R_CA = 362, R_CB = 263, R_TOP = 386, R_BOT = 374;
+
+  // ===== 유틸 =====
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove('show'), 2000);
+  }
+
+  // ===== 특징 추출 (레퍼런스와 동일) =====
+  function meanPoint(lm, idxs) {
+    let x = 0, y = 0;
+    for (const i of idxs) { x += lm[i].x; y += lm[i].y; }
+    return { x: x / idxs.length, y: y / idxs.length };
+  }
+  function normInEyeBox(lm, irisIdxs, cA, cB, topI, botI) {
+    const iris = meanPoint(lm, irisIdxs);
+    const a = lm[cA], b = lm[cB], t = lm[topI], bo = lm[botI];
+    const xMin = Math.min(a.x, b.x), xMax = Math.max(a.x, b.x);
+    const yMin = Math.min(t.y, bo.y), yMax = Math.max(t.y, bo.y);
+    const w = Math.max(1e-6, xMax - xMin), h = Math.max(1e-6, yMax - yMin);
+    const nx = (iris.x - xMin) / w, ny = (iris.y - yMin) / h;
+    return { nx: Math.max(-0.5, Math.min(1.5, nx)), ny: Math.max(-0.5, Math.min(1.5, ny)) };
+  }
+  function getGazeNorm(lm) {
+    const L = normInEyeBox(lm, L_IRIS, L_CA, L_CB, L_TOP, L_BOT);
+    const R = normInEyeBox(lm, R_IRIS, R_CA, R_CB, R_TOP, R_BOT);
+    return { xNorm: (L.nx + R.nx) / 2, yNorm: (L.ny + R.ny) / 2 };
+  }
+
+  // ===== 상태 =====
+  let coef = null;  // 캘리 다항식 계수
+  let inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
+  let hotIdx = -1, hotSince = 0, dwellArmed = false, dwellStart = 0;
+  let calibIdx = 0, calibData = [], lastCalibCollect = 0;
+  let cam = null;
+
+  // ===== 셀 중심 좌표 =====
+  function getTileCenters() {
+    return cells.map(c => {
+      const r = c.getBoundingClientRect();
+      return [r.left + r.width / 2, r.top + r.height / 2];
+    });
+  }
+
+  // ===== UI =====
+  function setHot(idx) {
+    cells.forEach((c, i) => {
+      c.classList.toggle('hot', i === idx);
+      if (i !== idx) c.querySelector('.progress').style.width = '0%';
+    });
+  }
+  function flashSelected(idx) {
+    cells[idx].classList.add('selected');
+    setTimeout(() => cells[idx].classList.remove('selected'), 800);
+  }
+
+  // ===== 캘리브레이션 =====
+  function getCalibPx() {
+    return CalibrationRegion.getCalibPointsPx(CALIB_N, window.innerWidth, window.innerHeight)[calibIdx];
+  }
+
+  function startCalibration() {
+    calibIdx = 0;
+    calibData = [];
+    coef = null;
+    inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
+    hotIdx = -1;
+    cells.forEach(c => { c.classList.remove('hot', 'selected'); c.querySelector('.progress').style.width = '0%'; });
+
+    calibEl.classList.add('show');
+    calibText.textContent = '포인트 1 / ' + CALIB_N + ' — 주황색 점을 응시하세요 (점당 2초)';
+    const pt = getCalibPx();
+    calibDot.style.left = pt.x + 'px';
+    calibDot.style.top = pt.y + 'px';
+    lastCalibCollect = Date.now();
+    document.getElementById('btnCal').disabled = true;
+    statusEl.textContent = '캘리브레이션 중…';
+  }
+
+  function collectCalibSample(xNorm, yNorm) {
+    const pt = getCalibPx();
+    calibData.push({ screenX: pt.x, screenY: pt.y, xNorm, yNorm });
+    calibIdx++;
+
+    if (calibIdx >= CALIB_N) {
+      // 다항식 피팅
+      coef = CalibrationRegion.fitPolynomialCalibration(calibData);
+      calibEl.classList.remove('show');
+      document.getElementById('btnCal').disabled = false;
+      statusEl.textContent = '캘리브레이션 완료!';
+      showToast('캘리브레이션 완료');
+      setTimeout(() => statusEl.textContent = '', 2000);
+
+      // localStorage에 저장
+      try { localStorage.setItem('gaze_poly_6grid', JSON.stringify({ coef, calibData })); } catch(e) {}
+      return;
+    }
+
+    calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N + ' — 다음 점을 응시하세요';
+    const next = CalibrationRegion.getCalibPointsPx(CALIB_N, window.innerWidth, window.innerHeight)[calibIdx];
+    calibDot.style.left = next.x + 'px';
+    calibDot.style.top = next.y + 'px';
+    lastCalibCollect = Date.now();
+  }
+
+  // ===== MediaPipe 결과 콜백 =====
+  function onResults(results) {
+    const hasFace = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
+
+    if (!hasFace) {
+      debugEl.textContent = '얼굴 없음 — 카메라를 정면으로 봐주세요';
+      if (calibEl.classList.contains('show')) {
+        calibText.textContent = '⚠ 얼굴을 인식할 수 없습니다 — 카메라를 봐주세요';
+      }
+      return;
+    }
+
+    // ★ 핵심: x축 미러링 (1 - p.x) — 레퍼런스와 동일
+    const lm = results.multiFaceLandmarks[0].map(p => ({ x: 1 - p.x, y: p.y }));
+
+    // 캘리브레이션 모드
+    if (calibEl.classList.contains('show')) {
+      const now = Date.now();
+      const remaining = Math.max(0, CALIB_COLLECT_MS - (now - lastCalibCollect));
+      calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N +
+        ' — 점을 응시하세요 (' + Math.ceil(remaining / 1000) + '초)';
+      debugEl.textContent = '얼굴 OK — 캘리 수집 중';
+      if (now - lastCalibCollect >= CALIB_COLLECT_MS) {
+        const g = getGazeNorm(lm);
+        collectCalibSample(g.xNorm, g.yNorm);
+      }
+      return;
+    }
+
+    // 캘리 없으면 대기
+    if (!coef) {
+      debugEl.textContent = '캘리브레이션 버튼을 눌러주세요';
+      return;
+    }
+
+    // 시선 예측
+    const g = getGazeNorm(lm);
+    const screen = CalibrationRegion.predictScreenPolynomial(
+      g.xNorm, g.yNorm, coef.cx, coef.cy, window.innerWidth, window.innerHeight
+    );
+
+    // 가장 가까운 셀 찾기
+    const centers = getTileCenters();
+    let idx = 0, bestD2 = Infinity;
+    for (let i = 0; i < centers.length; i++) {
+      const dx = screen.x - centers[i][0], dy = screen.y - centers[i][1];
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestD2) { bestD2 = d2; idx = i; }
+    }
+
+    // 관성 적용
+    const result = CalibrationRegion.applyInertia(idx, inertiaState, performance.now(), { holdMs: INERTIA_HOLD_MS });
+    inertiaState = result.state;
+    const stableIdx = result.idx;
+
+    debugEl.textContent = `셀:${stableIdx + 1} gaze:(${Math.round(screen.x)},${Math.round(screen.y)}) nx:${g.xNorm.toFixed(3)} ny:${g.yNorm.toFixed(3)}`;
+    setHot(stableIdx);
+
+    // Dwell 선택
+    const now = performance.now();
+    if (stableIdx !== hotIdx) {
+      hotIdx = stableIdx;
+      hotSince = now;
+      dwellArmed = false;
+    } else {
+      if (!dwellArmed) {
+        if (now - hotSince >= 300) { dwellArmed = true; dwellStart = now; }
+      } else {
+        const elapsed = now - dwellStart;
+        const pct = Math.min(100, (elapsed / DWELL_MS) * 100);
+        cells[stableIdx].querySelector('.progress').style.width = pct + '%';
+        if (elapsed >= DWELL_MS) {
+          flashSelected(stableIdx);
+          showToast((stableIdx + 1) + '번 선택!');
+          dwellArmed = false;
+          hotIdx = -1;
+          cells.forEach(c => c.querySelector('.progress').style.width = '0%');
+        }
+      }
+    }
+  }
+
+  // ===== 버튼 이벤트 =====
+  document.getElementById('btnCal').addEventListener('click', () => {
+    if (!cam || !faceMesh) { showToast('카메라/MediaPipe 로딩 중… 잠시 기다려주세요'); return; }
+    startCalibration();
+  });
+
+  document.getElementById('btnReset').addEventListener('click', () => {
+    coef = null;
+    inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
+    hotIdx = -1;
+    cells.forEach(c => { c.classList.remove('hot', 'selected'); c.querySelector('.progress').style.width = '0%'; });
+    try { localStorage.removeItem('gaze_poly_6grid'); } catch(e) {}
+    showToast('캘리 초기화됨');
+  });
+
+  // ===== 초기화: MediaPipe + 카메라 =====
+  let faceMesh = null;
+
+  // 저장된 캘리 불러오기
+  try {
+    const s = localStorage.getItem('gaze_poly_6grid');
+    if (s) {
+      const d = JSON.parse(s);
+      coef = d.coef;
+      debugEl.textContent = '이전 캘리 불러옴 — 바로 사용 가능';
+    }
+  } catch(e) {}
+
+  async function initMediaPipe() {
+    debugEl.textContent = 'MediaPipe 로딩 중… (처음엔 수 초 걸림)';
+    statusEl.textContent = '초기화 중…';
+    try {
+      faceMesh = new FaceMesh({
+        locateFile: f => 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + f
+      });
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+      });
+      faceMesh.onResults(onResults);
+
+      debugEl.textContent = '카메라 시작 중…';
+      cam = new Camera(videoEl, {
+        onFrame: async () => { await faceMesh.send({ image: videoEl }); },
+        width: 640,
+        height: 480
+      });
+      await cam.start();
+      debugEl.textContent = coef ? '이전 캘리 불러옴 — 바로 사용 가능' : '카메라 준비됨 — 캘리브레이션 버튼을 눌러주세요';
+      statusEl.textContent = '';
+    } catch(e) {
+      debugEl.textContent = '초기화 오류: ' + e.message;
+      statusEl.textContent = '오류 발생 — 페이지를 새로고침하세요';
+      console.error('MediaPipe init error:', e);
+    }
+  }
+
+  // CDN 스크립트가 로드된 후 초기화
+  if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+    initMediaPipe();
+  } else {
+    debugEl.textContent = 'CDN 스크립트 로딩 대기 중…';
+    window.addEventListener('load', () => {
+      if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
+        initMediaPipe();
+      } else {
+        debugEl.textContent = '❌ MediaPipe CDN 로드 실패 — 인터넷 연결을 확인하세요';
+      }
+    });
+  }
+})();
+</script>
+</body>
+</html>
