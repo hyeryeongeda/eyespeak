@@ -35,6 +35,10 @@ export const ROUTE_SEGMENTS = {
   CARE: {
     ROOT: 'care',
     HOME: 'home',
+    CHAT: 'chat',
+    RECORD: 'records',
+    SETTINGS: 'settings',
+    VOICE: 'voice',
   },
 } as const
 
