@@ -13,6 +13,7 @@
 # 환경 변수 파일 경로
 ENV_PROD = --env-file .env.prod
 ENV_DEV = --env-file .env.dev
+ENV_LOCAL = --env-file .env.local
 
 .PHONY: help \
         data-prod-up data-prod-down data-dev-up data-dev-down \
@@ -125,7 +126,7 @@ dev-app-down:
 
 local-up:
 	@echo "Starting Local Environment (All-in-One)..."
-	cd backend && docker compose -f docker-compose.local.yml up -d --build
+	cd backend && docker compose -f docker-compose.local.yml $(ENV_LOCAL) up -d --build
 	cd frontend && docker compose -f docker-compose.local.yml up -d --build
 	@echo "Local started! Backend: http://localhost:8080, Frontend: http://localhost:3000"
 
