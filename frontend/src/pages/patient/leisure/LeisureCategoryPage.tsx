@@ -80,20 +80,6 @@ const noticeStyle: CSSProperties = {
   lineHeight: 1.45,
 }
 
-const responsiveStyle = `
-  @media (max-width: 1080px) {
-    .leisure-category-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(6, minmax(180px, auto));
-    }
-
-    .leisure-category-state {
-      grid-column: auto;
-      grid-row: auto;
-    }
-  }
-`
-
 export default function LeisureCategoryPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -269,8 +255,6 @@ export default function LeisureCategoryPage() {
       statusText={getCategoryStatusText(status)}
       contextLabel="6분할 화면 · refresh mock 지원"
     >
-      <style>{responsiveStyle}</style>
-
       <section style={pagePanelStyle}>
         <LeisureSectionHeader
           title={`${category.label} 영상`}
