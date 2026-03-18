@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import HomePage from '../../pages/HomePage'
 import CareHomePage from '../../pages/care/CareHomePage'
+import ChatPage from '../../pages/care/ChatPage'
+import VoicePage from '../../pages/care/VoicePage'
 import CareLoginPage from '../../pages/auth/CareLoginPage'
 import CareSignupPage from '../../pages/auth/CareSignupPage'
 import LoginPage from '../../pages/auth/LoginPage'
@@ -154,6 +156,14 @@ const careRoutes = [
   {
     path: ROUTE_SEGMENTS.CARE.HOME,
     element: <CareHomePage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.CHAT,
+    element: <ChatPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.VOICE,
+    element: <VoicePage />,
   },
 ]
 
