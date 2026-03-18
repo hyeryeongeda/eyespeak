@@ -1,0 +1,17 @@
+# TTS 서버 (tts_server.py)
+TTS
+fastapi
+uvicorn[standard]
+torch
+torchaudio
+transformers
+numpy
+pydantic
+
+# 데이터셋 빌드 (build_dataset.py)
+faster-whisper
+yt-dlp
+
+# 테스트 (test_tts_server.py)
+pytest
+httpx
