@@ -1,7 +1,7 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../hooks/useAuth'
+import { useAuth } from '../../../features/auth/hooks/useAuth'
 import PatientCallOverlay from './PatientCallOverlay'
 import {
   getPatientCallCooldownSeconds,

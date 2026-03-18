@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { BodyMindUiStatus } from '../../../../types/communication'
+import type { BodyMindUiStatus } from '../../../../features/patient/body-mind/types/bodyMind'
 
 const statusTextMap: Record<BodyMindUiStatus, string> = {
   idle: '대기',

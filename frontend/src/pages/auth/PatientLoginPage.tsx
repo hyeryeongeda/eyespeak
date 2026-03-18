@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getHomePathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../hooks/useAuth'
+import { useAuth } from '../../features/auth/hooks/useAuth'
 import { setStoredEntryMode, setStoredRole } from '../../services/authService'
 import {
   card,

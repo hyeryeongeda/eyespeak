@@ -2,22 +2,26 @@ import type { CSSProperties, ReactNode } from 'react'
 import { leisureInteractiveCss } from './leisureTheme'
 
 const pageStyle: CSSProperties = {
+  height: '100dvh',
   minHeight: '100dvh',
   width: '100%',
   padding: 0,
   background:
     'radial-gradient(circle at top left, rgba(255, 255, 255, 0.92) 0%, rgba(240, 246, 251, 0.9) 34%, #eaf2f7 100%)',
   boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
 }
 
 const shellStyle: CSSProperties = {
-  minHeight: '100dvh',
+  flex: 1,
+  minHeight: 0,
   width: '100%',
-  padding: '12px',
+  padding: 0,
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
+  gap: 0,
 }
 
 const headerStyle: CSSProperties = {
@@ -91,6 +95,7 @@ const contentStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'flex',
+  flexDirection: 'column',
 }
 
 const srOnlyStyle: CSSProperties = {

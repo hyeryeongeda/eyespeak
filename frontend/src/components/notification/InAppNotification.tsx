@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { useNotificationStore } from '../../stores/notificationStore';
-import type { FcmType } from '../../stores/notificationStore';
+import { useNotificationStore } from '../../shared/stores/notificationStore';
+import type { FcmType } from '../../shared/stores/notificationStore';
 
 /** VOICE_READY만 자동 사라짐 (확인 동작이 필요 없음) */
 const AUTO_DISMISS_MS = 4000;

@@ -1,3 +1,5 @@
+/** Patient 공통 소통 관련 타입 (body-mind / talk 등에서 공유) */
+
 export type BodyMindUiStatus =
   | 'idle'
   | 'visible'

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import type { BodyMindUiStatus } from '../../../types/communication'
+import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
 import {
   bodyMindCategoryOptionPages,
   getBodyMindCategoryPath,
