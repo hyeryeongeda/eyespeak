@@ -1,13 +1,13 @@
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../features/auth/hooks/useAuth'
+import { CARE_ROUTE_PATHS, ROUTE_PATHS } from '../../app/router/routePaths'
+import { useAuth } from '../../hooks/useAuth'
 
 const MENU_ITEMS = [
   {
     icon: '💬',
     label: '실시간 채팅',
     sub: '환자와의 대화',
-    path: null,
+    path: CARE_ROUTE_PATHS.CARE_CHAT,
   },
   {
     icon: '📊',
@@ -25,9 +25,9 @@ const MENU_ITEMS = [
     icon: '🎙️',
     label: '음성 관리',
     sub: '맞춤 TTS 설정',
-    path: null,
+    path: CARE_ROUTE_PATHS.CARE_VOICE,
   },
-] as const
+]
 
 const TOP_PHRASES = [
   { rank: 1, text: '불편해요', count: '8회' },
@@ -85,7 +85,9 @@ export default function CareHomePage() {
             <button
               key={item.label}
               type="button"
-              className="bg-white border border-[#E8EDF2] rounded-[12px] p-3 text-left min-h-[44px] active:border-[#3D405B] transition-colors"
+              onClick={() => item.path && navigate(item.path)}
+              disabled={!item.path}
+              className="bg-white border border-[#E8EDF2] rounded-[12px] p-3 text-left min-h-[44px] active:border-[#3D405B] transition-colors disabled:opacity-40"
             >
               <p className="text-[20px] mb-1">{item.icon}</p>
               <p className="text-[13px] font-bold text-[#1A202C]">{item.label}</p>
@@ -126,15 +128,19 @@ export default function CareHomePage() {
           <span className="text-[18px]">🏠</span>
           <span className="text-[10px] font-semibold mt-0.5">홈</span>
         </div>
-        <button type="button" className="flex-1 flex flex-col items-center text-[#A0AEC0] min-h-[44px]">
+        <button
+          type="button"
+          onClick={() => navigate(CARE_ROUTE_PATHS.CARE_CHAT)}
+          className="flex-1 flex flex-col items-center text-[#A0AEC0] min-h-[44px]"
+        >
           <span className="text-[18px]">💬</span>
           <span className="text-[10px] font-semibold mt-0.5">채팅</span>
         </button>
-        <button type="button" className="flex-1 flex flex-col items-center text-[#A0AEC0] min-h-[44px]">
+        <button type="button" disabled className="flex-1 flex flex-col items-center text-[#A0AEC0] min-h-[44px] disabled:opacity-40">
           <span className="text-[18px]">📊</span>
           <span className="text-[10px] font-semibold mt-0.5">기록</span>
         </button>
-        <button type="button" className="flex-1 flex flex-col items-center text-[#A0AEC0] min-h-[44px]">
+        <button type="button" disabled className="flex-1 flex flex-col items-center text-[#A0AEC0] min-h-[44px] disabled:opacity-40">
           <span className="text-[18px]">⚙️</span>
           <span className="text-[10px] font-semibold mt-0.5">설정</span>
         </button>
