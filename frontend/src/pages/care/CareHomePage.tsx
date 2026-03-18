@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../hooks/useAuth'
+import eyespeakLogo from '../../assets/eyespeak_logo.svg'
 
 const MENU_ITEMS = [
   {
@@ -52,7 +53,7 @@ export default function CareHomePage() {
     <div className="flex flex-col h-screen overflow-hidden bg-[#FEFEFE]">
       {/* 상단 헤더 */}
       <header className="flex items-center px-[18px] py-3 border-b border-[#E2E8F0] bg-[#FEFEFE] sticky top-0 z-10">
-        <span className="text-[17px] font-bold text-[#3D405B] tracking-tight">eyespeak</span>
+        <img src={eyespeakLogo} alt="eyespeak" className="h-[22px]" />
         <button
           type="button"
           onClick={handleLogout}
