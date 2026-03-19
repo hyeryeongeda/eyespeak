@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import usePatientGlobalMenuActionTarget from '../../../hooks/usePatientGlobalMenuActionTarget'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 
 interface PatientCallOverlayProps {
@@ -135,6 +136,12 @@ export default function PatientCallOverlay({
   cooldownSeconds,
   onClose,
 }: PatientCallOverlayProps) {
+  usePatientGlobalMenuActionTarget({
+    enabled: status === 'cooldown' && typeof onClose === 'function',
+    priority: 200,
+    onPositiveAction: onClose,
+  })
+
   const copy = getOverlayCopy(status, cooldownSeconds, message)
 
   return (

@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import usePatientGlobalMenuActionTarget from '../../../hooks/usePatientGlobalMenuActionTarget'
 import type { PatientChatMessage, PatientChatRouteContext } from '../../../types/chat'
 
 interface IncomingInterruptOverlayProps {
@@ -117,6 +118,13 @@ export default function IncomingInterruptOverlay({
   onReplyNow,
   onLater,
 }: IncomingInterruptOverlayProps) {
+  usePatientGlobalMenuActionTarget({
+    enabled: visible && Boolean(message),
+    priority: 300,
+    onPositiveAction: onReplyNow,
+    onNegativeAction: onLater,
+  })
+
   if (!visible || !message) {
     return null
   }
