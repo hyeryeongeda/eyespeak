@@ -19,7 +19,7 @@ import java.util.List;
  */
 @Tag(name = "[예시] 테스트", description = "백엔드 참고용 — 실제 API 아님")
 @RestController
-@RequestMapping("/api/v1/test")
+@RequestMapping("/test")
 public class ExampleController {
 
     // ========================
