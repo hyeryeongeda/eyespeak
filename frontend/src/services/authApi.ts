@@ -5,6 +5,8 @@ import type {
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
+  PasswordResetRequestDto,
+  PasswordResetResponseDto,
   RefreshRequestDto,
   WithdrawRequestDto,
 } from '../types/auth'
@@ -28,6 +30,13 @@ export function signUpGuardianApi(request: GuardianSignupRequestDto) {
 
 export function refreshApi(request: RefreshRequestDto) {
   return apiClient.post<AuthResponseDto, RefreshRequestDto>(API_ENDPOINTS.AUTH_REFRESH, request)
+}
+
+export function requestPasswordResetApi(request: PasswordResetRequestDto) {
+  return apiClient.post<PasswordResetResponseDto, PasswordResetRequestDto>(
+    API_ENDPOINTS.AUTH_RESET_PASSWORD,
+    request,
+  )
 }
 
 export function withdrawApi(request: WithdrawRequestDto, accessToken?: string | null) {

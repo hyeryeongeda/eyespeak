@@ -1,6 +1,18 @@
 import axios from 'axios'
 import type { AxiosError } from 'axios'
 import { ApiError, type ApiRequestOptions, type ApiSource, type ApiTransport } from '../types/api'
+import type { AuthResponseDto, AuthSession, RefreshRequestDto } from '../types/auth'
+import { API_ENDPOINTS } from './apiEndpoints'
+import { mapAuthResponseToSession } from './authSessionMapper'
+import {
+  applyActiveAuthSession,
+  getActiveAuthSession,
+} from './authSessionRegistry'
+import {
+  setStoredEntryMode,
+  setStoredRole,
+  storeGuardianSessionExitReason,
+} from './authStorage'
 import { mockApiTransport } from './mockAuthApi'
 
 const AUTH_API_MODE = import.meta.env.VITE_AUTH_API_MODE === 'real' ? 'real' : 'mock'
@@ -14,6 +26,10 @@ const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 8000,
 })
+
+interface ApiRequestInternalOptions<TBody = unknown> extends ApiRequestOptions<TBody> {
+  skipGuardianRefreshRetry?: boolean
+}
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
   if (value && typeof value === 'object' && 'data' in value) {
@@ -80,17 +96,119 @@ const realApiTransport: ApiTransport = {
 }
 
 const activeTransport = AUTH_API_MODE === 'real' ? realApiTransport : mockApiTransport
+let guardianRefreshPromise: Promise<AuthSession | null> | null = null
+
+function callTransport<TResponse, TBody = unknown>(options: ApiRequestInternalOptions<TBody>) {
+  const { skipGuardianRefreshRetry: _skipGuardianRefreshRetry, ...transportOptions } = options
+  return activeTransport.request<TResponse, TBody>(transportOptions)
+}
+
+function getGuardianRetrySession<TBody>(
+  options: ApiRequestInternalOptions<TBody>,
+): AuthSession | null {
+  if (options.skipGuardianRefreshRetry || options.url === API_ENDPOINTS.AUTH_REFRESH) {
+    return null
+  }
+
+  if (!options.accessToken) {
+    return null
+  }
+
+  const session = getActiveAuthSession()
+
+  if (!session || session.role !== 'guardian' || !session.refreshToken) {
+    return null
+  }
+
+  return session
+}
+
+async function refreshGuardianSession(): Promise<AuthSession | null> {
+  if (guardianRefreshPromise) {
+    return guardianRefreshPromise
+  }
+
+  guardianRefreshPromise = (async () => {
+    const session = getActiveAuthSession()
+
+    if (!session || session.role !== 'guardian' || !session.refreshToken) {
+      return null
+    }
+
+    try {
+      const response = await callTransport<AuthResponseDto, RefreshRequestDto>({
+        method: 'POST',
+        url: API_ENDPOINTS.AUTH_REFRESH,
+        data: {
+          refreshToken: session.refreshToken,
+        },
+        skipGuardianRefreshRetry: true,
+      })
+      const nextSession = mapAuthResponseToSession(response)
+      applyActiveAuthSession(nextSession)
+      return nextSession
+    } catch {
+      setStoredRole('guardian')
+      setStoredEntryMode('login')
+      storeGuardianSessionExitReason('refresh-failed')
+      applyActiveAuthSession(null)
+      return null
+    } finally {
+      guardianRefreshPromise = null
+    }
+  })()
+
+  return guardianRefreshPromise
+}
+
+async function requestWithGuardianRefreshRetry<TResponse, TBody = unknown>(
+  options: ApiRequestInternalOptions<TBody>,
+) {
+  try {
+    return await callTransport<TResponse, TBody>(options)
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.statusCode !== 401) {
+      throw error
+    }
+
+    const guardianSession = getGuardianRetrySession(options)
+
+    if (!guardianSession) {
+      throw error
+    }
+
+    if (guardianSession.accessToken && guardianSession.accessToken !== options.accessToken) {
+      return callTransport<TResponse, TBody>({
+        ...options,
+        accessToken: guardianSession.accessToken,
+        skipGuardianRefreshRetry: true,
+      })
+    }
+
+    const refreshedSession = await refreshGuardianSession()
+
+    if (!refreshedSession?.accessToken) {
+      throw error
+    }
+
+    return callTransport<TResponse, TBody>({
+      ...options,
+      accessToken: refreshedSession.accessToken,
+      skipGuardianRefreshRetry: true,
+    })
+  }
+}
 
 export const apiClient = {
   request<TResponse, TBody = unknown>(options: ApiRequestOptions<TBody>) {
-    return activeTransport.request<TResponse, TBody>(options)
+    return requestWithGuardianRefreshRetry<TResponse, TBody>(options)
   },
   post<TResponse, TBody = unknown>(
     url: string,
     data?: TBody,
     options?: Pick<ApiRequestOptions<TBody>, 'accessToken'>,
   ) {
-    return activeTransport.request<TResponse, TBody>({
+    return requestWithGuardianRefreshRetry<TResponse, TBody>({
       method: 'POST',
       url,
       data,
@@ -102,7 +220,7 @@ export const apiClient = {
     data?: TBody,
     options?: Pick<ApiRequestOptions<TBody>, 'accessToken'>,
   ) {
-    return activeTransport.request<TResponse, TBody>({
+    return requestWithGuardianRefreshRetry<TResponse, TBody>({
       method: 'DELETE',
       url,
       data,

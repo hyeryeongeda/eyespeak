@@ -3,6 +3,8 @@ export type UserRole = 'guardian' | 'patient'
 
 export type AuthEntryMode = 'login' | 'signup'
 
+export type GuardianSessionExitReason = 'idle-timeout' | 'refresh-failed'
+
 export interface AuthSession {
   id: string
   role: UserRole
@@ -45,6 +47,19 @@ export interface LogoutRequestDto {
 
 export interface RefreshRequestDto {
   refreshToken: string
+}
+
+export interface PasswordResetRequestDto {
+  identifier: string
+  role?: UserRole
+}
+
+export interface PasswordResetResponseDto {
+  userRole: UserRole
+  userName: string
+  maskedIdentifier: string
+  temporaryPassword: string | null
+  message: string
 }
 
 export interface WithdrawRequestDto {

@@ -351,6 +351,10 @@ export default function CareSignupPage() {
               <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
                 환자 측은 이 팀코드를 입력한 뒤 보호자와 연결됩니다.
               </p>
+              <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+                회원가입이 끝나면 자동 로그인하지 않습니다. 아래 버튼으로 보호자 로그인 화면으로
+                이동해주세요.
+              </p>
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
                 TODO(PLAN): 팀코드 재발급, 유효기간, 중복 생성 제한 정책 확정 필요.
               </p>
@@ -363,7 +367,7 @@ export default function CareSignupPage() {
                 코드 다시 복사
               </button>
               <button type="button" style={primaryButton} onClick={finishGuardianSignup}>
-                시작하기
+                로그인 하기
               </button>
             </div>
           </>

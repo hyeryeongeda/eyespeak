@@ -2,7 +2,7 @@ import { getActiveApiMode } from './apiClient'
 import { findMockTeamCode } from './mockAuthApi'
 import { signUpPatientApi } from './patientApi'
 import { normalizeTeamCode } from './authStorage'
-import { mapAuthResponseToSession } from './authService'
+import { mapAuthResponseToSession } from './authSessionMapper'
 import type { AuthSession } from '../types/auth'
 import type {
   PatientAccountFormValues,

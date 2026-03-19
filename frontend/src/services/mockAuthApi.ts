@@ -5,6 +5,8 @@ import type {
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
+  PasswordResetRequestDto,
+  PasswordResetResponseDto,
   RefreshRequestDto,
   UserRole,
   WithdrawRequestDto,
@@ -288,6 +290,28 @@ function createUniqueTeamCode(database: MockAuthDatabase) {
   return nextCode
 }
 
+function maskIdentifier(value: string) {
+  const trimmedValue = value.trim()
+
+  if (!trimmedValue) {
+    return '***'
+  }
+
+  const [localPart, domainPart] = trimmedValue.split('@')
+
+  if (domainPart) {
+    const visibleLocalPart = localPart.slice(0, Math.min(2, localPart.length))
+    return `${visibleLocalPart}${'*'.repeat(Math.max(1, localPart.length - visibleLocalPart.length))}@${domainPart}`
+  }
+
+  const visiblePart = trimmedValue.slice(0, Math.min(2, trimmedValue.length))
+  return `${visiblePart}${'*'.repeat(Math.max(1, trimmedValue.length - visiblePart.length))}`
+}
+
+function createTemporaryPassword() {
+  return `reset${Math.floor(100000 + Math.random() * 900000)}!`
+}
+
 function handleLogin(request: LoginRequestDto) {
   assertRequiredText(request.identifier, '로그인 식별자를 입력해주세요.')
   assertRequiredText(request.password, '비밀번호를 입력해주세요.')
@@ -334,6 +358,110 @@ function handleLogin(request: LoginRequestDto) {
     name: patientAccount.name,
     email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
+  })
+}
+
+function handlePasswordReset(request: PasswordResetRequestDto) {
+  assertRequiredText(request.identifier, '아이디 또는 이메일을 입력해주세요.')
+
+  const database = readDatabase()
+  const normalizedIdentifier = request.identifier.trim().toLowerCase()
+  const matchedGuardian = database.guardians.find(
+    guardian => guardian.email.toLowerCase() === normalizedIdentifier,
+  )
+  const matchedPatient = database.patientAccounts.find(
+    patient => patient.loginId === normalizePatientLoginId(normalizedIdentifier),
+  )
+
+  if (request.role === 'guardian') {
+    if (!matchedGuardian) {
+      throw new ApiError({
+        statusCode: 404,
+        source: 'mock',
+        message: '보호자 계정을 찾을 수 없습니다.',
+      })
+    }
+
+    const temporaryPassword = createTemporaryPassword()
+    matchedGuardian.password = temporaryPassword
+    writeDatabase(database)
+
+    const response: PasswordResetResponseDto = {
+      userRole: 'guardian',
+      userName: matchedGuardian.name,
+      maskedIdentifier: maskIdentifier(matchedGuardian.email),
+      temporaryPassword,
+      message: '보호자 임시 비밀번호를 발급했습니다.',
+    }
+
+    return response
+  }
+
+  if (request.role === 'patient') {
+    if (!matchedPatient) {
+      throw new ApiError({
+        statusCode: 404,
+        source: 'mock',
+        message: '환자 계정을 찾을 수 없습니다.',
+      })
+    }
+
+    const temporaryPassword = createTemporaryPassword()
+    matchedPatient.password = temporaryPassword
+    writeDatabase(database)
+
+    const response: PasswordResetResponseDto = {
+      userRole: 'patient',
+      userName: matchedPatient.name,
+      maskedIdentifier: maskIdentifier(matchedPatient.loginId),
+      temporaryPassword,
+      message: '환자 임시 비밀번호를 발급했습니다.',
+    }
+
+    return response
+  }
+
+  if (matchedGuardian && matchedPatient) {
+    throw new ApiError({
+      statusCode: 409,
+      source: 'mock',
+      message: '역할을 확인할 수 없습니다. 로그인 화면에서 다시 진입해주세요.',
+      code: 'PASSWORD_RESET_ROLE_REQUIRED',
+    })
+  }
+
+  if (matchedGuardian) {
+    const temporaryPassword = createTemporaryPassword()
+    matchedGuardian.password = temporaryPassword
+    writeDatabase(database)
+
+    return {
+      userRole: 'guardian',
+      userName: matchedGuardian.name,
+      maskedIdentifier: maskIdentifier(matchedGuardian.email),
+      temporaryPassword,
+      message: '보호자 임시 비밀번호를 발급했습니다.',
+    } satisfies PasswordResetResponseDto
+  }
+
+  if (matchedPatient) {
+    const temporaryPassword = createTemporaryPassword()
+    matchedPatient.password = temporaryPassword
+    writeDatabase(database)
+
+    return {
+      userRole: 'patient',
+      userName: matchedPatient.name,
+      maskedIdentifier: maskIdentifier(matchedPatient.loginId),
+      temporaryPassword,
+      message: '환자 임시 비밀번호를 발급했습니다.',
+    } satisfies PasswordResetResponseDto
+  }
+
+  throw new ApiError({
+    statusCode: 404,
+    source: 'mock',
+    message: '일치하는 계정을 찾을 수 없습니다.',
   })
 }
 
@@ -750,6 +878,8 @@ export const mockApiTransport: ApiTransport = {
         return handlePatientSignup(data as PatientSignupRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.AUTH_LOGOUT}`:
         return handleLogout(data as LogoutRequestDto) as TResponse
+      case `POST ${API_ENDPOINTS.AUTH_RESET_PASSWORD}`:
+        return handlePasswordReset(data as PasswordResetRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.AUTH_REFRESH}`:
         return handleRefresh(data as RefreshRequestDto) as TResponse
       case `DELETE ${API_ENDPOINTS.AUTH_WITHDRAW}`:
