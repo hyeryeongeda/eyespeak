@@ -1,4 +1,4 @@
-import type { CustomTalkDraft } from '../../features/patient/talk/types/customTalk'
+import type { CustomTalkDraft } from '../types'
 import { polishSentence } from './polishSentence'
 
 export function buildCustomTalkDraftPreview(draft: CustomTalkDraft) {

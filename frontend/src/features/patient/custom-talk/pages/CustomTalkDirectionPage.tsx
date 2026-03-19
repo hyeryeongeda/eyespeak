@@ -1,17 +1,17 @@
 import { type CSSProperties, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import CustomTalkContextPanel from '../../../components/patient/custom-talk/CustomTalkContextPanel'
-import CustomTalkStageLayout from '../../../components/patient/custom-talk/CustomTalkStageLayout'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
+import CustomTalkStageLayout from '../components/CustomTalkStageLayout'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
-} from '../../../components/patient/custom-talk/customTalkUi'
-import type { CustomCategoryKey } from '../../../features/patient/talk/types/customTalk'
-import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
-import { useCustomTalkStore } from '../../../stores/customTalkStore'
-import { buildCustomTalkDraftPreview } from '../../../utils/customTalk/generateCustomSentences'
+} from '../components/customTalkUi'
+import type { CustomCategoryKey } from '../types'
+import { usePatientIncomingChat } from '../../../../hooks/usePatientIncomingChat'
+import { useCustomTalkStore } from '../store/customTalkStore'
+import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
   display: 'flex',

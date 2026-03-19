@@ -1,22 +1,22 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import CustomTalkContextPanel from '../../../components/patient/custom-talk/CustomTalkContextPanel'
-import CustomTalkKeyboardGrid from '../../../components/patient/custom-talk/CustomTalkKeyboardGrid'
-import CustomTalkStageLayout from '../../../components/patient/custom-talk/CustomTalkStageLayout'
-import KeyboardSentenceDisplay from '../../../components/patient/custom-talk/KeyboardSentenceDisplay'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
+import CustomTalkKeyboardGrid from '../components/CustomTalkKeyboardGrid'
+import CustomTalkStageLayout from '../components/CustomTalkStageLayout'
+import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkPanelStyle,
   customTalkSuccessNoticeStyle,
-} from '../../../components/patient/custom-talk/customTalkUi'
+} from '../components/customTalkUi'
 import type {
   CustomTalkKeyboardOption,
   KeyboardRootMenu,
-} from '../../../features/patient/talk/types/customTalk'
-import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
-import { useCustomTalkStore } from '../../../stores/customTalkStore'
+} from '../types'
+import { usePatientIncomingChat } from '../../../../hooks/usePatientIncomingChat'
+import { useCustomTalkStore } from '../store/customTalkStore'
 
 const centerStackStyle: CSSProperties = {
   display: 'flex',

@@ -1,16 +1,16 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import CustomTalkContextPanel from '../../../components/patient/custom-talk/CustomTalkContextPanel'
-import CustomTalkStageLayout from '../../../components/patient/custom-talk/CustomTalkStageLayout'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
+import CustomTalkStageLayout from '../components/CustomTalkStageLayout'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkPanelStyle,
   customTalkSuccessNoticeStyle,
-} from '../../../components/patient/custom-talk/customTalkUi'
-import { useCustomTalkStore } from '../../../stores/customTalkStore'
-import { buildCustomTalkDraftPreview } from '../../../utils/customTalk/generateCustomSentences'
+} from '../components/customTalkUi'
+import { useCustomTalkStore } from '../store/customTalkStore'
+import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
   display: 'flex',

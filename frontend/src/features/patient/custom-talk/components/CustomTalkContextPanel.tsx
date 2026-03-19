@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useRef } from 'react'
 import type {
   CustomTalkContextSummary,
   CustomTalkConversationLogItem,
-} from '../../../features/patient/talk/types/customTalk'
+} from '../types'
 
 interface CustomTalkContextPanelProps {
   context: CustomTalkContextSummary | null

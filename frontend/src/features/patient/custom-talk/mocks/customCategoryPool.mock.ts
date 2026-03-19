@@ -1,7 +1,7 @@
 import type {
   CustomCategoryKey,
   CustomTalkCategoryOption,
-} from '../../features/patient/talk/types/customTalk'
+} from '../types'
 
 export const CUSTOM_TALK_CATEGORY_POOL: CustomTalkCategoryOption[] = [
   {

@@ -1,4 +1,4 @@
-import type { CustomTalkContextSummary } from '../../features/patient/talk/types/customTalk'
+import type { CustomTalkContextSummary } from '../types'
 
 export const CUSTOM_TALK_CONTEXT_MOCK: CustomTalkContextSummary = {
   guardianMessage: '오늘 컨디션은 어때?',
