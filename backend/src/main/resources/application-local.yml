@@ -21,11 +21,27 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
     open-in-view: false
+    defer-datasource-initialization: true
+
+  sql:
+    init:
+      mode: always
 
 server:
   port: 8080
+
+# Python AI 서버
+ai:
+  server:
+    url: http://localhost:5003
 
 logging:
   level:
     e205.eyespeak: DEBUG
     org.hibernate.SQL: DEBUG
+
+# JWT 설정 (비밀키는 환경변수로 관리)
+jwt:
+  secret: ${JWT_SECRET:my-local-dev-secret-key-must-be-at-least-32-characters-long}
+  access-token-expiry: 1800000    # 30분 (밀리초)
+  refresh-token-expiry: 604800000 # 7일 (밀리초)
