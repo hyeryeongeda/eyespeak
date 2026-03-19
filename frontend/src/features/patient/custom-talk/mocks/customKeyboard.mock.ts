@@ -1,7 +1,7 @@
 import type {
   CustomTalkKeyboardGroup,
   CustomTalkKeyboardOption,
-} from '../../features/patient/talk/types/customTalk'
+} from '../types'
 
 export const CUSTOM_TALK_KEYBOARD_ROOT_OPTIONS: CustomTalkKeyboardOption[] = [
   {

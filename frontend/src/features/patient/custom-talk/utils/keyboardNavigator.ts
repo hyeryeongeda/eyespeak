@@ -3,12 +3,12 @@ import type {
   CustomTalkKeyboardOption,
   CustomTalkKeyboardPageResult,
   KeyboardRootMenu,
-} from '../../features/patient/talk/types/customTalk'
+} from '../types'
 import {
   CUSTOM_TALK_KEYBOARD_ENDING_OPTIONS,
   CUSTOM_TALK_KEYBOARD_GROUPS,
   CUSTOM_TALK_KEYBOARD_ROOT_OPTIONS,
-} from '../../mocks/customTalk/customKeyboard.mock'
+} from '../mocks/customKeyboard.mock'
 
 const KEYBOARD_PAGE_SIZE = 4
 

@@ -3,21 +3,21 @@ import type {
   CustomCategoryKey,
   CustomTalkContextSummary,
   CustomTalkDraft,
-} from '../../features/patient/talk/types/customTalk'
+} from '../types'
 import {
   CUSTOM_COMPOSE_STEP_ORDER,
   CUSTOM_COMPOSE_WORD_POOL,
-} from '../../mocks/customTalk/customComposeWords.mock'
-import { CUSTOM_TALK_CONTEXT_MOCK } from '../../mocks/customTalk/customContext.mock'
+} from '../mocks/customComposeWords.mock'
+import { CUSTOM_TALK_CONTEXT_MOCK } from '../mocks/customContext.mock'
 import {
   CUSTOM_TALK_CATEGORY_POOL,
   CUSTOM_TALK_FALLBACK_CATEGORY_KEYS,
-} from '../../mocks/customTalk/customCategoryPool.mock'
+} from '../mocks/customCategoryPool.mock'
 import {
   CUSTOM_RECOMMENDED_SENTENCE_FALLBACK,
   CUSTOM_RECOMMENDED_SENTENCES,
-} from '../../mocks/customTalk/customRecommendedSentences.mock'
-import { generateCustomSentences } from '../../utils/customTalk/generateCustomSentences'
+} from '../mocks/customRecommendedSentences.mock'
+import { generateCustomSentences } from '../utils/generateCustomSentences'
 
 const DEFAULT_DELAY_MS = 220
 let mockSequence = 0

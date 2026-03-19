@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { CustomTalkKeyboardOption } from '../../../features/patient/talk/types/customTalk'
+import type { CustomTalkKeyboardOption } from '../types'
 
 interface CustomTalkKeyboardGridProps {
   options: CustomTalkKeyboardOption[]

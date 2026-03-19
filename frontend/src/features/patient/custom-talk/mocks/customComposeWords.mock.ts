@@ -1,7 +1,7 @@
 import type {
   ComposeStep,
   CustomCategoryKey,
-} from '../../features/patient/talk/types/customTalk'
+} from '../types'
 
 export const CUSTOM_COMPOSE_STEP_ORDER: ComposeStep[] = [
   'subject',

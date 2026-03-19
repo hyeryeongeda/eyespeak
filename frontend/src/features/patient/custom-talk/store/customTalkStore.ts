@@ -7,7 +7,7 @@ import type {
   CustomTalkMockFlags,
   CustomTalkState,
   KeyboardRootMenu,
-} from '../features/patient/talk/types/customTalk'
+} from '../types'
 import {
   fetchComposeWords,
   fetchCustomTalkContext,
@@ -19,12 +19,12 @@ import {
   initializeCustomTalkKeyboard,
   saveComposeSelection,
   submitCustomTalkUtterance,
-} from '../services/customTalk/customTalkMockService'
+} from '../services/customTalkMockService'
 import {
   getKeyboardCharPage,
   getKeyboardGroupPage,
   getKeyboardRootPage,
-} from '../utils/customTalk/keyboardNavigator'
+} from '../utils/keyboardNavigator'
 
 const composeStepKeyMap: Record<
   ComposeStep,

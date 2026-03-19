@@ -1,4 +1,4 @@
-import type { CustomCategoryKey } from '../../features/patient/talk/types/customTalk'
+import type { CustomCategoryKey } from '../types'
 
 export const CUSTOM_RECOMMENDED_SENTENCES: Record<CustomCategoryKey, string[]> = {
   mood: [
