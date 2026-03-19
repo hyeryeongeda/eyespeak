@@ -8,6 +8,7 @@ interface CustomTalkContextPanelProps {
   context: CustomTalkContextSummary | null
   conversationLog: CustomTalkConversationLogItem[]
   previewText?: string
+  mode?: 'default' | 'entry'
 }
 
 const wrapStyle: CSSProperties = {
@@ -137,36 +138,70 @@ export default function CustomTalkContextPanel({
   context,
   conversationLog,
   previewText,
+  mode = 'default',
 }: CustomTalkContextPanelProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const isEntryMode = mode === 'entry'
+  const visibleConversationLog = isEntryMode ? conversationLog.slice(-2) : conversationLog
+  const shouldShowPreview = mode === 'default' && Boolean(previewText)
+  const panelStyleByMode: CSSProperties = {
+    ...panelStyle,
+    borderRadius: isEntryMode ? '28px' : panelStyle.borderRadius,
+    background: isEntryMode
+      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f8fbff 100%)'
+      : panelStyle.backgroundColor,
+    border: isEntryMode ? '1px solid #e3ebf2' : panelStyle.border,
+    boxShadow: isEntryMode ? 'inset 0 1px 0 rgba(255, 255, 255, 0.72)' : 'none',
+  }
+  const chatListStyleByMode: CSSProperties = {
+    ...chatListStyle,
+    maxHeight: isEntryMode ? '240px' : chatListStyle.maxHeight,
+    padding: isEntryMode ? '24px 26px' : chatListStyle.padding,
+    gap: isEntryMode ? '16px' : chatListStyle.gap,
+    justifyContent:
+      isEntryMode && visibleConversationLog.length <= 2 ? 'center' : undefined,
+  }
+  const metaStyleByMode: CSSProperties = {
+    ...metaStyle,
+    fontSize: isEntryMode ? '12px' : metaStyle.fontSize,
+  }
 
   useEffect(() => {
+    if (isEntryMode) {
+      bottomRef.current?.scrollIntoView({ block: 'end' })
+      return
+    }
+
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [conversationLog.length, previewText])
+  }, [conversationLog.length, isEntryMode, previewText])
 
   return (
     <section style={wrapStyle} aria-label="맞춤대화 채팅 맥락">
-      <div style={panelStyle}>
-        <div style={panelHeaderStyle}>
-          <h2 style={panelTitleStyle}>최근 대화</h2>
-          <div style={tagWrapStyle}>
-            {context?.todayMood ? <span style={tagStyle}>오늘 기분: {context.todayMood}</span> : null}
-            {context?.todaySchedule ? (
-              <span style={tagStyle}>오늘 일정: {context.todaySchedule}</span>
-            ) : null}
-            {context?.recentUsedExpressions?.slice(0, 2).map(item => (
-              <span key={item} style={tagStyle}>
-                최근 표현: {item}
-              </span>
-            ))}
+      <div style={panelStyleByMode}>
+        {isEntryMode ? null : (
+          <div style={panelHeaderStyle}>
+            <h2 style={panelTitleStyle}>최근 대화</h2>
+            <div style={tagWrapStyle}>
+              {context?.todayMood ? (
+                <span style={tagStyle}>오늘 기분: {context.todayMood}</span>
+              ) : null}
+              {context?.todaySchedule ? (
+                <span style={tagStyle}>오늘 일정: {context.todaySchedule}</span>
+              ) : null}
+              {context?.recentUsedExpressions?.slice(0, 2).map(item => (
+                <span key={item} style={tagStyle}>
+                  최근 표현: {item}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div style={chatListStyle}>
-          {conversationLog.length === 0 ? (
+        <div style={chatListStyleByMode}>
+          {visibleConversationLog.length === 0 ? (
             <div style={emptyStyle}>아직 연결된 최근 대화가 없습니다.</div>
           ) : (
-            conversationLog.map(item => {
+            visibleConversationLog.map(item => {
               const isGuardian = item.sender === 'guardian'
 
               return (
@@ -177,13 +212,15 @@ export default function CustomTalkContextPanel({
                     alignItems: isGuardian ? 'flex-start' : 'flex-end',
                   }}
                 >
-                  <span style={metaStyle}>
+                  <span style={metaStyleByMode}>
                     {getSenderLabel(item.sender)} · {item.createdAt}
                   </span>
-                  <div style={getBubbleStyle(item.sender)}>
+                  <div
+                    style={getBubbleStyle(item.sender, false)}
+                  >
                     <div
                       style={{
-                        fontSize: '15px',
+                        fontSize: isEntryMode ? '16px' : '15px',
                         fontWeight: 700,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',
@@ -200,7 +237,7 @@ export default function CustomTalkContextPanel({
         </div>
       </div>
 
-      {previewText ? (
+      {shouldShowPreview ? (
         <div style={previewWrapStyle}>
           <p style={previewLabelStyle}>지금 만들고 있는 표현</p>
           <div style={getBubbleStyle('patient', true)}>
