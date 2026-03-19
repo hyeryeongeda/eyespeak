@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { CARE_ROUTE_PATHS, ROUTE_PATHS } from '../../app/router/routePaths'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import eyespeakLogo from '../../assets/eyespeak_logo.svg'
 
@@ -24,7 +24,6 @@ export default function CareHomePage() {
       {/* 상단 헤더 */}
       <header className="flex items-center px-[18px] py-3 border-b border-[#E2E8F0] bg-[#FEFEFE] flex-shrink-0">
         <img src={eyespeakLogo} alt="eyespeak" className="h-[22px]" />
-        <span className="ml-1 text-[17px] font-bold text-[#3D405B]">Guardian</span>
       </header>
 
       {/* 스크롤 영역 */}
