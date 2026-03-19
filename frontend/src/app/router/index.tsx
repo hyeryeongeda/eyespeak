@@ -5,6 +5,14 @@ import CareSettingsPage from '../../pages/care/CareSettingsPage'
 import ChatPage from '../../pages/care/ChatPage'
 import RecordsPage from '../../pages/care/RecordsPage'
 import VoicePage from '../../pages/care/VoicePage'
+import PatientInfoPage from '../../pages/care/settings/PatientInfoPage'
+import RoutineSettingPage from '../../pages/care/settings/RoutineSettingPage'
+import FavoritesSettingPage from '../../pages/care/settings/FavoritesSettingPage'
+import LeisureSettingPage from '../../pages/care/settings/LeisureSettingPage'
+import DeviceSettingPage from '../../pages/care/settings/DeviceSettingPage'
+import TtsSettingPage from '../../pages/care/settings/TtsSettingPage'
+import WordsSettingPage from '../../pages/care/settings/WordsSettingPage'
+import ExpressionsPage from '../../pages/care/settings/ExpressionsPage'
 import CareLoginPage from '../../pages/auth/CareLoginPage'
 import CareSignupPage from '../../pages/auth/CareSignupPage'
 import LoginPage from '../../pages/auth/LoginPage'
@@ -170,6 +178,38 @@ const careRoutes = [
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS,
     element: <CareSettingsPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_PATIENT_INFO,
+    element: <PatientInfoPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_ROUTINE,
+    element: <RoutineSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_FAVORITES,
+    element: <FavoritesSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_LEISURE,
+    element: <LeisureSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_DEVICE,
+    element: <DeviceSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_TTS,
+    element: <TtsSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_WORDS,
+    element: <WordsSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_EXPRESSIONS,
+    element: <ExpressionsPage />,
   },
   {
     path: ROUTE_SEGMENTS.CARE.VOICE,

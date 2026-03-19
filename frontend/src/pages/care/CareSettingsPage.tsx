@@ -4,34 +4,52 @@ import { useAuth } from '../../features/auth/hooks/useAuth'
 
 const PATIENT_SETTINGS = [
   {
+    icon: '👤',
+    label: '환자 기본 정보',
+    sub: '이름 · 생년월일 · 성별',
+    path: ROUTE_PATHS.CARE_SETTINGS_PATIENT_INFO,
+  },
+  {
     icon: '🗓️',
     label: '루틴 관리',
     sub: '시간대별 활동',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 루틴 관리 라우트 연결
+    path: ROUTE_PATHS.CARE_SETTINGS_ROUTINE,
   },
   {
     icon: '⭐',
     label: '표현 즐겨찾기',
     sub: '카테고리별 설정',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 즐겨찾기 라우트 연결
+    path: ROUTE_PATHS.CARE_SETTINGS_FAVORITES,
+  },
+  {
+    icon: '💬',
+    label: '커스텀 단어',
+    sub: '주어 · 목적어 · 동사',
+    path: ROUTE_PATHS.CARE_SETTINGS_WORDS,
+  },
+  {
+    icon: '📋',
+    label: '맞춤 표현 조회',
+    sub: '환자 개인화 표현',
+    path: ROUTE_PATHS.CARE_SETTINGS_EXPRESSIONS,
   },
   {
     icon: '🎬',
     label: '여가 콘텐츠',
     sub: '유튜브 설정',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 여가 콘텐츠 라우트 연결
+    path: ROUTE_PATHS.CARE_SETTINGS_LEISURE,
   },
   {
     icon: '🔧',
     label: '기기 설정',
     sub: 'Dwell Time · 입력 잠금',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 기기 설정 라우트 연결
+    path: ROUTE_PATHS.CARE_SETTINGS_DEVICE,
   },
   {
     icon: '🎙️',
     label: '맞춤 음성 (TTS)',
     sub: '음성 파일 관리',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: TTS 라우트 연결
+    path: ROUTE_PATHS.CARE_SETTINGS_TTS,
   },
 ] as const
 
