@@ -75,7 +75,7 @@ Table user {
   is_agree boolean [not null, default: false, note: '약관 동의 여부']
   created_at datetime [not null]
   updated_at datetime [not null]
-}
+}ㄴㅁ
 
 Table patient {
   id bigint [pk, increment]
@@ -212,18 +212,13 @@ Table tts_voice_file {
 Table leisure_content {
   id bigint [pk, increment]
   matching_id bigint [not null]
-  position int [not null, note: '화면 배치 위치']
   name varchar [not null, note: '콘텐츠 이름']
   url varchar [note: '콘텐츠 URL']
-  category varchar [note: '콘텐츠 카테고리']
+  category varchar [note: '콘텐츠 카테고리 (sports/news/music/radio/audiobook)']
   created_at datetime [not null]
   updated_at datetime [not null]
 
-  Note: 'url과 category 중 하나는 반드시 존재 (서버+프론트 검증)'
-
-  indexes {
-    (matching_id, position) [unique]
-  }
+  Note: 'url과 category 중 하나는 반드시 존재 (서버+프론트 검증). 최대 5개.'
 }
 
 // ========================
