@@ -1,0 +1,6 @@
+# dev 프로필 — docker-compose.dev, Jenkins 등
+# application-local.yml 은 profile=local 일 때만 적용되므로 JWT 를 여기서도 연결합니다.
+jwt:
+  secret: ${JWT_SECRET:my-local-dev-secret-key-must-be-at-least-32-characters-long}
+  access-token-expiry: ${JWT_ACCESS_TOKEN_EXPIRY:1800000}
+  refresh-token-expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
