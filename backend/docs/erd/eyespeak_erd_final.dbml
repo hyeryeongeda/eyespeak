@@ -75,7 +75,7 @@ Table user {
   is_agree boolean [not null, default: false, note: '약관 동의 여부']
   created_at datetime [not null]
   updated_at datetime [not null]
-}ㄴㅁ
+}
 
 Table patient {
   id bigint [pk, increment]
