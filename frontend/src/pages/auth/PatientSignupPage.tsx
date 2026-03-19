@@ -104,7 +104,7 @@ export default function PatientSignupPage() {
                 2단계. 환자 계정 생성
               </p>
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                팀코드 검증이 완료되면 환자 전용 로그인 계정을 만들 수 있습니다.
+                팀코드 검증이 완료되면 이메일 형식의 환자 로그인 계정을 만들 수 있습니다.
               </p>
             </div>
 
@@ -117,8 +117,8 @@ export default function PatientSignupPage() {
                 onChange={event => setPatientAccount(prev => ({ ...prev, name: event.target.value }))}
               />
               <input
-                type="text"
-                placeholder="환자 아이디"
+                type="email"
+                placeholder="로그인 이메일"
                 style={input}
                 value={patientAccount.loginId}
                 onChange={event =>

@@ -9,7 +9,7 @@ import {
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
 import { useAuth } from './useAuth'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
-import { validatePassword } from '../../../utils/validators'
+import { isValidEmail, validatePassword } from '../../../utils/validators'
 
 const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   name: '',
@@ -73,7 +73,12 @@ export function usePatientSignup() {
     }
 
     if (!patientAccount.name.trim() || !patientAccount.loginId.trim()) {
-      setErrorMessage('환자 이름과 아이디를 입력해주세요.')
+      setErrorMessage('환자 이름과 로그인 이메일을 입력해주세요.')
+      return
+    }
+
+    if (!isValidEmail(patientAccount.loginId)) {
+      setErrorMessage('올바른 이메일 형식의 로그인 이메일을 입력해주세요.')
       return
     }
 

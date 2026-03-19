@@ -17,11 +17,12 @@ import type {
 } from '../types/patient'
 import { ApiError, type ApiTransport } from '../types/api'
 import { normalizeTeamCode } from './authStorage'
+import { isValidEmail } from '../utils/validators'
 
 const MOCK_DATABASE_STORAGE_KEY = 'mockAuthDatabase:v2'
 const MOCK_NETWORK_DELAY_MS = 420
 const DEMO_GUARDIAN_EMAIL = 'care123@eyespeak.mock'
-const DEMO_PATIENT_LOGIN_ID = 'pat123'
+const DEMO_PATIENT_EMAIL = 'pat123@eyespeak.mock'
 const DEMO_PASSWORD = 'e205e205@'
 const DEMO_TEAM_CODE = 'TEAM123'
 
@@ -60,6 +61,37 @@ interface MockAuthDatabase {
   guardians: MockGuardianAccountRecord[]
   patientProfiles: MockPatientProfileRecord[]
   patientAccounts: MockPatientAccountRecord[]
+}
+
+function normalizePatientLoginId(value: string) {
+  return value.trim().toLowerCase()
+}
+
+function migrateDatabase(database: MockAuthDatabase) {
+  let didMutate = false
+
+  database.guardians.forEach(guardian => {
+    const normalizedEmail = guardian.email.trim().toLowerCase()
+
+    if (guardian.email !== normalizedEmail) {
+      guardian.email = normalizedEmail
+      didMutate = true
+    }
+  })
+
+  database.patientAccounts.forEach(patientAccount => {
+    const normalizedLoginId =
+      patientAccount.userId === 'patient-demo' && patientAccount.loginId === 'pat123'
+        ? DEMO_PATIENT_EMAIL
+        : normalizePatientLoginId(patientAccount.loginId)
+
+    if (patientAccount.loginId !== normalizedLoginId) {
+      patientAccount.loginId = normalizedLoginId
+      didMutate = true
+    }
+  })
+
+  return didMutate
 }
 
 function isBrowser() {
@@ -120,7 +152,7 @@ function createSeedDatabase(): MockAuthDatabase {
         userId: 'patient-demo',
         patientId,
         teamCode: DEMO_TEAM_CODE,
-        loginId: DEMO_PATIENT_LOGIN_ID,
+        loginId: DEMO_PATIENT_EMAIL,
         name: '환자 데모',
         password: DEMO_PASSWORD,
         createdAt: '2026-03-19T00:00:00.000Z',
@@ -143,7 +175,13 @@ function readDatabase(): MockAuthDatabase {
   }
 
   try {
-    return JSON.parse(storedValue) as MockAuthDatabase
+    const parsedDatabase = JSON.parse(storedValue) as MockAuthDatabase
+
+    if (migrateDatabase(parsedDatabase)) {
+      localStorage.setItem(MOCK_DATABASE_STORAGE_KEY, JSON.stringify(parsedDatabase))
+    }
+
+    return parsedDatabase
   } catch {
     const seedDatabase = createSeedDatabase()
     localStorage.setItem(MOCK_DATABASE_STORAGE_KEY, JSON.stringify(seedDatabase))
@@ -253,14 +291,14 @@ function handleLogin(request: LoginRequestDto) {
   }
 
   const patientAccount = database.patientAccounts.find(
-    patient => patient.loginId === request.identifier.trim(),
+    patient => patient.loginId === normalizePatientLoginId(request.identifier),
   )
 
   if (!patientAccount || patientAccount.password !== request.password) {
     throw new ApiError({
       statusCode: 401,
       source: 'mock',
-      message: '아이디 또는 비밀번호가 올바르지 않습니다.',
+      message: '이메일 또는 비밀번호가 올바르지 않습니다.',
     })
   }
 
@@ -268,6 +306,7 @@ function handleLogin(request: LoginRequestDto) {
     id: patientAccount.userId,
     role: 'patient',
     name: patientAccount.name,
+    email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
   })
 }
@@ -382,15 +421,24 @@ function handleRegisterPatientInfo(
 
 function handlePatientSignup(request: PatientSignupRequestDto) {
   assertRequiredText(request.teamCode, '팀코드를 입력해주세요.')
-  assertRequiredText(request.loginId, '환자 아이디를 입력해주세요.')
+  assertRequiredText(request.loginId, '로그인 이메일을 입력해주세요.')
   assertRequiredText(request.password, '비밀번호를 입력해주세요.')
   assertRequiredText(request.name, '환자 이름을 입력해주세요.')
 
   const database = readDatabase()
   const normalizedTeamCode = normalizeTeamCode(request.teamCode)
+  const normalizedLoginId = normalizePatientLoginId(request.loginId)
   const patientProfile = database.patientProfiles.find(
     profile => profile.teamCode === normalizedTeamCode,
   )
+
+  if (!isValidEmail(normalizedLoginId)) {
+    throw new ApiError({
+      statusCode: 400,
+      source: 'mock',
+      message: '올바른 이메일 형식의 로그인 이메일을 입력해주세요.',
+    })
+  }
 
   if (!patientProfile) {
     throw new ApiError({
@@ -412,13 +460,13 @@ function handlePatientSignup(request: PatientSignupRequestDto) {
 
   if (
     database.patientAccounts.some(
-      account => account.loginId.toLowerCase() === request.loginId.trim().toLowerCase(),
+      account => account.loginId === normalizedLoginId,
     )
   ) {
     throw new ApiError({
       statusCode: 409,
       source: 'mock',
-      message: '이미 사용 중인 환자 아이디입니다.',
+      message: '이미 사용 중인 로그인 이메일입니다.',
       code: 'PATIENT_LOGIN_ID_DUPLICATED',
     })
   }
@@ -427,7 +475,7 @@ function handlePatientSignup(request: PatientSignupRequestDto) {
     userId: createId('patient'),
     patientId: patientProfile.patientId,
     teamCode: normalizedTeamCode,
-    loginId: request.loginId.trim(),
+    loginId: normalizedLoginId,
     name: request.name.trim(),
     password: request.password,
     createdAt: new Date().toISOString(),
@@ -441,6 +489,7 @@ function handlePatientSignup(request: PatientSignupRequestDto) {
       id: patientAccount.userId,
       role: 'patient',
       name: patientAccount.name,
+      email: patientAccount.loginId,
       teamCode: patientAccount.teamCode,
     }),
     patientId: patientAccount.patientId,
@@ -505,6 +554,7 @@ function handleRefresh(request: RefreshRequestDto) {
     id: patientAccount.userId,
     role: 'patient',
     name: patientAccount.name,
+    email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
   })
 }
@@ -624,7 +674,7 @@ export const MOCK_AUTH_DEMO_CREDENTIALS = {
     password: DEMO_PASSWORD,
   },
   patient: {
-    loginId: DEMO_PATIENT_LOGIN_ID,
+    loginId: DEMO_PATIENT_EMAIL,
     password: DEMO_PASSWORD,
     teamCode: DEMO_TEAM_CODE,
   },
