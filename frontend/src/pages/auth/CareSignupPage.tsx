@@ -61,6 +61,10 @@ export default function CareSignupPage() {
     finishGuardianSignup,
   } = useGuardianSignupFlow()
 
+  const selectedRoutineCount = GUARDIAN_SIGNUP_ROUTINE_SLOTS.filter(
+    slot => typeof patientRoutines[slot.id] === 'number',
+  ).length
+
   useEffect(() => {
     setStoredRole('caregiver')
     setStoredEntryMode('signup')
@@ -243,8 +247,8 @@ export default function CareSignupPage() {
           <>
             <h2 style={sectionTitle}>3단계. 환자 시간대별 루틴 입력</h2>
             <p style={sectionDesc}>
-              시간대별 활동 태그를 선택해주세요. 모든 시간대가 필수는 아니며 비어 있는 슬롯도
-              허용됩니다.
+              7개 시간대별 대표 활동 태그를 1개씩 선택해주세요. 백엔드 루틴 API 기준으로 모든
+              시간대 입력이 필요합니다.
             </p>
 
             <div style={formStack}>
@@ -256,34 +260,25 @@ export default function CareSignupPage() {
                   <p style={{ margin: '0 0 12px', color: '#6d7f8f', fontSize: '13px' }}>
                     {slot.timeRange}
                   </p>
+                  <div style={tagWrap}>
+                    {slot.tags.map(tag => {
+                      const isSelected = patientRoutines[slot.id] === tag.id
 
-                  {slot.tags.length > 0 ? (
-                    <div style={tagWrap}>
-                      {slot.tags.map(tag => {
-                        const isSelected = (patientRoutines[slot.id] ?? []).includes(tag.id)
-
-                        return (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            style={{
-                              ...tagButton,
-                              ...(isSelected ? tagButtonSelected : {}),
-                            }}
-                            onClick={() => toggleRoutineTag(slot.id, tag.id)}
-                          >
-                            {tag.label}
-                          </button>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <div style={infoBox}>
-                      <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                        {slot.emptyHint ?? '선택하지 않고 넘어갈 수 있습니다.'}
-                      </p>
-                    </div>
-                  )}
+                      return (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          style={{
+                            ...tagButton,
+                            ...(isSelected ? tagButtonSelected : {}),
+                          }}
+                          onClick={() => toggleRoutineTag(slot.id, tag.id)}
+                        >
+                          {tag.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               ))}
 
@@ -299,7 +294,7 @@ export default function CareSignupPage() {
                   {patientProfile.gender === 'male' ? '남성' : '여성'}
                 </p>
                 <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px' }}>
-                  ASSUMED: 비어 있는 루틴 슬롯은 빈 배열 상태로 저장합니다.
+                  루틴 선택: {selectedRoutineCount}/{GUARDIAN_SIGNUP_ROUTINE_SLOTS.length}
                 </p>
               </div>
 
@@ -323,21 +318,21 @@ export default function CareSignupPage() {
         ) : null}
 
         {currentStep === 'submitting' ? (
-          <div style={infoBox}>
-            <p style={{ margin: '0 0 8px', color: '#203042', fontSize: '16px', fontWeight: 700 }}>
-              회원가입 완료 처리 중
-            </p>
-            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.6 }}>
-              보호자 계정을 생성하고 환자 초기 설문을 저장한 뒤 팀코드를 발급하고 있습니다.
-            </p>
-          </div>
-        ) : null}
+            <div style={infoBox}>
+              <p style={{ margin: '0 0 8px', color: '#203042', fontSize: '16px', fontWeight: 700 }}>
+                회원가입 완료 처리 중
+              </p>
+              <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.6 }}>
+                보호자 계정을 생성한 뒤 환자 기본 정보와 루틴을 순차 저장하고 있습니다.
+              </p>
+            </div>
+          ) : null}
 
         {currentStep === 'completed' && signupResult ? (
           <>
             <h2 style={sectionTitle}>4단계. 팀코드 생성 완료</h2>
             <p style={sectionDesc}>
-              보호자 계정 생성과 환자 초기 설문 저장이 완료되었습니다. 아래 팀코드를 환자에게
+              보호자 계정 생성과 환자 초기 루틴 저장이 완료되었습니다. 아래 팀코드를 환자에게
               전달해주세요.
             </p>
 
