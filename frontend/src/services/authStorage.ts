@@ -14,13 +14,23 @@ export function normalizeTeamCode(value: string) {
   return value.trim().toUpperCase()
 }
 
+function normalizeStoredRole(role: string | null | undefined): UserRole | null {
+  return role === 'guardian' || role === 'patient' ? role : null
+}
+
 export function getStoredRole(): UserRole | null {
   if (!isBrowser()) {
     return null
   }
 
   const savedRole = sessionStorage.getItem(SELECTED_ROLE_STORAGE_KEY)
-  return savedRole === 'caregiver' || savedRole === 'patient' ? savedRole : null
+  const normalizedRole = normalizeStoredRole(savedRole)
+
+  if (!normalizedRole && savedRole) {
+    sessionStorage.removeItem(SELECTED_ROLE_STORAGE_KEY)
+  }
+
+  return normalizedRole
 }
 
 export function setStoredRole(role: UserRole) {
@@ -57,8 +67,16 @@ export function clearStoredEntryMode() {
 }
 
 function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSession {
+  const normalizedRole = normalizeStoredRole(parsed.role)
+
+  if (!normalizedRole) {
+    return false
+  }
+
+  parsed.role = normalizedRole
+
   return (
-    (parsed.role === 'caregiver' || parsed.role === 'patient') &&
+    (parsed.role === 'guardian' || parsed.role === 'patient') &&
     typeof parsed.id === 'string' &&
     typeof parsed.name === 'string' &&
     typeof parsed.accessToken === 'string' &&
@@ -90,6 +108,8 @@ export function getStoredAuthSession(): AuthSession | null {
     if (isValidStoredSession(parsed)) {
       return parsed
     }
+
+    clearStoredAuthSession()
   } catch {
     clearStoredAuthSession()
   }

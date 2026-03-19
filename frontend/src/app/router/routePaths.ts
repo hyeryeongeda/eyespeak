@@ -115,14 +115,14 @@ export const ROUTE_PATHS = {
 
 export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
   if (mode === 'login') {
-    return role === 'caregiver' ? ROUTE_PATHS.AUTH_LOGIN_CARE : ROUTE_PATHS.AUTH_LOGIN_PATIENT
+    return role === 'guardian' ? ROUTE_PATHS.AUTH_LOGIN_CARE : ROUTE_PATHS.AUTH_LOGIN_PATIENT
   }
 
-  return role === 'caregiver' ? ROUTE_PATHS.AUTH_SIGNUP_CARE : ROUTE_PATHS.AUTH_SIGNUP_PATIENT
+  return role === 'guardian' ? ROUTE_PATHS.AUTH_SIGNUP_CARE : ROUTE_PATHS.AUTH_SIGNUP_PATIENT
 }
 
 export function getHomePathByRole(role: UserRole) {
-  return role === 'caregiver' ? ROUTE_PATHS.CARE_HOME : ROUTE_PATHS.PATIENT_MAIN
+  return role === 'guardian' ? ROUTE_PATHS.CARE_HOME : ROUTE_PATHS.PATIENT_MAIN
 }
 
 export function getPatientBodyMindCategoryDetailPath(categoryKey: BodyMindCategoryKey) {

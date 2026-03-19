@@ -1,4 +1,4 @@
-export type PatientChatMessageSender = 'caregiver' | 'patient'
+export type PatientChatMessageSender = 'guardian' | 'patient'
 
 export type PatientChatMessageType =
   | 'text'

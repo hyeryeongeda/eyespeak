@@ -7,7 +7,7 @@ import {
   setStoredEntryMode,
   setStoredRole,
 } from '../../services/authStorage'
-import type { AuthEntryMode } from '../../types/auth'
+import type { AuthEntryMode, UserRole } from '../../types/auth'
 import AuthBrand from './AuthBrand'
 import {
   backButton,
@@ -23,8 +23,6 @@ import {
   roleGrid,
   roleTitle,
 } from './authPageStyles'
-
-type AuthRole = 'caregiver' | 'patient'
 
 const selectedStyle: CSSProperties = {
   ...roleCard,
@@ -43,11 +41,11 @@ export default function RoleSelectPage() {
         ? savedMode
         : 'login'
 
-  const [selectedRole, setSelectedRoleState] = useState<AuthRole | null>(() => {
+  const [selectedRole, setSelectedRoleState] = useState<UserRole | null>(() => {
     return getStoredRole()
   })
 
-  const handleSelect = (role: AuthRole) => {
+  const handleSelect = (role: UserRole) => {
     setSelectedRoleState(role)
     setStoredRole(role)
   }
@@ -85,8 +83,8 @@ export default function RoleSelectPage() {
 
           <button
             type="button"
-            onClick={() => handleSelect('caregiver')}
-            style={selectedRole === 'caregiver' ? selectedStyle : roleCard}
+            onClick={() => handleSelect('guardian')}
+            style={selectedRole === 'guardian' ? selectedStyle : roleCard}
           >
             <p style={roleTitle}>보호자</p>
             <p style={roleDesc}>환자 연결과 관리 기능을 사용하는 보호자 계정으로 진입합니다.</p>
@@ -97,7 +95,7 @@ export default function RoleSelectPage() {
           현재 선택:{' '}
           {selectedRole === 'patient'
             ? '환자'
-            : selectedRole === 'caregiver'
+            : selectedRole === 'guardian'
               ? '보호자'
               : '선택 없음'}
         </p>

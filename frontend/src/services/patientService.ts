@@ -3,7 +3,6 @@ import type { AuthSession } from '../types/auth'
 import type {
   PatientGenderApiValue,
   PatientProfileFormValues,
-  PatientRoutinesFormValues,
   RegisterPatientInfoRequestDto,
   RegisterPatientInfoResponseDto,
 } from '../types/patient'
@@ -12,7 +11,6 @@ import { createServiceFailure } from '../utils/errorMapper'
 
 export interface RegisterPatientInfoInput {
   patientProfile: PatientProfileFormValues
-  patientRoutines: PatientRoutinesFormValues
 }
 
 export function mapPatientGenderToApiValue(gender: PatientProfileFormValues['gender']): PatientGenderApiValue {
@@ -27,12 +25,6 @@ export function mapPatientInfoInputToRequest(
     name: input.patientProfile.name.trim(),
     birthYear: Number(input.patientProfile.birthYear),
     gender: mapPatientGenderToApiValue(input.patientProfile.gender),
-    survey: {
-      routines: Object.entries(input.patientRoutines).map(([slotId, selectedTagIds]) => ({
-        slotId,
-        selectedTagIds,
-      })),
-    },
   }
 }
 
@@ -48,7 +40,7 @@ export async function registerPatientInfo(
 
     return {
       success: true,
-      source: 'mock',
+      source: guardianSession.accessToken.startsWith('mock-') ? 'mock' : 'api',
       data: response,
     }
   } catch (error) {
