@@ -62,14 +62,14 @@ export default function PatientLoginPage() {
             현재 로그인 방식
           </p>
           <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-            팀코드로 연결된 환자 전용 아이디와 비밀번호로 로그인합니다.
+            회원가입 때 등록한 로그인 이메일과 비밀번호로 로그인합니다.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} style={formStack}>
           <input
-            type="text"
-            placeholder="환자 아이디"
+            type="email"
+            placeholder="로그인 이메일"
             style={input}
             value={form.identifier}
             onChange={event => setForm(prev => ({ ...prev, identifier: event.target.value }))}

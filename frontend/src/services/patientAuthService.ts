@@ -27,7 +27,7 @@ function mapPatientSignupInputToRequest(input: PatientSignupInput): PatientSignu
   return {
     teamCode: normalizeTeamCode(input.teamCode),
     name: input.account.name.trim(),
-    loginId: input.account.loginId.trim(),
+    loginId: input.account.loginId.trim().toLowerCase(),
     password: input.account.password,
   }
 }
