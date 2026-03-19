@@ -16,6 +16,7 @@ import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
+import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {
@@ -93,6 +94,19 @@ const playTriangleStyle: CSSProperties = {
   marginLeft: '4px',
 }
 
+const pausedBadgeStyle: CSSProperties = {
+  position: 'absolute',
+  top: '16px',
+  left: '16px',
+  padding: '8px 12px',
+  borderRadius: '999px',
+  backgroundColor: 'rgba(18, 29, 46, 0.78)',
+  color: '#eef6ff',
+  fontSize: '12px',
+  fontWeight: 800,
+  zIndex: 2,
+}
+
 const sideActionWrapStyle: CSSProperties = {
   display: 'grid',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
@@ -115,6 +129,7 @@ const iframeWrapStyle: CSSProperties = {
 export default function LeisurePlayerPage() {
   const navigate = useNavigate()
   const location = useLocation()
+  const chat = usePatientIncomingChat()
   const params = useParams()
   const routeState = (location.state as LeisurePlayerRouteState | null) ?? null
   const searchParams = new URLSearchParams(location.search)
@@ -287,6 +302,9 @@ export default function LeisurePlayerPage() {
         <div style={playerVisualPanelStyle}>
           <div style={videoOuterWrapStyle}>
             <div style={videoInnerWrapStyle}>
+              {chat.state.isMediaPausedByInterrupt ? (
+                <div style={pausedBadgeStyle}>채팅 인터럽트로 mock 일시정지</div>
+              ) : null}
               <iframe
                 title={content.title}
                 src={content.embedUrl}
