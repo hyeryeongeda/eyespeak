@@ -36,6 +36,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private Role role;
 
+    @Column(nullable = false)
+    private boolean isAgree = false;
+
     @Builder
     public User(String loginId, String password, String name, Role role) {
         this.loginId = loginId;
