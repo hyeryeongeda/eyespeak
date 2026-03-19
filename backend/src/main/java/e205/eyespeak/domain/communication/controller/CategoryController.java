@@ -4,6 +4,7 @@ import e205.eyespeak.domain.communication.dto.response.CategoryResponse;
 import e205.eyespeak.domain.communication.dto.response.PhraseResponse;
 import e205.eyespeak.domain.communication.service.CategoryService;
 import e205.eyespeak.global.common.ApiResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
