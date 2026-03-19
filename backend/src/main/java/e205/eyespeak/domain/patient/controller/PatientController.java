@@ -83,7 +83,7 @@ public class PatientController {
 
         // 4. 일과 설정 저장
         if (request.getSurvey() != null && request.getSurvey().getRoutines() != null) {
-            routineService.saveRoutines(matching, request.getSurvey().getRoutines());
+            routineService.saveSurveyRoutines(matching, request.getSurvey().getRoutines());
         }
 
         // 5. 응답

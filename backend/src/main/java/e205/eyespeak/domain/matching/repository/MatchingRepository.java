@@ -10,4 +10,6 @@ public interface MatchingRepository extends JpaRepository<Matching, Long> {
     Optional<Matching> findByGuardianId(Long guardianId);
 
     Optional<Matching> findByPatientId(Long patientId);
+
+    Optional<Matching> findByInviteCode(String inviteCode);
 }

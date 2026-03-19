@@ -3,11 +3,13 @@ package e205.eyespeak.domain.routine.dto.request;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 public class RoutineSlotRequest {
 
     @NotNull(message = "시간대 ID는 필수입니다")
