@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../app/router/routePaths'
-import { setStoredEntryMode } from '../services/authService'
+import { setStoredEntryMode } from '../services/authStorage'
 
 export default function HomePage() {
   const navigate = useNavigate()
