@@ -4,6 +4,7 @@ import e205.eyespeak.domain.guardian.entity.Guardian;
 import e205.eyespeak.domain.guardian.repository.GuardianRepository;
 import e205.eyespeak.domain.matching.entity.Matching;
 import e205.eyespeak.domain.matching.repository.MatchingRepository;
+import e205.eyespeak.domain.patient.dto.request.RegisterPatientRequest;
 import e205.eyespeak.domain.routine.dto.request.RoutineCreateRequest;
 import e205.eyespeak.domain.routine.dto.request.RoutineSlotRequest;
 import e205.eyespeak.domain.routine.dto.response.RoutineListResponse;
@@ -20,6 +21,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -39,7 +42,7 @@ public class RoutineService {
     public void createRoutine(Long userId, RoutineCreateRequest request) {
         Matching matching = getMatchingByUserId(userId);
         validateNoDuplicateTimeSlots(request.getRoutines());
-        saveRoutines(matching, request.getRoutines());
+        persistRoutineSlots(matching, request.getRoutines());
     }
 
     public RoutineListResponse getRoutines(Long userId) {
@@ -58,7 +61,50 @@ public class RoutineService {
         Matching matching = getMatchingByUserId(userId);
         validateNoDuplicateTimeSlots(request.getRoutines());
         routineSlotTagRepository.deleteByMatchingId(matching.getId());
-        saveRoutines(matching, request.getRoutines());
+        persistRoutineSlots(matching, request.getRoutines());
+    }
+
+    /**
+     * 환자 등록 설문의 루틴(문자열 ID)을 저장합니다. 시간대당 태그가 여러 개면 행을 여러 개 만듭니다.
+     */
+    @Transactional
+    public void saveSurveyRoutines(Matching matching, List<RegisterPatientRequest.RoutineDto> routineDtos) {
+        if (routineDtos == null || routineDtos.isEmpty()) {
+            return;
+        }
+        List<RoutineSlotRequest> slots = mapSurveyRoutinesToSlots(routineDtos);
+        validateNoDuplicateTimeSlots(slots);
+        persistRoutineSlots(matching, slots);
+    }
+
+    private List<RoutineSlotRequest> mapSurveyRoutinesToSlots(List<RegisterPatientRequest.RoutineDto> routineDtos) {
+        if (routineDtos == null || routineDtos.isEmpty()) {
+            return List.of();
+        }
+        List<RoutineSlotRequest> out = new ArrayList<>();
+        for (RegisterPatientRequest.RoutineDto dto : routineDtos) {
+            if (dto.getSlotId() == null) {
+                throw new BusinessException(ErrorCode.INVALID_INPUT);
+            }
+            long timeSlotId = parsePositiveLong(dto.getSlotId(), "time slot id");
+            List<String> tagIds = dto.getSelectedTagIds() != null ? dto.getSelectedTagIds() : Collections.emptyList();
+            for (String tagIdStr : tagIds) {
+                long activityTagId = parsePositiveLong(tagIdStr, "activity tag id");
+                out.add(new RoutineSlotRequest(timeSlotId, activityTagId));
+            }
+        }
+        return out;
+    }
+
+    private static long parsePositiveLong(String raw, String fieldLabel) {
+        if (raw == null || raw.isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException e) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
     }
 
     private Matching getMatchingByUserId(Long userId) {
@@ -79,7 +125,7 @@ public class RoutineService {
         }
     }
 
-    private void saveRoutines(Matching matching, List<RoutineSlotRequest> routines) {
+    private void persistRoutineSlots(Matching matching, List<RoutineSlotRequest> routines) {
         List<RoutineSlotTag> entities = routines.stream()
                 .map(slot -> {
                     TimeSlot timeSlot = timeSlotRepository.findById(slot.getTimeSlotId())
