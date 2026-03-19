@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Routine", description = "루틴 관리 API")
 @RestController
-@RequestMapping("/api/v1/routines")
+@RequestMapping("/routines")
 @RequiredArgsConstructor
 public class RoutineController {
 
