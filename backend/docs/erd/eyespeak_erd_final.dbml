@@ -255,7 +255,7 @@ Table routine_slot_tag {
   created_at datetime [not null]
 
   indexes {
-    (matching_id, time_slot_id, activity_tag_id) [unique]
+    (matching_id, time_slot_id) [unique, note: '하나의 시간대에 활동 태그 1개만']
   }
 }
 

@@ -107,7 +107,7 @@ pipeline {
 
                             for (int i = 1; i <= maxRetries; i++) {
                                 def result = sh(
-                                    script: 'docker exec eyespeak-was-dev curl -sf http://localhost:8080/actuator/health || echo "failed"',
+                                    script: 'docker exec eyespeak-was-dev curl -sf http://localhost:8080/api/v1/actuator/health || echo "failed"',
                                     returnStdout: true
                                 ).trim()
 
@@ -256,7 +256,7 @@ pipeline {
 
                             for (int i = 1; i <= maxRetries; i++) {
                                 def result = sh(
-                                    script: "docker exec ${containerName} curl -sf http://localhost:8080/actuator/health || echo 'failed'",
+                                    script: "docker exec ${containerName} curl -sf http://localhost:8080/api/v1/actuator/health || echo 'failed'",
                                     returnStdout: true
                                 ).trim()
 
