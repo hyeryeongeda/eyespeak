@@ -1,6 +1,5 @@
-// ASSUMED: 기존 프론트 전반에서 사용하는 caregiver role key를 유지하고,
-// 백엔드 guardian 개념/엔드포인트와 매핑한다.
-export type UserRole = 'caregiver' | 'patient'
+// 백엔드 명세 기준 role 값을 그대로 사용한다.
+export type UserRole = 'guardian' | 'patient'
 
 export type AuthEntryMode = 'login' | 'signup'
 

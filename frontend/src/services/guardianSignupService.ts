@@ -1,6 +1,7 @@
 import { signUpGuardianApi } from './authApi'
 import { mapAuthResponseToSession } from './authService'
 import { registerPatientInfo } from './patientService'
+import { createPatientRoutines } from './routineService'
 import type { GuardianAccountFormValues } from '../types/auth'
 import type { AuthSession } from '../types/auth'
 import type {
@@ -43,13 +44,18 @@ export async function signUpGuardian(
     const patientRegistrationResult = await registerPatientInfo(
       {
         patientProfile: input.patientProfile,
-        patientRoutines: input.patientRoutines,
       },
       session,
     )
 
     if (!patientRegistrationResult.success) {
       return patientRegistrationResult
+    }
+
+    const routineRegistrationResult = await createPatientRoutines(input.patientRoutines, session)
+
+    if (!routineRegistrationResult.success) {
+      return routineRegistrationResult
     }
 
     return {

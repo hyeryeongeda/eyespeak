@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
   AUTH_SIGNUP_GUARDIAN: '/api/v1/auth/sign-up/guardian',
   AUTH_SIGNUP_PATIENT: '/api/v1/auth/patients',
   PATIENTS: '/api/v1/patients',
+  ROUTINES: '/api/v1/routines',
   AUTH_REFRESH: '/api/v1/auth/refresh',
   AUTH_WITHDRAW: '/api/v1/auth/withdraw',
 } as const
