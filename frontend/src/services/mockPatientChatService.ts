@@ -129,8 +129,8 @@ export function createMockIncomingPatientChatMessage(
   const createdAt = timestampFormatter.format(new Date())
 
   return {
-    id: overrides?.messageId ?? `caregiver-${preset.key}-${incomingMessageSequence}`,
-    sender: 'caregiver',
+    id: overrides?.messageId ?? `guardian-${preset.key}-${incomingMessageSequence}`,
+    sender: 'guardian',
     type: preset.type,
     content: overrides?.content ?? preset.content,
     createdAt,

@@ -11,37 +11,36 @@ export interface PatientProfileFormValues {
 }
 
 export interface PatientRoutineTagConfig {
-  id: string
+  id: number
   label: string
 }
 
 export interface PatientRoutineSlotConfig {
-  id: string
+  id: number
   label: string
   timeRange: string
   tags: PatientRoutineTagConfig[]
-  allowEmpty?: boolean
-  emptyHint?: string
 }
 
-export type PatientRoutinesFormValues = Record<string, string[]>
+export type PatientRoutinesFormValues = Record<number, number | null>
 
 export interface RegisterPatientInfoRequestDto {
   name: string
   birthYear: number
   gender: PatientGenderApiValue
-  survey: {
-    routines: Array<{
-      slotId: string
-      selectedTagIds: string[]
-    }>
-  }
 }
 
 export interface RegisterPatientInfoResponseDto {
   patientId: string
   teamCode: string
   createdAt: string
+}
+
+export interface RoutineCreateRequestDto {
+  routines: Array<{
+    timeSlotId: number
+    activityTagId: number
+  }>
 }
 
 export interface PatientAccountFormValues {

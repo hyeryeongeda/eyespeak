@@ -7,5 +7,7 @@ import java.util.Optional;
 
 public interface MatchingRepository extends JpaRepository<Matching, Long> {
 
-    Optional<Matching> findByInviteCode(String inviteCode);
+    Optional<Matching> findByGuardianId(Long guardianId);
+
+    Optional<Matching> findByPatientId(Long patientId);
 }

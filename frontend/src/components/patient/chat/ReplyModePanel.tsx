@@ -91,21 +91,21 @@ const badgeStyle: CSSProperties = {
   fontWeight: 800,
 }
 
-const caregiverBoxStyle: CSSProperties = {
+const guardianBoxStyle: CSSProperties = {
   padding: '18px 20px',
   borderRadius: '22px',
   backgroundColor: '#f5f8fb',
   border: '1px solid #dae4eb',
 }
 
-const caregiverLabelStyle: CSSProperties = {
+const guardianLabelStyle: CSSProperties = {
   margin: '0 0 8px',
   color: '#7b8a9f',
   fontSize: '12px',
   fontWeight: 800,
 }
 
-const caregiverTextStyle: CSSProperties = {
+const guardianTextStyle: CSSProperties = {
   margin: 0,
   color: '#23354b',
   fontSize: '20px',
@@ -258,9 +258,9 @@ export default function ReplyModePanel({
         </div>
       </div>
 
-      <div style={caregiverBoxStyle}>
-        <p style={caregiverLabelStyle}>보호자 원문</p>
-        <p style={caregiverTextStyle}>{message.content || '내용 없음'}</p>
+      <div style={guardianBoxStyle}>
+        <p style={guardianLabelStyle}>보호자 원문</p>
+        <p style={guardianTextStyle}>{message.content || '내용 없음'}</p>
       </div>
 
       <p style={statusTextStyle}>{getStatusCopy(status, timeoutMs, unresolvedCount)}</p>
