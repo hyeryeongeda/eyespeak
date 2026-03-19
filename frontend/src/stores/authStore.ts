@@ -1,26 +1,66 @@
 import { create } from 'zustand'
-import {
-  authenticateMockUser,
-  clearStoredAuthSession,
-  getStoredAuthSession,
-  persistAuthSession,
-} from '../services/authService'
-import type { AuthSession, MockLoginPayload, MockLoginResult } from '../types/auth'
+import { clearStoredAuthSession, getStoredAuthSession, persistAuthSession } from '../services/authStorage'
+import { login as loginService, logout as logoutService, refreshSession as refreshSessionService } from '../services/authService'
+import type { AuthSession, LoginFormValues } from '../types/auth'
+import type { ServiceResult } from '../types/api'
 
 interface AuthStoreState {
   isAuthenticated: boolean
   user: AuthSession | null
-  login: (payload: MockLoginPayload) => MockLoginResult
-  logout: () => void
+  isPending: boolean
+  login: (payload: LoginFormValues) => Promise<ServiceResult<AuthSession>>
+  logout: () => Promise<void>
+  refreshSession: () => Promise<ServiceResult<AuthSession>>
+  setSession: (session: AuthSession) => void
+  clearSession: () => void
 }
 
 const initialSession = getStoredAuthSession()
 
-export const useAuthStore = create<AuthStoreState>(set => ({
+export const useAuthStore = create<AuthStoreState>((set, get) => ({
   isAuthenticated: initialSession !== null,
   user: initialSession,
-  login: payload => {
-    const result = authenticateMockUser(payload)
+  isPending: false,
+  login: async payload => {
+    set({ isPending: true })
+
+    const result = await loginService(payload)
+
+    if (!result.success) {
+      clearStoredAuthSession()
+      set({
+        isAuthenticated: false,
+        user: null,
+        isPending: false,
+      })
+      return result
+    }
+
+    persistAuthSession(result.data)
+    set({
+      isAuthenticated: true,
+      user: result.data,
+      isPending: false,
+    })
+    return result
+  },
+  logout: async () => {
+    const currentSession = get().user
+
+    set({ isPending: true })
+    await logoutService(currentSession)
+    clearStoredAuthSession()
+
+    set({
+      isAuthenticated: false,
+      user: null,
+      isPending: false,
+    })
+  },
+  refreshSession: async () => {
+    const currentSession = get().user
+
+    const result = await refreshSessionService(currentSession)
 
     if (!result.success) {
       clearStoredAuthSession()
@@ -31,14 +71,22 @@ export const useAuthStore = create<AuthStoreState>(set => ({
       return result
     }
 
-    persistAuthSession(result.user)
+    persistAuthSession(result.data)
     set({
       isAuthenticated: true,
-      user: result.user,
+      user: result.data,
     })
+
     return result
   },
-  logout: () => {
+  setSession: session => {
+    persistAuthSession(session)
+    set({
+      isAuthenticated: true,
+      user: session,
+    })
+  },
+  clearSession: () => {
     clearStoredAuthSession()
     set({
       isAuthenticated: false,

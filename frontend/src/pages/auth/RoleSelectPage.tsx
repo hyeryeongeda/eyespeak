@@ -2,11 +2,17 @@ import { useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getAuthPathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
 import {
+  getStoredEntryMode,
+  getStoredRole,
+  setStoredEntryMode,
+  setStoredRole,
+} from '../../services/authStorage'
+import type { AuthEntryMode } from '../../types/auth'
+import AuthBrand from './AuthBrand'
+import {
   backButton,
   card,
   helperText,
-  logoText,
-  logoWrap,
   pageDesc,
   pageTitle,
   pageWrapper,
@@ -16,15 +22,7 @@ import {
   roleDesc,
   roleGrid,
   roleTitle,
-  subtitle,
 } from './authPageStyles'
-import {
-  getStoredEntryMode,
-  getStoredRole,
-  setStoredEntryMode,
-  setStoredRole,
-} from '../../services/authService'
-import type { AuthEntryMode } from '../../types/auth'
 
 type AuthRole = 'caregiver' | 'patient'
 
@@ -66,16 +64,13 @@ export default function RoleSelectPage() {
   return (
     <div style={pageWrapper}>
       <div style={card}>
-        <div style={logoWrap}>
-          <p style={logoText}>eyespeak</p>
-          <p style={subtitle}>역할 선택</p>
-        </div>
+        <AuthBrand subtitleText="역할 선택" />
 
         <h1 style={pageTitle}>이용할 역할을 선택해주세요</h1>
         <p style={pageDesc}>
           {mode === 'login'
-            ? '로그인 전에 사용할 역할을 먼저 선택합니다.'
-            : '회원가입 전에 사용할 역할을 먼저 선택합니다.'}
+            ? '로그인에 사용할 역할을 먼저 선택합니다.'
+            : '회원가입에 사용할 역할을 먼저 선택합니다.'}
         </p>
 
         <div style={roleGrid}>
@@ -104,7 +99,7 @@ export default function RoleSelectPage() {
             ? '환자'
             : selectedRole === 'caregiver'
               ? '보호자'
-              : '선택 전'}
+              : '선택 없음'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

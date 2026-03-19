@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import { getAuthPathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
-import { getStoredRole } from '../../services/authService'
+import { getStoredRole } from '../../services/authStorage'
 
 export default function LoginPage() {
   const selectedRole = getStoredRole()
