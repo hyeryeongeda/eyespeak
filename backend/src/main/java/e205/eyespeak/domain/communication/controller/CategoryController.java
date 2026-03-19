@@ -1,5 +1,8 @@
 package e205.eyespeak.domain.communication.controller;
 
+import e205.eyespeak.domain.communication.dto.response.CategoryResponse;
+import e205.eyespeak.domain.communication.dto.response.PhraseResponse;
+import e205.eyespeak.domain.communication.service.CategoryService;
 import e205.eyespeak.global.common.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -8,21 +11,38 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 /**
- * 카테고리 + 문구 트리 API (3.1)
- * - Swagger 명세용 하드코딩 컨트롤러
- * - 몸과마음 카테고리 계층(depth 0→1→2) + 말단 문구를 트리 구조로 한번에 조회
+ * 카테고리 + 문구 API
+ * - /tree: 기존 Swagger 명세용 트리 조회
+ * - /: 카테고리 목록 조회
+ * - /{categoryId}/phrases: 카테고리별 표현 조회
  */
-@Tag(name = "카테고리 (몸과마음)", description = "카테고리 + 문구 트리 조회 API")
+@Tag(name = "카테고리 (몸과마음)", description = "카테고리 + 문구 조회 API")
 @RestController
 @RequestMapping("/categories")
+@RequiredArgsConstructor
 public class CategoryController {
+
+    private final CategoryService categoryService;
+
+    @Operation(summary = "카테고리 목록 조회", description = "전체 카테고리 목록을 조회한다.")
+    @GetMapping
+    public ApiResponse<List<CategoryResponse>> getCategories() {
+        List<CategoryResponse> response = categoryService.getCategories();
+        return ApiResponse.ok(response);
+    }
+
+    @Operation(summary = "카테고리별 표현 조회", description = "해당 카테고리의 표현 목록을 조회한다.")
+    @GetMapping("/{categoryId}/phrases")
+    public ApiResponse<List<PhraseResponse>> getPhrasesByCategory(@PathVariable Long categoryId) {
+        List<PhraseResponse> response = categoryService.getPhrasesByCategory(categoryId);
+        return ApiResponse.ok(response);
+    }
 
     @Operation(summary = "카테고리 + 문구 트리 전체 조회",
             description = "몸과마음 카테고리 계층(depth 0→1→2) + 말단 문구를 트리 구조로 한번에 조회. "
@@ -38,13 +58,13 @@ public class CategoryController {
                 new CategoryTreeResponse(1L, "가래/침 빼줘", 0, 1,
                         List.of(
                                 new CategoryTreeResponse(10L, "가래 빼줘", 1, 1, List.of(),
-                                        List.of(new PhraseResponse(101L, "가래 빼줘", 1))),
+                                        List.of(new TreePhraseResponse(101L, "가래 빼줘", 1))),
                                 new CategoryTreeResponse(11L, "침 빼줘", 1, 2, List.of(),
-                                        List.of(new PhraseResponse(102L, "침 빼줘", 1)))
+                                        List.of(new TreePhraseResponse(102L, "침 빼줘", 1)))
                         ),
                         List.of()),
                 new CategoryTreeResponse(2L, "숨 답답해", 0, 2, List.of(),
-                        List.of(new PhraseResponse(201L, "숨이 답답해요", 1)))
+                        List.of(new TreePhraseResponse(201L, "숨이 답답해요", 1)))
         );
         return ApiResponse.ok(tree);
     }
@@ -68,10 +88,10 @@ public class CategoryController {
         private final List<CategoryTreeResponse> children;
 
         @Schema(description = "해당 카테고리의 문구 목록 (말단에만 존재)")
-        private final List<PhraseResponse> phrases;
+        private final List<TreePhraseResponse> phrases;
 
         CategoryTreeResponse(Long categoryId, String name, int depth, int orderIndex,
-                             List<CategoryTreeResponse> children, List<PhraseResponse> phrases) {
+                             List<CategoryTreeResponse> children, List<TreePhraseResponse> phrases) {
             this.categoryId = categoryId;
             this.name = name;
             this.depth = depth;
@@ -83,7 +103,7 @@ public class CategoryController {
 
     @Getter
     @Schema(description = "문구 응답")
-    static class PhraseResponse {
+    static class TreePhraseResponse {
         @Schema(description = "문구 ID", example = "101")
         private final Long phraseId;
 
@@ -93,7 +113,7 @@ public class CategoryController {
         @Schema(description = "문구 표시 순서", example = "1")
         private final int orderIndex;
 
-        PhraseResponse(Long phraseId, String content, int orderIndex) {
+        TreePhraseResponse(Long phraseId, String content, int orderIndex) {
             this.phraseId = phraseId;
             this.content = content;
             this.orderIndex = orderIndex;
