@@ -1,4 +1,8 @@
 # 모든 환경에서 공통으로 적용되는 설정
+server:
+  servlet:
+    context-path: /api/v1
+
 spring:
   application:
     name: eyespeak
