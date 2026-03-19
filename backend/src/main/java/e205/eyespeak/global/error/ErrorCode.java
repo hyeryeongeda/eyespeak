@@ -144,8 +144,25 @@ public enum ErrorCode {
     // → 존재하지 않는 즐겨찾기 ID
 
     FAVORITE_DUPLICATE(HttpStatus.CONFLICT, "COMM-607",
-            "이미 즐겨찾기에 등록된 표현입니다");
+            "이미 즐겨찾기에 등록된 표현입니다"),
     // → 동일 표현 중복 등록
+
+    // ====== LEISURE (여가 콘텐츠) ======
+
+    LEISURE_CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "LEISURE-1001",
+            "여가 콘텐츠를 찾을 수 없습니다"),
+
+    LEISURE_CONTENT_LIMIT(HttpStatus.BAD_REQUEST, "LEISURE-1002",
+            "여가 콘텐츠는 최대 5개까지 등록할 수 있습니다"),
+
+    LEISURE_INVALID_CONTENT(HttpStatus.BAD_REQUEST, "LEISURE-1003",
+            "URL 또는 카테고리 중 하나를 입력해야 합니다"),
+
+    LEISURE_INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "LEISURE-1004",
+            "유효하지 않은 YouTube 카테고리입니다"),
+
+    LEISURE_INVALID_URL(HttpStatus.BAD_REQUEST, "LEISURE-1005",
+            "유효하지 않은 YouTube URL입니다");
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)

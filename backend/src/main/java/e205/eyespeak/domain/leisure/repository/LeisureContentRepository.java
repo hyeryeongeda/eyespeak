@@ -7,5 +7,7 @@ import java.util.List;
 
 public interface LeisureContentRepository extends JpaRepository<LeisureContent, Long> {
 
-    List<LeisureContent> findByMatchingIdOrderByPosition(Long matchingId);
+    List<LeisureContent> findByMatchingId(Long matchingId);
+
+    int countByMatchingId(Long matchingId);
 }
