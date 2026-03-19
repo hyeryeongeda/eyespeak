@@ -9,6 +9,8 @@ import e205.eyespeak.domain.patient.dto.response.RegisterPatientResponse;
 import e205.eyespeak.domain.patient.entity.Patient;
 import e205.eyespeak.domain.patient.service.PatientService;
 import e205.eyespeak.domain.routine.service.RoutineService;
+import e205.eyespeak.domain.setting.entity.PatientSetting;
+import e205.eyespeak.domain.setting.repository.PatientSettingRepository;
 import e205.eyespeak.global.common.ApiResponse;
 import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
@@ -42,6 +44,7 @@ public class PatientController {
     private final MatchingService matchingService;
     private final RoutineService routineService;
     private final GuardianRepository guardianRepository;
+    private final PatientSettingRepository patientSettingRepository;
 
     @Operation(summary = "환자 본인 정보 조회",
             description = "JWT 토큰으로 로그인한 환자 본인 프로필 조회 (메인화면 '환자 OO 님' 표시용)")
@@ -81,12 +84,20 @@ public class PatientController {
         // 3. 매칭 생성 + 팀코드 발급
         Matching matching = matchingService.createMatching(patient, guardian);
 
-        // 4. 일과 설정 저장
+        // 4. 환자 시선 입력 설정 생성 (기본값: activationDelay=1000ms, dwellTime=1000ms)
+        patientSettingRepository.save(
+                PatientSetting.builder()
+                        .matching(matching)
+                        .activationDelay(1000)
+                        .dwellTime(1000)
+                        .build());
+
+        // 5. 일과 설정 저장
         if (request.getSurvey() != null && request.getSurvey().getRoutines() != null) {
             routineService.saveSurveyRoutines(matching, request.getSurvey().getRoutines());
         }
 
-        // 5. 응답
+        // 6. 응답
         RegisterPatientResponse response = RegisterPatientResponse.builder()
                 .patientId(patient.getId())
                 .teamCode(matching.getInviteCode())

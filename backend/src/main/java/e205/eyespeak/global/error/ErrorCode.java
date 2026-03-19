@@ -162,7 +162,15 @@ public enum ErrorCode {
             "유효하지 않은 YouTube 카테고리입니다"),
 
     LEISURE_INVALID_URL(HttpStatus.BAD_REQUEST, "LEISURE-1005",
-            "유효하지 않은 YouTube URL입니다");
+            "유효하지 않은 YouTube URL입니다"),
+
+    // ====== SETTING (환자 설정) ======
+
+    SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "SETTING-1101",
+            "환자 설정을 찾을 수 없습니다"),
+
+    INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
+            "허용되지 않는 설정값입니다");
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)
