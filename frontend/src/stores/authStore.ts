@@ -1,6 +1,10 @@
 import { create } from 'zustand'
 import { clearStoredAuthSession, getStoredAuthSession, persistAuthSession } from '../services/authStorage'
 import { login as loginService, logout as logoutService, refreshSession as refreshSessionService } from '../services/authService'
+import {
+  registerAuthSessionUpdater,
+  syncActiveAuthSession,
+} from '../services/authSessionRegistry'
 import type { AuthSession, LoginFormValues } from '../types/auth'
 import type { ServiceResult } from '../types/api'
 
@@ -16,6 +20,7 @@ interface AuthStoreState {
 }
 
 const initialSession = getStoredAuthSession()
+syncActiveAuthSession(initialSession)
 
 export const useAuthStore = create<AuthStoreState>((set, get) => ({
   isAuthenticated: initialSession !== null,
@@ -28,6 +33,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
 
     if (!result.success) {
       clearStoredAuthSession()
+      syncActiveAuthSession(null)
       set({
         isAuthenticated: false,
         user: null,
@@ -37,6 +43,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     }
 
     persistAuthSession(result.data)
+    syncActiveAuthSession(result.data)
     set({
       isAuthenticated: true,
       user: result.data,
@@ -50,6 +57,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     set({ isPending: true })
     await logoutService(currentSession)
     clearStoredAuthSession()
+    syncActiveAuthSession(null)
 
     set({
       isAuthenticated: false,
@@ -64,6 +72,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
 
     if (!result.success) {
       clearStoredAuthSession()
+      syncActiveAuthSession(null)
       set({
         isAuthenticated: false,
         user: null,
@@ -72,6 +81,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     }
 
     persistAuthSession(result.data)
+    syncActiveAuthSession(result.data)
     set({
       isAuthenticated: true,
       user: result.data,
@@ -81,6 +91,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   },
   setSession: session => {
     persistAuthSession(session)
+    syncActiveAuthSession(session)
     set({
       isAuthenticated: true,
       user: session,
@@ -88,9 +99,29 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   },
   clearSession: () => {
     clearStoredAuthSession()
+    syncActiveAuthSession(null)
     set({
       isAuthenticated: false,
       user: null,
     })
   },
 }))
+
+registerAuthSessionUpdater(session => {
+  if (session) {
+    persistAuthSession(session)
+    useAuthStore.setState({
+      isAuthenticated: true,
+      user: session,
+      isPending: false,
+    })
+    return
+  }
+
+  clearStoredAuthSession()
+  useAuthStore.setState({
+    isAuthenticated: false,
+    user: null,
+    isPending: false,
+  })
+})

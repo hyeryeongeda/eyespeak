@@ -1,10 +1,16 @@
-import type { AuthEntryMode, AuthSession, UserRole } from '../types/auth'
+import type {
+  AuthEntryMode,
+  AuthSession,
+  GuardianSessionExitReason,
+  UserRole,
+} from '../types/auth'
 
 export const SELECTED_ROLE_STORAGE_KEY = 'selectedRole'
 export const AUTH_ENTRY_MODE_STORAGE_KEY = 'authEntryMode'
 export const AUTH_SESSION_STORAGE_KEY = 'authSession'
 export const LEGACY_AUTH_SESSION_STORAGE_KEY = 'mockAuthSession'
 export const VERIFIED_TEAM_CODE_STORAGE_KEY = 'verifiedTeamCode'
+export const GUARDIAN_SESSION_EXIT_REASON_STORAGE_KEY = 'guardianSessionExitReason'
 
 function isBrowser() {
   return typeof window !== 'undefined'
@@ -16,6 +22,12 @@ export function normalizeTeamCode(value: string) {
 
 function normalizeStoredRole(role: string | null | undefined): UserRole | null {
   return role === 'guardian' || role === 'patient' ? role : null
+}
+
+function normalizeGuardianSessionExitReason(
+  value: string | null | undefined,
+): GuardianSessionExitReason | null {
+  return value === 'idle-timeout' || value === 'refresh-failed' ? value : null
 }
 
 export function getStoredRole(): UserRole | null {
@@ -66,6 +78,24 @@ export function clearStoredEntryMode() {
   sessionStorage.removeItem(AUTH_ENTRY_MODE_STORAGE_KEY)
 }
 
+export function storeGuardianSessionExitReason(reason: GuardianSessionExitReason) {
+  if (!isBrowser()) {
+    return
+  }
+
+  sessionStorage.setItem(GUARDIAN_SESSION_EXIT_REASON_STORAGE_KEY, reason)
+}
+
+export function consumeGuardianSessionExitReason(): GuardianSessionExitReason | null {
+  if (!isBrowser()) {
+    return null
+  }
+
+  const savedReason = sessionStorage.getItem(GUARDIAN_SESSION_EXIT_REASON_STORAGE_KEY)
+  sessionStorage.removeItem(GUARDIAN_SESSION_EXIT_REASON_STORAGE_KEY)
+  return normalizeGuardianSessionExitReason(savedReason)
+}
+
 function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSession {
   const normalizedRole = normalizeStoredRole(parsed.role)
 
@@ -82,6 +112,10 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
     typeof parsed.accessToken === 'string' &&
     (typeof parsed.refreshToken === 'string' || parsed.refreshToken === null)
   )
+}
+
+function shouldPersistAuthSession(role: UserRole) {
+  return role === 'patient'
 }
 
 function getSessionStorageValue() {
@@ -106,6 +140,11 @@ export function getStoredAuthSession(): AuthSession | null {
     const parsed = JSON.parse(savedSession) as Partial<AuthSession>
 
     if (isValidStoredSession(parsed)) {
+      if (!shouldPersistAuthSession(parsed.role)) {
+        clearStoredAuthSession()
+        return null
+      }
+
       return parsed
     }
 
@@ -122,8 +161,13 @@ export function persistAuthSession(session: AuthSession) {
     return
   }
 
-  sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
-  sessionStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
+  if (shouldPersistAuthSession(session.role)) {
+    sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
+    sessionStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
+  } else {
+    clearStoredAuthSession()
+  }
+
   setStoredRole(session.role)
 }
 

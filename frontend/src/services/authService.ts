@@ -1,9 +1,12 @@
-import { loginApi, logoutApi, refreshApi, withdrawApi } from './authApi'
+import { getActiveApiMode } from './apiClient'
+import { loginApi, logoutApi, refreshApi, requestPasswordResetApi, withdrawApi } from './authApi'
+import { mapAuthResponseToSession } from './authSessionMapper'
 import type {
-  AuthResponseDto,
   AuthSession,
   LoginFormValues,
   LoginRequestDto,
+  PasswordResetRequestDto,
+  PasswordResetResponseDto,
 } from '../types/auth'
 import type { ServiceResult } from '../types/api'
 import { createServiceFailure } from '../utils/errorMapper'
@@ -14,18 +17,6 @@ function mapLoginValuesToRequest(values: LoginFormValues): LoginRequestDto {
     identifier: values.identifier.trim(),
     password: values.password,
     role: values.role,
-  }
-}
-
-export function mapAuthResponseToSession(response: AuthResponseDto): AuthSession {
-  return {
-    id: response.user.id,
-    role: response.user.role,
-    name: response.user.name,
-    email: response.user.email,
-    teamCode: response.user.teamCode ?? null,
-    accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
   }
 }
 
@@ -94,6 +85,25 @@ export async function refreshSession(
     }
   } catch (error) {
     return createServiceFailure(error, '세션 갱신에 실패했습니다.')
+  }
+}
+
+export async function requestPasswordReset(
+  values: PasswordResetRequestDto,
+): Promise<ServiceResult<PasswordResetResponseDto>> {
+  try {
+    const response = await requestPasswordResetApi({
+      identifier: values.identifier.trim(),
+      role: values.role,
+    })
+
+    return {
+      success: true,
+      source: getActiveApiMode() === 'mock' ? 'mock' : 'api',
+      data: response,
+    }
+  } catch (error) {
+    return createServiceFailure(error, '비밀번호 재설정 요청에 실패했습니다.')
   }
 }
 

@@ -2,7 +2,12 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getHomePathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
-import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
+import {
+  consumeGuardianSessionExitReason,
+  setStoredEntryMode,
+  setStoredRole,
+} from '../../services/authStorage'
+import type { GuardianSessionExitReason } from '../../types/auth'
 import AuthBrand from './AuthBrand'
 import {
   card,
@@ -21,6 +26,9 @@ import {
 export default function CareLoginPage() {
   const navigate = useNavigate()
   const { login, isPending } = useAuth()
+  const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
+    consumeGuardianSessionExitReason(),
+  )
   const [form, setForm] = useState({
     identifier: '',
     password: '',
@@ -66,6 +74,19 @@ export default function CareLoginPage() {
           </p>
         </div>
 
+        {sessionNotice ? (
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+              세션 안내
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              {sessionNotice === 'idle-timeout'
+                ? '오랫동안 활동이 없어 보호자 세션이 자동으로 종료되었습니다. 다시 로그인해주세요.'
+                : '보호자 세션을 갱신하지 못해 다시 로그인이 필요합니다.'}
+            </p>
+          </div>
+        ) : null}
+
         <form onSubmit={handleSubmit} style={formStack}>
           <input
             type="email"
@@ -96,7 +117,7 @@ export default function CareLoginPage() {
         <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <Link to={ROUTE_PATHS.AUTH_RESET_PASSWORD} style={textLink}>
+          <Link to={`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=guardian`} style={textLink}>
             비밀번호 재설정
           </Link>
           <Link to={ROUTE_PATHS.AUTH_SIGNUP_CARE} style={textLink}>

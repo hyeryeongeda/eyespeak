@@ -96,7 +96,7 @@ export default function PatientLoginPage() {
         <p style={helperText}>로그인 성공 시 환자 메인으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <Link to={ROUTE_PATHS.AUTH_RESET_PASSWORD} style={textLink}>
+          <Link to={`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=patient`} style={textLink}>
             비밀번호 재설정
           </Link>
           <Link to={ROUTE_PATHS.AUTH_SIGNUP_PATIENT} style={textLink}>

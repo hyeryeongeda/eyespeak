@@ -6,7 +6,7 @@ import {
   GUARDIAN_SIGNUP_ROUTINE_SLOTS,
 } from '../guardianRoutineSurvey'
 import { signUpGuardian } from '../../../services/guardianSignupService'
-import { useAuth } from './useAuth'
+import { setStoredEntryMode, setStoredRole } from '../../../services/authStorage'
 import type { GuardianAccountFormValues } from '../../../types/auth'
 import type {
   PatientProfileFormValues,
@@ -55,7 +55,6 @@ function toggleSelectedTag(
 
 export function useGuardianSignupFlow() {
   const navigate = useNavigate()
-  const { setSession } = useAuth()
   const [currentStep, setCurrentStep] = useState<GuardianSignupStep>('guardian-account')
   const [guardianAccount, setGuardianAccount] =
     useState<GuardianAccountFormValues>(INITIAL_GUARDIAN_ACCOUNT)
@@ -224,8 +223,9 @@ export function useGuardianSignupFlow() {
       return
     }
 
-    setSession(signupResult.session)
-    navigate(ROUTE_PATHS.CARE_HOME, { replace: true })
+    setStoredRole('guardian')
+    setStoredEntryMode('login')
+    navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, { replace: true })
   }
 
   return {

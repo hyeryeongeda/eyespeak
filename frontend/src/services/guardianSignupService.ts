@@ -1,5 +1,5 @@
 import { signUpGuardianApi } from './authApi'
-import { mapAuthResponseToSession } from './authService'
+import { mapAuthResponseToSession } from './authSessionMapper'
 import { registerPatientInfo } from './patientService'
 import { createPatientRoutines } from './routineService'
 import type { GuardianAccountFormValues } from '../types/auth'
