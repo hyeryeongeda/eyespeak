@@ -156,6 +156,7 @@ export interface DailyMood {
   moodDate: string
   moodType: MoodType
   moodLevel: number
+  createdAt: string
 }
 
 export interface DailySummary {
