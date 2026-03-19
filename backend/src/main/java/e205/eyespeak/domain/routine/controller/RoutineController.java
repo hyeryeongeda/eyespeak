@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "루틴 관리", description = "환자 시간대별 루틴 관리 API. 7개 시간대 슬롯 각각에 활동 태그 1개 지정.")
@@ -34,9 +35,9 @@ public class RoutineController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Void> createRoutine(@Valid @RequestBody RoutineCreateRequest request) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<Void> createRoutine(@Valid @RequestBody RoutineCreateRequest request,
+                                              Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         routineService.createRoutine(userId, request);
         return ApiResponse.created();
     }
@@ -48,9 +49,8 @@ public class RoutineController {
                     content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
     })
     @GetMapping
-    public ApiResponse<RoutineListResponse> getRoutines() {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<RoutineListResponse> getRoutines(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         RoutineListResponse response = routineService.getRoutines(userId);
         return ApiResponse.ok(response);
     }
@@ -66,9 +66,9 @@ public class RoutineController {
                     content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
     })
     @PutMapping
-    public ApiResponse<Void> updateRoutine(@Valid @RequestBody RoutineCreateRequest request) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<Void> updateRoutine(@Valid @RequestBody RoutineCreateRequest request,
+                                              Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         routineService.updateRoutine(userId, request);
         return ApiResponse.ok();
     }
