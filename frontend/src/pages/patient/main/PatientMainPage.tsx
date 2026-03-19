@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -9,6 +9,15 @@ import {
   requestMockPatientCall,
 } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
+import { useTracking } from '../../../hooks/useTracking'
+import { useDwell, type DwellPhase } from '../../../hooks/useDwell'
+import {
+  getActivationDelayPreset,
+  getDwellTimePreset,
+} from '../../../services/careSettingService'
+import { ACTIVATION_DELAY_OPTIONS, DWELL_TIME_OPTIONS } from '../../../types/care'
+
+type PatientMainTrackingTargetId = 'talk' | 'call' | 'leisure'
 
 type FeatureCardProps = {
   badge: string
@@ -16,6 +25,11 @@ type FeatureCardProps = {
   description: string
   background: string
   className: string
+  trackingId?: PatientMainTrackingTargetId
+  trackingFocused?: boolean
+  dwellPhase?: DwellPhase
+  dwellProgress?: number
+  dwellRemainingMs?: number
   onSelect?: () => void
   disabled?: boolean
   centered?: boolean
@@ -27,11 +41,17 @@ function FeatureCard({
   description,
   background,
   className,
+  trackingId,
+  trackingFocused = false,
+  dwellPhase = 'idle',
+  dwellProgress = 0,
+  dwellRemainingMs = 0,
   onSelect,
   disabled = false,
   centered = false,
 }: FeatureCardProps) {
   const isInteractive = typeof onSelect === 'function'
+  const showTrackingFeedback = Boolean(trackingId) && trackingFocused
   const cardClassName = isInteractive ? `${className} patient-main-interactive` : className
   const content = (
     <>
@@ -60,9 +80,22 @@ function FeatureCard({
           lineHeight: 1.35,
           textAlign: centered ? 'center' : 'left',
         }}
-      >
+        >
         {description}
       </p>
+      {showTrackingFeedback ? (
+        <div style={trackingPanelStyle}>
+          <p style={trackingLabelStyle}>{getTrackingStatusCopy(dwellPhase, dwellRemainingMs)}</p>
+          <div style={trackingBarStyle}>
+            <div
+              style={{
+                ...trackingBarFillStyle,
+                width: `${Math.max(8, Math.round(dwellProgress * 100))}%`,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </>
   )
 
@@ -79,6 +112,12 @@ function FeatureCard({
           alignItems: centered ? 'center' : 'flex-start',
           justifyContent: centered ? 'center' : 'flex-start',
           textAlign: centered ? 'center' : 'left',
+          ...(trackingFocused
+            ? {
+                borderColor: '#8ab6de',
+                boxShadow: '0 28px 52px rgba(93, 142, 199, 0.2)',
+              }
+            : null),
         }}
       >
         {content}
@@ -93,6 +132,7 @@ function FeatureCard({
       onClick={onSelect}
       disabled={disabled}
       aria-label={`${title} 카드`}
+      data-tracking-id={trackingId && !disabled ? trackingId : undefined}
       style={{
         ...featureCardBase,
         background,
@@ -106,6 +146,12 @@ function FeatureCard({
         alignItems: centered ? 'center' : 'flex-start',
         justifyContent: centered ? 'center' : 'flex-start',
         textAlign: centered ? 'center' : 'left',
+        ...(trackingFocused
+          ? {
+              borderColor: '#8ab6de',
+              boxShadow: '0 28px 52px rgba(93, 142, 199, 0.24)',
+            }
+          : null),
       }}
     >
       {content}
@@ -144,6 +190,13 @@ const userTextStyle: CSSProperties = {
   color: '#7384a1',
   fontSize: '14px',
   fontWeight: 600,
+}
+
+const trackingTextStyle: CSSProperties = {
+  margin: '4px 0 0',
+  color: '#6f82a0',
+  fontSize: '12px',
+  fontWeight: 700,
 }
 
 const logoutButtonStyle: CSSProperties = {
@@ -195,6 +248,36 @@ const badgeStyle: CSSProperties = {
   boxShadow: '0 6px 16px rgba(115, 129, 180, 0.08)',
 }
 
+const trackingPanelStyle: CSSProperties = {
+  width: '100%',
+  marginTop: '14px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+}
+
+const trackingLabelStyle: CSSProperties = {
+  margin: 0,
+  color: '#45688d',
+  fontSize: '13px',
+  fontWeight: 800,
+}
+
+const trackingBarStyle: CSSProperties = {
+  width: '100%',
+  height: '8px',
+  borderRadius: '999px',
+  backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  overflow: 'hidden',
+}
+
+const trackingBarFillStyle: CSSProperties = {
+  height: '100%',
+  borderRadius: '999px',
+  background: 'linear-gradient(90deg, #7ea8d7 0%, #5d8ec7 100%)',
+  transition: 'width 0.08s linear',
+}
+
 const responsiveStyle = `
   .patient-main-grid {
     grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -223,28 +306,98 @@ const responsiveStyle = `
   }
 `
 
+function formatSecondsText(milliseconds: number) {
+  const seconds = milliseconds / 1000
+
+  if (seconds <= 0) {
+    return '0.0초'
+  }
+
+  return `${seconds.toFixed(1)}초`
+}
+
+function getTrackingStatusCopy(phase: DwellPhase, remainingMs: number) {
+  if (phase === 'locking') {
+    return `입력 잠금 해제까지 ${formatSecondsText(remainingMs)}`
+  }
+
+  if (phase === 'dwelling') {
+    return `선택 확정까지 ${formatSecondsText(remainingMs)}`
+  }
+
+  if (phase === 'triggered') {
+    return '선택 확정'
+  }
+
+  return '시선 입력 대기'
+}
+
 export default function PatientMainPage() {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
+  const [dwellDurationMs, setDwellDurationMs] = useState(DWELL_TIME_OPTIONS.default.value)
+  const [activationDelayMs, setActivationDelayMs] =
+    useState(ACTIVATION_DELAY_OPTIONS.medium.value)
+  const gridRef = useRef<HTMLDivElement | null>(null)
 
   const patientId = user?.id ?? 'patient-guest'
   const isOverlayVisible =
     callStatus === 'requesting' || callStatus === 'success' || callStatus === 'cooldown'
   const overlayStatus = isOverlayVisible ? callStatus : null
+  const trackingEnabled = !isOverlayVisible
+
+  const { hoveredTargetId, isPointerInside } = useTracking<PatientMainTrackingTargetId>({
+    containerRef: gridRef,
+    enabled: trackingEnabled,
+  })
+
+  const dwellState = useDwell<PatientMainTrackingTargetId>({
+    hoveredTargetId,
+    dwellDurationMs,
+    activationDelayMs,
+    disabled: !trackingEnabled,
+    onCommit: handleTrackedSelect,
+  })
+
+  const trackingStatusText = useMemo(() => {
+    if (isOverlayVisible) {
+      return '호출 상태 안내 중에는 시선 선택을 잠시 멈춥니다.'
+    }
+
+    if (dwellState.activeTargetId && dwellState.phase !== 'idle') {
+      return getTrackingStatusCopy(dwellState.phase, dwellState.remainingMs)
+    }
+
+    if (isPointerInside) {
+      return `포인터를 유지하면 ${formatSecondsText(dwellDurationMs)} 뒤 선택됩니다.`
+    }
+
+    return `포인터를 카드 위에 올리면 입력 잠금 ${formatSecondsText(
+      activationDelayMs,
+    )} 후 dwell 선택이 시작됩니다.`
+  }, [
+    activationDelayMs,
+    dwellDurationMs,
+    dwellState.activeTargetId,
+    dwellState.phase,
+    dwellState.remainingMs,
+    isOverlayVisible,
+    isPointerInside,
+  ])
 
   const handleLogout = () => {
     logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
 
-  const closeCallOverlay = () => {
+  function closeCallOverlay() {
     setCallStatus('idle')
     setCooldownSeconds(0)
   }
 
-  const requestPatientCall = async () => {
+  async function requestPatientCall() {
     const result = await requestMockPatientCall(patientId)
 
     if (!result.success) {
@@ -256,7 +409,7 @@ export default function PatientMainPage() {
     setCallStatus('success')
   }
 
-  const handleSelectCall = () => {
+  function handleSelectCall() {
     const remainingMs = getRemainingPatientCallCooldownMs(patientId)
 
     if (remainingMs > 0) {
@@ -271,6 +424,53 @@ export default function PatientMainPage() {
       void requestPatientCall()
     }, 0)
   }
+
+  function handleTrackedSelect(targetId: PatientMainTrackingTargetId) {
+    if (targetId === 'talk') {
+      navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+      return
+    }
+
+    if (targetId === 'call') {
+      handleSelectCall()
+      return
+    }
+
+    navigate(ROUTE_PATHS.PATIENT_LEISURE)
+  }
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadTrackingPresets = async () => {
+      try {
+        const [dwellPresetResult, activationDelayResult] = await Promise.all([
+          getDwellTimePreset(),
+          getActivationDelayPreset(),
+        ])
+
+        if (!isMounted) {
+          return
+        }
+
+        if (dwellPresetResult.success) {
+          setDwellDurationMs(DWELL_TIME_OPTIONS[dwellPresetResult.data].value)
+        }
+
+        if (activationDelayResult.success) {
+          setActivationDelayMs(ACTIVATION_DELAY_OPTIONS[activationDelayResult.data].value)
+        }
+      } catch {
+        // Preset fetch is non-blocking. Keep default timing values when it fails.
+      }
+    }
+
+    void loadTrackingPresets()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     if (callStatus !== 'cooldown') {
@@ -319,19 +519,29 @@ export default function PatientMainPage() {
       <main className="patient-main-page" style={pageStyle}>
         <div style={containerStyle}>
           <div style={topBarStyle}>
-            <p style={userTextStyle}>{user?.name ? `${user.name} 님` : '환자 메인'}</p>
+            <div>
+              <p style={userTextStyle}>{user?.name ? `${user.name} 님` : '환자 메인'}</p>
+              <p style={trackingTextStyle}>{trackingStatusText}</p>
+            </div>
             <button type="button" onClick={handleLogout} style={logoutButtonStyle}>
               로그아웃
             </button>
           </div>
 
-          <div className="patient-main-grid" style={featureGridStyle}>
+          <div ref={gridRef} className="patient-main-grid" style={featureGridStyle}>
             <FeatureCard
               className="patient-main-card patient-main-full"
               badge="주기능"
               title="대화"
               description="렛츠고우!"
               background="linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)"
+              trackingId="talk"
+              trackingFocused={dwellState.activeTargetId === 'talk'}
+              dwellPhase={dwellState.activeTargetId === 'talk' ? dwellState.phase : 'idle'}
+              dwellProgress={dwellState.activeTargetId === 'talk' ? dwellState.progress : 0}
+              dwellRemainingMs={
+                dwellState.activeTargetId === 'talk' ? dwellState.remainingMs : 0
+              }
               centered
               onSelect={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}
             />
@@ -342,6 +552,13 @@ export default function PatientMainPage() {
               title="호출"
               description="보호자를 호출해요"
               background="linear-gradient(135deg, #fff6d7 0%, #fff1bf 100%)"
+              trackingId="call"
+              trackingFocused={dwellState.activeTargetId === 'call'}
+              dwellPhase={dwellState.activeTargetId === 'call' ? dwellState.phase : 'idle'}
+              dwellProgress={dwellState.activeTargetId === 'call' ? dwellState.progress : 0}
+              dwellRemainingMs={
+                dwellState.activeTargetId === 'call' ? dwellState.remainingMs : 0
+              }
               onSelect={handleSelectCall}
               disabled={callStatus === 'requesting'}
               centered
@@ -353,6 +570,13 @@ export default function PatientMainPage() {
               title="여가"
               description="음악 · 유튜브 · 뉴스"
               background="linear-gradient(135deg, #eff7f0 0%, #ebf8f6 100%)"
+              trackingId="leisure"
+              trackingFocused={dwellState.activeTargetId === 'leisure'}
+              dwellPhase={dwellState.activeTargetId === 'leisure' ? dwellState.phase : 'idle'}
+              dwellProgress={dwellState.activeTargetId === 'leisure' ? dwellState.progress : 0}
+              dwellRemainingMs={
+                dwellState.activeTargetId === 'leisure' ? dwellState.remainingMs : 0
+              }
               centered
               onSelect={() => navigate(ROUTE_PATHS.PATIENT_LEISURE)}
             />
