@@ -31,7 +31,6 @@ export default function TtsSettingPage() {
 
   const ACCEPTED_FORMATS = '.mp3,.wav,.mp4'
   const MAX_FILE_SIZE = 500 * 1024 * 1024   // 500MB
-  const MAX_TOTAL_SIZE = 1024 * 1024 * 1024  // 1GB
 
   useEffect(() => {
     const fetchAll = async () => {
