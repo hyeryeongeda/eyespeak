@@ -12,13 +12,12 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * 매칭별 루틴 선택 (M:N 중간 테이블)
- * - 어떤 시간대에 어떤 활동을 하는지
- * - matching_id + time_slot_id + activity_tag_id 조합이 유니크
+ * 매칭별 루틴 선택 (하나의 시간대에 활동 태그 1개)
+ * - matching_id + time_slot_id 조합이 유니크
  */
 @Entity
 @Table(name = "routine_slot_tag", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"matching_id", "time_slot_id", "activity_tag_id"})
+        @UniqueConstraint(columnNames = {"matching_id", "time_slot_id"})
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

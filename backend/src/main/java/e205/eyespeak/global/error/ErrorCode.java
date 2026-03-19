@@ -112,8 +112,22 @@ public enum ErrorCode {
             "커스텀 슬롯을 찾을 수 없습니다"),
 
     CUSTOM_SLOT_LIMIT(HttpStatus.BAD_REQUEST, "CUSTOM-902",
-            "커스텀 슬롯은 최대 4개까지 등록할 수 있습니다");
+            "커스텀 슬롯은 최대 4개까지 등록할 수 있습니다"),
     // → 프로토타입에서 커스텀 칸이 4개니까 4개 제한
+
+    // ====== MATCHING (매칭) ======
+
+    INVALID_INVITE_CODE(HttpStatus.NOT_FOUND, "MATCHING-801",
+            "유효하지 않은 팀코드입니다"),
+    // → 초대코드가 존재하지 않을 때
+
+    INVITE_CODE_ALREADY_USED(HttpStatus.CONFLICT, "MATCHING-802",
+            "이미 사용된 팀코드입니다"),
+    // → 이미 LINKED 상태인 초대코드로 가입 시도
+
+    MATCHING_NOT_FOUND(HttpStatus.NOT_FOUND, "MATCHING-803",
+            "매칭 정보를 찾을 수 없습니다");
+    // → 매칭이 아직 생성되지 않았을 때 (환자 정보 미등록)
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)
