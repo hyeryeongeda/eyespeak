@@ -21,6 +21,7 @@ import type {
   TimeSlot,
   ActivityTag,
 } from '../types/care'
+import { DWELL_TIME_OPTIONS, ACTIVATION_DELAY_OPTIONS } from '../types/care'
 
 import {
   MOCK_PATIENT_INFO,
@@ -41,6 +42,51 @@ import {
 } from './mockCareData'
 
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms))
+const CARE_DWELL_TIME_PRESET_STORAGE_KEY = 'careSetting:dwellTimePreset'
+const CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY = 'careSetting:activationDelayPreset'
+
+export const CARE_DWELL_TIME_PRESET_UPDATED_EVENT = 'care-setting:dwell-time-updated'
+
+export interface CareDwellTimePresetUpdatedDetail {
+  preset: DwellTimePreset
+}
+
+function isBrowser() {
+  return typeof window !== 'undefined'
+}
+
+function readStoredPreset<TPreset extends string>(
+  storageKey: string,
+  isValidPreset: (value: unknown) => value is TPreset,
+) {
+  if (!isBrowser()) {
+    return null
+  }
+
+  const storedValue = localStorage.getItem(storageKey)
+
+  if (!storedValue || !isValidPreset(storedValue)) {
+    return null
+  }
+
+  return storedValue
+}
+
+function writeStoredPreset(storageKey: string, preset: string) {
+  if (!isBrowser()) {
+    return
+  }
+
+  localStorage.setItem(storageKey, preset)
+}
+
+function isDwellTimePreset(value: unknown): value is DwellTimePreset {
+  return typeof value === 'string' && value in DWELL_TIME_OPTIONS
+}
+
+function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
+  return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
+}
 
 // 환자 기본 정보
 export async function getPatientInfo(): Promise<ApiResponse<PatientInfo>> {
@@ -129,11 +175,30 @@ export async function deleteLeisureContent(id: number): Promise<ApiResponse<null
 // Dwell Time
 export async function getDwellTimePreset(): Promise<ApiResponse<DwellTimePreset>> {
   await delay()
-  return { success: true, data: MOCK_DWELL_TIME_PRESET, message: '조회 성공' }
+
+  return {
+    success: true,
+    data:
+      readStoredPreset(CARE_DWELL_TIME_PRESET_STORAGE_KEY, isDwellTimePreset) ??
+      MOCK_DWELL_TIME_PRESET,
+    message: '조회 성공',
+  }
 }
 
 export async function updateDwellTimePreset(preset: DwellTimePreset): Promise<ApiResponse<DwellTimePreset>> {
   await delay()
+  writeStoredPreset(CARE_DWELL_TIME_PRESET_STORAGE_KEY, preset)
+
+  if (isBrowser()) {
+    window.dispatchEvent(
+      new CustomEvent<CareDwellTimePresetUpdatedDetail>(CARE_DWELL_TIME_PRESET_UPDATED_EVENT, {
+        detail: {
+          preset,
+        },
+      }),
+    )
+  }
+
   return { success: true, data: preset, message: '저장 성공' }
 }
 
@@ -143,11 +208,20 @@ export async function updateDwellTimePreset(preset: DwellTimePreset): Promise<Ap
 
 export async function getActivationDelayPreset(): Promise<ApiResponse<ActivationDelayPreset>> {
   await delay()
-  return { success: true, data: MOCK_ACTIVATION_DELAY_PRESET, message: '조회 성공' }
+  return {
+    success: true,
+    data:
+      readStoredPreset(
+        CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY,
+        isActivationDelayPreset,
+      ) ?? MOCK_ACTIVATION_DELAY_PRESET,
+    message: '조회 성공',
+  }
 }
 
 export async function updateActivationDelayPreset(preset: ActivationDelayPreset): Promise<ApiResponse<ActivationDelayPreset>> {
   await delay()
+  writeStoredPreset(CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY, preset)
   return { success: true, data: preset, message: '저장 성공' }
 }
 
