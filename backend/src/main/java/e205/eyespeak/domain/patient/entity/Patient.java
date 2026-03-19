@@ -51,4 +51,10 @@ public class Patient extends BaseEntity {
     public void linkUser(User user) {
         this.user = user;
     }
+
+    public void updateInfo(String name, Integer birthYear, Gender gender) {
+        this.name = name;
+        this.birthYear = birthYear;
+        this.gender = gender;
+    }
 }
