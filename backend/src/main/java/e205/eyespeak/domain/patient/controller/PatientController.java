@@ -1,26 +1,47 @@
 package e205.eyespeak.domain.patient.controller;
 
+import e205.eyespeak.domain.guardian.entity.Guardian;
+import e205.eyespeak.domain.guardian.repository.GuardianRepository;
+import e205.eyespeak.domain.matching.entity.Matching;
+import e205.eyespeak.domain.matching.service.MatchingService;
+import e205.eyespeak.domain.patient.dto.request.RegisterPatientRequest;
+import e205.eyespeak.domain.patient.dto.response.RegisterPatientResponse;
+import e205.eyespeak.domain.patient.entity.Patient;
+import e205.eyespeak.domain.patient.service.PatientService;
+import e205.eyespeak.domain.routine.service.RoutineService;
 import e205.eyespeak.global.common.ApiResponse;
+import e205.eyespeak.global.error.BusinessException;
+import e205.eyespeak.global.error.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.Getter;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.*;
 
 /**
- * 환자 프로필 API (1.1)
- * - Swagger 명세용 하드코딩 컨트롤러
- * - 실제 서비스 로직 연동 시 Service 주입으로 교체
+ * 환자 프로필 API
+ * - GET /patients/me: 환자 본인 정보 조회
+ * - POST /patients: 보호자가 환자 정보 등록 + 팀코드 발급
  */
-@Tag(name = "환자 프로필", description = "환자 본인 정보 조회 API")
+@Tag(name = "환자 프로필", description = "환자 정보 조회/등록 API")
 @RestController
 @RequestMapping("/patients")
+@RequiredArgsConstructor
 public class PatientController {
+
+    private final PatientService patientService;
+    private final MatchingService matchingService;
+    private final RoutineService routineService;
+    private final GuardianRepository guardianRepository;
 
     @Operation(summary = "환자 본인 정보 조회",
             description = "JWT 토큰으로 로그인한 환자 본인 프로필 조회 (메인화면 '환자 OO 님' 표시용)")
@@ -38,6 +59,41 @@ public class PatientController {
     public ApiResponse<PatientMeResponse> getMe() {
         PatientMeResponse response = new PatientMeResponse(1L, "데모", 1990, "M");
         return ApiResponse.ok(response);
+    }
+
+    @Operation(summary = "환자 정보 등록 + 팀코드 발급",
+            description = "보호자가 환자 정보를 등록하면 Patient + Matching 생성 후 팀코드를 발급합니다")
+    @Transactional
+    @PostMapping
+    public ResponseEntity<ApiResponse<RegisterPatientResponse>> registerPatient(
+            @Valid @RequestBody RegisterPatientRequest request,
+            Authentication authentication) {
+
+        // 1. 토큰에서 보호자 조회
+        Long userId = (Long) authentication.getPrincipal();
+        Guardian guardian = guardianRepository.findByUserId(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.GUARDIAN_NOT_FOUND));
+
+        // 2. 환자 프로필 생성 (user_id는 NULL — 환자가 가입하면 연결됨)
+        Patient patient = patientService.createPatient(
+                request.getName(), request.getBirthYear(), request.getGender());
+
+        // 3. 매칭 생성 + 팀코드 발급
+        Matching matching = matchingService.createMatching(patient, guardian);
+
+        // 4. 일과 설정 저장
+        if (request.getSurvey() != null && request.getSurvey().getRoutines() != null) {
+            routineService.saveRoutines(matching, request.getSurvey().getRoutines());
+        }
+
+        // 5. 응답
+        RegisterPatientResponse response = RegisterPatientResponse.builder()
+                .patientId(patient.getId())
+                .teamCode(matching.getInviteCode())
+                .createdAt(patient.getCreatedAt())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @Getter
