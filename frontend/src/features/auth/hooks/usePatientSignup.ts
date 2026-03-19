@@ -6,6 +6,7 @@ import {
   getStoredVerifiedTeamCode,
   storeVerifiedTeamCode,
 } from '../../../services/authStorage'
+import { getPatientCalibrationStatus } from '../../../services/calibration/patientCalibrationService'
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
 import { useAuth } from './useAuth'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
@@ -110,7 +111,14 @@ export function usePatientSignup() {
 
     clearVerifiedTeamCode()
     setSession(result.data.session)
-    navigate(ROUTE_PATHS.PATIENT_MAIN, { replace: true })
+
+    const calibrationStatus = await getPatientCalibrationStatus(result.data.session)
+    const nextPath =
+      calibrationStatus.success && !calibrationStatus.data.required
+        ? ROUTE_PATHS.PATIENT_MAIN
+        : ROUTE_PATHS.PATIENT_CALIBRATION
+
+    navigate(nextPath, { replace: true })
   }
 
   return {

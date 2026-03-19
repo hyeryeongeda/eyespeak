@@ -4,25 +4,30 @@ import ReplyModePanel from '../../components/patient/chat/ReplyModePanel'
 import DevChatTriggerPanel from '../../components/patient/chat/DevChatTriggerPanel'
 import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
 import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
+import { ROUTE_PATHS } from '../router/routePaths'
 
 function PatientLayoutShell() {
   const chat = usePatientIncomingChat()
+  const location = useLocation()
+  const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
 
   return (
     <>
       <Outlet />
 
-      <IncomingInterruptOverlay
-        visible={chat.shouldShowInterruptOverlay}
-        message={chat.activeMessage}
-        unreadCount={chat.unreadCount}
-        currentRoute={chat.state.currentRoute}
-        pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
-        onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
-        onLater={chat.deferActiveMessage}
-      />
+      {!isCalibrationRoute ? (
+        <IncomingInterruptOverlay
+          visible={chat.shouldShowInterruptOverlay}
+          message={chat.activeMessage}
+          unreadCount={chat.unreadCount}
+          currentRoute={chat.state.currentRoute}
+          pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
+          onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
+          onLater={chat.deferActiveMessage}
+        />
+      ) : null}
 
-      {chat.shouldShowReplyOverlay ? (
+      {!isCalibrationRoute && chat.shouldShowReplyOverlay ? (
         <ReplyModePanel
           overlay
           message={chat.activeReplyMessage}
@@ -52,7 +57,7 @@ function PatientLayoutShell() {
         />
       ) : null}
 
-      {PATIENT_CHAT_DEV_PANEL_ENABLED ? (
+      {!isCalibrationRoute && PATIENT_CHAT_DEV_PANEL_ENABLED ? (
         <DevChatTriggerPanel
           availablePresets={chat.availablePresets}
           nextSendOutcome={chat.state.nextSendOutcome}

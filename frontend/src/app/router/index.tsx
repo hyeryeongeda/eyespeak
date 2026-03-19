@@ -17,6 +17,7 @@ import CareLoginPage from '../../pages/auth/CareLoginPage'
 import CareSignupPage from '../../pages/auth/CareSignupPage'
 import LoginPage from '../../pages/auth/LoginPage'
 import PatientLoginPage from '../../pages/auth/PatientLoginPage'
+import PatientCalibrationPage from '../../pages/patient/calibration/PatientCalibrationPage'
 import TalkMainPage from '../../pages/patient/talk/TalkMainPage'
 import PatientMainPage from '../../pages/patient/main/PatientMainPage'
 import LeisureMainPage from '../../pages/patient/leisure/LeisureMainPage'
@@ -44,7 +45,7 @@ import AppLayout from '../layouts/AppLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import CareLayout from '../layouts/CareLayout'
 import PatientLayout from '../layouts/PatientLayout'
-import { ProtectedRoute, PublicOnlyRoute } from './guards'
+import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
 
 const authRoutes = [
@@ -90,6 +91,10 @@ const patientRoutes = [
   {
     index: true,
     element: <Navigate to={ROUTE_PATHS.PATIENT_MAIN} replace />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CALIBRATION,
+    element: <PatientCalibrationPage />,
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.MAIN,
@@ -263,7 +268,9 @@ const router = createBrowserRouter([
         path: ROUTE_SEGMENTS.PATIENT.ROOT,
         element: (
           <ProtectedRoute allowedRole="patient">
-            <PatientLayout />
+            <PatientCalibrationRoute>
+              <PatientLayout />
+            </PatientCalibrationRoute>
           </ProtectedRoute>
         ),
         children: patientRoutes,
