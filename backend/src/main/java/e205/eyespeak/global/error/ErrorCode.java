@@ -93,7 +93,11 @@ public enum ErrorCode {
     EXPRESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-602",
             "표현을 찾을 수 없습니다"),
 
-    PAIN_AREA_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-603",
+    PHRASE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-603",
+            "문구를 찾을 수 없습니다"),
+    // → phrase 테이블에서 해당 ID를 찾을 수 없을 때
+
+    PAIN_AREA_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-604",
             "불편 부위를 찾을 수 없습니다"),
 
     // ====== AI (추천/문장 생성) ======
@@ -126,8 +130,22 @@ public enum ErrorCode {
     // → 이미 LINKED 상태인 초대코드로 가입 시도
 
     MATCHING_NOT_FOUND(HttpStatus.NOT_FOUND, "MATCHING-803",
-            "매칭 정보를 찾을 수 없습니다");
+            "매칭 정보를 찾을 수 없습니다"),
     // → 매칭이 아직 생성되지 않았을 때 (환자 정보 미등록)
+
+    // ====== FAVORITE (즐겨찾기) ======
+
+    FAVORITE_LIMIT(HttpStatus.BAD_REQUEST, "COMM-605",
+            "즐겨찾기는 최대 5개까지 등록할 수 있습니다"),
+    // → 즐겨찾기 5개 초과 시도
+
+    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-606",
+            "즐겨찾기를 찾을 수 없습니다"),
+    // → 존재하지 않는 즐겨찾기 ID
+
+    FAVORITE_DUPLICATE(HttpStatus.CONFLICT, "COMM-607",
+            "이미 즐겨찾기에 등록된 표현입니다");
+    // → 동일 표현 중복 등록
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)
