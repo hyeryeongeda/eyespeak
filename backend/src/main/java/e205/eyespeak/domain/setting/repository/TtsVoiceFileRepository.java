@@ -8,4 +8,6 @@ import java.util.List;
 public interface TtsVoiceFileRepository extends JpaRepository<TtsVoiceFile, Long> {
 
     List<TtsVoiceFile> findByTtsSettingId(Long ttsSettingId);
+
+    long countByTtsSettingId(Long ttsSettingId);
 }

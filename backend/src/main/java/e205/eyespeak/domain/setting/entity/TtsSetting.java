@@ -42,4 +42,12 @@ public class TtsSetting extends BaseEntity {
         this.isEnabled = false;
         this.status = TtsStatus.NONE;
     }
+
+    public void toggleEnabled() {
+        this.isEnabled = !this.isEnabled;
+    }
+
+    public void updateStatus(TtsStatus status) {
+        this.status = status;
+    }
 }
