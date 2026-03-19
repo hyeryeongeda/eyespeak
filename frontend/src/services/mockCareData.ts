@@ -194,30 +194,9 @@ export const MOCK_FAVORITE_PHRASES: FavoritePhrase[] = [
 // ========================
 
 export const MOCK_LEISURE_CONTENTS: LeisureContentItem[] = [
-  {
-    id: 1,
-    matchingId: 1,
-    position: 0,
-    name: 'KBS 뉴스 라이브',
-    url: 'https://youtube.com/watch?v=mock001',
-    category: 'news',
-  },
-  {
-    id: 2,
-    matchingId: 1,
-    position: 1,
-    name: '클래식 음악 모음',
-    url: 'https://youtube.com/watch?v=mock002',
-    category: 'music',
-  },
-  {
-    id: 3,
-    matchingId: 1,
-    position: 2,
-    name: '프로야구 하이라이트',
-    url: 'https://youtube.com/watch?v=mock003',
-    category: 'sports',
-  },
+  { id: 1, matchingId: 1, position: 0, name: 'KBS 뉴스 라이브', url: 'https://youtube.com/watch?v=mock001', category: 'news' },
+  { id: 2, matchingId: 1, position: 1, name: '클래식 음악 모음', url: 'https://youtube.com/watch?v=mock002', category: 'music' },
+  { id: 3, matchingId: 1, position: 2, name: '프로야구 하이라이트', url: 'https://youtube.com/watch?v=mock003', category: 'sports' },
   { id: 4, matchingId: 1, position: 3, name: '라디오 낭독', url: null, category: 'audiobook' },
 ]
 
@@ -240,27 +219,9 @@ export const MOCK_TTS_SETTING: TtsSetting = {
 }
 
 export const MOCK_TTS_VOICE_FILES: TtsVoiceFile[] = [
-  {
-    id: 1,
-    ttsSettingId: 1,
-    fileUrl: 'https://s3.example.com/tts/voice_001.wav',
-    fileName: '이환자_음성샘플_01.wav',
-    createdAt: '2026-02-20T10:00:00',
-  },
-  {
-    id: 2,
-    ttsSettingId: 1,
-    fileUrl: 'https://s3.example.com/tts/voice_002.wav',
-    fileName: '이환자_음성샘플_02.wav',
-    createdAt: '2026-02-20T10:05:00',
-  },
-  {
-    id: 3,
-    ttsSettingId: 1,
-    fileUrl: 'https://s3.example.com/tts/voice_003.wav',
-    fileName: '이환자_음성샘플_03.wav',
-    createdAt: '2026-02-20T10:10:00',
-  },
+  { id: 1, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_001.wav', fileName: '이환자_음성샘플_01.wav', createdAt: '2026-02-20T10:00:00' },
+  { id: 2, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_002.wav', fileName: '이환자_음성샘플_02.wav', createdAt: '2026-02-20T10:05:00' },
+  { id: 3, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_003.wav', fileName: '이환자_음성샘플_03.wav', createdAt: '2026-02-20T10:10:00' },
 ]
 
 // ========================
@@ -281,46 +242,11 @@ export const MOCK_CALLS: Call[] = [
 // ========================
 
 export const MOCK_DAILY_MOODS: DailyMood[] = [
-  {
-    id: 1,
-    matchingId: 1,
-    moodDate: '2026-03-15',
-    moodType: 'HAPPY',
-    moodLevel: 4,
-    createdAt: '2026-03-15T07:30:00',
-  },
-  {
-    id: 2,
-    matchingId: 1,
-    moodDate: '2026-03-16',
-    moodType: 'TIRED',
-    moodLevel: 3,
-    createdAt: '2026-03-16T08:00:00',
-  },
-  {
-    id: 3,
-    matchingId: 1,
-    moodDate: '2026-03-17',
-    moodType: 'CALM',
-    moodLevel: 3,
-    createdAt: '2026-03-17T07:45:00',
-  },
-  {
-    id: 4,
-    matchingId: 1,
-    moodDate: '2026-03-18',
-    moodType: 'ANXIOUS',
-    moodLevel: 4,
-    createdAt: '2026-03-18T08:10:00',
-  },
-  {
-    id: 5,
-    matchingId: 1,
-    moodDate: '2026-03-19',
-    moodType: 'JOYFUL',
-    moodLevel: 5,
-    createdAt: '2026-03-19T07:30:00',
-  },
+  { id: 1, matchingId: 1, moodDate: '2026-03-15', moodType: 'HAPPY', moodLevel: 4, createdAt: '2026-03-15T07:30:00' },
+  { id: 2, matchingId: 1, moodDate: '2026-03-16', moodType: 'TIRED', moodLevel: 3, createdAt: '2026-03-16T08:00:00' },
+  { id: 3, matchingId: 1, moodDate: '2026-03-17', moodType: 'CALM', moodLevel: 3, createdAt: '2026-03-17T07:45:00' },
+  { id: 4, matchingId: 1, moodDate: '2026-03-18', moodType: 'ANXIOUS', moodLevel: 4, createdAt: '2026-03-18T08:10:00' },
+  { id: 5, matchingId: 1, moodDate: '2026-03-19', moodType: 'JOYFUL', moodLevel: 5, createdAt: '2026-03-19T07:30:00' },
 ]
 
 export const MOCK_DAILY_SUMMARIES: DailySummary[] = [
@@ -381,49 +307,9 @@ export const MOCK_USER_WORDS: UserWords = {
 // ========================
 
 export const MOCK_EXPRESSIONS: Expression[] = [
-  {
-    id: 1,
-    matchingId: 1,
-    content: '오늘 날씨가 좋으니 산책 가고 싶어',
-    sentiment: 'POSITIVE',
-    category: '욕구',
-    lastUsed: '2026-03-18T10:30:00',
-    createdAt: '2026-03-10T10:00:00',
-  },
-  {
-    id: 2,
-    matchingId: 1,
-    content: '허리가 너무 아파서 잠을 못 자겠어',
-    sentiment: 'NEGATIVE',
-    category: '통증',
-    lastUsed: '2026-03-16T22:00:00',
-    createdAt: '2026-03-05T14:00:00',
-  },
-  {
-    id: 3,
-    matchingId: 1,
-    content: '오늘은 음악 듣고 싶어',
-    sentiment: 'POSITIVE',
-    category: '욕구',
-    lastUsed: '2026-03-19T08:30:00',
-    createdAt: '2026-03-12T09:00:00',
-  },
-  {
-    id: 4,
-    matchingId: 1,
-    content: '가족들 보고 싶어',
-    sentiment: 'NEUTRAL',
-    category: '감정',
-    lastUsed: '2026-03-15T11:00:00',
-    createdAt: '2026-03-08T10:00:00',
-  },
-  {
-    id: 5,
-    matchingId: 1,
-    content: '오늘 약 먹었어?',
-    sentiment: 'NEUTRAL',
-    category: '일상',
-    lastUsed: null,
-    createdAt: '2026-03-18T08:00:00',
-  },
+  { id: 1, matchingId: 1, content: '오늘 날씨가 좋으니 산책 가고 싶어', sentiment: 'POSITIVE', category: '욕구', lastUsed: '2026-03-18T10:30:00', createdAt: '2026-03-10T10:00:00' },
+  { id: 2, matchingId: 1, content: '허리가 너무 아파서 잠을 못 자겠어', sentiment: 'NEGATIVE', category: '통증', lastUsed: '2026-03-16T22:00:00', createdAt: '2026-03-05T14:00:00' },
+  { id: 3, matchingId: 1, content: '오늘은 음악 듣고 싶어', sentiment: 'POSITIVE', category: '욕구', lastUsed: '2026-03-19T08:30:00', createdAt: '2026-03-12T09:00:00' },
+  { id: 4, matchingId: 1, content: '가족들 보고 싶어', sentiment: 'NEUTRAL', category: '감정', lastUsed: '2026-03-15T11:00:00', createdAt: '2026-03-08T10:00:00' },
+  { id: 5, matchingId: 1, content: '오늘 약 먹었어?', sentiment: 'NEUTRAL', category: '일상', lastUsed: null, createdAt: '2026-03-18T08:00:00' },
 ]
