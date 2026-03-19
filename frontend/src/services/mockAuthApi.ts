@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from './apiEndpoints'
+import { ROUTINE_ACTIVITY_TAG_IDS, ROUTINE_TIME_SLOT_IDS } from '../constants/routineCatalog'
 import type {
   AuthResponseDto,
   GuardianSignupRequestDto,
@@ -13,13 +14,14 @@ import type {
   PatientSignupResponseDto,
   RegisterPatientInfoRequestDto,
   RegisterPatientInfoResponseDto,
+  RoutineCreateRequestDto,
   VerifiedTeamCode,
 } from '../types/patient'
 import { ApiError, type ApiTransport } from '../types/api'
 import { normalizeTeamCode } from './authStorage'
 import { isValidEmail } from '../utils/validators'
 
-const MOCK_DATABASE_STORAGE_KEY = 'mockAuthDatabase:v2'
+const MOCK_DATABASE_STORAGE_KEY = 'mockAuthDatabase:v3'
 const MOCK_NETWORK_DELAY_MS = 420
 const DEMO_GUARDIAN_EMAIL = 'care123@eyespeak.mock'
 const DEMO_PATIENT_EMAIL = 'pat123@eyespeak.mock'
@@ -42,7 +44,7 @@ interface MockPatientProfileRecord {
   name: string
   birthYear: number
   gender: 'M' | 'F'
-  routines: RegisterPatientInfoRequestDto['survey']
+  routines: RoutineCreateRequestDto | null
   teamCode: string
   createdAt: string
 }
@@ -138,8 +140,32 @@ function createSeedDatabase(): MockAuthDatabase {
         routines: {
           routines: [
             {
-              slotId: 'morning',
-              selectedTagIds: ['oral-care', 'medication'],
+              timeSlotId: 1,
+              activityTagId: 3,
+            },
+            {
+              timeSlotId: 2,
+              activityTagId: 4,
+            },
+            {
+              timeSlotId: 3,
+              activityTagId: 1,
+            },
+            {
+              timeSlotId: 4,
+              activityTagId: 9,
+            },
+            {
+              timeSlotId: 5,
+              activityTagId: 2,
+            },
+            {
+              timeSlotId: 6,
+              activityTagId: 11,
+            },
+            {
+              timeSlotId: 7,
+              activityTagId: 11,
             },
           ],
         },
@@ -268,7 +294,7 @@ function handleLogin(request: LoginRequestDto) {
 
   const database = readDatabase()
 
-  if (request.role === 'caregiver') {
+  if (request.role === 'guardian') {
     const guardianAccount = database.guardians.find(
       guardian => guardian.email.toLowerCase() === request.identifier.trim().toLowerCase(),
     )
@@ -283,7 +309,7 @@ function handleLogin(request: LoginRequestDto) {
 
     return createAuthResponse({
       id: guardianAccount.userId,
-      role: 'caregiver',
+      role: 'guardian',
       name: guardianAccount.name,
       email: guardianAccount.email,
       teamCode: guardianAccount.teamCode,
@@ -343,7 +369,7 @@ function handleGuardianSignup(request: GuardianSignupRequestDto) {
 
   return createAuthResponse({
     id: guardianRecord.userId,
-    role: 'caregiver',
+    role: 'guardian',
     name: guardianRecord.name,
     email: guardianRecord.email,
   })
@@ -400,7 +426,7 @@ function handleRegisterPatientInfo(
     name: request.name.trim(),
     birthYear: request.birthYear,
     gender: request.gender,
-    routines: request.survey,
+    routines: null,
     teamCode,
     createdAt: new Date().toISOString(),
   }
@@ -417,6 +443,74 @@ function handleRegisterPatientInfo(
   }
 
   return response
+}
+
+function handleCreateRoutine(
+  request: RoutineCreateRequestDto,
+  accessToken?: string | null,
+) {
+  if (!Array.isArray(request.routines) || request.routines.length !== ROUTINE_TIME_SLOT_IDS.length) {
+    throw new ApiError({
+      statusCode: 400,
+      source: 'mock',
+      message: '모든 시간대의 루틴을 입력해주세요.',
+    })
+  }
+
+  const hasInvalidValue = request.routines.some(
+    routine =>
+      !ROUTINE_TIME_SLOT_IDS.includes(routine.timeSlotId) ||
+      !ROUTINE_ACTIVITY_TAG_IDS.includes(routine.activityTagId),
+  )
+
+  if (hasInvalidValue) {
+    throw new ApiError({
+      statusCode: 400,
+      source: 'mock',
+      message: '루틴 시간대 또는 활동 태그 값이 올바르지 않습니다.',
+    })
+  }
+
+  const uniqueTimeSlotIds = new Set(request.routines.map(routine => routine.timeSlotId))
+
+  if (uniqueTimeSlotIds.size !== ROUTINE_TIME_SLOT_IDS.length) {
+    throw new ApiError({
+      statusCode: 400,
+      source: 'mock',
+      message: '각 시간대는 한 번씩만 선택할 수 있습니다.',
+    })
+  }
+
+  const guardianUserId = extractUserIdFromToken(accessToken)
+  const database = readDatabase()
+  const guardianRecord = database.guardians.find(guardian => guardian.userId === guardianUserId)
+
+  if (!guardianRecord?.patientId) {
+    throw new ApiError({
+      statusCode: 404,
+      source: 'mock',
+      message: '환자 기본 정보가 먼저 등록되어야 합니다.',
+    })
+  }
+
+  const patientProfile = database.patientProfiles.find(
+    profile => profile.patientId === guardianRecord.patientId,
+  )
+
+  if (!patientProfile) {
+    throw new ApiError({
+      statusCode: 404,
+      source: 'mock',
+      message: '환자 정보를 찾을 수 없습니다.',
+    })
+  }
+
+  patientProfile.routines = {
+    routines: request.routines.map(routine => ({ ...routine })),
+  }
+  writeDatabase(database)
+
+  return null
 }
 
 function handlePatientSignup(request: PatientSignupRequestDto) {
@@ -510,7 +604,7 @@ function handleRefresh(request: RefreshRequestDto) {
 
   const [, role, userId] = request.refreshToken.split(':')
 
-  if (!userId || (role !== 'caregiver' && role !== 'patient')) {
+  if (!userId || (role !== 'guardian' && role !== 'patient')) {
     throw new ApiError({
       statusCode: 401,
       source: 'mock',
@@ -520,7 +614,7 @@ function handleRefresh(request: RefreshRequestDto) {
 
   const database = readDatabase()
 
-  if (role === 'caregiver') {
+  if (role === 'guardian') {
     const guardianRecord = database.guardians.find(guardian => guardian.userId === userId)
 
     if (!guardianRecord) {
@@ -533,7 +627,7 @@ function handleRefresh(request: RefreshRequestDto) {
 
     return createAuthResponse({
       id: guardianRecord.userId,
-      role: 'caregiver',
+      role: 'guardian',
       name: guardianRecord.name,
       email: guardianRecord.email,
       teamCode: guardianRecord.teamCode,
@@ -650,6 +744,8 @@ export const mockApiTransport: ApiTransport = {
           data as RegisterPatientInfoRequestDto,
           accessToken,
         ) as TResponse
+      case `POST ${API_ENDPOINTS.ROUTINES}`:
+        return handleCreateRoutine(data as RoutineCreateRequestDto, accessToken) as TResponse
       case `POST ${API_ENDPOINTS.AUTH_SIGNUP_PATIENT}`:
         return handlePatientSignup(data as PatientSignupRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.AUTH_LOGOUT}`:

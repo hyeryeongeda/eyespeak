@@ -1,7 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { createInitialPatientRoutines } from '../guardianRoutineSurvey'
+import {
+  createInitialPatientRoutines,
+  GUARDIAN_SIGNUP_ROUTINE_SLOTS,
+} from '../guardianRoutineSurvey'
 import { signUpGuardian } from '../../../services/guardianSignupService'
 import { useAuth } from './useAuth'
 import type { GuardianAccountFormValues } from '../../../types/auth'
@@ -34,21 +37,19 @@ const INITIAL_PATIENT_PROFILE: PatientProfileFormValues = {
 
 function toggleSelectedTag(
   currentSelections: PatientRoutinesFormValues,
-  slotId: string,
-  tagId: string,
+  slotId: number,
+  tagId: number,
 ) {
-  const selectedTagIds = currentSelections[slotId] ?? []
-
-  if (selectedTagIds.includes(tagId)) {
+  if (currentSelections[slotId] === tagId) {
     return {
       ...currentSelections,
-      [slotId]: selectedTagIds.filter(selectedTagId => selectedTagId !== tagId),
+      [slotId]: null,
     }
   }
 
   return {
     ...currentSelections,
-    [slotId]: [...selectedTagIds, tagId],
+    [slotId]: tagId,
   }
 }
 
@@ -122,6 +123,18 @@ export function useGuardianSignupFlow() {
     return null
   }
 
+  const validatePatientRoutinesStep = () => {
+    const missingSlot = GUARDIAN_SIGNUP_ROUTINE_SLOTS.find(
+      slot => typeof patientRoutines[slot.id] !== 'number',
+    )
+
+    if (missingSlot) {
+      return `${missingSlot.label} 시간대의 대표 활동을 선택해주세요.`
+    }
+
+    return null
+  }
+
   const goToNextStep = () => {
     setErrorMessage('')
 
@@ -163,6 +176,13 @@ export function useGuardianSignupFlow() {
   }
 
   const submitGuardianSignup = async () => {
+    const validationMessage = validatePatientRoutinesStep()
+
+    if (validationMessage) {
+      setErrorMessage(validationMessage)
+      return
+    }
+
     setErrorMessage('')
     setCopyMessage('')
     setIsSubmitting(true)
@@ -223,7 +243,7 @@ export function useGuardianSignupFlow() {
     setPatientRoutines,
     goToNextStep,
     goToPreviousStep,
-    toggleRoutineTag: (slotId: string, tagId: string) => {
+    toggleRoutineTag: (slotId: number, tagId: number) => {
       setPatientRoutines(prev => toggleSelectedTag(prev, slotId, tagId))
     },
     submitGuardianSignup,

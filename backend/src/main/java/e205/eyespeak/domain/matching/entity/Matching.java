@@ -51,4 +51,9 @@ public class Matching extends BaseEntity {
         this.inviteCode = inviteCode;
         this.status = status;
     }
+
+    public void link() {
+        this.status = MatchingStatus.LINKED;
+        this.linkedAt = LocalDateTime.now();
+    }
 }

@@ -336,7 +336,7 @@ eyespeak/
 │   ├── domain/
 │   │   ├── auth/
 │   │   │   ├── controller/
-│   │   │   │   └── AuthController.java           ← 로그인, 로그아웃, 재발급, 보호자/환자 회원가입
+│   │   │   │   └── AuthController.java           ← 로그인, 로그아웃, 재발급, 보호자/환자 회원가입, 회원탈퇴
 │   │   │   ├── service/
 │   │   │   │   └── AuthService.java
 │   │   │   ├── dto/
@@ -357,7 +357,7 @@ eyespeak/
 │   │   │
 │   │   ├── patient/
 │   │   │   ├── controller/
-│   │   │   │   └── PatientController.java        ← 환자 정보 등록 + 초대코드 발급
+│   │   │   │   └── PatientController.java        ← 환자 정보 등록
 │   │   │   ├── service/
 │   │   │   │   └── PatientService.java
 │   │   │   ├── dto/
@@ -375,6 +375,15 @@ eyespeak/
 │   │   │       └── Guardian.java
 │   │   │
 │   │   └── matching/
+│   │       ├── controller/
+│   │       │   └── MatchingController.java       ← 초대코드 발급
+│   │       ├── service/
+│   │       │   └── MatchingService.java
+│   │       ├── dto/
+│   │       │   ├── request/
+│   │       │   │   └── MatchingCreateRequest.java
+│   │       │   └── response/
+│   │       │       └── MatchingResponse.java
 │   │       ├── repository/
 │   │       │   └── MatchingRepository.java
 │   │       └── entity/
@@ -407,3 +416,34 @@ eyespeak/
 ├── build.gradle                                  ← 의존성 관리
 └── .gitignore                                    ← git에 안 올릴 파일 목록
 ```
+
+---
+
+## 7. Git 커밋 컨벤션
+
+### 커밋 메시지 형식
+```
+git commit -m "타입(영역): 상세 내용" -m "Jira티켓번호"
+```
+
+### 타입
+| 타입 | 설명 |
+|---|---|
+| feat | 새로운 기능 |
+| fix | 버그 수정 |
+| docs | 문서 수정 |
+| refactor | 코드 개선 (동작 동일) |
+| style | 코드 스타일 수정 (세미콜론, 포맷팅 등) |
+| test | 테스트 코드 |
+| chore | 빌드 설정, 패키지 등 잡다한 작업 |
+
+### 브랜치 명명 규칙
+```
+타입/영역/Jira티켓번호-기능내용
+예: feat/server/S14P21E205-101-login-signup
+```
+
+### MR 규칙
+- Source branch → develop 으로 MR
+- MR 제목: `타입(영역): 작업 내용 요약`
+- Description에 Jira 티켓 번호, 변경 사항, 리뷰 포인트, 참고 사항 포함

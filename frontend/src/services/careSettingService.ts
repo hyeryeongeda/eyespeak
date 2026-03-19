@@ -176,6 +176,18 @@ export async function deleteTtsVoiceFile(id: number): Promise<ApiResponse<null>>
   return { success: true, data: null, message: '삭제 성공' }
 }
 
+export async function uploadTtsVoiceFile(file: File): Promise<ApiResponse<TtsVoiceFile>> {
+  await delay(500)
+  const created: TtsVoiceFile = {
+    id: Date.now(),
+    ttsSettingId: 1,
+    fileUrl: `https://s3.example.com/tts/${file.name}`,
+    fileName: file.name,
+    createdAt: new Date().toISOString(),
+  }
+  return { success: true, data: created, message: '업로드 성공' }
+}
+
 // ========================
 // 커스텀 단어
 // ========================

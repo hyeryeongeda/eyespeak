@@ -41,14 +41,14 @@ const emptyStyle: CSSProperties = {
 }
 
 function getBubbleStyle(message: PatientChatMessage, isActive: boolean): CSSProperties {
-  const isCaregiver = message.sender === 'caregiver'
+  const isGuardian = message.sender === 'guardian'
 
   return {
-    alignSelf: isCaregiver ? 'flex-start' : 'flex-end',
+    alignSelf: isGuardian ? 'flex-start' : 'flex-end',
     maxWidth: '88%',
     padding: '14px 16px',
-    borderRadius: isCaregiver ? '18px 18px 18px 6px' : '18px 18px 6px 18px',
-    backgroundColor: isCaregiver ? '#f5f8fb' : '#e9f3ff',
+    borderRadius: isGuardian ? '18px 18px 18px 6px' : '18px 18px 6px 18px',
+    backgroundColor: isGuardian ? '#f5f8fb' : '#e9f3ff',
     border: isActive ? '2px solid #7ea2d9' : '1px solid #dbe4eb',
     boxShadow: isActive ? '0 12px 28px rgba(101, 128, 174, 0.12)' : 'none',
     color: '#243246',
@@ -96,7 +96,7 @@ export default function ChatMessageList({
   return (
     <div style={listWrapStyle}>
       {messages.map(message => {
-        const isCaregiver = message.sender === 'caregiver'
+        const isGuardian = message.sender === 'guardian'
         const isActive = activeMessageId === message.id
 
         return (
@@ -104,11 +104,11 @@ export default function ChatMessageList({
             key={message.id}
             style={{
               ...rowBaseStyle,
-              alignItems: isCaregiver ? 'flex-start' : 'flex-end',
+              alignItems: isGuardian ? 'flex-start' : 'flex-end',
             }}
           >
             <span style={metaStyle}>
-              {isCaregiver ? '보호자' : '환자'} · {message.createdAt} · {getStatusLabel(message)}
+              {isGuardian ? '보호자' : '환자'} · {message.createdAt} · {getStatusLabel(message)}
               {message.type === 'stt' ? ' · STT' : null}
             </span>
             <div style={getBubbleStyle(message, isActive)}>

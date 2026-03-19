@@ -7,6 +7,8 @@ import e205.eyespeak.domain.matching.repository.MatchingRepository;
 import e205.eyespeak.domain.patient.dto.request.PatientUpdateRequest;
 import e205.eyespeak.domain.patient.dto.response.PatientInfoResponse;
 import e205.eyespeak.domain.patient.entity.Patient;
+import e205.eyespeak.domain.patient.repository.PatientRepository;
+import e205.eyespeak.global.enums.Gender;
 import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +22,19 @@ import java.time.LocalDate;
 @Transactional(readOnly = true)
 public class PatientService {
 
+    private final PatientRepository patientRepository;
     private final GuardianRepository guardianRepository;
     private final MatchingRepository matchingRepository;
+
+    @Transactional
+    public Patient createPatient(String name, Integer birthYear, String gender) {
+        Patient patient = Patient.builder()
+                .name(name)
+                .birthYear(birthYear)
+                .gender(Gender.valueOf(gender))
+                .build();
+        return patientRepository.save(patient);
+    }
 
     public PatientInfoResponse getPatientInfo(Long userId) {
         Patient patient = getPatientByGuardianUserId(userId);
