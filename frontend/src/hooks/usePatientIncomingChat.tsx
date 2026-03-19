@@ -463,10 +463,10 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
     }
   }
 
-  if (pathname.endsWith('/custom-talk')) {
+  if (pathname.includes('/talk/custom') || pathname.endsWith('/custom-talk')) {
     return {
       pathname,
-      label: '맞춤 문장',
+      label: '맞춤 대화',
       kind: 'custom_talk',
       responseSurface: 'overlay',
       canEnterReplyMode: true,

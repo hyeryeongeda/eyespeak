@@ -32,6 +32,10 @@ import BodyMindCategoryDetailPage from '../../pages/patient/body-mind/BodyMindCa
 import BodyMindPlaceholderPage from '../../pages/patient/body-mind/BodyMindPlaceholderPage'
 import FavoritesPage from '../../pages/patient/favorites/FavoritesPage'
 import CustomTalkDirectionPage from '../../pages/patient/talk/CustomTalkDirectionPage'
+import CustomTalkRecommendPage from '../../pages/patient/talk/CustomTalkRecommendPage'
+import CustomTalkComposePage from '../../pages/patient/talk/CustomTalkComposePage'
+import CustomTalkGeneratedPage from '../../pages/patient/talk/CustomTalkGeneratedPage'
+import CustomTalkKeyboardPage from '../../pages/patient/talk/CustomTalkKeyboardPage'
 import PatientSignupPage from '../../pages/auth/PatientSignupPage'
 import ResetPasswordPage from '../../pages/auth/ResetPasswordPage'
 import RoleSelectPage from '../../pages/auth/RoleSelectPage'
@@ -153,8 +157,28 @@ const patientRoutes = [
     element: <FavoritesPage />,
   },
   {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_LEGACY,
+    element: <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />,
+  },
+  {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK,
     element: <CustomTalkDirectionPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_RECOMMEND,
+    element: <CustomTalkRecommendPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_COMPOSE,
+    element: <CustomTalkComposePage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_GENERATED,
+    element: <CustomTalkGeneratedPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_KEYBOARD,
+    element: <CustomTalkKeyboardPage />,
   },
 ]
 
