@@ -271,7 +271,7 @@ const router = createBrowserRouter([
       {
         path: ROUTE_SEGMENTS.CARE.ROOT,
         element: (
-          <ProtectedRoute allowedRole="caregiver">
+          <ProtectedRoute allowedRole="guardian">
             <CareLayout />
           </ProtectedRoute>
         ),

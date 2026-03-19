@@ -28,7 +28,7 @@ export default function CareLoginPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setStoredRole('caregiver')
+    setStoredRole('guardian')
     setStoredEntryMode('login')
   }, [])
 
@@ -39,7 +39,7 @@ export default function CareLoginPage() {
     const result = await login({
       identifier: form.identifier,
       password: form.password,
-      role: 'caregiver',
+      role: 'guardian',
     })
 
     if (!result.success) {

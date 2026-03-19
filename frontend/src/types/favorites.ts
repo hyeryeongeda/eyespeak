@@ -13,7 +13,7 @@ export interface FavoriteItem {
 /**
  * 정렬 기준 (정책 미확정 시 mock 고정, 추후 교체 용이하도록 타입 분리)
  */
-export type FavoritesSortKey = 'recentUsed' | 'caregiverOrder' | 'usageCount'
+export type FavoritesSortKey = 'recentUsed' | 'guardianOrder' | 'usageCount'
 
 export type FavoritesStatus =
   | 'idle'

@@ -294,7 +294,7 @@ function handleLogin(request: LoginRequestDto) {
 
   const database = readDatabase()
 
-  if (request.role === 'caregiver') {
+  if (request.role === 'guardian') {
     const guardianAccount = database.guardians.find(
       guardian => guardian.email.toLowerCase() === request.identifier.trim().toLowerCase(),
     )
@@ -309,7 +309,7 @@ function handleLogin(request: LoginRequestDto) {
 
     return createAuthResponse({
       id: guardianAccount.userId,
-      role: 'caregiver',
+      role: 'guardian',
       name: guardianAccount.name,
       email: guardianAccount.email,
       teamCode: guardianAccount.teamCode,
@@ -369,7 +369,7 @@ function handleGuardianSignup(request: GuardianSignupRequestDto) {
 
   return createAuthResponse({
     id: guardianRecord.userId,
-    role: 'caregiver',
+    role: 'guardian',
     name: guardianRecord.name,
     email: guardianRecord.email,
   })
@@ -604,7 +604,7 @@ function handleRefresh(request: RefreshRequestDto) {
 
   const [, role, userId] = request.refreshToken.split(':')
 
-  if (!userId || (role !== 'caregiver' && role !== 'patient')) {
+  if (!userId || (role !== 'guardian' && role !== 'patient')) {
     throw new ApiError({
       statusCode: 401,
       source: 'mock',
@@ -614,7 +614,7 @@ function handleRefresh(request: RefreshRequestDto) {
 
   const database = readDatabase()
 
-  if (role === 'caregiver') {
+  if (role === 'guardian') {
     const guardianRecord = database.guardians.find(guardian => guardian.userId === userId)
 
     if (!guardianRecord) {
@@ -627,7 +627,7 @@ function handleRefresh(request: RefreshRequestDto) {
 
     return createAuthResponse({
       id: guardianRecord.userId,
-      role: 'caregiver',
+      role: 'guardian',
       name: guardianRecord.name,
       email: guardianRecord.email,
       teamCode: guardianRecord.teamCode,

@@ -125,7 +125,7 @@ function patientChatReducer(
         ...state,
         status: 'unread',
         messages: state.messages.map(message =>
-          message.id === action.messageId && message.sender === 'caregiver'
+          message.id === action.messageId && message.sender === 'guardian'
             ? { ...message, status: 'unread' }
             : message,
         ),
@@ -160,7 +160,7 @@ function patientChatReducer(
         manualInputMode: null,
         manualDraft: '',
         messages: state.messages.map(message =>
-          message.id === action.messageId && message.sender === 'caregiver'
+          message.id === action.messageId && message.sender === 'guardian'
             ? { ...message, status: 'pending_reply' }
             : message,
         ),
@@ -258,7 +258,7 @@ function patientChatReducer(
 
     case 'SEND_SUCCEEDED': {
       const nextMessages = state.messages.map(message =>
-        message.id === action.replyMessage.replyToId && message.sender === 'caregiver'
+        message.id === action.replyMessage.replyToId && message.sender === 'guardian'
           ? { ...message, status: 'replied' as const }
           : message,
       )
@@ -495,10 +495,10 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
   }
 }
 
-function getLatestUnresolvedCaregiverMessage(messages: PatientChatMessage[]) {
+function getLatestUnresolvedGuardianMessage(messages: PatientChatMessage[]) {
   return [...messages]
     .reverse()
-    .find(message => message.sender === 'caregiver' && message.status !== 'replied') ?? null
+    .find(message => message.sender === 'guardian' && message.status !== 'replied') ?? null
 }
 
 function getMessageById(messages: PatientChatMessage[], messageId: string | null) {
@@ -632,12 +632,12 @@ export function PatientIncomingChatProvider({
 
   const activeMessage = getMessageById(state.messages, state.activeMessageId)
   const activeReplyMessage = getMessageById(state.messages, state.activeReplyMessageId)
-  const latestUnresolvedMessage = getLatestUnresolvedCaregiverMessage(state.messages)
+  const latestUnresolvedMessage = getLatestUnresolvedGuardianMessage(state.messages)
   const unreadCount = state.messages.filter(
-    message => message.sender === 'caregiver' && message.status === 'unread',
+    message => message.sender === 'guardian' && message.status === 'unread',
   ).length
   const unresolvedCount = state.messages.filter(
-    message => message.sender === 'caregiver' && message.status !== 'replied',
+    message => message.sender === 'guardian' && message.status !== 'replied',
   ).length
   const isTalkRoute = state.currentRoute?.kind === 'talk'
   const shouldShowInterruptOverlay =
@@ -712,7 +712,7 @@ export function PatientIncomingChatProvider({
   }
 
   function triggerDuplicateMessage() {
-    const duplicateId = 'caregiver-duplicate-water'
+    const duplicateId = 'guardian-duplicate-water'
 
     triggerIncomingPreset('water', { messageId: duplicateId })
     triggerIncomingPreset('water', { messageId: duplicateId })
@@ -774,7 +774,7 @@ export function PatientIncomingChatProvider({
     const targetMessageId =
       messageId ??
       stateRef.current.activeMessageId ??
-      getLatestUnresolvedCaregiverMessage(stateRef.current.messages)?.id
+      getLatestUnresolvedGuardianMessage(stateRef.current.messages)?.id
 
     if (!targetMessageId) {
       return
@@ -784,7 +784,7 @@ export function PatientIncomingChatProvider({
   }
 
   function openLatestPendingReply() {
-    const latestMessage = getLatestUnresolvedCaregiverMessage(stateRef.current.messages)
+    const latestMessage = getLatestUnresolvedGuardianMessage(stateRef.current.messages)
 
     if (!latestMessage) {
       return

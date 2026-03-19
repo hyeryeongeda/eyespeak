@@ -66,7 +66,7 @@ export default function CareSignupPage() {
   ).length
 
   useEffect(() => {
-    setStoredRole('caregiver')
+    setStoredRole('guardian')
     setStoredEntryMode('signup')
   }, [])
 
