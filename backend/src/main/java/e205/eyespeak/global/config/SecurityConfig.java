@@ -60,7 +60,8 @@ public class SecurityConfig {
                                 "/api/recommendation/**",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/actuator/**"
+                                "/actuator/**",
+                                "/ws/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
