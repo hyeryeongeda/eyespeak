@@ -9,8 +9,15 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface CallRepository extends JpaRepository<Call, Long> {
+
+    /**
+     * [Unit 8] 빈도 제한용 — 해당 매칭의 가장 최근 호출 1건 조회.
+     * 메서드 이름 규칙: findTop(1개) + ByMatchingId(조건) + OrderByCreatedAtDesc(최신순)
+     */
+    Optional<Call> findTopByMatchingIdOrderByCreatedAtDesc(Long matchingId);
 
     @Query("SELECT DISTINCT CAST(c.createdAt AS LocalDate) " +
             "FROM Call c " +
