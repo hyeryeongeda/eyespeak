@@ -81,7 +81,7 @@ export function useCalibrationFlow({
 
         setPhase('error')
         setTrackingStatus('idle')
-        setErrorMessage('?쇨뎬 異붿쟻??以鍮꾪븯吏 紐삵뻽?듬땲?? ?ㅼ떆 ?쒕룄?댁＜?몄슂.')
+        setErrorMessage('얼굴 추적을 준비하지 못했습니다. 다시 시도해주세요.')
       } finally {
         if (activeControllerRef.current === controller) {
           activeControllerRef.current = null
@@ -107,7 +107,7 @@ export function useCalibrationFlow({
 
     if (!videoRef.current) {
       setPhase('error')
-      setErrorMessage('移대찓???꾨━酉곕? 遺덈윭?ㅼ? 紐삵뻽?듬땲?? ?ㅼ떆 ?쒕룄?댁＜?몄슂.')
+      setErrorMessage('카메라 프리뷰를 불러오지 못했습니다. 다시 시도해주세요.')
       return false
     }
 
@@ -132,7 +132,7 @@ export function useCalibrationFlow({
         if (!result.success) {
           setTrackingStatus(result.trackingStatus ?? 'tracking-unstable')
           setPhase('ready')
-          setErrorMessage('?쇨뎬???붾㈃ 以묒븰??留욎떠二쇱꽭??')
+          setErrorMessage('얼굴을 화면 중앙에 맞춰주세요.')
           return false
         }
 
@@ -147,7 +147,7 @@ export function useCalibrationFlow({
       if (!completionResult.success) {
         setTrackingStatus(completionResult.trackingStatus ?? 'tracking-unstable')
         setPhase('ready')
-        setErrorMessage('Eye tracking calibration could not be saved. Please try again.')
+        setErrorMessage('아이트래킹 캘리브레이션을 저장하지 못했습니다. 다시 시도해주세요.')
         return false
       }
 
@@ -161,7 +161,7 @@ export function useCalibrationFlow({
 
       setPhase('error')
       setTrackingStatus('idle')
-      setErrorMessage('罹섎━釉뚮젅?댁뀡??吏꾪뻾?섏? 紐삵뻽?듬땲?? ?ㅼ떆 ?쒕룄?댁＜?몄슂.')
+      setErrorMessage('캘리브레이션을 진행하지 못했습니다. 다시 시도해주세요.')
       return false
     } finally {
       if (activeControllerRef.current === controller) {
