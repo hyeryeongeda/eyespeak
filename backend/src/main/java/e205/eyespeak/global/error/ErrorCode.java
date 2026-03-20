@@ -102,6 +102,10 @@ public enum ErrorCode {
             "표현 ID가 필요합니다"),
     // → contentType이 EXPRESSION인데 expressionId가 null
 
+    CHAT_MATCHING_MISMATCH(HttpStatus.FORBIDDEN, "CHAT-555",
+            "본인의 매칭이 아닌 채팅에는 접근할 수 없습니다"),
+    // → 요청자의 매칭 ID와 요청한 매칭 ID가 불일치 (남의 채팅 조회 시도)
+
     // ====== COMMUNICATION (의사소통) ======
     // 특화소통 카테고리, 표현, 불편부위
 

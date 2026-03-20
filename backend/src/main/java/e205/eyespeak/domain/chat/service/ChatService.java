@@ -2,6 +2,7 @@ package e205.eyespeak.domain.chat.service;
 
 import e205.eyespeak.domain.category.entity.Phrase;
 import e205.eyespeak.domain.category.repository.PhraseRepository;
+import e205.eyespeak.domain.chat.dto.ChatHistoryResponse;
 import e205.eyespeak.domain.chat.dto.ChatMessageRequest;
 import e205.eyespeak.domain.chat.dto.ChatMessageResponse;
 import e205.eyespeak.domain.communication.entity.Message;
@@ -22,9 +23,12 @@ import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
 import e205.eyespeak.global.websocket.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 /**
  * [Unit 4] 채팅 비즈니스 로직
@@ -36,6 +40,9 @@ import org.springframework.transaction.annotation.Transactional;
  *     3. Message 엔티티 DB 저장
  *     4. 발신자에게 WebSocket 응답 (저장 확인용)
  *     5. 상대방이 온라인이면 WebSocket, 오프라인이면 FCM (Unit 7)
+ *
+ * [Unit 5] 채팅 히스토리 조회 (커서 기반 페이징)
+ *   GET /api/chat/{matchingId}/messages → ChatRestController → ChatService.getMessages()
  *
  * @Transactional(readOnly = true): 클래스 레벨 기본값. 읽기 전용 트랜잭션 (DB 최적화).
  * 쓰기가 필요한 메서드에만 @Transactional을 따로 붙여서 쓰기 가능으로 덮어씌운다.
@@ -95,6 +102,77 @@ public class ChatService {
             messagingTemplate.convertAndSendToUser(recipientId, "/queue/chat", response);
         }
         // else: Unit 7에서 FCM 연동
+    }
+
+    /**
+     * [Unit 5] 채팅 히스토리 조회 (커서 기반 페이징)
+     *
+     * @param userId     요청자의 userId (매칭 소유자 검증용)
+     * @param matchingId 조회할 매칭 ID
+     * @param cursor     이 messageId보다 이전 메시지를 조회 (null이면 최신부터)
+     * @param size       한 페이지에 가져올 메시지 수
+     */
+    public ChatHistoryResponse getMessages(Long userId, Long matchingId, Long cursor, int size) {
+        // 1. 매칭 소유자 검증 — 요청자가 이 매칭의 환자 또는 보호자인지 확인
+        Matching matching = getMatchingByUserId(userId);
+        if (!matching.getId().equals(matchingId)) {
+            throw new BusinessException(ErrorCode.CHAT_MATCHING_MISMATCH);
+        }
+
+        // 2. size + 1개 조회 (hasNext 판별용)
+        List<Message> messages;
+        if (cursor == null) {
+            messages = messageRepository.findByMatchingIdOrderByIdDesc(
+                    matchingId, PageRequest.of(0, size + 1));
+        } else {
+            messages = messageRepository.findByMatchingIdAndIdLessThanOrderByIdDesc(
+                    matchingId, cursor, PageRequest.of(0, size + 1));
+        }
+
+        // 3. hasNext 판별: size+1개보다 많이 나오면 다음 페이지 있음
+        boolean hasNext = messages.size() > size;
+        List<Message> pageMessages = hasNext ? messages.subList(0, size) : messages;
+
+        // 4. 각 메시지의 senderId를 계산하여 Response DTO 변환
+        Long patientUserId = matching.getPatient().getUser().getId();
+        Long guardianUserId = matching.getGuardian().getUser().getId();
+
+        List<ChatMessageResponse> responseList = pageMessages.stream()
+                .map(msg -> {
+                    Long senderId = (msg.getSenderRole() == Role.PATIENT)
+                            ? patientUserId : guardianUserId;
+                    return ChatMessageResponse.from(msg, senderId);
+                })
+                .toList();
+
+        // 5. 응답 생성
+        return ChatHistoryResponse.builder()
+                .messages(responseList)
+                .hasNext(hasNext)
+                .nextCursor(hasNext ? pageMessages.get(pageMessages.size() - 1).getId() : null)
+                .build();
+    }
+
+    /**
+     * userId로 해당 유저의 매칭을 찾는다.
+     * 기존 FavoriteService, LeisureContentService와 동일한 패턴.
+     *   userId → User(role) → Patient 또는 Guardian → Matching
+     */
+    private Matching getMatchingByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        if (user.getRole() == Role.GUARDIAN) {
+            Guardian guardian = guardianRepository.findByUserId(userId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.GUARDIAN_NOT_FOUND));
+            return matchingRepository.findByGuardianId(guardian.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.MATCHING_NOT_FOUND));
+        } else {
+            Patient patient = patientRepository.findByUserId(userId)
+                    .orElseThrow(() -> new BusinessException(ErrorCode.PATIENT_NOT_FOUND));
+            return matchingRepository.findByPatientId(patient.getId())
+                    .orElseThrow(() -> new BusinessException(ErrorCode.MATCHING_NOT_FOUND));
+        }
     }
 
     /**
