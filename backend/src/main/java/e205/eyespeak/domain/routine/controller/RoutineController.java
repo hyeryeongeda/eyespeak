@@ -15,7 +15,35 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "루틴 관리", description = "환자 시간대별 루틴 관리 API. 7개 시간대 슬롯 각각에 활동 태그 1개 지정.")
+@Tag(name = "루틴 관리", description = """
+        환자 시간대별 루틴 관리 API. 7개 시간대 슬롯 각각에 활동 태그 1개 지정.
+
+        ## TIME_SLOT (시간대 슬롯) — 시드 데이터 7행 고정
+        | id | 이름 | 시간대 |
+        |---|---|---|
+        | 1 | 기상/아침 | 06:00 ~ 09:00 |
+        | 2 | 오전 | 09:00 ~ 12:00 |
+        | 3 | 점심/낮 | 12:00 ~ 15:00 |
+        | 4 | 오후 | 15:00 ~ 18:00 |
+        | 5 | 저녁 | 18:00 ~ 21:00 |
+        | 6 | 취침준비 | 21:00 ~ 00:00 |
+        | 7 | 야간 | 00:00 ~ 06:00 |
+
+        ## ACTIVITY_TAG (활동 카테고리) — 시드 데이터 11행 고정
+        | id | 이름 |
+        |---|---|
+        | 1 | 경관식/수분 섭취 |
+        | 2 | 약물 투여 |
+        | 3 | 구강 케어 |
+        | 4 | 체위 변경 |
+        | 5 | 흡인/호흡 케어 |
+        | 6 | 배변/배뇨 케어 |
+        | 7 | 재활/ROM 운동 |
+        | 8 | 세면/위생 |
+        | 9 | 영상 시청 |
+        | 10 | 외부인 방문 |
+        | 11 | 휴식/수면 |
+        """)
 @RestController
 @RequestMapping("/routines")
 @RequiredArgsConstructor
