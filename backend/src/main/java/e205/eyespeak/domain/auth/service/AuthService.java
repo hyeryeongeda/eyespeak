@@ -22,6 +22,7 @@ import e205.eyespeak.domain.setting.entity.TtsSetting;
 import e205.eyespeak.domain.setting.repository.TtsSettingRepository;
 import e205.eyespeak.domain.user.entity.User;
 import e205.eyespeak.domain.user.repository.UserRepository;
+import e205.eyespeak.domain.patient.repository.PatientRepository;
 import e205.eyespeak.global.enums.MatchingStatus;
 import e205.eyespeak.global.enums.Role;
 import e205.eyespeak.global.error.BusinessException;
@@ -39,6 +40,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final GuardianRepository guardianRepository;
+    private final PatientRepository patientRepository;
     private final MatchingRepository matchingRepository;
     private final TtsSettingRepository ttsSettingRepository;
     private final PasswordEncoder passwordEncoder;
@@ -160,6 +162,7 @@ public class AuthService {
                         .role(user.getRole().name())
                         .name(user.getName())
                         .email(user.getLoginId())
+                        .teamCode(request.getTeamCode())
                         .build())
                 .patientId(matching.getPatient().getId())
                 .teamCode(request.getTeamCode())
@@ -185,6 +188,9 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtProvider.createRefreshToken(user.getId(), user.getRole());
 
+        // user → matching 조회하여 teamCode 가져오기
+        String teamCode = findTeamCode(user);
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -193,7 +199,22 @@ public class AuthService {
                         .role(user.getRole().name())
                         .name(user.getName())
                         .email(user.getLoginId())
+                        .teamCode(teamCode)
                         .build())
                 .build();
+    }
+
+    private String findTeamCode(User user) {
+        if (user.getRole() == Role.GUARDIAN) {
+            return guardianRepository.findByUserId(user.getId())
+                    .flatMap(guardian -> matchingRepository.findByGuardianId(guardian.getId()))
+                    .map(Matching::getInviteCode)
+                    .orElse(null);
+        } else {
+            return patientRepository.findByUserId(user.getId())
+                    .flatMap(patient -> matchingRepository.findByPatientId(patient.getId()))
+                    .map(Matching::getInviteCode)
+                    .orElse(null);
+        }
     }
 }
