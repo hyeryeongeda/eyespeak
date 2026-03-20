@@ -93,7 +93,11 @@ public enum ErrorCode {
     EXPRESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-602",
             "표현을 찾을 수 없습니다"),
 
-    PAIN_AREA_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-603",
+    PHRASE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-603",
+            "문구를 찾을 수 없습니다"),
+    // → phrase 테이블에서 해당 ID를 찾을 수 없을 때
+
+    PAIN_AREA_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-604",
             "불편 부위를 찾을 수 없습니다"),
 
     // ====== AI (추천/문장 생성) ======
@@ -112,8 +116,61 @@ public enum ErrorCode {
             "커스텀 슬롯을 찾을 수 없습니다"),
 
     CUSTOM_SLOT_LIMIT(HttpStatus.BAD_REQUEST, "CUSTOM-902",
-            "커스텀 슬롯은 최대 4개까지 등록할 수 있습니다");
+            "커스텀 슬롯은 최대 4개까지 등록할 수 있습니다"),
     // → 프로토타입에서 커스텀 칸이 4개니까 4개 제한
+
+    // ====== MATCHING (매칭) ======
+
+    INVALID_INVITE_CODE(HttpStatus.NOT_FOUND, "MATCHING-801",
+            "유효하지 않은 팀코드입니다"),
+    // → 초대코드가 존재하지 않을 때
+
+    INVITE_CODE_ALREADY_USED(HttpStatus.CONFLICT, "MATCHING-802",
+            "이미 사용된 팀코드입니다"),
+    // → 이미 LINKED 상태인 초대코드로 가입 시도
+
+    MATCHING_NOT_FOUND(HttpStatus.NOT_FOUND, "MATCHING-803",
+            "매칭 정보를 찾을 수 없습니다"),
+    // → 매칭이 아직 생성되지 않았을 때 (환자 정보 미등록)
+
+    // ====== FAVORITE (즐겨찾기) ======
+
+    FAVORITE_LIMIT(HttpStatus.BAD_REQUEST, "COMM-605",
+            "즐겨찾기는 최대 5개까지 등록할 수 있습니다"),
+    // → 즐겨찾기 5개 초과 시도
+
+    FAVORITE_NOT_FOUND(HttpStatus.NOT_FOUND, "COMM-606",
+            "즐겨찾기를 찾을 수 없습니다"),
+    // → 존재하지 않는 즐겨찾기 ID
+
+    FAVORITE_DUPLICATE(HttpStatus.CONFLICT, "COMM-607",
+            "이미 즐겨찾기에 등록된 표현입니다"),
+    // → 동일 표현 중복 등록
+
+    // ====== LEISURE (여가 콘텐츠) ======
+
+    LEISURE_CONTENT_NOT_FOUND(HttpStatus.NOT_FOUND, "LEISURE-1001",
+            "여가 콘텐츠를 찾을 수 없습니다"),
+
+    LEISURE_CONTENT_LIMIT(HttpStatus.BAD_REQUEST, "LEISURE-1002",
+            "여가 콘텐츠는 최대 5개까지 등록할 수 있습니다"),
+
+    LEISURE_INVALID_CONTENT(HttpStatus.BAD_REQUEST, "LEISURE-1003",
+            "URL 또는 카테고리 중 하나를 입력해야 합니다"),
+
+    LEISURE_INVALID_CATEGORY(HttpStatus.BAD_REQUEST, "LEISURE-1004",
+            "유효하지 않은 YouTube 카테고리입니다"),
+
+    LEISURE_INVALID_URL(HttpStatus.BAD_REQUEST, "LEISURE-1005",
+            "유효하지 않은 YouTube URL입니다"),
+
+    // ====== SETTING (환자 설정) ======
+
+    SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "SETTING-1101",
+            "환자 설정을 찾을 수 없습니다"),
+
+    INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
+            "허용되지 않는 설정값입니다");
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)

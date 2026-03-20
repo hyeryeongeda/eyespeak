@@ -1,46 +1,53 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getHomePathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../hooks/useAuth'
-import { setStoredEntryMode, setStoredRole } from '../../services/authService'
+import { useAuth } from '../../features/auth/hooks/useAuth'
+import {
+  consumeGuardianSessionExitReason,
+  setStoredEntryMode,
+  setStoredRole,
+} from '../../services/authStorage'
+import type { GuardianSessionExitReason } from '../../types/auth'
+import AuthBrand from './AuthBrand'
 import {
   card,
   errorMessage,
   formStack,
   helperText,
+  infoBox,
   input,
   linkRow,
-  logoText,
-  logoWrap,
   pageTitle,
   pageWrapper,
   primaryButton,
-  subtitle,
   textLink,
 } from './authPageStyles'
 
 export default function CareLoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const { login, isPending } = useAuth()
+  const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
+    consumeGuardianSessionExitReason(),
+  )
   const [form, setForm] = useState({
-    id: '',
+    identifier: '',
     password: '',
   })
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setStoredRole('caregiver')
+    setStoredRole('guardian')
     setStoredEntryMode('login')
   }, [])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
 
-    const result = login({
-      id: form.id,
+    const result = await login({
+      identifier: form.identifier,
       password: form.password,
-      role: 'caregiver',
+      role: 'guardian',
     })
 
     if (!result.success) {
@@ -48,26 +55,45 @@ export default function CareLoginPage() {
       return
     }
 
-    navigate(getHomePathByRole(result.user.role), { replace: true })
+    navigate(getHomePathByRole(result.data.role), { replace: true })
   }
 
   return (
     <div style={pageWrapper}>
       <div style={card}>
-        <div style={logoWrap}>
-          <p style={logoText}>eyespeak</p>
-          <p style={subtitle}>보호자 로그인</p>
-        </div>
+        <AuthBrand subtitleText="보호자 로그인" />
 
         <h1 style={pageTitle}>보호자 로그인</h1>
 
+        <div style={infoBox}>
+          <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+            현재 로그인 방식
+          </p>
+          <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+            보호자 회원가입에서 사용한 이메일과 비밀번호로 로그인합니다.
+          </p>
+        </div>
+
+        {sessionNotice ? (
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+              세션 안내
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              {sessionNotice === 'idle-timeout'
+                ? '오랫동안 활동이 없어 보호자 세션이 자동으로 종료되었습니다. 다시 로그인해주세요.'
+                : '보호자 세션을 갱신하지 못해 다시 로그인이 필요합니다.'}
+            </p>
+          </div>
+        ) : null}
+
         <form onSubmit={handleSubmit} style={formStack}>
           <input
-            type="text"
-            placeholder="보호자 아이디"
+            type="email"
+            placeholder="이메일"
             style={input}
-            value={form.id}
-            onChange={event => setForm(prev => ({ ...prev, id: event.target.value }))}
+            value={form.identifier}
+            onChange={event => setForm(prev => ({ ...prev, identifier: event.target.value }))}
           />
           <input
             type="password"
@@ -79,15 +105,19 @@ export default function CareLoginPage() {
 
           {error ? <p style={errorMessage}>{error}</p> : null}
 
-          <button type="submit" style={primaryButton}>
-            로그인
+          <button
+            type="submit"
+            style={isPending ? { ...primaryButton, opacity: 0.7 } : primaryButton}
+            disabled={isPending}
+          >
+            {isPending ? '로그인 중...' : '로그인'}
           </button>
         </form>
 
         <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <Link to={ROUTE_PATHS.AUTH_RESET_PASSWORD} style={textLink}>
+          <Link to={`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=guardian`} style={textLink}>
             비밀번호 재설정
           </Link>
           <Link to={ROUTE_PATHS.AUTH_SIGNUP_CARE} style={textLink}>

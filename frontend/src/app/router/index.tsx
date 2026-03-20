@@ -1,25 +1,42 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import HomePage from '../../pages/HomePage'
 import CareHomePage from '../../pages/care/CareHomePage'
+import CareSettingsPage from '../../pages/care/CareSettingsPage'
+import ChatPage from '../../pages/care/ChatPage'
+import RecordsPage from '../../pages/care/RecordsPage'
+import VoicePage from '../../pages/care/VoicePage'
+import PatientInfoPage from '../../pages/care/settings/PatientInfoPage'
+import RoutineSettingPage from '../../pages/care/settings/RoutineSettingPage'
+import FavoritesSettingPage from '../../pages/care/settings/FavoritesSettingPage'
+import LeisureSettingPage from '../../pages/care/settings/LeisureSettingPage'
+import DeviceSettingPage from '../../pages/care/settings/DeviceSettingPage'
+import TtsSettingPage from '../../pages/care/settings/TtsSettingPage'
+import WordsSettingPage from '../../pages/care/settings/WordsSettingPage'
+import ExpressionsPage from '../../pages/care/settings/ExpressionsPage'
 import CareLoginPage from '../../pages/auth/CareLoginPage'
 import CareSignupPage from '../../pages/auth/CareSignupPage'
 import LoginPage from '../../pages/auth/LoginPage'
 import PatientLoginPage from '../../pages/auth/PatientLoginPage'
-import TalkMainPage from '../../pages/patient/TalkMainPage'
-import PatientMainPage from '../../pages/patient/PatientMainPage'
-import LeisureMainPage from '../../pages/patient/LeisureMainPage'
-import LeisureCategoryPage from '../../pages/patient/LeisureCategoryPage'
-import LeisurePlayerPage from '../../pages/patient/LeisurePlayerPage'
-import BodyMindPage from '../../pages/patient/BodyMindPage'
-import BodyMindSecretionPage from '../../pages/patient/BodyMindSecretionPage'
-import BodyMindBreathingPage from '../../pages/patient/BodyMindBreathingPage'
-import BodyMindPainAreaPage from '../../pages/patient/BodyMindPainAreaPage'
-import BodyMindPainDetailPage from '../../pages/patient/BodyMindPainDetailPage'
-import BodyMindCategoryListPage from '../../pages/patient/BodyMindCategoryListPage'
-import BodyMindCategoryDetailPage from '../../pages/patient/BodyMindCategoryDetailPage'
-import BodyMindPlaceholderPage from '../../pages/patient/BodyMindPlaceholderPage'
-import FavoritesPage from '../../pages/patient/FavoritesPage'
-import CustomTalkDirectionPage from '../../pages/patient/CustomTalkDirectionPage'
+import PatientCalibrationPage from '../../pages/patient/calibration/PatientCalibrationPage'
+import TalkMainPage from '../../pages/patient/talk/TalkMainPage'
+import PatientMainPage from '../../pages/patient/main/PatientMainPage'
+import LeisureMainPage from '../../pages/patient/leisure/LeisureMainPage'
+import LeisureCategoryPage from '../../pages/patient/leisure/LeisureCategoryPage'
+import LeisurePlayerPage from '../../pages/patient/leisure/LeisurePlayerPage'
+import BodyMindPage from '../../pages/patient/body-mind/BodyMindPage'
+import BodyMindSecretionPage from '../../pages/patient/body-mind/BodyMindSecretionPage'
+import BodyMindBreathingPage from '../../pages/patient/body-mind/BodyMindBreathingPage'
+import BodyMindPainAreaPage from '../../pages/patient/body-mind/BodyMindPainAreaPage'
+import BodyMindPainDetailPage from '../../pages/patient/body-mind/BodyMindPainDetailPage'
+import BodyMindCategoryListPage from '../../pages/patient/body-mind/BodyMindCategoryListPage'
+import BodyMindCategoryDetailPage from '../../pages/patient/body-mind/BodyMindCategoryDetailPage'
+import BodyMindPlaceholderPage from '../../pages/patient/body-mind/BodyMindPlaceholderPage'
+import FavoritesPage from '../../pages/patient/favorites/FavoritesPage'
+import CustomTalkDirectionPage from '../../features/patient/custom-talk/pages/CustomTalkDirectionPage'
+import CustomTalkRecommendPage from '../../features/patient/custom-talk/pages/CustomTalkRecommendPage'
+import CustomTalkComposePage from '../../features/patient/custom-talk/pages/CustomTalkComposePage'
+import CustomTalkGeneratedPage from '../../features/patient/custom-talk/pages/CustomTalkGeneratedPage'
+import CustomTalkKeyboardPage from '../../features/patient/custom-talk/pages/CustomTalkKeyboardPage'
 import PatientSignupPage from '../../pages/auth/PatientSignupPage'
 import ResetPasswordPage from '../../pages/auth/ResetPasswordPage'
 import RoleSelectPage from '../../pages/auth/RoleSelectPage'
@@ -28,8 +45,10 @@ import AppLayout from '../layouts/AppLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import CareLayout from '../layouts/CareLayout'
 import PatientLayout from '../layouts/PatientLayout'
-import { ProtectedRoute, PublicOnlyRoute } from './guards'
+import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
+
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
 const authRoutes = [
   {
@@ -74,6 +93,10 @@ const patientRoutes = [
   {
     index: true,
     element: <Navigate to={ROUTE_PATHS.PATIENT_MAIN} replace />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CALIBRATION,
+    element: <PatientCalibrationPage />,
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.MAIN,
@@ -141,8 +164,28 @@ const patientRoutes = [
     element: <FavoritesPage />,
   },
   {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_LEGACY,
+    element: <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />,
+  },
+  {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK,
     element: <CustomTalkDirectionPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_RECOMMEND,
+    element: <CustomTalkRecommendPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_COMPOSE,
+    element: <CustomTalkComposePage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_GENERATED,
+    element: <CustomTalkGeneratedPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_KEYBOARD,
+    element: <CustomTalkKeyboardPage />,
   },
 ]
 
@@ -155,46 +198,101 @@ const careRoutes = [
     path: ROUTE_SEGMENTS.CARE.HOME,
     element: <CareHomePage />,
   },
+  {
+    path: ROUTE_SEGMENTS.CARE.CHAT,
+    element: <ChatPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.RECORD,
+    element: <RecordsPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS,
+    element: <CareSettingsPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_PATIENT_INFO,
+    element: <PatientInfoPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_ROUTINE,
+    element: <RoutineSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_FAVORITES,
+    element: <FavoritesSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_LEISURE,
+    element: <LeisureSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_DEVICE,
+    element: <DeviceSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_TTS,
+    element: <TtsSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_WORDS,
+    element: <WordsSettingPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.SETTINGS_EXPRESSIONS,
+    element: <ExpressionsPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.CARE.VOICE,
+    element: <VoicePage />,
+  },
 ]
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: ROUTE_PATHS.HOME,
+      element: <AppLayout />,
+      children: [
+        {
+          index: true,
+          element: <HomePage />,
+        },
+        {
+          path: ROUTE_SEGMENTS.AUTH.ROOT,
+          element: (
+            <PublicOnlyRoute>
+              <AuthLayout />
+            </PublicOnlyRoute>
+          ),
+          children: authRoutes,
+        },
+        {
+          path: ROUTE_SEGMENTS.PATIENT.ROOT,
+          element: (
+            <ProtectedRoute allowedRole="patient">
+              <PatientCalibrationRoute>
+                <PatientLayout />
+              </PatientCalibrationRoute>
+            </ProtectedRoute>
+          ),
+          children: patientRoutes,
+        },
+        {
+          path: ROUTE_SEGMENTS.CARE.ROOT,
+          element: (
+            <ProtectedRoute allowedRole="guardian">
+              <CareLayout />
+            </ProtectedRoute>
+          ),
+          children: careRoutes,
+        },
+      ],
+    },
+  ],
   {
-    path: ROUTE_PATHS.HOME,
-    element: <AppLayout />,
-    children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: ROUTE_SEGMENTS.AUTH.ROOT,
-        element: (
-          <PublicOnlyRoute>
-            <AuthLayout />
-          </PublicOnlyRoute>
-        ),
-        children: authRoutes,
-      },
-      {
-        path: ROUTE_SEGMENTS.PATIENT.ROOT,
-        element: (
-          <ProtectedRoute allowedRole="patient">
-            <PatientLayout />
-          </ProtectedRoute>
-        ),
-        children: patientRoutes,
-      },
-      {
-        path: ROUTE_SEGMENTS.CARE.ROOT,
-        element: (
-          <ProtectedRoute allowedRole="caregiver">
-            <CareLayout />
-          </ProtectedRoute>
-        ),
-        children: careRoutes,
-      },
-    ],
+    basename: routerBasename,
   },
-])
+)
 
 export default router

@@ -2,11 +2,17 @@ import { useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { getAuthPathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
 import {
+  getStoredEntryMode,
+  getStoredRole,
+  setStoredEntryMode,
+  setStoredRole,
+} from '../../services/authStorage'
+import type { AuthEntryMode, UserRole } from '../../types/auth'
+import AuthBrand from './AuthBrand'
+import {
   backButton,
   card,
   helperText,
-  logoText,
-  logoWrap,
   pageDesc,
   pageTitle,
   pageWrapper,
@@ -16,17 +22,7 @@ import {
   roleDesc,
   roleGrid,
   roleTitle,
-  subtitle,
 } from './authPageStyles'
-import {
-  getStoredEntryMode,
-  getStoredRole,
-  setStoredEntryMode,
-  setStoredRole,
-} from '../../services/authService'
-import type { AuthEntryMode } from '../../types/auth'
-
-type AuthRole = 'caregiver' | 'patient'
 
 const selectedStyle: CSSProperties = {
   ...roleCard,
@@ -45,11 +41,11 @@ export default function RoleSelectPage() {
         ? savedMode
         : 'login'
 
-  const [selectedRole, setSelectedRoleState] = useState<AuthRole | null>(() => {
+  const [selectedRole, setSelectedRoleState] = useState<UserRole | null>(() => {
     return getStoredRole()
   })
 
-  const handleSelect = (role: AuthRole) => {
+  const handleSelect = (role: UserRole) => {
     setSelectedRoleState(role)
     setStoredRole(role)
   }
@@ -66,16 +62,13 @@ export default function RoleSelectPage() {
   return (
     <div style={pageWrapper}>
       <div style={card}>
-        <div style={logoWrap}>
-          <p style={logoText}>eyespeak</p>
-          <p style={subtitle}>역할 선택</p>
-        </div>
+        <AuthBrand subtitleText="역할 선택" />
 
         <h1 style={pageTitle}>이용할 역할을 선택해주세요</h1>
         <p style={pageDesc}>
           {mode === 'login'
-            ? '로그인 전에 사용할 역할을 먼저 선택합니다.'
-            : '회원가입 전에 사용할 역할을 먼저 선택합니다.'}
+            ? '로그인에 사용할 역할을 먼저 선택합니다.'
+            : '회원가입에 사용할 역할을 먼저 선택합니다.'}
         </p>
 
         <div style={roleGrid}>
@@ -90,8 +83,8 @@ export default function RoleSelectPage() {
 
           <button
             type="button"
-            onClick={() => handleSelect('caregiver')}
-            style={selectedRole === 'caregiver' ? selectedStyle : roleCard}
+            onClick={() => handleSelect('guardian')}
+            style={selectedRole === 'guardian' ? selectedStyle : roleCard}
           >
             <p style={roleTitle}>보호자</p>
             <p style={roleDesc}>환자 연결과 관리 기능을 사용하는 보호자 계정으로 진입합니다.</p>
@@ -102,9 +95,9 @@ export default function RoleSelectPage() {
           현재 선택:{' '}
           {selectedRole === 'patient'
             ? '환자'
-            : selectedRole === 'caregiver'
+            : selectedRole === 'guardian'
               ? '보호자'
-              : '선택 전'}
+              : '선택 없음'}
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

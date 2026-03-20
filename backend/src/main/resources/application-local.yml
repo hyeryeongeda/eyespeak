@@ -7,9 +7,14 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  sql:
+    init:
+      mode: always
+
   jpa:
     hibernate:
       ddl-auto: create
+    defer-datasource-initialization: true
     show-sql: true
     properties:
       hibernate:
@@ -20,7 +25,20 @@ spring:
 server:
   port: 8080
 
+# AI 서버 (로컬 Docker: eyespeak-ai-caregiver:5003, eyespeak-ai-tts:8000)
+ai:
+  server:
+    url: ${AI_SERVER_URL:http://eyespeak-ai-caregiver:5003}
+  tts:
+    url: ${AI_TTS_URL:http://eyespeak-ai-tts:8000}
+
 logging:
   level:
     e205.eyespeak: DEBUG
     org.hibernate.SQL: DEBUG
+
+# JWT 설정 (비밀키는 환경변수로 관리)
+jwt:
+  secret: ${JWT_SECRET:my-local-dev-secret-key-must-be-at-least-32-characters-long}
+  access-token-expiry: 1800000    # 30분 (밀리초)
+  refresh-token-expiry: 604800000 # 7일 (밀리초)

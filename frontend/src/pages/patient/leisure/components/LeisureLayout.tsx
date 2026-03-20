@@ -2,26 +2,26 @@ import type { CSSProperties, ReactNode } from 'react'
 import { leisureInteractiveCss } from './leisureTheme'
 
 const pageStyle: CSSProperties = {
+  height: '100dvh',
   minHeight: '100dvh',
   width: '100%',
-  padding: '12px',
+  padding: 0,
   background:
     'radial-gradient(circle at top left, rgba(255, 255, 255, 0.92) 0%, rgba(240, 246, 251, 0.9) 34%, #eaf2f7 100%)',
   boxSizing: 'border-box',
+  display: 'flex',
+  flexDirection: 'column',
 }
 
 const shellStyle: CSSProperties = {
-  minHeight: 'calc(100dvh - 24px)',
-  borderRadius: '36px',
-  border: '1px solid rgba(210, 221, 232, 0.88)',
-  backgroundColor: 'rgba(249, 252, 254, 0.78)',
-  boxShadow: '0 26px 56px rgba(78, 97, 123, 0.12)',
-  backdropFilter: 'blur(18px)',
-  padding: '20px',
+  flex: 1,
+  minHeight: 0,
+  width: '100%',
+  padding: 0,
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
+  gap: 0,
 }
 
 const headerStyle: CSSProperties = {
@@ -95,6 +95,7 @@ const contentStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'flex',
+  flexDirection: 'column',
 }
 
 const srOnlyStyle: CSSProperties = {
@@ -111,23 +112,6 @@ const srOnlyStyle: CSSProperties = {
 
 const responsiveStyle = `
   ${leisureInteractiveCss}
-
-  @media (max-width: 900px) {
-    .leisure-layout-shell {
-      min-height: auto;
-      border-radius: 28px;
-      padding: 16px;
-    }
-
-    .leisure-layout-header {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .leisure-layout-meta {
-      justify-content: flex-start;
-    }
-  }
 `
 
 interface LeisureLayoutProps {

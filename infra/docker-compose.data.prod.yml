@@ -85,38 +85,38 @@ services:
   # ===========================================================================
   # RabbitMQ Message Broker (Prod)
   # ===========================================================================
-  prod-rabbitmq:
-    image: rabbitmq:management
-    container_name: eyespeak-rabbitmq-prod
-    restart: always
-    environment:
-      TZ: Asia/Seoul
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
-    expose:
-      - "5672"
-      - "15672"
-    networks:
-      - prod-net
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 1G
-        reservations:
-          cpus: '0.5'
-          memory: 512M
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
+#  prod-rabbitmq:
+#    image: rabbitmq:management
+#    container_name: eyespeak-rabbitmq-prod
+#    restart: always
+#    environment:
+#      TZ: Asia/Seoul
+#      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+#      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+#    expose:
+#      - "5672"
+#      - "15672"
+#    networks:
+#      - prod-net
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '1.0'
+#          memory: 1G
+#        reservations:
+#          cpus: '0.5'
+#          memory: 512M
+#    healthcheck:
+#      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#      start_period: 30s
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "50m"
+#        max-file: "3"
 
 # =============================================================================
 # Networks - prod-net 생성 담당

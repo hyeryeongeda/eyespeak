@@ -1,176 +1,134 @@
+import { getActiveApiMode } from './apiClient'
+import { loginApi, logoutApi, refreshApi, requestPasswordResetApi, withdrawApi } from './authApi'
+import { mapAuthResponseToSession } from './authSessionMapper'
 import type {
-  AuthEntryMode,
   AuthSession,
-  MockLoginPayload,
-  MockLoginResult,
-  UserRole,
+  LoginFormValues,
+  LoginRequestDto,
+  PasswordResetRequestDto,
+  PasswordResetResponseDto,
 } from '../types/auth'
+import type { ServiceResult } from '../types/api'
+import { createServiceFailure } from '../utils/errorMapper'
 
-export const SELECTED_ROLE_STORAGE_KEY = 'selectedRole'
-export const AUTH_ENTRY_MODE_STORAGE_KEY = 'authEntryMode'
-export const AUTH_SESSION_STORAGE_KEY = 'mockAuthSession'
-export const VERIFIED_TEAM_CODE_STORAGE_KEY = 'verifiedTeamCode'
-export const MOCK_PATIENT_TEAM_CODE = 'TEAM123'
-
-const MOCK_ACCOUNTS: Record<UserRole, { id: string; password: string; name: string }> = {
-  caregiver: {
-    id: 'care123',
-    password: 'e205e205@',
-    name: '보호자 목업 사용자',
-  },
-  patient: {
-    id: 'pat123',
-    password: 'e205e205@',
-    name: '환자 목업 사용자',
-  },
-}
-
-function isBrowser() {
-  return typeof window !== 'undefined'
-}
-
-export function getStoredRole(): UserRole | null {
-  if (!isBrowser()) {
-    return null
+function mapLoginValuesToRequest(values: LoginFormValues): LoginRequestDto {
+  // TODO(BE): /auth/login 요청 필드(identifier/email/loginId) 계약 확정 시 여기서만 교체.
+  return {
+    identifier: values.identifier.trim(),
+    password: values.password,
+    role: values.role,
   }
-
-  const savedRole = sessionStorage.getItem(SELECTED_ROLE_STORAGE_KEY)
-  return savedRole === 'caregiver' || savedRole === 'patient' ? savedRole : null
 }
 
-export function setStoredRole(role: UserRole) {
-  if (!isBrowser()) {
-    return
-  }
+export async function login(values: LoginFormValues): Promise<ServiceResult<AuthSession>> {
+  try {
+    const response = await loginApi(mapLoginValuesToRequest(values))
 
-  sessionStorage.setItem(SELECTED_ROLE_STORAGE_KEY, role)
+    return {
+      success: true,
+      source: 'mock',
+      data: mapAuthResponseToSession(response),
+    }
+  } catch (error) {
+    return createServiceFailure(error, '로그인에 실패했습니다.')
+  }
 }
 
-export function getStoredEntryMode(): AuthEntryMode | null {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const savedMode = sessionStorage.getItem(AUTH_ENTRY_MODE_STORAGE_KEY)
-  return savedMode === 'login' || savedMode === 'signup' ? savedMode : null
-}
-
-export function setStoredEntryMode(mode: AuthEntryMode) {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.setItem(AUTH_ENTRY_MODE_STORAGE_KEY, mode)
-}
-
-export function clearStoredEntryMode() {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.removeItem(AUTH_ENTRY_MODE_STORAGE_KEY)
-}
-
-export function getStoredAuthSession(): AuthSession | null {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const savedSession = sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY)
-  if (!savedSession) {
-    return null
+export async function logout(session: AuthSession | null): Promise<ServiceResult<null>> {
+  if (!session) {
+    return {
+      success: true,
+      source: 'mock',
+      data: null,
+    }
   }
 
   try {
-    const parsed = JSON.parse(savedSession) as Partial<AuthSession>
+    await logoutApi(
+      {
+        refreshToken: session.refreshToken,
+      },
+      session.accessToken,
+    )
 
-    if (
-      (parsed.role === 'caregiver' || parsed.role === 'patient') &&
-      typeof parsed.id === 'string' &&
-      typeof parsed.name === 'string'
-    ) {
-      return {
-        id: parsed.id,
-        role: parsed.role,
-        name: parsed.name,
-      }
+    return {
+      success: true,
+      source: 'mock',
+      data: null,
     }
-  } catch {
-    clearStoredAuthSession()
+  } catch (error) {
+    return createServiceFailure(error, '로그아웃 처리에 실패했습니다.')
   }
-
-  return null
 }
 
-export function persistAuthSession(session: AuthSession) {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
-  setStoredRole(session.role)
-}
-
-export function clearStoredAuthSession() {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
-}
-
-export function normalizeTeamCode(value: string) {
-  return value.trim().toUpperCase()
-}
-
-export function verifyMockTeamCode(value: string) {
-  return normalizeTeamCode(value) === MOCK_PATIENT_TEAM_CODE
-}
-
-export function getStoredVerifiedTeamCode(): string | null {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const savedCode = sessionStorage.getItem(VERIFIED_TEAM_CODE_STORAGE_KEY)
-  return savedCode ? normalizeTeamCode(savedCode) : null
-}
-
-export function storeVerifiedTeamCode(value: string) {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.setItem(VERIFIED_TEAM_CODE_STORAGE_KEY, normalizeTeamCode(value))
-}
-
-export function clearVerifiedTeamCode() {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.removeItem(VERIFIED_TEAM_CODE_STORAGE_KEY)
-}
-
-export function authenticateMockUser(payload: MockLoginPayload): MockLoginResult {
-  const targetAccount = MOCK_ACCOUNTS[payload.role]
-
-  if (payload.id.trim() !== targetAccount.id || payload.password !== targetAccount.password) {
+export async function refreshSession(
+  session: AuthSession | null,
+): Promise<ServiceResult<AuthSession>> {
+  if (!session?.refreshToken) {
     return {
       success: false,
-      message:
-        payload.role === 'caregiver'
-          ? '보호자 계정 정보가 올바르지 않습니다.'
-          : '환자 계정 정보가 올바르지 않습니다.',
+      source: 'mock',
+      message: '리프레시 토큰이 없습니다.',
+      statusCode: 401,
     }
   }
 
-  return {
-    success: true,
-    user: {
-      id: targetAccount.id,
-      role: payload.role,
-      name: targetAccount.name,
-    },
+  try {
+    const response = await refreshApi({
+      refreshToken: session.refreshToken,
+    })
+
+    return {
+      success: true,
+      source: 'mock',
+      data: mapAuthResponseToSession(response),
+    }
+  } catch (error) {
+    return createServiceFailure(error, '세션 갱신에 실패했습니다.')
+  }
+}
+
+export async function requestPasswordReset(
+  values: PasswordResetRequestDto,
+): Promise<ServiceResult<PasswordResetResponseDto>> {
+  try {
+    const response = await requestPasswordResetApi({
+      identifier: values.identifier.trim(),
+      role: values.role,
+    })
+
+    return {
+      success: true,
+      source: getActiveApiMode() === 'mock' ? 'mock' : 'api',
+      data: response,
+    }
+  } catch (error) {
+    return createServiceFailure(error, '비밀번호 재설정 요청에 실패했습니다.')
+  }
+}
+
+export async function withdraw(
+  session: AuthSession | null,
+  reason?: string,
+): Promise<ServiceResult<null>> {
+  if (!session) {
+    return {
+      success: false,
+      source: 'mock',
+      message: '로그인 정보가 없습니다.',
+      statusCode: 401,
+    }
+  }
+
+  try {
+    await withdrawApi({ reason }, session.accessToken)
+
+    return {
+      success: true,
+      source: 'mock',
+      data: null,
+    }
+  } catch (error) {
+    return createServiceFailure(error, '회원 탈퇴 처리에 실패했습니다.')
   }
 }

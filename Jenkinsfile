@@ -65,6 +65,64 @@ pipeline {
         }
 
         // =================================================================
+        // 빌드 테스트 (feature 브랜치 - MR 시 실행)
+        // =================================================================
+        stage('Build Test') {
+            when {
+                not { branch 'develop' }
+                not { branch 'release' }
+            }
+            steps {
+                script {
+                    def commitSha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                    def projectId = '1273805'
+
+                    // 빌드 시작 상태 전송
+                    withCredentials([usernamePassword(credentialsId: 'e205-gitlab', usernameVariable: 'GL_USER', passwordVariable: 'GL_TOKEN')]) {
+                        sh """
+                            curl -s --request POST \
+                            --header "PRIVATE-TOKEN: \$GL_TOKEN" \
+                            "https://lab.ssafy.com/api/v4/projects/${projectId}/statuses/${commitSha}?state=running&name=build-test&target_url=${env.BUILD_URL}"
+                        """
+                    }
+                }
+
+                dir('backend') {
+                    sh 'chmod +x gradlew'
+                    sh './gradlew clean compileJava --no-daemon'
+                }
+            }
+            post {
+                success {
+                    script {
+                        def commitSha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                        def projectId = '1273805'
+                        withCredentials([usernamePassword(credentialsId: 'e205-gitlab', usernameVariable: 'GL_USER', passwordVariable: 'GL_TOKEN')]) {
+                            sh """
+                                curl -s --request POST \
+                                --header "PRIVATE-TOKEN: \$GL_TOKEN" \
+                                "https://lab.ssafy.com/api/v4/projects/${projectId}/statuses/${commitSha}?state=success&name=build-test&target_url=${env.BUILD_URL}"
+                            """
+                        }
+                    }
+                }
+                failure {
+                    script {
+                        def commitSha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                        def projectId = '1273805'
+                        withCredentials([usernamePassword(credentialsId: 'e205-gitlab', usernameVariable: 'GL_USER', passwordVariable: 'GL_TOKEN')]) {
+                            sh """
+                                curl -s --request POST \
+                                --header "PRIVATE-TOKEN: \$GL_TOKEN" \
+                                "https://lab.ssafy.com/api/v4/projects/${projectId}/statuses/${commitSha}?state=failed&name=build-test&target_url=${env.BUILD_URL}"
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        // =================================================================
         // Dev 파이프라인 (develop 브랜치)
         // =================================================================
         stage('Dev Pipeline') {
@@ -107,7 +165,7 @@ pipeline {
 
                             for (int i = 1; i <= maxRetries; i++) {
                                 def result = sh(
-                                    script: 'docker exec eyespeak-was-dev curl -sf http://localhost:8080/actuator/health || echo "failed"',
+                                    script: 'docker exec eyespeak-was-dev curl -sf http://localhost:8080/api/v1/actuator/health || echo "failed"',
                                     returnStdout: true
                                 ).trim()
 
@@ -256,7 +314,7 @@ pipeline {
 
                             for (int i = 1; i <= maxRetries; i++) {
                                 def result = sh(
-                                    script: "docker exec ${containerName} curl -sf http://localhost:8080/actuator/health || echo 'failed'",
+                                    script: "docker exec ${containerName} curl -sf http://localhost:8080/api/v1/actuator/health || echo 'failed'",
                                     returnStdout: true
                                 ).trim()
 

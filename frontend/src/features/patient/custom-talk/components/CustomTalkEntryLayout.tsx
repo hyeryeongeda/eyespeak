@@ -1,0 +1,162 @@
+import type { CSSProperties, ReactNode } from 'react'
+import type { CustomTalkStageActionCard } from './CustomTalkStageLayout'
+
+interface CustomTalkEntryLayoutProps {
+  title: string
+  centerChildren: ReactNode
+  topLeft: CustomTalkStageActionCard
+  topCenter: CustomTalkStageActionCard
+  topRight: CustomTalkStageActionCard
+  bottomLeft: CustomTalkStageActionCard
+  bottomCenter: CustomTalkStageActionCard
+  bottomRight: CustomTalkStageActionCard
+}
+
+const pageWrap: CSSProperties = {
+  minHeight: '100dvh',
+  width: '100%',
+  padding: '20px',
+  boxSizing: 'border-box',
+  background: 'linear-gradient(180deg, #edf3f8 0%, #f8fbff 48%, #eef2f6 100%)',
+  overflow: 'auto',
+}
+
+const gridStyle: CSSProperties = {
+  width: '100%',
+  minWidth: '1120px',
+  minHeight: 'calc(100dvh - 40px)',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gridTemplateRows: 'minmax(240px, 1.05fr) minmax(180px, 0.72fr) minmax(240px, 1.05fr)',
+  gridTemplateAreas: `
+    "top-left top-center top-right"
+    "center center center"
+    "bottom-left bottom-center bottom-right"
+  `,
+  gap: '16px',
+}
+
+const cardBaseStyle: CSSProperties = {
+  borderRadius: '30px',
+  padding: '26px 24px',
+  border: '1px solid rgba(216, 225, 235, 0.9)',
+  boxShadow: '0 22px 48px rgba(53, 77, 103, 0.1)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  transition: 'transform 0.16s ease, box-shadow 0.16s ease',
+  cursor: 'pointer',
+}
+
+function getCardStyle(
+  gridArea: string,
+  tone: CustomTalkStageActionCard['tone'],
+  disabled: boolean,
+): CSSProperties {
+  const backgroundByTone: Record<CustomTalkStageActionCard['tone'], string> = {
+    sky: 'linear-gradient(180deg, #eef1ff 0%, #e6ebff 100%)',
+    sand: 'linear-gradient(180deg, #fff7d8 0%, #fff1b8 100%)',
+    mint: 'linear-gradient(180deg, #f0f7f4 0%, #ebf6f4 100%)',
+    slate: 'linear-gradient(180deg, #f7f8fc 0%, #edf1f7 100%)',
+  }
+
+  return {
+    ...cardBaseStyle,
+    gridArea,
+    background: backgroundByTone[tone],
+    opacity: disabled ? 0.58 : 1,
+    cursor: disabled ? 'default' : 'pointer',
+  }
+}
+
+const cardTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#1f3047',
+  fontSize: 'clamp(1.45rem, 2.1vw, 2.2rem)',
+  fontWeight: 900,
+  lineHeight: 1.28,
+}
+
+const cardDescriptionStyle: CSSProperties = {
+  margin: '14px 0 0',
+  maxWidth: '20ch',
+  color: '#6f8095',
+  fontSize: 'clamp(0.95rem, 1.15vw, 1.12rem)',
+  fontWeight: 700,
+  lineHeight: 1.58,
+}
+
+const centerAreaStyle: CSSProperties = {
+  gridArea: 'center',
+  minHeight: 0,
+  borderRadius: '30px',
+  border: '1px solid rgba(219, 227, 236, 0.9)',
+  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, #f8fbff 100%)',
+  boxShadow: '0 18px 40px rgba(53, 77, 103, 0.08)',
+  overflow: 'hidden',
+}
+
+const layoutCss = `
+  .custom-talk-entry-card:hover:not(:disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 26px 56px rgba(53, 77, 103, 0.14);
+  }
+
+  .custom-talk-entry-card:focus-visible {
+    outline: 3px solid #6b91c7;
+    outline-offset: 3px;
+  }
+`
+
+function ActionCard({
+  gridArea,
+  card,
+}: {
+  gridArea: string
+  card: CustomTalkStageActionCard
+}) {
+  return (
+    <button
+      type="button"
+      className="custom-talk-entry-card"
+      style={getCardStyle(gridArea, card.tone, card.disabled ?? false)}
+      disabled={card.disabled}
+      onClick={card.onSelect}
+    >
+      <h2 style={cardTitleStyle}>{card.title}</h2>
+      <p style={cardDescriptionStyle}>{card.description}</p>
+    </button>
+  )
+}
+
+export default function CustomTalkEntryLayout({
+  title,
+  centerChildren,
+  topLeft,
+  topCenter,
+  topRight,
+  bottomLeft,
+  bottomCenter,
+  bottomRight,
+}: CustomTalkEntryLayoutProps) {
+  return (
+    <main style={pageWrap} aria-label={title}>
+      <style>{layoutCss}</style>
+      <div className="custom-talk-entry-layout" style={gridStyle}>
+        <ActionCard gridArea="top-left" card={topLeft} />
+        <ActionCard gridArea="top-center" card={topCenter} />
+        <ActionCard gridArea="top-right" card={topRight} />
+
+        <section style={centerAreaStyle} aria-label={`${title} 대화 맥락`}>
+          {centerChildren}
+        </section>
+
+        <ActionCard gridArea="bottom-left" card={bottomLeft} />
+        <ActionCard gridArea="bottom-center" card={bottomCenter} />
+        <ActionCard gridArea="bottom-right" card={bottomRight} />
+      </div>
+    </main>
+  )
+}
