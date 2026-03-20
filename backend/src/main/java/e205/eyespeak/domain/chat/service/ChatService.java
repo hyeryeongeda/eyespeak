@@ -7,6 +7,7 @@ import e205.eyespeak.domain.chat.dto.ChatMessageRequest;
 import e205.eyespeak.domain.chat.dto.ChatMessageResponse;
 import e205.eyespeak.domain.communication.entity.Message;
 import e205.eyespeak.domain.communication.repository.MessageRepository;
+import e205.eyespeak.domain.fcm.service.FcmService;
 import e205.eyespeak.domain.guardian.entity.Guardian;
 import e205.eyespeak.domain.guardian.repository.GuardianRepository;
 import e205.eyespeak.domain.matching.entity.Matching;
@@ -23,6 +24,7 @@ import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
 import e205.eyespeak.global.websocket.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,7 @@ import java.util.List;
  *     2. contentType별 검증 + content 결정
  *     3. Message 엔티티 DB 저장
  *     4. 발신자에게 WebSocket 응답 (저장 확인용)
- *     5. 상대방이 온라인이면 WebSocket, 오프라인이면 FCM (Unit 7)
+ *     5. 상대방이 온라인이면 WebSocket, 보호자가 오프라인이면 FCM (Unit 7)
  *
  * [Unit 5] 채팅 히스토리 조회 (커서 기반 페이징)
  *   GET /api/chat/{matchingId}/messages → ChatRestController → ChatService.getMessages()
@@ -47,6 +49,7 @@ import java.util.List;
  * @Transactional(readOnly = true): 클래스 레벨 기본값. 읽기 전용 트랜잭션 (DB 최적화).
  * 쓰기가 필요한 메서드에만 @Transactional을 따로 붙여서 쓰기 가능으로 덮어씌운다.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -61,6 +64,7 @@ public class ChatService {
     private final ExpressionRepository expressionRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final WebSocketSessionManager sessionManager;
+    private final FcmService fcmService;
 
     @Transactional
     public void sendMessage(Long userId, Role senderRole, ChatMessageRequest request) {
@@ -99,9 +103,18 @@ public class ChatService {
         String recipientId = String.valueOf(recipientUserId);
 
         if (sessionManager.isOnline(recipientId)) {
+            // 상대방이 온라인 → WebSocket으로 즉시 전달
             messagingTemplate.convertAndSendToUser(recipientId, "/queue/chat", response);
+        } else if (senderRole == Role.PATIENT) {
+            // 발신자가 환자 = 수신자가 보호자, 보호자가 오프라인 → FCM 발송
+            String fcmToken = matching.getGuardian().getFcmToken();
+            fcmService.sendChatNotification(fcmToken, matching.getId(), userId,
+                    senderRole.name(), content, message.getId());
+        } else {
+            // 보호자→환자인데 환자가 오프라인 → 있을 수 없는 상황 (환자는 항상 WebSocket 연결)
+            log.warn("환자가 오프라인입니다. recipientUserId={}, matchingId={}",
+                    recipientUserId, matching.getId());
         }
-        // else: Unit 7에서 FCM 연동
     }
 
     /**
