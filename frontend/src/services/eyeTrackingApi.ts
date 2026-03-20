@@ -9,6 +9,7 @@ import type {
   EyeTrackingFrameResponseDto,
   EyeTrackingHealthResponseDto,
   EyeTrackingHealthStatus,
+  EyeTrackingSelectionResponseDto,
   EyeTrackingTrigger,
 } from '../types/eyeTracking'
 
@@ -242,6 +243,17 @@ export function loadEyeTrackingCalibrationApi(userId: string, signal?: AbortSign
     path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE_LOAD,
     body: {
       user_id: userId,
+    },
+    signal,
+  })
+}
+
+export function submitEyeTrackingSelectionApi(cell: number, signal?: AbortSignal) {
+  return requestEyeTrackingApi<EyeTrackingSelectionResponseDto, { cell: number }>({
+    method: 'POST',
+    path: API_ENDPOINTS.EYE_TRACKING_SELECTION,
+    body: {
+      cell,
     },
     signal,
   })

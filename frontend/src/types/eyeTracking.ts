@@ -52,3 +52,8 @@ export interface EyeTrackingCalibrationLoadResponseDto
   extends EyeTrackingCalibrationResponseDto {
   calibrated?: boolean
 }
+
+export interface EyeTrackingSelectionResponseDto {
+  status?: string
+  error?: string
+}
