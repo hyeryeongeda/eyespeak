@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eye Mouse — 시선 마우스 데모</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ── Camera + detection layer ── */
+    #cam-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+    }
+    #video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      transform: scaleX(-1); /* mirror for selfie */
+      opacity: 0.35;
+    }
+    #detect-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      pointer-events: none;
+    }
+
+    /* ── Calibration overlay ── */
+    #calib-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+    }
+
+    /* ── Gaze cursor ── */
+    #gaze-cursor {
+      position: fixed;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,80,80,0.9) 0%, rgba(255,80,80,0.3) 60%, transparent 100%);
+      border: 2px solid #ff5050;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      display: none;
+      transition: left 0.05s ease-out, top 0.05s ease-out;
+      box-shadow: 0 0 12px rgba(255,80,80,0.7);
+      z-index: 100;
+    }
+
+    /* ── HUD (top status bar) ── */
+    #hud {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 48px;
+      background: rgba(13,17,23,0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid #30363d;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 24px;
+      z-index: 200;
+      font-size: 13px;
+    }
+    .hud-item { display: flex; align-items: center; gap: 6px; }
+    .hud-label { color: #8b949e; }
+    .hud-val   { color: #e6edf3; font-weight: 600; }
+    #hud-title { font-size: 14px; font-weight: 700; color: #58a6ff; margin-right: 8px; }
+    .dot-ok  { color: #3fb950; }
+    .dot-err { color: #f78166; }
+    .dot-warn{ color: #ffa657; }
+    #hud-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+    /* ── Control panel ── */
+    #ctrl-panel {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      z-index: 200;
+    }
+    .btn {
+      padding: 10px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-primary  { background: #238636; color: #fff; }
+    .btn-blue     { background: #1f6feb; color: #fff; }
+    .btn-warn     { background: #9e6a03; color: #fff; }
+    .btn-danger   { background: #da3633; color: #fff; }
+
+    /* ── State message overlay ── */
+    #state-msg {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 150;
+    }
+    #state-msg .msg-big {
+      font-size: 28px;
+      font-weight: 700;
+      color: #e6edf3;
+      text-shadow: 0 2px 16px rgba(0,0,0,0.8);
+      margin-bottom: 8px;
+    }
+    #state-msg .msg-sub {
+      font-size: 16px;
+      color: #8b949e;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.8);
+    }
+
+    /* ── Gaze trail indicator (during collect) ── */
+    #collect-ring {
+      position: fixed;
+      border-radius: 50%;
+      border: 3px solid rgba(88, 166, 255, 0.6);
+      pointer-events: none;
+      z-index: 120;
+      display: none;
+      transform: translate(-50%, -50%);
+      animation: pulse-ring 0.8s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.4; }
+    }
+
+    /* ── Bottom info bar ── */
+    #info-bar {
+      position: fixed;
+      bottom: 72px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(13,17,23,0.8);
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 13px;
+      color: #8b949e;
+      z-index: 200;
+      display: none;
+    }
+    #info-bar span { color: #e6edf3; }
+  </style>
+</head>
+<body>
+
+  <!-- Camera feed (dimmed background) -->
+  <div id="cam-container">
+    <video id="video" autoplay playsinline muted></video>
+  </div>
+  <canvas id="detect-canvas"></canvas>
+
+  <!-- Calibration dot canvas -->
+  <canvas id="calib-overlay"></canvas>
+
+  <!-- Gaze cursor -->
+  <div id="gaze-cursor"></div>
+  <div id="collect-ring"></div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <span id="hud-title">👁️ Eye Mouse</span>
+    <div class="hud-item">
+      <span class="hud-label">YOLO</span>
+      <span class="hud-val" id="hud-yolo"><span class="dot-warn">로딩...</span></span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">Gaze</span>
+      <span class="hud-val" id="hud-gaze"><span class="dot-warn">로딩...</span></span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">눈 검출</span>
+      <span class="hud-val" id="hud-eyes">—</span>
+    </div>
+    <div class="hud-item">
+      <span class="hud-label">추론</span>
+      <span class="hud-val" id="hud-infer">— ms</span>
+    </div>
+    <div id="hud-right">
+      <div class="hud-item">
+        <span class="hud-label">상태</span>
+        <span class="hud-val" id="hud-state">초기화 중</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- State message -->
+  <div id="state-msg">
+    <div class="msg-big" id="msg-big"></div>
+    <div class="msg-sub" id="msg-sub"></div>
+  </div>
+
+  <!-- Info bar -->
+  <div id="info-bar">
+    동공 위치 기반 시선 추적 | 캘리브레이션으로 정확도 보정 |
+    <span id="info-calib-pts">0</span>/9 포인트 수집됨
+  </div>
+
+  <!-- Controls -->
+  <div id="ctrl-panel">
+    <button class="btn btn-primary" id="btn-start-cam" disabled>📷 카메라 시작</button>
+    <button class="btn btn-blue"    id="btn-calibrate" disabled>🎯 캘리브레이션 시작</button>
+    <button class="btn btn-warn"    id="btn-recalib"   disabled>🔄 재캘리브레이션</button>
+    <button class="btn btn-danger"  id="btn-stop"      disabled>■ 중지</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/ort.min.js"></script>
+  <script type="module" src="eye_mouse.js"></script>
+</body>
+</html>

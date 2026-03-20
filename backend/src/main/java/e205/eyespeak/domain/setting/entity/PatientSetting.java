@@ -40,4 +40,12 @@ public class PatientSetting extends BaseEntity {
         this.activationDelay = activationDelay;
         this.dwellTime = dwellTime;
     }
+
+    public void updateActivationDelay(int activationDelay) {
+        this.activationDelay = activationDelay;
+    }
+
+    public void updateDwellTime(int dwellTime) {
+        this.dwellTime = dwellTime;
+    }
 }

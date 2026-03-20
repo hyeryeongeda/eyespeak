@@ -10,13 +10,12 @@ import {
   PATIENT_CHAT_MESSAGE_PRESETS,
   PATIENT_CHAT_RESPONSE_TIMEOUT_MS,
   createMockIncomingPatientChatMessage,
-  mockSendPatientReply,
 } from '../services/mockPatientChatService'
 import {
   MAX_SUGGESTION_RETRIES,
   buildManualWordBank,
-  buildMockSuggestedResponses,
 } from '../services/mockSuggestionService'
+import { fetchSuggestedReplies, sendPatientReply } from '../services/recommendationService'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
@@ -743,7 +742,7 @@ export function PatientIncomingChatProvider({
     dispatch({ type: 'SUGGESTION_LOADING', messageId })
 
     try {
-      const suggestions = await buildMockSuggestedResponses({
+      const suggestions = await fetchSuggestedReplies({
         message,
         history: stateRef.current.messages,
       })
@@ -842,7 +841,7 @@ export function PatientIncomingChatProvider({
       selectedSuggestionId: suggestion.id,
     })
 
-    const result = await mockSendPatientReply({
+    const result = await sendPatientReply({
       content: suggestion.label,
       replyToId,
       type: 'suggested_reply',
@@ -880,7 +879,7 @@ export function PatientIncomingChatProvider({
       selectedSuggestionId: null,
     })
 
-    const result = await mockSendPatientReply({
+    const result = await sendPatientReply({
       content: draft,
       replyToId,
       type:

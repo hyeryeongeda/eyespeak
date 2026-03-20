@@ -6,6 +6,7 @@ export type {
   SecretionOptionKey,
   BreathingOptionKey,
   PainAreaKey,
+  PainAreaGroupKey,
   PainDetailKey,
   BodyMindCategoryKey,
   BodyMindExpressionType,

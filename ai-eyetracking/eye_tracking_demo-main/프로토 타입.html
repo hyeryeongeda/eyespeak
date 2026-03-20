@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>소리 없는 목소리 - ALS 환자 의사소통 보조</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── 상단 헤더 ── */
+        .header {
+            height: 48px;
+            background: #16213e;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid #0f3460;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e94560;
+        }
+
+        .header-patient {
+            font-size: 13px;
+            color: #8899aa;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-time {
+            font-size: 14px;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .btn-blink-home {
+            position: fixed;
+            top: 8px;
+            right: 16px;
+            z-index: 999;
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 2px solid #e94560;
+            background: rgba(22, 33, 62, 0.95);
+            color: #e94560;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-blink-home:hover {
+            background: #e94560;
+            color: #fff;
+        }
+
+        /* ── 메인 4분할 그리드 ── */
+        .main-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 6px;
+            padding: 6px;
+        }
+
+        .quadrant {
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quadrant:hover {
+            transform: scale(0.98);
+            filter: brightness(1.1);
+        }
+
+        .quadrant:active {
+            transform: scale(0.96);
+        }
+
+        /* 각 사분면 색상 */
+        .q-call {
+            background: linear-gradient(135deg, #e94560 0%, #c23152 100%);
+            border: 3px solid #ff6b81;
+        }
+
+        .q-special {
+            background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+            border: 3px solid #3a7bd5;
+        }
+
+        .q-extended {
+            background: linear-gradient(135deg, #1a6b3c 0%, #0d4d2b 100%);
+            border: 3px solid #2ecc71;
+        }
+
+        .q-custom {
+            background: linear-gradient(135deg, #6c3483 0%, #4a235a 100%);
+            border: 3px solid #a569bd;
+        }
+
+        /* 사분면 내부 콘텐츠 */
+        .q-icon {
+            font-size: 56px;
+            margin-bottom: 12px;
+        }
+
+        .q-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        .q-desc {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* 호출 버튼 맥동 효과 */
+        .q-call::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%) scale(0);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0.6; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+
+        /* ── 특화 소통 서브페이지 ── */
+        .subpage {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #1a1a2e;
+            z-index: 100;
+            flex-direction: column;
+        }
+
+        .subpage.active {
+            display: flex;
+        }
+
+        .sub-header {
+            height: 48px;
+            background: #16213e;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+            border-bottom: 1px solid #0f3460;
+            flex-shrink: 0;
+        }
+
+        .btn-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 2px solid #e94560;
+            background: transparent;
+            color: #e94560;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .btn-back:hover {
+            background: #e94560;
+            color: #fff;
+        }
+
+        .sub-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        /* ── 4분할 공통 그리드 (특화 소통 전용) ── */
+        .quad-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 6px;
+            padding: 6px;
+        }
+
+        .quad-item {
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 3px solid transparent;
+        }
+
+        .quad-item:hover {
+            transform: scale(0.97);
+            filter: brightness(1.1);
+        }
+
+        .quad-item .q-item-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .quad-item .q-item-label {
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        /* 카테고리 색상 */
+        .qi-meal       { background: linear-gradient(135deg, #e67e22, #d35400); border-color: #f39c12; }
+        .qi-drink      { background: linear-gradient(135deg, #3498db, #2471a3); border-color: #5dade2; }
+        .qi-toilet     { background: linear-gradient(135deg, #1abc9c, #148f77); border-color: #48c9b0; }
+        .qi-hygiene    { background: linear-gradient(135deg, #5dade2, #2e86c1); border-color: #85c1e9; }
+        .qi-sleep      { background: linear-gradient(135deg, #2c3e50, #1a252f); border-color: #5d6d7e; }
+        .qi-environ    { background: linear-gradient(135deg, #27ae60, #1e8449); border-color: #58d68d; }
+        .qi-posture    { background: linear-gradient(135deg, #8e44ad, #6c3483); border-color: #af7ac5; }
+        .qi-pain       { background: linear-gradient(135deg, #e74c3c, #c0392b); border-color: #f1948a; }
+        .qi-response   { background: linear-gradient(135deg, #f39c12, #d4ac0d); border-color: #f7dc6f; }
+
+        /* 불편 부위 전용 색상 */
+        .qi-pain-area  { background: linear-gradient(135deg, #c0392b, #922b21); border-color: #e74c3c; }
+        .qi-pain-level { background: linear-gradient(135deg, #d35400, #a04000); border-color: #e67e22; }
+
+        /* "다른 소통" 네비게이션 버튼 */
+        .qi-next {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            border-color: #5d6d7e;
+        }
+
+        .qi-next .q-item-label {
+            color: #8899aa;
+        }
+
+        /* ── 표현 목록도 4분할 ── */
+        .quad-expr {
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 3px solid rgba(255,255,255,0.2);
+            background: #16213e;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            text-align: center;
+            padding: 12px;
+        }
+
+        .quad-expr:hover {
+            background: #0f3460;
+            border-color: #3a7bd5;
+            transform: scale(0.97);
+        }
+
+        .quad-expr-next {
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 3px solid #5d6d7e;
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            color: #8899aa;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .quad-expr-next:hover {
+            border-color: #8899aa;
+            color: #fff;
+            transform: scale(0.97);
+        }
+
+        .quad-expr-next .next-icon {
+            font-size: 36px;
+            margin-bottom: 4px;
+        }
+
+        /* ── 확장 소통 — 빌더 전용 스타일 ── */
+        .qi-builder-rec {
+            background: linear-gradient(135deg, #1a6b3c, #145a32);
+            border-color: #2ecc71;
+        }
+
+        .qi-builder-rec .q-item-icon {
+            font-size: 20px;
+            color: #2ecc71;
+            margin-bottom: 6px;
+        }
+
+        .qi-builder {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            border-color: #2ecc71;
+        }
+
+        .qi-builder-result {
+            background: linear-gradient(135deg, #1a6b3c, #145a32);
+            border-color: #58d68d;
+        }
+
+        .qi-builder-result .q-item-label {
+            font-size: 20px;
+        }
+
+        .qi-builder-reset {
+            background: linear-gradient(135deg, #2c3e50, #1a252f);
+            border-color: #5d6d7e;
+        }
+
+        .qi-builder-reset .q-item-label {
+            color: #8899aa;
+        }
+
+        .qi-builder-topic {
+            background: linear-gradient(135deg, #1a6b3c, #145a32);
+            border-color: #2ecc71;
+        }
+
+        /* ── 호출 피드백 오버레이 ── */
+        .call-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(233, 69, 96, 0.95);
+            z-index: 200;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            animation: flashIn 0.3s ease;
+        }
+
+        .call-overlay.active {
+            display: flex;
+        }
+
+        @keyframes flashIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .call-status-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .call-status-text {
+            font-size: 32px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+
+        .call-status-sub {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .call-cancel-btn {
+            margin-top: 40px;
+            padding: 16px 48px;
+            border-radius: 12px;
+            border: 3px solid #fff;
+            background: transparent;
+            color: #fff;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── 설계 근거 버튼 ── */
+        .btn-rationale {
+            position: fixed;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 998;
+            padding: 5px 16px;
+            border-radius: 6px;
+            border: 1px solid #5d6d7e;
+            background: rgba(22, 33, 62, 0.9);
+            color: #8899aa;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-rationale:hover {
+            border-color: #f39c12;
+            color: #f39c12;
+        }
+
+        /* ── 근거 모달 ── */
+        .rationale-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rationale-overlay.active {
+            display: flex;
+        }
+
+        .rationale-box {
+            width: 90%;
+            max-width: 640px;
+            max-height: 80vh;
+            background: #16213e;
+            border: 2px solid #f39c12;
+            border-radius: 16px;
+            padding: 28px 24px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .rationale-box h2 {
+            color: #f39c12;
+            font-size: 20px;
+            margin-bottom: 16px;
+            padding-right: 40px;
+        }
+
+        .rationale-box h3 {
+            color: #e0e0e0;
+            font-size: 15px;
+            margin-top: 14px;
+            margin-bottom: 6px;
+        }
+
+        .rationale-box h4 {
+            color: #d4d4d4;
+            font-size: 14px;
+            margin-top: 12px;
+            margin-bottom: 4px;
+        }
+
+        .rationale-box p, .rationale-box li {
+            color: #aab;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        .rationale-box strong {
+            color: #ffffff;
+        }
+
+        .rationale-box ul {
+            padding-left: 20px;
+            margin-bottom: 8px;
+        }
+
+        .rationale-box .source-tag {
+            display: inline-block;
+            background: #0f3460;
+            color: #5dade2;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-right: 4px;
+        }
+
+        .btn-close-rationale {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 2px solid #e94560;
+            background: transparent;
+            color: #e94560;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-close-rationale:hover {
+            background: #e94560;
+            color: #fff;
+        }
+
+        /* ── 커스텀 서브페이지 ── */
+        .custom-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 6px;
+            padding: 6px;
+        }
+
+        .custom-item {
+            border-radius: 12px;
+            background: #16213e;
+            border: 2px dashed #a569bd;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            color: #a569bd;
+        }
+
+        .custom-item:hover {
+            border-style: solid;
+            background: #1a1a3e;
+        }
+
+        .custom-item .c-icon {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+
+        .custom-item .c-label {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .custom-item .c-desc {
+            font-size: 12px;
+            margin-top: 4px;
+            color: rgba(165, 105, 189, 0.6);
+        }
+
+        .custom-item.has-content {
+            border-style: solid;
+            color: #d7bde2;
+        }
+
+        /* ── 선택 피드백 ── */
+        .select-feedback {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(46, 204, 113, 0.95);
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            padding: 24px 48px;
+            border-radius: 16px;
+            z-index: 300;
+            animation: feedbackPop 0.3s ease;
+        }
+
+        @keyframes feedbackPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ══════ 메인 페이지 ══════ -->
+    <div id="mainPage">
+        <div class="header">
+            <div class="header-left"></div>
+            <div class="header-time" id="headerTime">14:35</div>
+        </div>
+
+        <div class="main-grid">
+            <!-- 1. 호출 -->
+            <div class="quadrant q-call" onclick="triggerCall()">
+                <div class="q-icon">🔔</div>
+                <div class="q-title">호출</div>
+                <div class="q-desc">보호자에게 알림 전송</div>
+            </div>
+
+            <!-- 2. 특화 소통 -->
+            <div class="quadrant q-special" onclick="enterSpecial()">
+                <div class="q-icon">💬</div>
+                <div class="q-title">특화 소통</div>
+                <div class="q-desc">식사 · 화장실 · 통증 등<br>자주 쓰는 표현</div>
+            </div>
+
+            <!-- 3. 확장 소통 -->
+            <div class="quadrant q-extended" onclick="renderExtendedPage()">
+                <div class="q-icon">🤖</div>
+                <div class="q-title">확장 소통</div>
+                <div class="q-desc">AI가 지금 상황에 맞는<br>표현을 추천합니다</div>
+            </div>
+
+            <!-- 4. 커스텀 -->
+            <div class="quadrant q-custom" onclick="showPage('customPage')">
+                <div class="q-icon">⚙️</div>
+                <div class="q-title">커스텀</div>
+                <div class="q-desc">보호자가 설정한<br>나만의 기능</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ 호출 피드백 ══════ -->
+    <div class="call-overlay" id="callOverlay">
+        <div class="call-status-icon">📡</div>
+        <div class="call-status-text">보호자에게 알림을 보냈습니다</div>
+        <div class="call-status-sub">잠시만 기다려 주세요</div>
+        <button class="call-cancel-btn" onclick="hideCall()">돌아가기</button>
+    </div>
+
+    <!-- ══════ 특화 소통 (JS로 4분할 페이지네이션 렌더링) ══════ -->
+    <div class="subpage" id="specialPage">
+        <div class="sub-header">
+            <div class="sub-title">특화 소통</div>
+        </div>
+        <div class="quad-grid" id="specialGrid">
+            <!-- JS로 채움 -->
+        </div>
+    </div>
+
+    <!-- ══════ 특화 소통 - 표현 목록 (4분할) ══════ -->
+    <div class="subpage" id="exprPage">
+        <div class="sub-header">
+            <div class="sub-title" id="exprPageTitle">식사</div>
+        </div>
+        <div class="quad-grid" id="exprGrid">
+            <!-- JS로 채움 -->
+        </div>
+    </div>
+
+    <!-- ══════ 불편 부위 (3단계 선택) ══════ -->
+    <div class="subpage" id="painPage">
+        <div class="sub-header">
+            <div class="sub-title" id="painPageTitle">불편 부위</div>
+        </div>
+        <div class="quad-grid" id="painGrid">
+            <!-- JS로 채움 -->
+        </div>
+    </div>
+
+    <!-- ══════ 확장 소통 (4분할: 추천3 + 직접 만들기) ══════ -->
+    <div class="subpage" id="extendedPage">
+        <div class="sub-header">
+            <div class="sub-title">확장 소통</div>
+        </div>
+        <div class="quad-grid" id="extendedGrid">
+            <!-- JS renderExtendedPage()로 채움 -->
+        </div>
+    </div>
+
+    <!-- ══════ 직접 만들기 (순차 단계 빌더) ══════ -->
+    <div class="subpage" id="builderPage">
+        <div class="sub-header">
+            <div class="sub-title" id="builderTitle">Step 1 — 누가</div>
+        </div>
+        <div class="quad-grid" id="builderGrid">
+            <!-- JS renderBuilderStep()으로 채움 -->
+        </div>
+    </div>
+
+    <!-- ══════ 커스텀 ══════ -->
+    <div class="subpage" id="customPage">
+        <div class="sub-header">
+            <div class="sub-title">커스텀</div>
+        </div>
+        <div class="custom-grid">
+            <div class="custom-item has-content">
+                <div class="c-icon">📺</div>
+                <div class="c-label">유튜브</div>
+                <div class="c-desc">보호자 설정 완료</div>
+            </div>
+            <div class="custom-item has-content">
+                <div class="c-icon">🎵</div>
+                <div class="c-label">음악 재생</div>
+                <div class="c-desc">보호자 설정 완료</div>
+            </div>
+            <div class="custom-item">
+                <div class="c-icon">➕</div>
+                <div class="c-label">추가하기</div>
+                <div class="c-desc">보호자 앱에서 설정</div>
+            </div>
+            <div class="custom-item">
+                <div class="c-icon">➕</div>
+                <div class="c-label">추가하기</div>
+                <div class="c-desc">보호자 앱에서 설정</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════ 글로벌: 더블블링크 홈 버튼 (프로토타입 테스트용) ══════ -->
+    <button class="btn-blink-home" onclick="goHome()">👁️ 더블블링크 → 홈</button>
+
+    <!-- ══════ 글로벌: 설계 근거 버튼 ══════ -->
+    <button class="btn-rationale" onclick="showRationale()">📋 설계 근거</button>
+
+    <!-- ══════ 근거 모달 ══════ -->
+    <div class="rationale-overlay" id="rationaleOverlay">
+        <div class="rationale-box">
+            <button class="btn-close-rationale" onclick="closeRationale()">✕</button>
+            <div id="rationaleContent"></div>
+        </div>
+    </div>
+
+    <!-- ══════ 선택 피드백 ══════ -->
+    <div class="select-feedback" id="selectFeedback"></div>
+
+    <script>
+        // ══════════════════════════════════════
+        // 데이터 정의
+        // ══════════════════════════════════════
+
+        // 특화 소통 카테고리 (근거 기반 우선순위 정렬)
+        const specialCategories = [
+            { key: "pain",     icon: "🩺", label: "불편 부위",   css: "qi-pain" },      // 1위: PMC 임상 중요도 1위
+            { key: "toilet",   icon: "🚻", label: "화장실·위생", css: "qi-toilet" },     // 2위: 긴급성 최상위
+            { key: "posture",  icon: "🧑‍🦽", label: "자세/이동",   css: "qi-posture" },    // 3위: OHSU 지시전달 2위
+            { key: "meal",     icon: "💧", label: "영양/수분",   css: "qi-meal" },       // 4위: PEG 튜브 환자 기본 욕구
+            { key: "response", icon: "💛", label: "감정 표현",   css: "qi-response" },   // 5위: PMC 감정표현 3위
+            { key: "environ",  icon: "🌡️", label: "온도/환경",   css: "qi-environ" },    // 6위: 임상 AAC Environment
+            { key: "sleep",    icon: "😴", label: "수면",       css: "qi-sleep" },      // 7위: 임상 AAC Daily Care
+            { key: "extended", icon: "🤖", label: "확장 소통으로", css: "qi-next" },      // 8위: AI 추천 영역 연결
+        ];
+
+        // 카테고리별 표현 목록
+        // 카테고리별 표현 목록 (보호자 되물음 가능한 세부 선택지 제외)
+        const expressions = {
+            toilet: {
+                title: "화장실·위생",
+                items: ["소변이요", "대변이요", "기저귀 갈아주세요",
+                        "다 했어요", "씻겨주세요", "양치하고 싶어요"]
+            },
+            posture: {
+                title: "자세/이동",
+                items: ["일으켜주세요", "눕혀주세요", "돌려주세요",
+                        "베개 위치 바꿔주세요", "다리 올려주세요", "고개 돌려주세요"]
+            },
+            meal: {
+                title: "영양/수분",
+                items: ["속이 불편해요", "입이 말라요", "수분 보충해주세요",
+                        "속도 줄여주세요", "배가 더부룩해요", "입 안 닦아주세요"]
+            },
+            response: {
+                title: "감정 표현",
+                items: ["괜찮아요", "힘들어요", "감사해요",
+                        "미안해요", "같이 있어주세요", "사랑해요"]
+            },
+            environ: {
+                title: "온도/환경",
+                items: ["추워요", "더워요", "시끄러워요",
+                        "환기해주세요", "불 켜주세요", "냄새나요"]
+            },
+            sleep: {
+                title: "수면",
+                items: ["졸려요", "잠이 안 와요", "불 꺼주세요",
+                        "이불 덮어주세요", "이불 치워주세요", "숨이 답답해요"]
+            },
+        };
+
+        // 직접 만들기 — 주제 → 세부 → 의도 → AI 문장 (D방식)
+        const builderTopics = {
+            person: {
+                label: "사람",
+                icon: "👤",
+                details: ["엄마", "아빠", "가족", "간병인", "의사", "친구", "아이", "손님"],
+                intents: ["보고 싶어요", "불러주세요", "전화해주세요", "같이 있어주세요", "언제 와요?", "고마워요"]
+            },
+            thing: {
+                label: "물건",
+                icon: "📦",
+                details: ["물", "밥", "약", "TV", "전화기", "음악", "이불", "옷", "안경", "휴지", "책", "사진"],
+                intents: ["주세요", "치워주세요", "가져다주세요", "틀어주세요", "꺼주세요", "바꿔주세요"]
+            },
+            activity: {
+                label: "활동",
+                icon: "🎯",
+                details: ["산책", "외출", "운동", "목욕", "대화", "게임"],
+                intents: ["하고 싶어요", "그만할래요", "도와주세요", "언제 해요?", "준비해주세요", "시작해주세요"]
+            },
+            state: {
+                label: "상태",
+                icon: "💭",
+                details: ["피곤해요", "심심해요", "불안해요", "궁금해요", "답답해요", "기분 좋아요"],
+                intents: ["알려주세요", "도와주세요", "어떡해요?", "괜찮아요", "힘들어요", "나아졌어요"]
+            }
+        };
+        const topicKeys = ['person', 'thing', 'activity', 'state'];
+
+        let sentenceBuilder = { topicKey: null, detail: null, intent: null };
+        let builderCurrentStep = 0;  // 0=주제, 1=세부, 2=의도
+        let builderSlotPageIndex = 0;
+
+        // ══════════════════════════════════════
+        // 시간 표시
+        // ══════════════════════════════════════
+        function updateTime() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('headerTime').textContent = `${h}:${m}`;
+        }
+        updateTime();
+        setInterval(updateTime, 30000);
+
+        // ══════════════════════════════════════
+        // 페이지 네비게이션
+        // ══════════════════════════════════════
+        function showPage(pageId) {
+            document.querySelectorAll('.subpage').forEach(p => p.classList.remove('active'));
+            document.getElementById('mainPage').style.display = 'none';
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        function goHome() {
+            document.querySelectorAll('.subpage').forEach(p => p.classList.remove('active'));
+            document.getElementById('mainPage').style.display = '';
+        }
+
+        // ══════════════════════════════════════
+        // 호출
+        // ══════════════════════════════════════
+        function triggerCall() {
+            document.getElementById('callOverlay').classList.add('active');
+        }
+
+        function hideCall() {
+            document.getElementById('callOverlay').classList.remove('active');
+        }
+
+        // ══════════════════════════════════════
+        // 특화 소통 — 카테고리 4분할 페이지네이션
+        // ══════════════════════════════════════
+        let specialPageIndex = 0;
+        const ITEMS_PER_PAGE = 3; // 3개 콘텐츠 + 1개 "다른 소통"
+
+        function renderSpecialPage(pageIdx) {
+            specialPageIndex = pageIdx;
+            const grid = document.getElementById('specialGrid');
+            grid.innerHTML = '';
+
+            const start = pageIdx * ITEMS_PER_PAGE;
+            const pageItems = specialCategories.slice(start, start + ITEMS_PER_PAGE);
+            const hasMore = (start + ITEMS_PER_PAGE) < specialCategories.length;
+
+            // 콘텐츠 아이템 (최대 3개)
+            pageItems.forEach(cat => {
+                const div = document.createElement('div');
+                div.className = `quad-item ${cat.css}`;
+                div.innerHTML = `
+                    <div class="q-item-icon">${cat.icon}</div>
+                    <div class="q-item-label">${cat.label}</div>
+                `;
+                div.onclick = () => openCategory(cat.key);
+                grid.appendChild(div);
+            });
+
+            // 4번째 칸: "다른 소통" 또는 "처음으로"
+            const navDiv = document.createElement('div');
+            if (hasMore) {
+                navDiv.className = 'quad-item qi-next';
+                navDiv.innerHTML = `
+                    <div class="q-item-icon">➡️</div>
+                    <div class="q-item-label">다른 소통</div>
+                `;
+                navDiv.onclick = () => renderSpecialPage(pageIdx + 1);
+            } else if (pageIdx > 0) {
+                // 마지막 페이지: "처음으로" 버튼
+                navDiv.className = 'quad-item qi-next';
+                navDiv.innerHTML = `
+                    <div class="q-item-icon">🔄</div>
+                    <div class="q-item-label">처음으로</div>
+                `;
+                navDiv.onclick = () => renderSpecialPage(0);
+            }
+
+            // 아이템이 3개 미만이어도 4번째 칸 채우기
+            if (hasMore || pageIdx > 0) {
+                grid.appendChild(navDiv);
+            }
+
+            // 빈 칸 채우기 (페이지 아이템이 3개 미만 + 네비 없을 때)
+            const totalSlots = grid.children.length;
+            for (let i = totalSlots; i < 4; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'quad-item';
+                empty.style.visibility = 'hidden';
+                grid.appendChild(empty);
+            }
+
+            showPage('specialPage');
+        }
+
+        function openCategory(key) {
+            if (key === 'pain') {
+                renderPainStep1();
+                return;
+            }
+            if (key === 'extended') {
+                renderExtendedPage();
+                return;
+            }
+            renderExprPage(key, 0);
+        }
+
+        // ══════════════════════════════════════
+        // 확장 소통 — 4분할 (추천3 + 직접 만들기)
+        // ══════════════════════════════════════
+        function getRecommendations() {
+            const h = new Date().getHours();
+            if (h >= 6 && h < 11)  return ["약 먹을 시간이에요", "오늘 컨디션 괜찮아요", "창문 열어주세요"];
+            if (h >= 11 && h < 17) return ["TV 틀어주세요", "물 마시고 싶어요", "전화하고 싶어요"];
+            if (h >= 17 && h < 22) return ["가족 보고 싶어요", "음악 틀어주세요", "오늘 고마웠어요"];
+            return ["잠이 안 와요", "불 꺼주세요", "숨이 답답해요"];
+        }
+
+        function renderExtendedPage() {
+            const grid = document.getElementById('extendedGrid');
+            grid.innerHTML = '';
+
+            const recs = getRecommendations();
+            recs.forEach((rec, i) => {
+                const div = document.createElement('div');
+                div.className = 'quad-item qi-builder-rec';
+                div.innerHTML = `
+                    <div class="q-item-icon">추천${i + 1}</div>
+                    <div class="q-item-label">${rec}</div>
+                `;
+                div.onclick = () => selectExpr(rec);
+                grid.appendChild(div);
+            });
+
+            const builderDiv = document.createElement('div');
+            builderDiv.className = 'quad-item qi-builder';
+            builderDiv.innerHTML = `
+                <div class="q-item-icon">✏️</div>
+                <div class="q-item-label">직접 만들기</div>
+            `;
+            builderDiv.onclick = () => openBuilder();
+            grid.appendChild(builderDiv);
+
+            showPage('extendedPage');
+        }
+
+        // ══════════════════════════════════════
+        // 직접 만들기 — 주제 → 세부 → 의도 → AI 문장
+        // ══════════════════════════════════════
+        function openBuilder() {
+            sentenceBuilder = { topicKey: null, detail: null, intent: null };
+            builderCurrentStep = 0;
+            builderSlotPageIndex = 0;
+            renderBuilderStep();
+        }
+
+        function renderBuilderStep() {
+            const grid = document.getElementById('builderGrid');
+            grid.innerHTML = '';
+
+            // Step 0: 주제 선택 (4개 → pagination 불필요)
+            if (builderCurrentStep === 0) {
+                document.getElementById('builderTitle').textContent = 'Step 1 — 주제';
+                topicKeys.forEach(key => {
+                    const topic = builderTopics[key];
+                    const div = document.createElement('div');
+                    div.className = 'quad-item qi-builder-topic';
+                    div.innerHTML = `
+                        <div class="q-item-icon">${topic.icon}</div>
+                        <div class="q-item-label">${topic.label}</div>
+                    `;
+                    div.onclick = () => {
+                        sentenceBuilder.topicKey = key;
+                        builderCurrentStep = 1;
+                        builderSlotPageIndex = 0;
+                        renderBuilderStep();
+                    };
+                    grid.appendChild(div);
+                });
+                showPage('builderPage');
+                return;
+            }
+
+            // Step 1, 2: 세부/의도 선택 (3+1 pagination)
+            const topic = builderTopics[sentenceBuilder.topicKey];
+            const isDetail = (builderCurrentStep === 1);
+            const items = isDetail ? topic.details : topic.intents;
+            const stepLabel = isDetail ? '세부' : '의도';
+
+            document.getElementById('builderTitle').textContent =
+                `Step ${builderCurrentStep + 1} — ${stepLabel}`;
+
+            const start = builderSlotPageIndex * ITEMS_PER_PAGE;
+            const pageItems = items.slice(start, start + ITEMS_PER_PAGE);
+            const hasMore = (start + ITEMS_PER_PAGE) < items.length;
+
+            pageItems.forEach(text => {
+                const div = document.createElement('div');
+                div.className = 'quad-expr';
+                div.textContent = text;
+                div.onclick = () => {
+                    if (isDetail) {
+                        sentenceBuilder.detail = text;
+                        builderCurrentStep = 2;
+                    } else {
+                        sentenceBuilder.intent = text;
+                    }
+                    builderSlotPageIndex = 0;
+                    if (builderCurrentStep <= 2 && !sentenceBuilder.intent) {
+                        renderBuilderStep();
+                    } else {
+                        renderBuilderResult();
+                    }
+                };
+                grid.appendChild(div);
+            });
+
+            if (hasMore) {
+                const nav = document.createElement('div');
+                nav.className = 'quad-expr-next';
+                nav.innerHTML = `<div class="next-icon">➡️</div>다른 선택지`;
+                nav.onclick = () => { builderSlotPageIndex++; renderBuilderStep(); };
+                grid.appendChild(nav);
+            } else if (builderSlotPageIndex > 0) {
+                const nav = document.createElement('div');
+                nav.className = 'quad-expr-next';
+                nav.innerHTML = `<div class="next-icon">🔄</div>처음으로`;
+                nav.onclick = () => { builderSlotPageIndex = 0; renderBuilderStep(); };
+                grid.appendChild(nav);
+            }
+
+            // 빈 칸 채우기
+            const total = grid.children.length;
+            for (let i = total; i < 4; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'quad-item';
+                empty.style.visibility = 'hidden';
+                grid.appendChild(empty);
+            }
+
+            showPage('builderPage');
+        }
+
+        function generateSentenceCandidates(topicKey, detail, intent) {
+            // 프로토타입: 템플릿 기반. 실서비스: LLM API가 자연스러운 문장 생성
+            const c1 = `${detail} ${intent}`;
+
+            if (topicKey === 'person') {
+                return [c1, `${detail}한테 연락해주세요`, `${detail} 보고 싶어요`];
+            }
+            if (topicKey === 'thing') {
+                return [c1, `${detail} 좀 ${intent}`, `${detail} 부탁해요`];
+            }
+            if (topicKey === 'activity') {
+                return [c1, `${detail} 좀 ${intent}`, `${detail} 하고 싶어요`];
+            }
+            // state
+            return [c1, `지금 ${detail}`, `${detail}, ${intent}`];
+        }
+
+        function renderBuilderResult() {
+            const grid = document.getElementById('builderGrid');
+            grid.innerHTML = '';
+            document.getElementById('builderTitle').textContent = 'AI 완성 문장';
+
+            const candidates = generateSentenceCandidates(
+                sentenceBuilder.topicKey,
+                sentenceBuilder.detail,
+                sentenceBuilder.intent
+            );
+
+            candidates.forEach(sentence => {
+                const div = document.createElement('div');
+                div.className = 'quad-item qi-builder-result';
+                div.innerHTML = `<div class="q-item-label">${sentence}</div>`;
+                div.onclick = () => selectExpr(sentence);
+                grid.appendChild(div);
+            });
+
+            const resetDiv = document.createElement('div');
+            resetDiv.className = 'quad-item qi-builder-reset';
+            resetDiv.innerHTML = `
+                <div class="q-item-icon">🔄</div>
+                <div class="q-item-label">다시 만들기</div>
+            `;
+            resetDiv.onclick = () => openBuilder();
+            grid.appendChild(resetDiv);
+
+            showPage('builderPage');
+        }
+
+        // ══════════════════════════════════════
+        // 불편 부위 — 3단계 선택
+        // ══════════════════════════════════════
+        const painAreas = {
+            "머리/목":   ["머리(앞)", "머리(뒤)", "목", "얼굴"],
+            "가슴/배":   ["가슴", "윗배", "아랫배", "옆구리"],
+            "팔/어깨":   ["어깨", "윗팔", "팔꿈치/아래팔", "손/손목"],
+            "허리/다리": ["허리", "엉덩이/골반", "무릎/허벅지", "발/종아리"],
+        };
+
+        const painLevels = ["많이 아파요", "조금 아파요", "따끔/저림", "간지러워요"];
+
+        let painSelectedArea = "";
+        let painSelectedDetail = "";
+
+        function renderPainStep1() {
+            document.getElementById('painPageTitle').textContent = '불편 부위 — 어디가 불편한가요?';
+            const grid = document.getElementById('painGrid');
+            grid.innerHTML = '';
+
+            const areas = Object.keys(painAreas);
+            areas.forEach(area => {
+                const div = document.createElement('div');
+                div.className = 'quad-item qi-pain-area';
+                div.innerHTML = `
+                    <div class="q-item-icon">${getAreaIcon(area)}</div>
+                    <div class="q-item-label">${area}</div>
+                `;
+                div.onclick = () => {
+                    painSelectedArea = area;
+                    renderPainStep2(area);
+                };
+                grid.appendChild(div);
+            });
+
+            showPage('painPage');
+        }
+
+        function renderPainStep2(area) {
+            document.getElementById('painPageTitle').textContent = `불편 부위 — ${area} 어디?`;
+            const grid = document.getElementById('painGrid');
+            grid.innerHTML = '';
+
+            const details = painAreas[area];
+            details.forEach(detail => {
+                const div = document.createElement('div');
+                div.className = 'quad-item qi-pain-area';
+                div.innerHTML = `
+                    <div class="q-item-icon">📍</div>
+                    <div class="q-item-label">${detail}</div>
+                `;
+                div.onclick = () => {
+                    painSelectedDetail = detail;
+                    renderPainStep3(detail);
+                };
+                grid.appendChild(div);
+            });
+
+            showPage('painPage');
+        }
+
+        function renderPainStep3(detail) {
+            document.getElementById('painPageTitle').textContent = `불편 부위 — ${detail} 어떻게?`;
+            const grid = document.getElementById('painGrid');
+            grid.innerHTML = '';
+
+            const icons = ["😣", "😕", "⚡", "🤏"];
+            painLevels.forEach((level, i) => {
+                const div = document.createElement('div');
+                div.className = 'quad-item qi-pain-level';
+                div.innerHTML = `
+                    <div class="q-item-icon">${icons[i]}</div>
+                    <div class="q-item-label">${level}</div>
+                `;
+                div.onclick = () => {
+                    selectExpr(`${painSelectedDetail} — ${level}`);
+                };
+                grid.appendChild(div);
+            });
+
+            showPage('painPage');
+        }
+
+        function getAreaIcon(area) {
+            const map = { "머리/목": "🧠", "가슴/배": "🫁", "팔/어깨": "💪", "허리/다리": "🦵" };
+            return map[area] || "🩺";
+        }
+
+        // ══════════════════════════════════════
+        // 표현 목록 — 4분할 페이지네이션
+        // ══════════════════════════════════════
+        let currentExprCategory = null;
+        let exprPageIndex = 0;
+
+        function renderExprPage(categoryKey, pageIdx) {
+            currentExprCategory = categoryKey;
+            exprPageIndex = pageIdx;
+
+            const data = expressions[categoryKey];
+            if (!data) return;
+
+            document.getElementById('exprPageTitle').textContent = data.title;
+            const grid = document.getElementById('exprGrid');
+            grid.innerHTML = '';
+
+            const items = data.items;
+            const start = pageIdx * ITEMS_PER_PAGE;
+            const pageItems = items.slice(start, start + ITEMS_PER_PAGE);
+            const hasMore = (start + ITEMS_PER_PAGE) < items.length;
+
+            // 표현 버튼 (최대 3개)
+            pageItems.forEach(text => {
+                const div = document.createElement('div');
+                div.className = 'quad-expr';
+                div.textContent = text;
+                div.onclick = () => selectExpr(text);
+                grid.appendChild(div);
+            });
+
+            // 4번째 칸: "다른 표현" 또는 "처음으로"
+            const navDiv = document.createElement('div');
+            if (hasMore) {
+                navDiv.className = 'quad-expr-next';
+                navDiv.innerHTML = `
+                    <div class="next-icon">➡️</div>
+                    다른 표현
+                `;
+                navDiv.onclick = () => renderExprPage(categoryKey, pageIdx + 1);
+            } else if (pageIdx > 0) {
+                navDiv.className = 'quad-expr-next';
+                navDiv.innerHTML = `
+                    <div class="next-icon">🔄</div>
+                    처음으로
+                `;
+                navDiv.onclick = () => renderExprPage(categoryKey, 0);
+            }
+
+            if (hasMore || pageIdx > 0) {
+                grid.appendChild(navDiv);
+            }
+
+            // 빈 칸 채우기
+            const totalSlots = grid.children.length;
+            for (let i = totalSlots; i < 4; i++) {
+                const empty = document.createElement('div');
+                empty.className = 'quad-expr';
+                empty.style.visibility = 'hidden';
+                grid.appendChild(empty);
+            }
+
+            showPage('exprPage');
+        }
+
+        // ══════════════════════════════════════
+        // 특화 소통 진입점 (메인에서 호출)
+        // ══════════════════════════════════════
+        function enterSpecial() {
+            renderSpecialPage(0);
+        }
+
+        // ══════════════════════════════════════
+        // 표현 선택 피드백
+        // ══════════════════════════════════════
+        function selectExpr(text) {
+            const fb = document.getElementById('selectFeedback');
+            fb.textContent = `✓ "${text}"`;
+            fb.style.display = 'block';
+            setTimeout(() => {
+                fb.style.display = 'none';
+            }, 1500);
+        }
+
+        // ══════════════════════════════════════
+        // 설계 근거 시스템
+        // ══════════════════════════════════════
+        const rationaleData = {
+            main: `
+                <h2>메인 페이지 — 4분할 설계 근거</h2>
+                <h3>왜 4분할인가?</h3>
+                <p>4분할 아이트래킹이 MVP 입력 방식. 모든 화면은 선택지 4개로 구성한다.</p>
+                <h3>각 영역의 근거</h3>
+                <ul>
+                    <li><strong>호출</strong>: <span class="source-tag">PMC 2021</span> 환자 의사소통 핵심 4영역 중 "도움 호출(Summoning help)"이 2위. 긴급 상황에서 최소 동작(1회 선택)으로 보호자 알림 전송.</li>
+                    <li><strong>특화 소통</strong>: <span class="source-tag">OHSU 2006</span> AAC 사용 목적 1위 "기본 욕구 충족(Getting needs met)". 고빈도 표현을 모아 빠르게 접근.</li>
+                    <li><strong>확장 소통</strong>: 특화 소통에 포함되지 않는 다양한 표현을 AI 추천으로 제공. 표현 범위 확장.</li>
+                    <li><strong>커스텀</strong>: 보호자가 환자 개인에 맞춰 설정하는 영역 (유튜브, 음악 등). 개인화 지원.</li>
+                </ul>
+            `,
+            special: `
+                <h2>특화 소통 — 주제 순서 근거</h2>
+                <h3>배치 원칙</h3>
+                <p><span class="source-tag">AAC 설계 원칙</span> Core-Fringe 어휘 구조: 고빈도·고긴급 표현을 앞 페이지에, 저빈도 표현을 뒤 페이지에 배치.</p>
+                <p>한 페이지에 3개 주제 + "다른 소통→" 네비게이션 = 4분할 유지.</p>
+                <h3>주제 우선순위</h3>
+                <ul>
+                    <li><strong>1위 — 불편 부위</strong>: <span class="source-tag">PMC 2021</span> 환자 의사소통 핵심 영역 중 "통증/불편감"이 <strong>임상 중요도 1위</strong>. 신체 부위 선택이라는 별도 UI 특화 필요.</li>
+                    <li><strong>2위 — 화장실·위생</strong>: <span class="source-tag">OHSU 2006</span> 기본 욕구 충족 1위 범주. 화장실은 참을 수 없는 욕구로 <strong>긴급성 최상위</strong>. 위생(세수, 양치 등)은 화장실 이후 자연스러운 흐름으로 통합.</li>
+                    <li><strong>3위 — 자세/이동</strong>: <span class="source-tag">OHSU 2006</span> "지시/요청 전달" 2위. <span class="source-tag">임상 AAC</span> Positioning 카테고리. 장시간 와병 환자의 핵심 요청.</li>
+                </ul>
+                <ul>
+                    <li><strong>4위 — 영양/수분</strong>: ALS 후기 환자 대부분 PEG 튜브 영양. <span class="source-tag">PMC4093701</span> 경관 영양 합병증(오심 10-20%, 설사 30-80%) 환자 자기 보고 필수. 구강 건조·수분 보충 등 튜브 환자 특화 소통.</li>
+                    <li><strong>5위 — 감정 표현</strong>: <span class="source-tag">PMC 2021</span> 핵심 영역 3위 "감정 표현(Feelings)". <span class="source-tag">PMC6421295</span> ALS 우울 9-64%, 불안 8-88%. 환자-보호자 간 정서적 유대를 위한 감정 공유 카테고리.</li>
+                    <li><strong>6위 — 온도/환경</strong>: <span class="source-tag">임상 AAC</span> Environment 카테고리.</li>
+                </ul>
+                <ul>
+                    <li><strong>7위 — 수면</strong>: <span class="source-tag">임상 AAC</span> Daily Care 범주. 야간 시간대 필수.</li>
+                    <li><strong>8위 — 확장 소통으로</strong>: 특화 소통에 없는 표현이 필요할 때 AI 추천 영역으로 바로 연결.</li>
+                </ul>
+                <h3>추가 검토 사항 — 보호자 커스터마이징</h3>
+                <h4>원칙: pagination 유무에 따른 커스텀 범위</h4>
+                <ul>
+                    <li><strong>pagination 없는 화면(4분할 1화면)</strong>: 순서 고정. 모든 선택지가 한 화면에 보이므로 순서 변경의 실익이 없고, 오히려 환자의 위치 기억(motor planning)을 혼란시킬 수 있다.</li>
+                    <li><strong>pagination 있는 화면(3+1 구조)</strong>: 보호자 커스텀 대상. 1쪽에 있느냐 2쪽에 있느냐가 추가 선택 횟수 차이로 직결되어, 환자의 눈 피로도에 직접 영향을 준다.</li>
+                </ul>
+                <h4>커스텀 대상</h4>
+                <ul>
+                    <li><strong>카테고리 순서</strong> (7개 카테고리, 3페이지): 어떤 3개가 첫 페이지에 오는지를 보호자가 설정. 현재 순서는 연구 근거 기반 기본값(default)이나, 환자마다 실제 사용 패턴은 다를 수 있다.</li>
+                    <li><strong>카테고리 내 표현 순서</strong> (6개 표현, 2페이지): 각 카테고리 내에서 어떤 3개가 첫 페이지에 오는지를 보호자가 설정. 예: 화장실 카테고리에서 기저귀 사용 환자는 "기저귀 갈아주세요"를 1쪽으로 이동.</li>
+                </ul>
+                <h4>커스텀 비대상</h4>
+                <ul>
+                    <li>불편 부위 각 단계 (Lv1 대분류 4개, Lv2 상세 4개, Lv3 강도 4개) — 모두 pagination 없이 4분할 1화면이므로 고정.</li>
+                    <li>메인 페이지 4분할, 확장 소통 메인(추천3+직접 만들기), 직접 만들기 Step 1 주제(4개) — 동일 원칙.</li>
+                </ul>
+                <p>이를 통해 연구 근거 기반 초기 배치 + 개인 맞춤 최적화를 동시에 달성하며, 눈 피로도를 최소화할 수 있다.</p>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>Dougherty & Lewis (2006). "Purposes of AAC Device Use for Persons with ALS as Reported by Caregivers." OHSU.</li>
+                    <li>Happ et al. (2021). "Improving Patient Safety and Patient-Provider Communication." PMC.</li>
+                    <li>Medical SLPs, EatSpeakThink — 임상 AAC 보드 공통 카테고리 구성.</li>
+                </ul>
+            `,
+            pain: `
+                <h2>불편 부위 — 3단계 선택 근거</h2>
+                <h3>왜 3단계인가?</h3>
+                <p><span class="source-tag">PMC 2021</span> 환자 의사소통 핵심 영역 중 "통증/불편감(Pain and discomfort)"이 <strong>임상 중요도 1위</strong>. 통증은 <strong>부위 + 상세 위치 + 강도/유형</strong> 3가지 정보가 모두 전달되어야 의미가 있다.</p>
+                <h3>3단계 흐름</h3>
+                <ul>
+                    <li><strong>1단계 — 대분류 부위</strong>: 머리/목, 가슴/배, 팔/어깨, 허리/다리. 신체를 4개 대영역으로 나누어 4분할 제약 내에서 최대한 넓은 커버리지 확보.</li>
+                    <li><strong>2단계 — 상세 부위</strong>: 대분류 내 4개 세부 위치. 예) "가슴/배" → 가슴, 윗배, 아랫배, 옆구리. 보호자와 의료진에게 정확한 위치 전달.</li>
+                    <li><strong>3단계 — 강도/유형</strong>: 많이 아파요, 조금 아파요, 따끔/저림, 간지러워요. 통증의 성격을 분류하여 대응 판단 지원.</li>
+                </ul>
+                <h3>왜 텍스트 나열이 아닌가?</h3>
+                <p>기존 방식("머리가 아파요", "배가 아파요"...)은 15개 표현을 5페이지에 걸쳐 나열해야 한다. 3단계 드릴다운은 <strong>최대 3회 선택</strong>으로 4×4×4=64가지 조합을 표현할 수 있어, 같은 4분할 제약 내에서 훨씬 높은 표현력을 제공.</p>
+                <h3>향후 개선</h3>
+                <p>1단계에서 텍스트 대신 <strong>신체 일러스트 이미지</strong>를 적용하면 직관성이 크게 향상됨. 프로토타입에서는 텍스트+아이콘으로 구현.</p>
+            `,
+            toilet: `
+                <h2>화장실·위생 — 표현 선별 근거</h2>
+                <h3>왜 소변/대변을 구분하는가?</h3>
+                <p><span class="source-tag">WTCS Nursing Assistant</span> <span class="source-tag">NCBI Ch.5</span> 소변과 대변은 보호자의 <strong>준비 과정이 완전히 다르다</strong>.</p>
+                <ul>
+                    <li><strong>소변</strong>: 소변기(urinal) 또는 간이변기 → 비교적 간단한 준비</li>
+                    <li><strong>대변</strong>: 변기(bedpan) 배치 + 체위 변경 + 프라이버시 확보 → 별도 준비 필요</li>
+                </ul>
+                <p>따라서 "급해요"처럼 추상적 긴급 표현보다, <strong>무엇이 필요한지 직접 전달</strong>하는 것이 보호자의 즉각 대응에 더 효과적.</p>
+                <h3>왜 "급해요"가 없는가?</h3>
+                <p>"소변이요" 자체가 이미 즉각 행동 요청이다. "급해요"는 보호자에게 <strong>무엇을 해야 하는지</strong> 정보를 주지 않으므로, 구체적 행동을 지시하는 표현이 더 빠른 대응을 유도한다.</p>
+                <h3>표현 구성 (6개, 2페이지)</h3>
+                <ul>
+                    <li><strong>1쪽 — 배변·배뇨 시작</strong>: 소변이요, 대변이요, 기저귀 갈아주세요</li>
+                    <li><strong>2쪽 — 완료·위생</strong>: 다 했어요, 씻겨주세요, 양치하고 싶어요</li>
+                </ul>
+                <p>1쪽은 <strong>요청 개시</strong>(지금 필요함), 2쪽은 <strong>사후 처리 및 위생</strong>(끝남/세정/구강)으로 흐름이 자연스럽다.</p>
+                <h3>배제된 표현과 이유</h3>
+                <ul>
+                    <li>"급해요" — 행동 정보 없음, 소변이요/대변이요가 이미 긴급 요청</li>
+                    <li>"화장실 가고 싶어요" — ALS 와상 환자는 이동이 어려워 bedpan/기저귀 사용이 일반적</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>WTCS Nursing Assistant — "5.8 Assistance With Toileting": 배변 방법별 준비 차이, 절박성 요실금</li>
+                    <li>NCBI Nursing Manual Ch.5 — 2시간 주기 배뇨, 회음부 관리(perineal care)</li>
+                    <li>Dermolex — 와상 환자 배변 도구 종류, 존엄성 중요도</li>
+                </ul>
+            `,
+            posture: `
+                <h2>자세/이동 — 표현 선별 근거</h2>
+                <h3>표현 구성 (6개, 2페이지)</h3>
+                <ul>
+                    <li><strong>1쪽 — 전신 체위 변경</strong>: 일으켜주세요, 눕혀주세요, 돌려주세요</li>
+                    <li><strong>2쪽 — 부위별 미세 조정</strong>: 베개 위치 바꿔주세요, 다리 올려주세요, 고개 돌려주세요</li>
+                </ul>
+                <p>1쪽은 <strong>전신 체위</strong>(앉기/눕기/뒤집기), 2쪽은 <strong>부위별 조정</strong>(베개/다리/고개)으로 구분.</p>
+                <h3>1쪽 — 전신 체위 변경</h3>
+                <ul>
+                    <li><strong>일으켜주세요</strong>: <span class="source-tag">NCBI Ch.13</span> Fowler's position(30-90°). 식사·음료·호흡 시 필수. 폐 확장 촉진, 흡인(aspiration) 방지.</li>
+                    <li><strong>눕혀주세요</strong>: Supine position 복귀. 일으켜주세요와 쌍으로 작동하는 역방향 요청.</li>
+                    <li><strong>돌려주세요</strong>: <span class="source-tag">NCBI Ch.8</span> Lateral position. <strong>2시간 주기 체위변경</strong>의 핵심 동작. 욕창(pressure injury) 예방의 가장 기본적 조치.</li>
+                </ul>
+                <h3>2쪽 — 부위별 미세 조정</h3>
+                <ul>
+                    <li><strong>베개 위치 바꿔주세요</strong>: <span class="source-tag">NCBI Ch.8</span> 베개 배치(pillow placement)는 체위 유지와 편안함의 핵심. 보호자가 외부에서 판단하기 어려운 불편감을 환자가 직접 요청.</li>
+                    <li><strong>다리 올려주세요</strong>: <span class="source-tag">NCBI Ch.8</span> 종아리 아래 베개로 발뒤꿈치 띄우기(float the heels). 하지 부종·혈액순환 개선, 욕창 예방. 환자만 다리 불편감을 감지할 수 있음.</li>
+                    <li><strong>고개 돌려주세요</strong>: ALS 환자는 목 근력 약화(head drop)가 흔함. TV 시청, 보호자 쪽 바라보기, 기도 확보 등 환자 주도 요청이 필요한 영역.</li>
+                </ul>
+                <h3>배제된 표현과 이유</h3>
+                <ul>
+                    <li>"자세 바꿔주세요" — 모호한 지시. 일으켜/눕혀/돌려로 구체적 행동 전달 가능</li>
+                    <li>"휠체어 태워주세요" — 보호자가 일정·환자 상태를 보고 판단하는 영역</li>
+                    <li>"스트레칭 해주세요" — 부위 지정이 필수 → 불편 부위에서 부위+증상(저림 등) 선택으로 해결. 보호자가 "스트레칭 해줄까?" 되물을 수 있는 영역</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>NCBI Ch.13 Mobility (NBK591828) — 체위 종류, 2시간 주기 체위변경, ROM 운동</li>
+                    <li>NCBI Nursing Assistant Ch.8 (NBK599393) — 체위변경 빈도, 이동 보조 유형, 욕창 예방</li>
+                    <li>Your ALS Guide — Transferring with ALS: ALS 환자 이동 능력 변화 단계</li>
+                </ul>
+            `,
+            sleep: `
+                <h2>수면 — 표현 선별 근거</h2>
+                <h3>ALS 환자의 수면 장애</h3>
+                <p><span class="source-tag">PMC11508895</span> ALS 환자 <strong>57.7%</strong>가 불면증 기준 충족. <span class="source-tag">PMC12435240</span> <strong>50-80%</strong>가 수면 호흡 장애(야간 저환기). <span class="source-tag">PMC6701267</span> <strong>45-92%</strong>가 근육 경련으로 수면 방해.</p>
+                <p>ALS의 자율신경 장애로 <strong>체온 조절 이상</strong>이 발생하여 밤중에 덥다/춥다가 반복됨. 이불 요청이 밤중에 여러 번 필요한 것이 문서화되어 있음.</p>
+                <h3>표현 구성 (6개, 2페이지)</h3>
+                <ul>
+                    <li><strong>1쪽 — 수면 진입</strong>: 졸려요, 잠이 안 와요, 불 꺼주세요</li>
+                    <li><strong>2쪽 — 수면 중 불편 해소</strong>: 이불 덮어주세요, 이불 치워주세요, 숨이 답답해요</li>
+                </ul>
+                <h3>1쪽 — 수면 진입</h3>
+                <ul>
+                    <li><strong>졸려요</strong>: 주관적 졸림. 보호자가 자극을 줄이고 수면 환경 조성하는 트리거.</li>
+                    <li><strong>잠이 안 와요</strong>: <span class="source-tag">PMC11508895</span> 불면증 57.7%. 완전히 주관적 상태로 환자만 보고 가능.</li>
+                    <li><strong>불 꺼주세요</strong>: 수면 환경의 핵심 요인. 환자가 직접 조명 조작 불가. 수면 진입을 위한 행동 요청.</li>
+                </ul>
+                <h3>2쪽 — 수면 중 불편 해소</h3>
+                <ul>
+                    <li><strong>이불 덮어주세요</strong>: 자율신경 장애로 주관적 한냉감 발생. 환자만 감지 가능.</li>
+                    <li><strong>이불 치워주세요</strong>: 반대 방향. 야간 발한·체온 상승. 밤중에 덮었다/벗었다 반복이 문서화됨.</li>
+                    <li><strong>숨이 답답해요</strong>: <span class="source-tag">PMC7253511</span> <span class="source-tag">PMC12435240</span> ALS 야간 호흡곤란이 <strong>수면 장애 1위 원인</strong>. 횡격막 약화로 누운 자세에서 악화. 50-80% 해당. SpO2 모니터로 안 잡히는 경우 많아 환자 자기 보고가 필수.</li>
+                </ul>
+                <h3>배제된 표현과 이유</h3>
+                <ul>
+                    <li>"베개 조절해주세요" — 자세/이동 카테고리에 "베개 위치 바꿔주세요" 이미 존재. 중복</li>
+                    <li>"불안해요" — 감정/응답 카테고리에서 처리. 수면 카테고리는 신체적 불편에 집중</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>PMC7253511 — Sleep and Sleep Disruption in ALS: 야간 호흡곤란, 자율신경 장애</li>
+                    <li>PMC11508895 — Sleep Disturbances and Prognostic Impact: 불면증 57.7%</li>
+                    <li>PMC12435240 — Sleep alterations in ALS: 수면 호흡 장애 50-80%</li>
+                    <li>PMC6701267 — Sleep disturbances in ALS: 근육 경련 45-92%, RLS 14.6-25%</li>
+                    <li>Your ALS Guide — ALS and Sleep: 체온 조절 이상, 이불 조정 빈도</li>
+                </ul>
+            `,
+            environ: `
+                <h2>온도/환경 — 표현 선별 근거</h2>
+                <h3>ALS 환자의 환경 민감성</h3>
+                <p><span class="source-tag">PMC10573406</span> ALS 환자의 <strong>30%</strong>에서 발한 기능 이상(sudomotor dysfunction) 확인. 자율신경 장애로 체온 조절이 불안정하여 주관적 체감 온도가 객관적 실온과 다를 수 있음.</p>
+                <p><span class="source-tag">PMC12063940</span> 와상 환자의 환경 요인 — 환기 부재는 회복 저해, 소음은 면역 반응 저해·수면 방해·불안 증가, 자연광 부재는 일주기 리듬 교란.</p>
+                <h3>표현 구성 (6개, 2페이지)</h3>
+                <ul>
+                    <li><strong>1쪽 — 환경 불편 상태 보고</strong>: 추워요, 더워요, 시끄러워요</li>
+                    <li><strong>2쪽 — 환경 변경 행동 요청</strong>: 환기해주세요, 불 켜주세요, 냄새나요</li>
+                </ul>
+                <h3>1쪽 — 환경 불편 상태 보고</h3>
+                <ul>
+                    <li><strong>추워요</strong>: <span class="source-tag">PMC10573406</span> 자율신경 장애로 발한·체온 조절 이상. 주관적 한냉감은 환자만 보고 가능. 이불·난방 조절 트리거.</li>
+                    <li><strong>더워요</strong>: 추워요와 쌍. 동일한 자율신경 장애 근거. 환자 체감과 실제 실온이 다를 수 있어 환자 자기 보고 필수.</li>
+                    <li><strong>시끄러워요</strong>: <span class="source-tag">PMC12063940</span> 소음이 면역 반응 저해, 수면 방해, 불안 증가. TV·대화·외부 소음 등 보호자가 인지 못하는 경우 많음.</li>
+                </ul>
+                <h3>2쪽 — 환경 변경 행동 요청</h3>
+                <ul>
+                    <li><strong>환기해주세요</strong>: <span class="source-tag">PMC12063940</span> 신선한 공기 부재가 회복 저해. "창문 열어주세요"를 통합 — 방법(창문/환풍기)은 보호자가 판단.</li>
+                    <li><strong>불 켜주세요</strong>: 수면 카테고리에 "불 꺼주세요"가 있으므로 반대 방향. "밝기 조절해주세요"보다 구체적 행동 요청.</li>
+                    <li><strong>냄새나요</strong>: 와상 환자 환경에서 냄새 문제 빈발(기저귀 교체, 소독제, 음식 냄새 등). 환자만 감지할 수 있는 주관적 불편. 환기·원인 제거로 대응.</li>
+                </ul>
+                <h3>배제된 표현과 이유</h3>
+                <ul>
+                    <li>"창문 열어주세요" — "환기해주세요"로 통합. 방법은 보호자 판단</li>
+                    <li>"밝기 조절해주세요" — "조절"이 모호. "불 켜주세요"로 구체화. "불 꺼주세요"는 수면 카테고리에 존재</li>
+                    <li>"조용히 해주세요" — "시끄러워요"와 중복. 상태 보고만으로 보호자 대응 가능</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>PMC10573406 — Dysautonomia in ALS: 발한 기능 이상 30%, 자율신경 장애</li>
+                    <li>PMC12063940 — Care of the Bedridden Patient: 환기·소음·조명의 치유 영향</li>
+                </ul>
+            `,
+            response: `
+                <h2>감정 표현 — 표현 선별 근거</h2>
+                <h3>왜 "감정/응답"이 아닌 "감정 표현"인가?</h3>
+                <p>기존 "네/아니요" 응답은 <strong>눈 깜박임 약속</strong>(1회=예, 2회=아니요)으로 충분히 해결 가능. 보호자 온보딩에서 이 방식을 안내하면 AAC 슬롯을 사용할 필요가 없다.</p>
+                <p>따라서 이 카테고리는 환자가 <strong>먼저 감정을 공유</strong>해야 하는 표현에 집중. 환자-보호자 간 정서적 유대를 위한 감정 공유 카테고리로 재설계.</p>
+                <h3>ALS 환자의 감정 표현 수요</h3>
+                <p><span class="source-tag">PMC6421295</span> ALS 환자 우울 <strong>9-64%</strong>, 불안 <strong>8-88%</strong>. <span class="source-tag">PMC4266100</span> 중증 의사소통 장애 환자는 기본 욕구 외에 <strong>감정 표현(frustration, anxiety, gratitude)</strong> 수요가 있으나, 보호자·의료진이 이를 인식하지 못하는 경우가 많음.</p>
+                <h3>표현 구성 (6개, 2페이지)</h3>
+                <ul>
+                    <li><strong>1쪽 — 상태·감사 표현</strong>: 괜찮아요, 힘들어요, 감사해요</li>
+                    <li><strong>2쪽 — 관계 감정 표현</strong>: 미안해요, 같이 있어주세요, 사랑해요</li>
+                </ul>
+                <h3>1쪽 — 상태·감사 표현</h3>
+                <ul>
+                    <li><strong>괜찮아요</strong>: "네"와 다른 뉘앙스 — 보호자에게 "걱정하지 마세요"라는 안심 신호. 보호자 번아웃 완화에 기여.</li>
+                    <li><strong>힘들어요</strong>: <span class="source-tag">PMC6421295</span> 우울 9-64%, 불안 8-88%. 주관적 고통은 환자만 보고 가능. 보호자가 "어디가 힘들어?"로 후속 대화 가능.</li>
+                    <li><strong>감사해요</strong>: <span class="source-tag">PMC3096454</span> AAC 사용 시 social closeness 증가. 감사 표현은 보호자와의 관계 유지 핵심.</li>
+                </ul>
+                <h3>2쪽 — 관계 감정 표현</h3>
+                <ul>
+                    <li><strong>미안해요</strong>: ALS 환자는 돌봄 부담에 대한 죄책감을 자주 느낌. 환자만 표현할 수 있는 주관적 감정.</li>
+                    <li><strong>같이 있어주세요</strong>: 불안+외로움을 <strong>구체적 행동 요청</strong>으로 통합. 막연한 "불안해요"보다 보호자가 즉시 대응 가능.</li>
+                    <li><strong>사랑해요</strong>: 말을 잃은 환자가 가장 하고 싶은 말. 보호자(가족)와의 정서적 유대의 본질. 환자만 표현 가능.</li>
+                </ul>
+                <h3>배제된 표현과 이유</h3>
+                <ul>
+                    <li>"네/아니요" — 눈 깜박임 약속으로 대체 가능. 보호자 온보딩에서 안내</li>
+                    <li>"도와주세요" — 모호한 요청. 구체적 카테고리(자세, 영양 등)에서 처리</li>
+                    <li>"불안해요" — "같이 있어주세요"로 행동화하여 통합</li>
+                    <li>"외로워요" — "같이 있어주세요"로 행동화하여 통합</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>PMC6421295 — Cognitive and Behavioral Symptoms in ALS: 우울 9-64%, 불안 8-88%</li>
+                    <li>PMC4266100 — Patient-Provider Communication Metasynthesis: 감정 표현 수요, 기본 욕구 외 소통 필요성</li>
+                    <li>PMC3096454 — Communication Support for ALS: AAC와 social closeness 관계</li>
+                </ul>
+            `,
+            meal: `
+                <h2>영양/수분 — 표현 선별 근거</h2>
+                <h3>왜 "식사·음료"가 아닌 "영양/수분"인가?</h3>
+                <p>본 서비스의 타겟은 <strong>시선추적이 필요한 ALS 후기 환자</strong>. 이 단계에서는 사지·체간·구강 근육이 마비되어 경구 식사가 불가능하며, 대부분 <strong>PEG(경피적 내시경 위루술) 튜브</strong>로 영양을 공급받는다.</p>
+                <p>따라서 "배고파요", "천천히 주세요" 같은 경구 식사 표현 대신, <strong>튜브 영양 환자가 실제로 보호자에게 전달해야 하는 불편·요청</strong>으로 재설계.</p>
+                <h3>표현 구성 (6개, 2페이지)</h3>
+                <ul>
+                    <li><strong>1쪽 — 즉시 대응 필요한 불편</strong>: 속이 불편해요, 입이 말라요, 수분 보충해주세요</li>
+                    <li><strong>2쪽 — 주입 중 조절·관리</strong>: 속도 줄여주세요, 배가 더부룩해요, 입 안 닦아주세요</li>
+                </ul>
+                <h3>1쪽 — 즉시 대응 필요한 불편</h3>
+                <ul>
+                    <li><strong>속이 불편해요</strong>: <span class="source-tag">PMC4093701</span> 오심(nausea) <strong>10-20%</strong>, 복부 경련 빈발. 주입 속도·체위 조절이 필요한 신호. 환자만 감지 가능한 주관적 증상.</li>
+                    <li><strong>입이 말라요</strong>: <span class="source-tag">BAPEN</span> 경관 영양 환자의 <strong>가장 흔한 불편</strong>이 구강 건조. 경구 섭취가 없어 타액 분비 감소. 인공타액·구강 스프레이로 대응.</li>
+                    <li><strong>수분 보충해주세요</strong>: <span class="source-tag">PMC4093701</span> 수분 부족 시 변비·탈수 위험. 튜브를 통한 수분 공급 요청. 환자의 갈증은 자기 보고 필수.</li>
+                </ul>
+                <h3>2쪽 — 주입 중 조절·관리</h3>
+                <ul>
+                    <li><strong>속도 줄여주세요</strong>: <span class="source-tag">PMC4093701</span> "너무 빠른 주입 속도(too rapid infusion rate)"가 오심·구토·경련의 직접 원인. 환자가 불편을 느끼는 시점에 즉시 전달해야 하는 핵심 요청.</li>
+                    <li><strong>배가 더부룩해요</strong>: <span class="source-tag">PMC4093701</span> 위 배출 지연(delayed gastric emptying)으로 복부 팽만 빈발. "속이 불편해요"와 구분되는 구체적 증상 표현.</li>
+                    <li><strong>입 안 닦아주세요</strong>: <span class="source-tag">BAPEN</span> 경구 섭취 없으면 구강 감염·불편 위험 증가. 정기 구강 관리가 필수이나, 환자가 불편을 느끼는 시점에 요청할 수 있어야 함.</li>
+                </ul>
+                <h3>배제된 표현과 이유</h3>
+                <ul>
+                    <li>"배고파요/목말라요" — 튜브 환자는 정해진 스케줄로 영양 공급. 배고픔 표현의 실용성 낮음</li>
+                    <li>"다 먹었어요/더 먹을래요" — 경구 식사 아님, 해당 없음</li>
+                    <li>"천천히 주세요" — "속도 줄여주세요"로 대체 (튜브 주입 맥락에 맞게)</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>PMC4093701 — Gastroenteric tube feeding: Techniques, problems and solutions: 오심 10-20%, 설사 30-80%, 주입 속도 문제</li>
+                    <li>BAPEN — Management of Enteral Feeding Complications: 구강 건조, 구강 관리 프로토콜</li>
+                    <li>PMC4871719 — Swallowing-Related QOL in ALS: 식사 피로, 삼킴 QOL 영역별 점수</li>
+                </ul>
+            `,
+            expr: `
+                <h2>표현 목록 — 페이지네이션 근거</h2>
+                <h3>배치 원칙</h3>
+                <p>4분할 아이트래킹 제약 → 한 화면에 표현 3개 + "다른 표현→" 1개.</p>
+                <p><span class="source-tag">AAC 설계 원칙</span> Core-Fringe 구조: 각 주제 내에서도 가장 자주 쓰이는 표현을 첫 페이지에 배치.</p>
+                <h3>표현 선별 기준</h3>
+                <p>보호자가 되물어볼 수 있는 세부 선택지(예: "물 줄까? 주스 줄까?")는 제외하고, 환자가 <strong>먼저 의사를 전달</strong>해야 하는 핵심 표현만 포함.</p>
+                <p>예시: "목말라요" → 보호자가 음료 선택지를 제시 → 환자는 Yes/No 응답.</p>
+            `,
+            extended: `
+                <h2>확장 소통 — 설계 근거</h2>
+                <h3>구조</h3>
+                <p>4분할: AI 추천 3개 + 직접 만들기 1개</p>
+                <h3>AI 추천 — 2-Stage 추천 파이프라인</h3>
+                <p>첫 화면의 추천 3개는 <strong>2단계 추천 파이프라인</strong>으로 생성한다.</p>
+                <h4>Stage 1 — 5-Signal Scoring (후보 축소)</h4>
+                <p>150개 전체 표현 풀에서 5가지 신호를 가중 합산하여 상위 K개(기본 10개) 후보를 추출한다.</p>
+                <ul>
+                    <li><strong>T (Time)</strong>: 현재 시간대(아침/낮/저녁/밤)에 해당 표현이 사용된 빈도 비율. 시간대 맥락 반영.</li>
+                    <li><strong>F (Frequency)</strong>: 전체 사용 횟수. 환자의 절대적 사용 빈도 반영.</li>
+                    <li><strong>R (Recency)</strong>: 마지막 사용으로부터 경과 시간의 역수. 최근 관심사 반영.</li>
+                    <li><strong>S (Sequence)</strong>: 직전 표현 이후 전이 확률 (마르코프 체인). 대화 흐름 예측.</li>
+                    <li><strong>P (Preference)</strong>: 표현이 추천되었을 때 실제 선택된 비율. 사용자 선호 학습.</li>
+                </ul>
+                <p>각 신호는 0-1 정규화 후 가중치(w_t, w_f, w_r, w_s, w_p)로 합산. <span class="source-tag">IJCAI 2022</span> Multi-Signal Scoring 방식 참고.</p>
+                <h4>Stage 2 — LLM Re-ranking (최종 정렬)</h4>
+                <p>Stage 1의 상위 K개 후보를 LLM에 전달하여, 환자 프로필(나이, 병기, 선호)과 현재 맥락(시간, 최근 대화)을 고려한 최종 3개를 선정한다.</p>
+                <ul>
+                    <li>프롬프트에 환자 프로필 + 후보 리스트 + 최근 사용 이력을 포함.</li>
+                    <li>LLM이 후보를 재정렬하고 상위 3개를 JSON으로 반환.</li>
+                    <li><span class="source-tag">arXiv 2024</span> LLM4Rerank: LLM 기반 Re-ranking이 전통적 정렬 대비 맥락 이해에서 우수.</li>
+                </ul>
+                <h4>콜드 스타트 (사용 이력 없을 때)</h4>
+                <p>신규 환자는 사용 이력이 없어 F, R, S, P 신호가 모두 0. 이때는 시간대(T) 기반 기본 추천으로 폴백한다.</p>
+                <ul>
+                    <li>아침(6-11시): "약 먹을 시간이에요", "오늘 컨디션 괜찮아요", "창문 열어주세요"</li>
+                    <li>낮(11-17시): "TV 틀어주세요", "물 마시고 싶어요", "전화하고 싶어요"</li>
+                    <li>저녁(17-22시): "가족 보고 싶어요", "음악 틀어주세요", "오늘 고마웠어요"</li>
+                    <li>밤(22-6시): "잠이 안 와요", "불 꺼주세요", "숨이 답답해요"</li>
+                </ul>
+                <h3>근거</h3>
+                <ul>
+                    <li><span class="source-tag">OHSU 2006</span> AAC 사용 목적 중 "사회적 유대 유지(Social closeness)"와 "중요 사안 논의(Information transfer)" — 기본 욕구 외의 의사소통 수요 존재.</li>
+                    <li>특화 소통 42개 표현만으로는 환자의 전체 의사소통 수요 커버 불가 → AI 추천 + 직접 만들기로 보완.</li>
+                    <li>2-Stage 파이프라인은 Spring Boot 백엔드에 통합하여 REST API로 제공 예정.</li>
+                </ul>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>IJCAI 2022 — Multi-Signal 기반 추천 스코어링 모델</li>
+                    <li>arXiv 2024 — LLM4Rerank: Large Language Models for Re-ranking</li>
+                    <li>Dougherty & Lewis (2006). OHSU — AAC 사용 목적 분석</li>
+                </ul>
+            `,
+            builder: `
+                <h2>직접 만들기 — 카테고리형 의미 지도 설계 근거</h2>
+                <h3>구조</h3>
+                <p>순차적 3단계 플로우: <strong>주제(Topic) → 세부(Detail) → 의도(Intent)</strong> → AI 완성 문장 선택</p>
+                <h3>왜 카테고리형(D방식)인가?</h3>
+                <p>최종 문장은 AI가 생성하므로, 입력은 문법 구조(SOV)가 아닌 <strong>의미 힌트</strong>만 전달하면 된다. 카테고리형은 환자가 "무엇에 대해(주제) → 구체적으로 무엇을(세부) → 어떤 의도로(의도)" 순서로 의미를 좁혀가는 방식.</p>
+                <h4>대안 비교</h4>
+                <ul>
+                    <li><strong>A. 문법형(SOV)</strong>: 주어→목적어→서술어. "엄마가 전화를 주세요" 같은 부자연스러운 조합 발생. AI가 문장을 만드는데 문법 입력을 강제할 이유 없음.</li>
+                    <li><strong>B. 2단계 플랫형</strong>: 대상→의도. 단계 수는 적으나, 대상 32개를 8페이지에 걸쳐 나열 → 저빈도 항목 접근에 많은 스크롤.</li>
+                    <li><strong>C. 키워드형</strong>: 자유 키워드 조합. 시선 입력으로 키워드 검색이 불가.</li>
+                    <li><strong>D. 카테고리형 (채택)</strong>: 4개 주제로 먼저 분류 → 주제별 세부 항목. 저빈도 항목도 최대 3단계(주제+2페이지) 안에 도달.</li>
+                </ul>
+                <h4>D방식의 장점</h4>
+                <ul>
+                    <li><strong>Motor Planning Consistency</strong>: <span class="source-tag">AAC 설계 원칙</span> 동일한 표현은 항상 같은 경로(주제→세부→의도)로 도달. 반복 사용 시 운동 기억 형성.</li>
+                    <li><strong>Light 1988 매핑</strong>: <span class="source-tag">Light 1988</span> AAC 의사소통 4대 목적 — Needs & Wants(물건·활동), Information Transfer(상태), Social Closeness(사람), Social Etiquette(사람·상태). 4개 주제(사람/물건/활동/상태)가 이 분류에 자연스럽게 대응.</li>
+                    <li><strong>조합 수</strong>: 사람(8×6) + 물건(12×6) + 활동(6×6) + 상태(6×6) = <strong>192가지</strong> 의미 조합. AI가 각 조합에서 자연스러운 문장 3개를 생성하여 실질적 표현력은 더 높음.</li>
+                </ul>
+                <h3>AI 완성 문장</h3>
+                <p>주제+세부+의도 3개 힌트를 LLM에 전달하면, 한국어 자연어 문장 3개를 생성. 프로토타입에서는 템플릿 기반 생성, 실제 서비스에서는 LLM API 활용.</p>
+                <h3>참고 문헌</h3>
+                <ul>
+                    <li>Baker (1982) — Semantic Compaction: 의미 기반 조합의 AAC 원론</li>
+                    <li>Light (1988) — Interaction involving individuals using AAC: 의사소통 4대 목적 분류</li>
+                    <li>Beukelman & Mirenda (2013) — AAC: 운동 계획 일관성(Motor Planning Consistency)</li>
+                </ul>
+            `,
+            custom: `
+                <h2>커스텀 — 설계 근거</h2>
+                <h3>역할</h3>
+                <p>보호자가 환자 개인에 맞춰 설정하는 영역. URL, API 등을 통해 유튜브, 음악, 기타 서비스 연결.</p>
+                <h3>근거</h3>
+                <ul>
+                    <li><span class="source-tag">PMC 2021</span> AAC 기기 사용 목적 중 "인터넷 접근(86%)", "컴퓨터 기반 기능(43%)"이 보고됨 — 의사소통 외 디지털 접근 수요 존재.</li>
+                    <li>미디어/여가 카테고리(TV, 유튜브, 음악 등)는 환자마다 선호가 다르므로 보호자 맞춤 설정이 적합.</li>
+                </ul>
+            `
+        };
+
+        // 현재 어떤 페이지가 보이는지 판별
+        function getCurrentPageKey() {
+            if (document.getElementById('painPage').classList.contains('active')) return 'pain';
+            if (document.getElementById('exprPage').classList.contains('active')) {
+                if (currentExprCategory === 'toilet') return 'toilet';
+                if (currentExprCategory === 'posture') return 'posture';
+                if (currentExprCategory === 'sleep') return 'sleep';
+                if (currentExprCategory === 'meal') return 'meal';
+                if (currentExprCategory === 'response') return 'response';
+                if (currentExprCategory === 'environ') return 'environ';
+                return 'expr';
+            }
+            if (document.getElementById('specialPage').classList.contains('active')) return 'special';
+            if (document.getElementById('extendedPage').classList.contains('active')) return 'extended';
+            if (document.getElementById('builderPage').classList.contains('active')) return 'builder';
+            if (document.getElementById('customPage').classList.contains('active')) return 'custom';
+            return 'main';
+        }
+
+        function showRationale() {
+            const key = getCurrentPageKey();
+            document.getElementById('rationaleContent').innerHTML = rationaleData[key] || rationaleData.main;
+            document.getElementById('rationaleOverlay').classList.add('active');
+        }
+
+        function closeRationale() {
+            document.getElementById('rationaleOverlay').classList.remove('active');
+        }
+
+        // 오버레이 배경 클릭으로도 닫기
+        document.getElementById('rationaleOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeRationale();
+        });
+    </script>
+</body>
+</html>

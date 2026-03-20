@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react'
 
 export const pageWrapper: CSSProperties = {
-  minHeight: '100vh',
+  height: '100%',
+  overflowY: 'auto',
   background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
   display: 'flex',
   alignItems: 'center',

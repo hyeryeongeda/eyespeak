@@ -37,15 +37,17 @@ export type PainAreaKey =
   | 'head'
   | 'neck'
   | 'shoulder'
+  | 'arm_hand'
   | 'chest'
   | 'stomach'
-  | 'arm'
-  | 'hand'
-  | 'waist'
-  | 'leg'
-  | 'foot'
+  | 'back'
   | 'hip'
-  | 'whole_body_or_unsure'
+  | 'thigh'
+  | 'knee'
+  | 'calf'
+  | 'foot'
+
+export type PainAreaGroupKey = 'upper_body' | 'middle_body' | 'lower_body'
 
 export type PainDetailKey =
   | 'stiff'
@@ -91,7 +93,7 @@ export interface BodyMindMainCardOption extends BodyMindCardOption<BodyMindMainK
 }
 
 export interface PainAreaGroup {
-  key: 'upper_body' | 'mid_body' | 'lower_body'
+  key: PainAreaGroupKey
   label: string
   options: BodyMindCardOption<PainAreaKey>[]
 }
@@ -120,5 +122,6 @@ export interface SubmitBodyMindExpressionResult {
 }
 
 export interface PainAreaRouteState {
+  selectedGroupKey?: PainAreaGroupKey
   selectedAreaKey?: PainAreaKey
 }

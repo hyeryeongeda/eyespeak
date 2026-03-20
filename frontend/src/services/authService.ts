@@ -26,7 +26,7 @@ export async function login(values: LoginFormValues): Promise<ServiceResult<Auth
 
     return {
       success: true,
-      source: 'mock',
+      source: getActiveApiMode() === 'mock' ? 'mock' : 'api',
       data: mapAuthResponseToSession(response),
     }
   } catch (error) {
@@ -53,7 +53,7 @@ export async function logout(session: AuthSession | null): Promise<ServiceResult
 
     return {
       success: true,
-      source: 'mock',
+      source: getActiveApiMode() === 'mock' ? 'mock' : 'api',
       data: null,
     }
   } catch (error) {
@@ -80,7 +80,7 @@ export async function refreshSession(
 
     return {
       success: true,
-      source: 'mock',
+      source: getActiveApiMode() === 'mock' ? 'mock' : 'api',
       data: mapAuthResponseToSession(response),
     }
   } catch (error) {
@@ -125,7 +125,7 @@ export async function withdraw(
 
     return {
       success: true,
-      source: 'mock',
+      source: getActiveApiMode() === 'mock' ? 'mock' : 'api',
       data: null,
     }
   } catch (error) {

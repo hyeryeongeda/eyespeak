@@ -17,6 +17,7 @@ ENV_LOCAL = --env-file .env.local
 
 .PHONY: help \
         data-prod-up data-prod-down data-dev-up data-dev-down \
+        ai-up ai-down ai-local-up ai-local-down \
         infra-up infra-down \
         prod-app-up prod-app-down dev-app-up dev-app-down \
         local-up local-down \
@@ -36,6 +37,12 @@ help:
 	@echo "    make data-prod-down  - Prod 데이터 중지"
 	@echo "    make data-dev-up     - Dev 데이터 시작"
 	@echo "    make data-dev-down   - Dev 데이터 중지"
+	@echo ""
+	@echo "  AI Servers (TTS + Caregiver):"
+	@echo "    make ai-up           - AI 서버 시작 (Dev/Prod)"
+	@echo "    make ai-down         - AI 서버 중지"
+	@echo "    make ai-local-up     - AI 서버 시작 (Local)"
+	@echo "    make ai-local-down   - AI 서버 중지 (Local)"
 	@echo ""
 	@echo "  Infrastructure (Nginx):"
 	@echo "    make infra-up        - Nginx Proxy 시작"
@@ -82,6 +89,28 @@ data-dev-up:
 data-dev-down:
 	@echo "Stopping Dev Data Services..."
 	cd infra && docker compose -f docker-compose.data.dev.yml down
+
+# =============================================================================
+# AI Servers (Stateful) - 한 번 띄우면 계속 유지
+# =============================================================================
+
+ai-up:
+	@echo "Starting AI Servers (TTS + Caregiver)..."
+	cd infra && docker compose -f docker-compose.ai.yml up -d --build
+	@echo "AI Servers started!"
+
+ai-down:
+	@echo "Stopping AI Servers..."
+	cd infra && docker compose -f docker-compose.ai.yml down
+
+ai-local-up:
+	@echo "Starting AI Servers (Local)..."
+	cd infra && docker compose -f docker-compose.ai.local.yml up -d --build
+	@echo "AI Servers started (local-net)!"
+
+ai-local-down:
+	@echo "Stopping AI Servers (Local)..."
+	cd infra && docker compose -f docker-compose.ai.local.yml down
 
 # =============================================================================
 # Infrastructure (Nginx Proxy)

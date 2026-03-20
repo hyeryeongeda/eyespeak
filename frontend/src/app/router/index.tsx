@@ -27,6 +27,7 @@ import BodyMindPage from '../../pages/patient/body-mind/BodyMindPage'
 import BodyMindSecretionPage from '../../pages/patient/body-mind/BodyMindSecretionPage'
 import BodyMindBreathingPage from '../../pages/patient/body-mind/BodyMindBreathingPage'
 import BodyMindPainAreaPage from '../../pages/patient/body-mind/BodyMindPainAreaPage'
+import BodyMindPainPartPage from '../../pages/patient/body-mind/BodyMindPainPartPage'
 import BodyMindPainDetailPage from '../../pages/patient/body-mind/BodyMindPainDetailPage'
 import BodyMindCategoryListPage from '../../pages/patient/body-mind/BodyMindCategoryListPage'
 import BodyMindCategoryDetailPage from '../../pages/patient/body-mind/BodyMindCategoryDetailPage'
@@ -47,6 +48,8 @@ import CareLayout from '../layouts/CareLayout'
 import PatientLayout from '../layouts/PatientLayout'
 import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
+
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
 const authRoutes = [
   {
@@ -131,6 +134,10 @@ const patientRoutes = [
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_AREA,
     element: <BodyMindPainAreaPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_PART,
+    element: <BodyMindPainPartPage />,
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_DETAIL,
@@ -246,46 +253,51 @@ const careRoutes = [
   },
 ]
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: ROUTE_PATHS.HOME,
+      element: <AppLayout />,
+      children: [
+        {
+          index: true,
+          element: <HomePage />,
+        },
+        {
+          path: ROUTE_SEGMENTS.AUTH.ROOT,
+          element: (
+            <PublicOnlyRoute>
+              <AuthLayout />
+            </PublicOnlyRoute>
+          ),
+          children: authRoutes,
+        },
+        {
+          path: ROUTE_SEGMENTS.PATIENT.ROOT,
+          element: (
+            <ProtectedRoute allowedRole="patient">
+              <PatientCalibrationRoute>
+                <PatientLayout />
+              </PatientCalibrationRoute>
+            </ProtectedRoute>
+          ),
+          children: patientRoutes,
+        },
+        {
+          path: ROUTE_SEGMENTS.CARE.ROOT,
+          element: (
+            <ProtectedRoute allowedRole="guardian">
+              <CareLayout />
+            </ProtectedRoute>
+          ),
+          children: careRoutes,
+        },
+      ],
+    },
+  ],
   {
-    path: ROUTE_PATHS.HOME,
-    element: <AppLayout />,
-    children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: ROUTE_SEGMENTS.AUTH.ROOT,
-        element: (
-          <PublicOnlyRoute>
-            <AuthLayout />
-          </PublicOnlyRoute>
-        ),
-        children: authRoutes,
-      },
-      {
-        path: ROUTE_SEGMENTS.PATIENT.ROOT,
-        element: (
-          <ProtectedRoute allowedRole="patient">
-            <PatientCalibrationRoute>
-              <PatientLayout />
-            </PatientCalibrationRoute>
-          </ProtectedRoute>
-        ),
-        children: patientRoutes,
-      },
-      {
-        path: ROUTE_SEGMENTS.CARE.ROOT,
-        element: (
-          <ProtectedRoute allowedRole="guardian">
-            <CareLayout />
-          </ProtectedRoute>
-        ),
-        children: careRoutes,
-      },
-    ],
+    basename: routerBasename,
   },
-])
+)
 
 export default router
