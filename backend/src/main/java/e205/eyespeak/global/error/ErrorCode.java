@@ -179,7 +179,7 @@ public enum ErrorCode {
             "TTS 음성 파일을 찾을 수 없습니다"),
 
     TTS_FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "TTS-1105",
-            "파일 저장에 실패하였습니다");
+            "파일 저장에 실패하였습니다"),
 
     // ====== SETTING (환자 설정) ======
 
