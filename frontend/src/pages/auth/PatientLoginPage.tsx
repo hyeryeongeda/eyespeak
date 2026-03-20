@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
 import { requestPatientRecalibration } from '../../services/calibration/patientCalibrationService'
@@ -20,7 +19,6 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientLoginPage() {
-  const navigate = useNavigate()
   const { login, isPending } = useAuth()
   const [form, setForm] = useState({
     identifier: '',
@@ -49,7 +47,7 @@ export default function PatientLoginPage() {
     }
 
     requestPatientRecalibration(result.data)
-    navigate(ROUTE_PATHS.PATIENT_CALIBRATION, { replace: true })
+    window.location.replace(resolveAppPath(ROUTE_PATHS.PATIENT_CALIBRATION))
   }
 
   return (
@@ -98,15 +96,15 @@ export default function PatientLoginPage() {
         <p style={helperText}>로그인 후 환자 시선 캘리브레이션을 다시 진행합니다.</p>
 
         <div style={linkRow}>
-          <Link to={`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=patient`} style={textLink}>
+          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=patient`)} style={textLink}>
             비밀번호 재설정
-          </Link>
-          <Link to={ROUTE_PATHS.AUTH_SIGNUP_PATIENT} style={textLink}>
+          </a>
+          <a href={resolveAppPath(ROUTE_PATHS.AUTH_SIGNUP_PATIENT)} style={textLink}>
             환자 회원가입
-          </Link>
-          <Link to={`${ROUTE_PATHS.AUTH_ROLE}?mode=login`} style={textLink}>
+          </a>
+          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=login`)} style={textLink}>
             역할 다시 선택
-          </Link>
+          </a>
         </div>
       </div>
     </AuthPageFrame>

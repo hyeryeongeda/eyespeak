@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { usePatientSignup } from '../../features/auth/hooks/usePatientSignup'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
 import AuthBrand from './AuthBrand'
@@ -163,12 +162,12 @@ export default function PatientSignupPage() {
         {infoMessage ? <p style={successMessage}>{infoMessage}</p> : null}
 
         <div style={linkRow}>
-          <Link to={ROUTE_PATHS.AUTH_LOGIN_PATIENT} style={textLink}>
+          <a href={resolveAppPath(ROUTE_PATHS.AUTH_LOGIN_PATIENT)} style={textLink}>
             환자 로그인
-          </Link>
-          <Link to={`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`} style={textLink}>
+          </a>
+          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`)} style={textLink}>
             역할 다시 선택
-          </Link>
+          </a>
         </div>
       </div>
     </AuthPageFrame>

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { GUARDIAN_SIGNUP_ROUTINE_SLOTS } from '../../features/auth/guardianRoutineSurvey'
 import { useGuardianSignupFlow } from '../../features/auth/hooks/useGuardianSignupFlow'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
@@ -374,12 +373,12 @@ export default function CareSignupPage() {
         ) : null}
 
         <div style={linkRow}>
-          <Link to={ROUTE_PATHS.AUTH_LOGIN_CARE} style={textLink}>
+          <a href={resolveAppPath(ROUTE_PATHS.AUTH_LOGIN_CARE)} style={textLink}>
             보호자 로그인
-          </Link>
-          <Link to={`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`} style={textLink}>
+          </a>
+          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`)} style={textLink}>
             역할 다시 선택
-          </Link>
+          </a>
         </div>
       </div>
     </AuthPageFrame>
