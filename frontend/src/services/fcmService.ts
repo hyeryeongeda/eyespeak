@@ -82,10 +82,12 @@ export const initFcm = async (): Promise<void> => {
         type,
         title: data.title ?? '',
         body: data.body ?? '',
-        teamCode: data.teamCode,
+        // FCM data-only 메시지는 모든 값이 string → number 변환 필요
+        matchingId: data.matchingId ? Number(data.matchingId) : undefined,
         senderId: data.senderId,
         senderRole: data.senderRole,
         messageId: data.messageId,
+        callId: data.callId ? Number(data.callId) : undefined,
       });
     }
   });

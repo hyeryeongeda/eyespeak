@@ -6,10 +6,13 @@ export interface NotificationData {
   type: FcmType;
   title: string;
   body: string;
-  teamCode?: string;
+  /** ERD matching.id (bigint → number). FCM 에서는 string 으로 수신되므로 선택적 */
+  matchingId?: number;
   senderId?: string;
   senderRole?: string;
   messageId?: string;
+  /** CALL_CONFIRMED 시 call.id */
+  callId?: number;
 }
 
 interface NotificationState {
