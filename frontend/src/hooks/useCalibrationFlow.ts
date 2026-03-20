@@ -12,12 +12,14 @@ import type {
 
 interface UseCalibrationFlowOptions {
   enabled: boolean
+  patientId?: string | null
   previewStream: MediaStream | null
   videoRef: RefObject<HTMLVideoElement | null>
 }
 
 export function useCalibrationFlow({
   enabled,
+  patientId,
   previewStream,
   videoRef,
 }: UseCalibrationFlowOptions) {
@@ -79,7 +81,7 @@ export function useCalibrationFlow({
 
         setPhase('error')
         setTrackingStatus('idle')
-        setErrorMessage('얼굴 추적을 준비하지 못했습니다. 다시 시도해주세요.')
+        setErrorMessage('?쇨뎬 異붿쟻??以鍮꾪븯吏 紐삵뻽?듬땲?? ?ㅼ떆 ?쒕룄?댁＜?몄슂.')
       } finally {
         if (activeControllerRef.current === controller) {
           activeControllerRef.current = null
@@ -105,7 +107,7 @@ export function useCalibrationFlow({
 
     if (!videoRef.current) {
       setPhase('error')
-      setErrorMessage('카메라 프리뷰를 불러오지 못했습니다. 다시 시도해주세요.')
+      setErrorMessage('移대찓???꾨━酉곕? 遺덈윭?ㅼ? 紐삵뻽?듬땲?? ?ㅼ떆 ?쒕룄?댁＜?몄슂.')
       return false
     }
 
@@ -130,11 +132,23 @@ export function useCalibrationFlow({
         if (!result.success) {
           setTrackingStatus(result.trackingStatus ?? 'tracking-unstable')
           setPhase('ready')
-          setErrorMessage('얼굴을 화면 중앙에 맞춰주세요.')
+          setErrorMessage('?쇨뎬???붾㈃ 以묒븰??留욎떠二쇱꽭??')
           return false
         }
 
         setCompletedPointIds(prev => [...prev, point.id])
+      }
+
+      const completionResult = await serviceRef.current.completeCalibration({
+        patientId,
+        signal: controller.signal,
+      })
+
+      if (!completionResult.success) {
+        setTrackingStatus(completionResult.trackingStatus ?? 'tracking-unstable')
+        setPhase('ready')
+        setErrorMessage('Eye tracking calibration could not be saved. Please try again.')
+        return false
       }
 
       setTrackingStatus('ready')
@@ -147,7 +161,7 @@ export function useCalibrationFlow({
 
       setPhase('error')
       setTrackingStatus('idle')
-      setErrorMessage('캘리브레이션을 진행하지 못했습니다. 다시 시도해주세요.')
+      setErrorMessage('罹섎━釉뚮젅?댁뀡??吏꾪뻾?섏? 紐삵뻽?듬땲?? ?ㅼ떆 ?쒕룄?댁＜?몄슂.')
       return false
     } finally {
       if (activeControllerRef.current === controller) {
