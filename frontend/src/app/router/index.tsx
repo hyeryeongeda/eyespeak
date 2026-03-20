@@ -27,6 +27,7 @@ import BodyMindPage from '../../pages/patient/body-mind/BodyMindPage'
 import BodyMindSecretionPage from '../../pages/patient/body-mind/BodyMindSecretionPage'
 import BodyMindBreathingPage from '../../pages/patient/body-mind/BodyMindBreathingPage'
 import BodyMindPainAreaPage from '../../pages/patient/body-mind/BodyMindPainAreaPage'
+import BodyMindPainPartPage from '../../pages/patient/body-mind/BodyMindPainPartPage'
 import BodyMindPainDetailPage from '../../pages/patient/body-mind/BodyMindPainDetailPage'
 import BodyMindCategoryListPage from '../../pages/patient/body-mind/BodyMindCategoryListPage'
 import BodyMindCategoryDetailPage from '../../pages/patient/body-mind/BodyMindCategoryDetailPage'
@@ -133,6 +134,10 @@ const patientRoutes = [
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_AREA,
     element: <BodyMindPainAreaPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_PART,
+    element: <BodyMindPainPartPage />,
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_DETAIL,

@@ -6,6 +6,14 @@ server:
 spring:
   application:
     name: eyespeak
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+file:
+  upload:
+    base-dir: ${FILE_UPLOAD_BASE_DIR:./uploads}
 
   # 활성 프로필 설정 — 실행할 때 어떤 환경 설정을 쓸지 결정
   # VM 옵션이나 환경변수로 덮어쓸 수 있음
