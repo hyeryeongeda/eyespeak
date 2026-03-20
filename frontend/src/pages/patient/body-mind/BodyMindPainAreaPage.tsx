@@ -1,16 +1,21 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
-import {
-  getStoredPainAreaSelection,
-  storePainAreaSelection,
-} from '../../../services/bodyMindService'
-import type { BodyMindUiStatus, PainAreaKey, PainAreaRouteState } from '../../../features/patient/body-mind/types/bodyMind'
-import { getPainAreaOptionByKey, painAreaOptionPages } from './bodyMindMock'
-import BodyMindFixedGrid from './components/BodyMindFixedGrid'
+import type {
+  BodyMindUiStatus,
+  PainAreaGroupKey,
+  PainAreaRouteState,
+} from '../../../features/patient/body-mind/types/bodyMind'
+import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
+import { getPainAreaGroupByAreaKey, getPainAreaGroupByKey } from './bodyMindMock'
+import { getFullBodyModelUrl } from './bodyMindPainModels'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
+import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
+import BodyMindPainOverviewGrid from './components/BodyMindPainOverviewGrid'
+
+const PREVIEW_DELAY_MS = 220
 
 export default function BodyMindPainAreaPage() {
   const navigate = useNavigate()
@@ -18,43 +23,40 @@ export default function BodyMindPainAreaPage() {
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
   const routeState = location.state as PainAreaRouteState | null
+  const storedAreaKey = routeState?.selectedAreaKey ?? getStoredPainAreaSelection(patientId)
+  const storedGroupKey = getPainAreaGroupByAreaKey(storedAreaKey)?.key ?? null
+  const initialGroupKey = routeState?.selectedGroupKey ?? storedGroupKey ?? null
+  const navigationTimeoutRef = useRef<number | null>(null)
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
-  const [pageIndex, setPageIndex] = useState(0)
-  const [selectedAreaKey, setSelectedAreaKey] = useState<PainAreaKey | null>(
-    routeState?.selectedAreaKey ?? getStoredPainAreaSelection(patientId),
-  )
+  const [selectedGroupKey, setSelectedGroupKey] = useState<PainAreaGroupKey | null>(initialGroupKey)
 
-  const selectedArea = getPainAreaOptionByKey(selectedAreaKey)
-  const currentOptions = painAreaOptionPages[pageIndex] ?? []
-  const hasNextPage = pageIndex < painAreaOptionPages.length - 1
+  const selectedGroup = getPainAreaGroupByKey(selectedGroupKey)
+  const guideModelUrl = getFullBodyModelUrl()
 
-  const handleSelectArea = (areaKey: PainAreaKey) => {
-    setSelectedAreaKey(areaKey)
-    setStatus('area_selected')
-    storePainAreaSelection(patientId, areaKey)
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_DETAIL, {
-      state: { selectedAreaKey: areaKey },
-    })
+  const clearPendingNavigation = () => {
+    if (navigationTimeoutRef.current !== null) {
+      window.clearTimeout(navigationTimeoutRef.current)
+      navigationTimeoutRef.current = null
+    }
   }
 
-  const handleNext = () => {
-    if (!hasNextPage) {
-      return
-    }
+  useEffect(() => () => clearPendingNavigation(), [])
 
-    setStatus('transitioning')
-    setPageIndex(currentPage => currentPage + 1)
-    setStatus('visible')
+  const handleSelectGroup = (groupKey: PainAreaGroupKey) => {
+    clearPendingNavigation()
+    setSelectedGroupKey(groupKey)
+    setStatus('area_selected')
+
+    navigationTimeoutRef.current = window.setTimeout(() => {
+      setStatus('transitioning')
+      navigate(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_PART, {
+        state: { selectedGroupKey: groupKey },
+      })
+    }, PREVIEW_DELAY_MS)
   }
 
   const handleBack = () => {
-    if (pageIndex > 0) {
-      setStatus('transitioning')
-      setPageIndex(currentPage => currentPage - 1)
-      setStatus('visible')
-      return
-    }
-
+    clearPendingNavigation()
     setStatus('transitioning')
     navigate(ROUTE_PATHS.PATIENT_BODY_MIND)
   }
@@ -62,39 +64,60 @@ export default function BodyMindPainAreaPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-004"
-      title="아파"
-      description="통증이 있는 부위를 먼저 선택한 뒤 상세 표현으로 이동합니다."
+      title="통증 메인"
+      description="통증이 있는 큰 부위를 먼저 고른 뒤 세부 부위로 이동합니다."
       status={status}
-      contextLabel={selectedArea ? `현재 선택: ${selectedArea.label}` : undefined}
-      feedbackText={`부위를 선택하면 다음 단계에서 통증 상세를 고를 수 있습니다. · 페이지 ${
-        pageIndex + 1
-      } / ${painAreaOptionPages.length}`}
+      contextLabel={selectedGroup ? `현재 선택: ${selectedGroup.label}` : '대분류 선택'}
+      feedbackText="상체, 몸통, 하체 중 통증이 있는 범위를 먼저 선택하세요."
     >
-      <BodyMindFixedGrid
-        primaryCards={currentOptions.map(option => (
+      <BodyMindPainOverviewGrid
+        upperCard={
           <BodyMindOptionCard
-            key={option.key}
-            title={option.label}
-            description={option.description}
-            tone={option.tone}
-            selected={selectedAreaKey === option.key}
-            onSelect={() => handleSelectArea(option.key)}
-          />
-        ))}
-        topRightCard={
-          <BodyMindOptionCard
-            title="다음"
-            description={hasNextPage ? '다음 부위 보기' : '마지막 항목입니다'}
-            tone="mint"
-            disabled={!hasNextPage}
-            onSelect={handleNext}
+            title="상체"
+            description="머리 · 목 · 어깨 · 팔 · 손"
+            tone="sky"
+            badge="대분류"
+            selected={selectedGroupKey === 'upper_body'}
+            onSelect={() => handleSelectGroup('upper_body')}
           />
         }
-        bottomRightCard={
+        middleCard={
+          <BodyMindOptionCard
+            title="몸통"
+            description="가슴 · 배 · 허리 · 엉덩이"
+            tone="sky"
+            badge="대분류"
+            selected={selectedGroupKey === 'middle_body'}
+            onSelect={() => handleSelectGroup('middle_body')}
+          />
+        }
+        guideCard={
+          <BodyMindPainGuideCard
+            badge="전신 가이드"
+            modelUrl={guideModelUrl}
+            headerText={
+              selectedGroup
+                ? `${selectedGroup.label} 선택 후 세부 부위를 이어서 고릅니다.`
+                : '가운데 가이드에서 전체 신체를 확인한 뒤 대분류를 선택하세요.'
+            }
+          />
+        }
+        lowerCard={
+          <BodyMindOptionCard
+            title="하체"
+            description="허벅지 · 무릎 · 종아리 · 발"
+            tone="sky"
+            badge="대분류"
+            selected={selectedGroupKey === 'lower_body'}
+            onSelect={() => handleSelectGroup('lower_body')}
+          />
+        }
+        backCard={
           <BodyMindOptionCard
             title="뒤로가기"
-            description={pageIndex > 0 ? '이전 부위로' : '몸과마음 메인으로'}
+            description="몸과마음 메인으로"
             tone="slate"
+            badge="고정 위치"
             onSelect={handleBack}
           />
         }

@@ -9,6 +9,7 @@ import type {
   BodyMindMainKey,
   BreathingOptionKey,
   PainAreaGroup,
+  PainAreaGroupKey,
   PainAreaKey,
   PainDetailKey,
   SecretionOptionKey,
@@ -85,32 +86,32 @@ export const breathingOptions: BodyMindCardOption<BreathingOptionKey>[] = [
 export const painAreaGroups: PainAreaGroup[] = [
   {
     key: 'upper_body',
-    label: '머리 / 목 / 어깨 / 가슴',
+    label: '머리 / 목 / 어깨 / 팔·손',
     options: [
-      { key: 'head', label: '머리', tone: 'sky' },
-      { key: 'neck', label: '목', tone: 'sky' },
-      { key: 'shoulder', label: '어깨', tone: 'sand' },
-      { key: 'chest', label: '가슴', tone: 'rose' },
+      { key: 'head', label: '머리', description: '두통 · 머리가 아파요', tone: 'sky' },
+      { key: 'shoulder', label: '어깨', description: '어깨가 결려요', tone: 'sand' },
+      { key: 'arm_hand', label: '팔 · 손', description: '팔이나 손이 아파요', tone: 'mint' },
+      { key: 'neck', label: '목', description: '목이 뻐근해요', tone: 'sky' },
     ],
   },
   {
-    key: 'mid_body',
-    label: '배 / 팔 / 손 / 허리',
+    key: 'middle_body',
+    label: '가슴 / 배 / 허리·등 / 엉덩이',
     options: [
-      { key: 'stomach', label: '배', tone: 'sand' },
-      { key: 'arm', label: '팔', tone: 'mint' },
-      { key: 'hand', label: '손', tone: 'sky' },
-      { key: 'waist', label: '허리', tone: 'rose' },
+      { key: 'chest', label: '가슴', description: '가슴이 답답하거나 아파요', tone: 'rose' },
+      { key: 'stomach', label: '배', description: '배가 아프거나 불편해요', tone: 'sand' },
+      { key: 'back', label: '허리 · 등', description: '허리나 등이 아파요', tone: 'sky' },
+      { key: 'hip', label: '엉덩이', description: '엉덩이가 배기거나 아파요', tone: 'mint' },
     ],
   },
   {
     key: 'lower_body',
-    label: '다리 / 발 / 엉덩이 / 전신·잘 모르겠어',
+    label: '허벅지 / 무릎 / 종아리 / 발',
     options: [
-      { key: 'leg', label: '다리', tone: 'mint' },
-      { key: 'foot', label: '발', tone: 'sand' },
-      { key: 'hip', label: '엉덩이', tone: 'rose' },
-      { key: 'whole_body_or_unsure', label: '전신·잘 모르겠어', tone: 'slate' },
+      { key: 'thigh', label: '허벅지', description: '허벅지가 아파요', tone: 'mint' },
+      { key: 'knee', label: '무릎', description: '무릎이 아파요', tone: 'sand' },
+      { key: 'calf', label: '종아리', description: '종아리가 당기거나 아파요', tone: 'rose' },
+      { key: 'foot', label: '발', description: '발이 아파요', tone: 'sand' },
     ],
   },
 ]
@@ -209,6 +210,38 @@ export function getPainAreaOptionByKey(key: PainAreaKey | null | undefined) {
   }
 
   return painAreaOptionMap.get(key) ?? null
+}
+
+export function getPainAreaPageIndexByKey(key: PainAreaKey | null | undefined) {
+  if (!key) {
+    return 0
+  }
+
+  const matchedIndex = painAreaGroups.findIndex(group =>
+    group.options.some(option => option.key === key),
+  )
+
+  return matchedIndex >= 0 ? matchedIndex : 0
+}
+
+export function getPainAreaGroupByPageIndex(pageIndex: number) {
+  return painAreaGroups[pageIndex] ?? painAreaGroups[0]
+}
+
+export function getPainAreaGroupByKey(groupKey: PainAreaGroupKey | null | undefined) {
+  if (!groupKey) {
+    return null
+  }
+
+  return painAreaGroups.find(group => group.key === groupKey) ?? null
+}
+
+export function getPainAreaGroupByAreaKey(key: PainAreaKey | null | undefined) {
+  if (!key) {
+    return null
+  }
+
+  return painAreaGroups.find(group => group.options.some(option => option.key === key)) ?? null
 }
 
 export function getBodyMindCategoryOptionByKey(key: string | undefined) {

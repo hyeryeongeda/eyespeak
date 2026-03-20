@@ -12,7 +12,11 @@ import type {
   PainAreaRouteState,
   PainDetailKey,
 } from '../../../features/patient/body-mind/types/bodyMind'
-import { getPainAreaOptionByKey, painDetailOptionPages } from './bodyMindMock'
+import {
+  getPainAreaGroupByAreaKey,
+  getPainAreaOptionByKey,
+  painDetailOptionPages,
+} from './bodyMindMock'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
@@ -25,6 +29,8 @@ export default function BodyMindPainDetailPage() {
   const routeState = location.state as PainAreaRouteState | null
   const selectedAreaKey = (routeState?.selectedAreaKey ??
     getStoredPainAreaSelection(patientId)) as PainAreaKey | null
+  const selectedGroupKey =
+    routeState?.selectedGroupKey ?? getPainAreaGroupByAreaKey(selectedAreaKey)?.key ?? undefined
   const selectedArea = getPainAreaOptionByKey(selectedAreaKey)
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedKey, setSelectedKey] = useState<PainDetailKey | null>(null)
@@ -77,8 +83,8 @@ export default function BodyMindPainDetailPage() {
     }
 
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA, {
-      state: { selectedAreaKey },
+    navigate(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_PART, {
+      state: { selectedGroupKey, selectedAreaKey },
     })
   }
 
@@ -114,7 +120,7 @@ export default function BodyMindPainDetailPage() {
         bottomRightCard={
           <BodyMindOptionCard
             title="뒤로가기"
-            description={pageIndex > 0 ? '이전 항목으로' : '부위 선택으로 돌아가기'}
+            description={pageIndex > 0 ? '이전 항목으로' : '세부 부위로 돌아가기'}
             tone="slate"
             onSelect={handleBack}
           />
