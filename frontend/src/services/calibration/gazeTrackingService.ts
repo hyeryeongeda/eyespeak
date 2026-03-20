@@ -2,6 +2,8 @@ import {
   CALIBRATION_POINT_CAPTURE_DELAY_MS,
   DEFAULT_CALIBRATION_READINESS_STEPS,
 } from './calibrationConstants'
+import { isEyeTrackingApiEnabled } from '../eyeTrackingServiceConfig'
+import { createRealGazeTrackingService } from './realGazeTrackingService'
 import type {
   CalibrationCaptureResult,
   CalibrationPoint,
@@ -24,6 +26,10 @@ export interface GazeTrackingService {
     point: CalibrationPoint,
     options?: GazeCaptureOptions,
   ): Promise<CalibrationCaptureResult>
+  completeCalibration(options?: {
+    patientId?: string | null
+    signal?: AbortSignal
+  }): Promise<CalibrationCaptureResult>
   dispose(): void
 }
 
@@ -79,10 +85,18 @@ class MockGazeTrackingService implements GazeTrackingService {
     }
   }
 
+  async completeCalibration(): Promise<CalibrationCaptureResult> {
+    return {
+      success: true,
+    }
+  }
+
   dispose() {}
 }
 
-let gazeTrackingServiceFactory = () => new MockGazeTrackingService()
+let gazeTrackingServiceFactory = isEyeTrackingApiEnabled()
+  ? createRealGazeTrackingService
+  : () => new MockGazeTrackingService()
 
 export function createGazeTrackingService(): GazeTrackingService {
   return gazeTrackingServiceFactory()

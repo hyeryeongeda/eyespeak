@@ -19,4 +19,10 @@ export const API_ENDPOINTS = {
   TTS_TRAIN: '/api/v1/tts/train',
   TTS_SYNTHESIZE: '/api/v1/tts/synthesize',
   TTS_TEST: '/api/v1/tts/test',
+  EYE_TRACKING_GAZE: '/api/gaze',
+  EYE_TRACKING_CALIBRATE: '/api/calibrate',
+  EYE_TRACKING_CALIBRATE_RESET: '/api/calibrate/reset',
+  EYE_TRACKING_CALIBRATE_SAVE: '/api/calibrate/save',
+  EYE_TRACKING_CALIBRATE_LOAD: '/api/calibrate/load',
+  EYE_TRACKING_HEALTH: '/api/health',
 } as const

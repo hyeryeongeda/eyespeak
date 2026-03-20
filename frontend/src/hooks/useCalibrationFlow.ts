@@ -12,12 +12,14 @@ import type {
 
 interface UseCalibrationFlowOptions {
   enabled: boolean
+  patientId?: string | null
   previewStream: MediaStream | null
   videoRef: RefObject<HTMLVideoElement | null>
 }
 
 export function useCalibrationFlow({
   enabled,
+  patientId,
   previewStream,
   videoRef,
 }: UseCalibrationFlowOptions) {
@@ -135,6 +137,18 @@ export function useCalibrationFlow({
         }
 
         setCompletedPointIds(prev => [...prev, point.id])
+      }
+
+      const completionResult = await serviceRef.current.completeCalibration({
+        patientId,
+        signal: controller.signal,
+      })
+
+      if (!completionResult.success) {
+        setTrackingStatus(completionResult.trackingStatus ?? 'tracking-unstable')
+        setPhase('ready')
+        setErrorMessage('아이트래킹 캘리브레이션을 저장하지 못했습니다. 다시 시도해주세요.')
+        return false
       }
 
       setTrackingStatus('ready')
