@@ -22,6 +22,7 @@ import e205.eyespeak.domain.setting.entity.TtsSetting;
 import e205.eyespeak.domain.setting.repository.TtsSettingRepository;
 import e205.eyespeak.domain.user.entity.User;
 import e205.eyespeak.domain.user.repository.UserRepository;
+import e205.eyespeak.global.enums.MatchingStatus;
 import e205.eyespeak.global.enums.Role;
 import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
@@ -111,12 +112,14 @@ public class AuthService {
         Matching matching = matchingRepository.findByInviteCode(request.getTeamCode())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 이미 연결된 팀코드인지 확인
+        // 매칭 상태 검증: PENDING일 때만 환자 가입 허용
+        if (matching.getStatus() != MatchingStatus.PENDING) {
+            throw new BusinessException(ErrorCode.INVITE_CODE_ALREADY_USED);
+        }
+
+        // Patient 레코드 존재 확인 (보호자 설문으로 생성된 상태)
         if (matching.getPatient() == null) {
             throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
-        }
-        if (matching.getPatient().getUser() != null) {
-            throw new BusinessException(ErrorCode.PATIENT_ALREADY_EXISTS);
         }
 
         // 이메일 중복 검사

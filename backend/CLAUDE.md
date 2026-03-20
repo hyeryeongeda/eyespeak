@@ -10,7 +10,7 @@ Claude Code가 이 파일을 자동으로 읽어 프로젝트 맥락을 유지�
 - **설명**: 환자(시선 입력)와 보호자 간 의사소통 보조 앱
 - **백엔드**: Spring Boot / Java
 - **DB**: MySQL
-- **인증**: JWT (Access Token - Body, Refresh Token - HttpOnly 쿠키)
+- **인증**: JWT (Access Token - Body, Refresh Token - Body)
 
 ---
 
