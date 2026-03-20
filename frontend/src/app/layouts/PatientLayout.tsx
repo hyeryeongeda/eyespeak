@@ -7,12 +7,17 @@ import DevChatTriggerPanel from '../../components/patient/chat/DevChatTriggerPan
 import PatientTrackingGuardOverlay from '../../components/patient/PatientTrackingGuardOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../hooks/usePatientGlobalMenuActionListener'
+import usePatientGazeClick from '../../hooks/usePatientGazeClick'
 import usePatientModeDwellSync from '../../hooks/usePatientModeDwellSync'
 import usePatientRuntimeTracking from '../../hooks/usePatientRuntimeTracking'
 import usePatientTrackingBridge from '../../hooks/usePatientTrackingBridge'
 import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
 import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
-import { isPatientTrackingBlocked, usePatientModeStore } from '../../stores/patientModeStore'
+import {
+  isPatientTrackingAvailable,
+  isPatientTrackingBlocked,
+  usePatientModeStore,
+} from '../../stores/patientModeStore'
 import { ROUTE_PATHS } from '../router/routePaths'
 
 function PatientLayoutShell() {
@@ -20,6 +25,7 @@ function PatientLayoutShell() {
   const { user } = useAuth()
   const location = useLocation()
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
+  const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
@@ -33,6 +39,12 @@ function PatientLayoutShell() {
   })
   usePatientGlobalMenuActionListener({
     enabled: !isCalibrationRoute,
+  })
+  usePatientGazeClick({
+    enabled:
+      !isCalibrationRoute &&
+      !isGlobalMenuOpen &&
+      isPatientTrackingAvailable(trackingStatus),
   })
   usePatientModeDwellSync({
     enabled: !isCalibrationRoute,

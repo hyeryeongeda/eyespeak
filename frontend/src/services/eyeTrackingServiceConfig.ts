@@ -17,6 +17,11 @@ const EYE_TRACKING_API_BASE_URL =
   import.meta.env.VITE_EYE_TRACKING_API_BASE_URL?.trim() ||
   (import.meta.env.DEV ? '/eye-tracking-api' : '')
 
+const EYE_TRACKING_UI_URL =
+  import.meta.env.VITE_EYE_TRACKING_UI_URL?.trim() ||
+  import.meta.env.VITE_EYE_TRACKING_PROXY_TARGET?.trim() ||
+  ''
+
 const EYE_TRACKING_REQUEST_TIMEOUT_MS = getPositiveNumber(
   import.meta.env.VITE_EYE_TRACKING_REQUEST_TIMEOUT_MS,
   5000,
@@ -62,6 +67,10 @@ export function isEyeTrackingApiEnabled() {
 
 export function getEyeTrackingApiBaseUrl() {
   return EYE_TRACKING_API_BASE_URL
+}
+
+export function getEyeTrackingUiUrl() {
+  return EYE_TRACKING_UI_URL
 }
 
 export function getEyeTrackingRequestTimeoutMs() {
