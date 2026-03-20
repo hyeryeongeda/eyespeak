@@ -84,6 +84,24 @@ public enum ErrorCode {
             "호출 정보를 찾을 수 없습니다"),
     // → 호출 수락/거절 시 해당 호출이 없을 때
 
+    // ====== CHAT (채팅) ======
+
+    CHAT_INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "CHAT-551",
+            "유효하지 않은 메시지 타입입니다"),
+    // → contentType이 null이거나 지원하지 않는 타입
+
+    CHAT_TEXT_EMPTY(HttpStatus.BAD_REQUEST, "CHAT-552",
+            "텍스트 메시지 내용이 비어있습니다"),
+    // → contentType이 TEXT인데 text 필드가 null 또는 빈 문자열
+
+    CHAT_PHRASE_ID_REQUIRED(HttpStatus.BAD_REQUEST, "CHAT-553",
+            "문구 ID가 필요합니다"),
+    // → contentType이 PHRASE인데 phraseId가 null
+
+    CHAT_EXPRESSION_ID_REQUIRED(HttpStatus.BAD_REQUEST, "CHAT-554",
+            "표현 ID가 필요합니다"),
+    // → contentType이 EXPRESSION인데 expressionId가 null
+
     // ====== COMMUNICATION (의사소통) ======
     // 특화소통 카테고리, 표현, 불편부위
 
