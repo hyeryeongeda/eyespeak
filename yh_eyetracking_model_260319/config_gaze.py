@@ -1,6 +1,11 @@
 """
 아이트래킹 파이프라인 공통 설정 (3단계 입출력 규격).
 gaze_server 및 9그리드 UI와 동기화.
+
+.. deprecated::
+    신규 코드는 ``eye_speak.configs.loader.load_config()`` 및
+    ``eye_speak/configs/default.yaml`` 사용을 권장합니다.
+    이 모듈은 루트 ``pipeline.py`` 등 레거시 경로와의 호환을 위해 유지됩니다.
 """
 
 import os
@@ -53,3 +58,24 @@ CELL_STABILITY_COUNT = int(os.environ.get("CELL_STABILITY_COUNT", "3"))
 
 # L2CS-Net 퓨전 가중치 (fused=iris+head에 L2CS 추가 시: final = (1-L2CS_WEIGHT)*fused + L2CS_WEIGHT*l2cs)
 L2CS_WEIGHT = float(os.environ.get("L2CS_WEIGHT", "0.20"))
+
+# 캘리브레이션 12점 좌표
+CALIB_POINTS = 12
+CALIB_TARGET_RX = [
+    0.03, 0.20, 0.40, 0.60, 0.80, 0.97,   # 상단 6점
+    0.03, 0.20, 0.40, 0.60, 0.80, 0.97,   # 하단 6점
+]
+CALIB_TARGET_RY = [
+    0.03, 0.03, 0.03, 0.03, 0.03, 0.03,   # 상단
+    0.97, 0.97, 0.97, 0.97, 0.97, 0.97,   # 하단
+]
+
+# 트리거 설정 (ALS 환자용)
+BLINK_SELECT_MIN_SEC = float(os.environ.get("BLINK_SELECT_MIN_SEC", "0.3"))
+BLINK_SELECT_MAX_SEC = float(os.environ.get("BLINK_SELECT_MAX_SEC", "1.0"))
+DOUBLE_BLINK_WINDOW_SEC = float(os.environ.get("DOUBLE_BLINK_WINDOW_SEC", "2.0"))
+LONG_CLOSE_SEC = float(os.environ.get("LONG_CLOSE_SEC", "3.0"))
+TRIPLE_BLINK_WINDOW_SEC = float(os.environ.get("TRIPLE_BLINK_WINDOW_SEC", "3.0"))
+
+# 캘리브레이션 데이터 저장 경로
+CALIB_SAVE_DIR = os.environ.get("CALIB_SAVE_DIR", "calibration_data")

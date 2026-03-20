@@ -1,14 +1,27 @@
 """
 파이프라인: 프레임(BGR) → MediaPipe → 홍채 비율 → 셀
-6포인트 캘리브레이션: 각 셀 극단 위치에서 홍채 비율 측정 → 경계 기반 매핑
+6~12포인트 캘리브레이션: 각 셀 극단 위치에서 홍채 비율 측정 → 경계 기반 매핑
 L2CS-Net 선택적 3번째 시선 시그널 (use_l2cs=True 시 퓨전).
+
+호환 / 마이그레이션
+-------------------
+신규 코드·웹 서버는 ``eye_speak`` 패키지 사용을 권장합니다.
+
+- 핵심 구현: ``eye_speak.pipeline.hybrid_tracker.HybridTracker``
+- Flask/레거시 API 동일 클래스: ``eye_speak.pipeline.legacy_gaze_pipeline.GazePipeline``
+- 한 번에 임포트: ``from eye_speak.pipeline.compat import HybridTracker, GazePipeline``
+
+이 파일(루트 ``pipeline.py``)의 ``GazePipeline`` 클래스는 기존 스크립트 하위 호환용으로
+유지합니다. 기능 동기화는 ``legacy_gaze_pipeline.GazePipeline`` 기준으로 진행합니다.
 """
 
 import collections
+import json
 import os
 import cv2
 import numpy as np
 import time, math
+from pathlib import Path
 
 from mediapipe_detector import MediaPipeDetector
 from iris_gaze import compute_iris_position
@@ -19,13 +32,18 @@ from config_gaze import (
     GRID_YAW_RANGE,
     GRID_PITCH_RANGE,
     L2CS_WEIGHT,
+    CALIB_TARGET_RX,
+    CALIB_TARGET_RY,
+    CALIB_SAVE_DIR,
 )
+from Ai_eyetracking.trigger_detector import TriggerDetector
 from preprocess import preprocess_frame
 from iris_gaze_refine import CalibrationRefiner
 
-# 셀 중심 target (비율 0~1), record_selection / set_calibration 공용
-CELL_TARGET_RX = [1/6, 0.5, 5/6, 1/6, 0.5, 5/6]
-CELL_TARGET_RY = [0.25, 0.25, 0.25, 0.75, 0.75, 0.75]
+# 캘리브레이션용 → config에서 import한 CALIB_TARGET_RX, CALIB_TARGET_RY 사용
+# 온라인 학습(record_selection)용 6셀 중심 좌표는 별도 유지
+CELL_CENTER_RX = [1/6, 0.5, 5/6, 1/6, 0.5, 5/6]
+CELL_CENTER_RY = [0.25, 0.25, 0.25, 0.75, 0.75, 0.75]
 DRIFT_THRESHOLD = 0.05
 ONLINE_FIT_AFTER_SAMPLES = 10
 
@@ -70,12 +88,13 @@ class GazePipeline:
         self._cell_buf = collections.deque(maxlen=5)
         self._stable_cell = None
 
-        # 6포인트 캘리: 2차 다항식 회귀 (rx,ry) → (target_x, target_y)
+        # 6~12포인트 캘리: 2차 다항식 회귀 (rx,ry) → (target_x, target_y)
         self.calibration = None
         self._poly_coeff_x = None
         self._poly_coeff_y = None
         self._cal_refiner = CalibrationRefiner()
         self._blink_threshold = 0.18
+        self._trigger = TriggerDetector(blink_threshold=self._blink_threshold)
         self._ear_samples = collections.deque(maxlen=120)
         self._last_raw_rx = None
         self._last_raw_ry = None
@@ -139,7 +158,7 @@ class GazePipeline:
 
     def run(self, frame_bgr):
         fail = {"cell": None, "rx": None, "ry": None, "raw_rx": None, "raw_ry": None,
-                "ear": 0.0, "face": False, "blink": False, "screen_x": 0.5, "screen_y": 0.5}
+                "ear": 0.0, "face": False, "blink": False, "trigger": "none", "screen_x": 0.5, "screen_y": 0.5}
         if frame_bgr is None or frame_bgr.size == 0:
             return fail
 
@@ -156,10 +175,11 @@ class GazePipeline:
 
         landmarks = det["landmarks"]
         rx, ry, ear, is_blinking = compute_iris_position(landmarks, blink_threshold=self._blink_threshold)
+        trigger = self._trigger.update(ear, time.time())
         self._ear_samples.append(ear)
 
         if rx is None:
-            return {**fail, "face": True, "ear": round(ear, 3), "blink": is_blinking}
+            return {**fail, "face": True, "ear": round(ear, 3), "blink": is_blinking, "trigger": trigger}
 
         # 헤드포즈 + 홍채 비율 퓨전 (헤드포즈 실패 시 홍채 비율만 사용)
         head_yaw, head_pitch = head_pose_from_landmarks(landmarks, w, h)
@@ -242,23 +262,25 @@ class GazePipeline:
             "ear": round(ear, 3),
             "face": True,
             "blink": False,
+            "trigger": trigger,
             "screen_x": round(screen_x, 4),
             "screen_y": round(screen_y, 4),
         }
 
     def set_calibration(self, points):
         """
-        6포인트 캘리: points = [{rx, ry}, ...] 6개
+        6~12포인트 캘리: points = [{rx, ry}, ...] 6~12개
         순서: 좌상(0), 중상(1), 우상(2), 좌하(3), 중하(4), 우하(5)
         캘리 중 수집된 EAR 평균의 60%를 깜빡임 임계값으로 설정 (ptosis 대응).
         """
         if self._ear_samples:
             mean_ear = sum(self._ear_samples) / len(self._ear_samples)
             self._blink_threshold = max(0.10, mean_ear * 0.6)
+            self._trigger.set_threshold(self._blink_threshold)
             self._ear_samples.clear()
-        n_pts = min(6, len(points))
-        CELL_TARGET_RX_arr = np.array(CELL_TARGET_RX[:6], dtype=np.float64)
-        CELL_TARGET_RY_arr = np.array(CELL_TARGET_RY[:6], dtype=np.float64)
+        n_pts = min(len(CALIB_TARGET_RX), len(points))
+        CELL_TARGET_RX_arr = np.array(CALIB_TARGET_RX[:n_pts], dtype=np.float64)
+        CELL_TARGET_RY_arr = np.array(CALIB_TARGET_RY[:n_pts], dtype=np.float64)
         A = np.zeros((n_pts, 6), dtype=np.float64)
         for i in range(n_pts):
             rx = points[i].get('rx', 0.5)
@@ -273,7 +295,7 @@ class GazePipeline:
         for i in range(n_pts):
             raw_rx = points[i].get('rx', 0.5)
             raw_ry = points[i].get('ry', 0.5)
-            self._cal_refiner.add_sample(raw_rx, raw_ry, float(CELL_TARGET_RX[i]), float(CELL_TARGET_RY[i]))
+            self._cal_refiner.add_sample(raw_rx, raw_ry, float(CALIB_TARGET_RX[i]), float(CALIB_TARGET_RY[i]))
         self._cal_refiner.fit()
 
         self.calibration = True
@@ -293,8 +315,8 @@ class GazePipeline:
             return
         if self._last_screen_x is None or self._last_screen_y is None:
             return
-        target_rx = CELL_TARGET_RX[cell_index]
-        target_ry = CELL_TARGET_RY[cell_index]
+        target_rx = CELL_CENTER_RX[cell_index]
+        target_ry = CELL_CENTER_RY[cell_index]
         self._cal_refiner.add_sample(self._last_screen_x, self._last_screen_y, target_rx, target_ry)
         if self._cal_refiner.sample_count >= ONLINE_FIT_AFTER_SAMPLES:
             self._cal_refiner.fit()
@@ -310,6 +332,7 @@ class GazePipeline:
         self._poly_coeff_y = None
         self._cal_refiner.clear()
         self._blink_threshold = 0.18
+        self._trigger.reset()
         self._ear_samples.clear()
         self._last_raw_rx = None
         self._last_raw_ry = None
@@ -320,3 +343,81 @@ class GazePipeline:
         self._drift_baseline_y = None
         self._drift_offset_x = 0.0
         self._drift_offset_y = 0.0
+
+    def save_calibration(self, user_id: str) -> bool:
+        """캘리브레이션 상태를 JSON 파일로 저장.
+
+        Args:
+            user_id: 사용자 식별자 (파일명에 사용).
+
+        Returns:
+            저장 성공 여부.
+        """
+        if not self.calibration or self._poly_coeff_x is None:
+            return False
+        if not user_id or "/" in user_id or "\\" in user_id or ".." in user_id:
+            return False
+        import logging
+        log = logging.getLogger(__name__)
+        save_dir = Path(CALIB_SAVE_DIR)
+        save_dir.mkdir(parents=True, exist_ok=True)
+        data = {
+            "user_id": user_id,
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "blink_threshold": self._blink_threshold,
+            "poly_coeff_x": self._poly_coeff_x.tolist(),
+            "poly_coeff_y": self._poly_coeff_y.tolist(),
+            "cal_refiner_raw": self._cal_refiner._raw,
+            "cal_refiner_target": self._cal_refiner._target,
+        }
+        filepath = save_dir / f"{user_id}.json"
+        try:
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            log.info("캘리 저장: %s", filepath)
+            return True
+        except Exception as e:
+            log.error("캘리 저장 실패: %s", e)
+            return False
+
+    def load_calibration(self, user_id: str) -> bool:
+        """JSON 파일에서 캘리브레이션 상태 복원.
+
+        Args:
+            user_id: 사용자 식별자.
+
+        Returns:
+            로드 성공 여부.
+        """
+        if not user_id or "/" in user_id or "\\" in user_id or ".." in user_id:
+            return False
+        import logging
+        log = logging.getLogger(__name__)
+        filepath = Path(CALIB_SAVE_DIR) / f"{user_id}.json"
+        if not filepath.is_file():
+            log.warning("캘리 파일 없음: %s", filepath)
+            return False
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            self._poly_coeff_x = np.array(data["poly_coeff_x"], dtype=np.float64)
+            self._poly_coeff_y = np.array(data["poly_coeff_y"], dtype=np.float64)
+            self._blink_threshold = float(data.get("blink_threshold", 0.18))
+            self._trigger.set_threshold(self._blink_threshold)
+            self._cal_refiner.clear()
+            for raw, tgt in zip(data.get("cal_refiner_raw", []),
+                                data.get("cal_refiner_target", [])):
+                self._cal_refiner.add_sample(raw[0], raw[1], tgt[0], tgt[1])
+            if self._cal_refiner.sample_count >= 3:
+                self._cal_refiner.fit()
+            self.calibration = True
+            self._cell_buf.clear()
+            self._stable_cell = None
+            self._fx.reset()
+            self._fy.reset()
+            self._last_t = None
+            log.info("캘리 로드: %s", filepath)
+            return True
+        except Exception as e:
+            log.error("캘리 로드 실패: %s", e)
+            return False

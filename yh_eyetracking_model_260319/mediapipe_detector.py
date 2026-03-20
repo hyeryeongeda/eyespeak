@@ -1,6 +1,6 @@
 """
 MediaPipe Face Mesh 기반 얼굴·눈 검출.
-반환 형식: eye_detector.EyeDetector와 동일 { left, right, face_roi } + landmarks(헤드포즈용).
+반환 형식: (아카이브) archive/eye_detector.EyeDetector와 동일 { left, right, face_roi } + landmarks(헤드포즈용).
 MediaPipe 0.9: mp.solutions.face_mesh 사용.
 MediaPipe 0.10+: mp.solutions 없음 → tasks.vision.FaceLandmarker + face_landmarker.task 모델 사용.
 """

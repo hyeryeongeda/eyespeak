@@ -1,7 +1,7 @@
 """
 시선 추적 서버 (단순화).
 POST /api/gaze           → 프레임 → 셀 + 비율
-POST /api/calibrate      → 6포인트 캘리브레이션
+POST /api/calibrate      → 6~12포인트 캘리브레이션
 POST /api/calibrate/reset → 캘리 초기화
 GET  /api/health         → 상태
 """
@@ -17,13 +17,13 @@ from flask import Flask, request, jsonify, send_from_directory
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("gaze")
 
-from pipeline import GazePipeline
+from eye_speak.pipeline.legacy_gaze_pipeline import GazePipeline
 
 app = Flask(__name__, static_folder=None)
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "시선_예시"
 
-pipe = GazePipeline(use_l2cs=True)
+pipe = GazePipeline()
 
 
 def _decode_frame():
@@ -49,10 +49,10 @@ def api_gaze():
 def api_calibrate():
     data = request.get_json(silent=True) or {}
     cal = data.get("calibration")
-    if not cal or not isinstance(cal, list) or len(cal) != 6:
-        return jsonify({"ok": False, "error": "need 6 calibration points"}), 400
+    if not cal or not isinstance(cal, list) or len(cal) < 6 or len(cal) > 12:
+        return jsonify({"ok": False, "error": "need 6-12 calibration points"}), 400
     pipe.set_calibration(cal)
-    log.info("6포인트 캘리 적용: %s", cal)
+    log.info("%d포인트 캘리 적용: %s", len(cal), cal)
     return jsonify({"ok": True})
 
 
@@ -60,6 +60,32 @@ def api_calibrate():
 def api_calibrate_reset():
     pipe.reset_filters()
     return jsonify({"ok": True})
+
+
+@app.route("/api/calibrate/save", methods=["POST"])
+def api_calibrate_save():
+    """캘리브레이션 상태를 user_id별 JSON으로 저장."""
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("user_id")
+    if not user_id or not isinstance(user_id, str):
+        return jsonify({"ok": False, "error": "need user_id"}), 400
+    ok = pipe.save_calibration(user_id)
+    if ok:
+        log.info("캘리 저장 완료: %s", user_id)
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/calibrate/load", methods=["POST"])
+def api_calibrate_load():
+    """user_id별 JSON에서 캘리브레이션 상태 복원."""
+    data = request.get_json(silent=True) or {}
+    user_id = data.get("user_id")
+    if not user_id or not isinstance(user_id, str):
+        return jsonify({"ok": False, "error": "need user_id"}), 400
+    ok = pipe.load_calibration(user_id)
+    if ok:
+        log.info("캘리 로드 완료: %s", user_id)
+    return jsonify({"ok": ok, "calibrated": pipe.calibration is not None})
 
 
 @app.route("/api/selection", methods=["POST"])

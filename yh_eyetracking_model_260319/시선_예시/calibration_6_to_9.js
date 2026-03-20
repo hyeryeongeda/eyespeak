@@ -2,12 +2,13 @@
  * calibration_6_to_9.js
  * =====================
  * 6~9분할 화면을 위한 캘리브레이션 포인트 생성, 스크린 좌표 예측, 영역 인덱스 매핑.
- * - 캘리 포인트: 6분할 9점(3×3), 9분할 9점 또는 25점(5×5) 선택 가능
+ * - 캘리 포인트: 9점(3×3), 12점(3×3+보강3점), 25점(5×5) 선택 가능
  * - 매핑: 2차 다항식 (9점) 또는 RBF (25점 권장)는 호출측에서 구현 후 predictScreen만 사용 가능
  * - 영역: 그리드 경계 또는 최근접 중심(Voronoi) + 선택적 inertia
  *
  * 사용 예:
  *   const pts = CalibrationRegion.getCalibPoints(9, { cols: 3, rows: 3 });  // 9점
+ *   const pts12 = CalibrationRegion.getCalibPoints(12);                     // 12점 (셀2,5 보강)
  *   const pts25 = CalibrationRegion.getCalibPoints(25);                     // 25점
  *   const idx = CalibrationRegion.getRegionIndex(sx, sy, { cols: 3, rows: 3 }, 'nearest');
  */
@@ -21,17 +22,26 @@ const CalibrationRegion = (function () {
 
   /**
    * 그리드 포인트 생성. 각 점은 (xRatio, yRatio) in [0,1]^2
-   * @param {number} nPoints - 9 (3×3) 또는 25 (5×5)
+   * @param {number} nPoints - 9 (3×3), 12 (3×3+보강3), 또는 25 (5×5)
    * @returns {{ x: number, y: number }[]} 화면 비율 좌표 배열
    */
   function getCalibPoints(nPoints) {
     if (nPoints === 9) {
-      const xy = [0.15, 0.5, 0.85];
+      const xs = [0.03, 0.50, 0.97];
+      const ys = [0.03, 0.50, 0.97];
       const out = [];
       for (let row = 0; row < 3; row++)
         for (let col = 0; col < 3; col++)
-          out.push({ x: xy[col], y: xy[row] });
+          out.push({ x: xs[col], y: ys[row] });
       return out;
+    }
+    if (nPoints === 12) {
+      return [
+        { x: 0.03, y: 0.03 }, { x: 0.20, y: 0.03 }, { x: 0.40, y: 0.03 },
+        { x: 0.60, y: 0.03 }, { x: 0.80, y: 0.03 }, { x: 0.97, y: 0.03 },
+        { x: 0.03, y: 0.97 }, { x: 0.20, y: 0.97 }, { x: 0.40, y: 0.97 },
+        { x: 0.60, y: 0.97 }, { x: 0.80, y: 0.97 }, { x: 0.97, y: 0.97 },
+      ];
     }
     if (nPoints === 25) {
       const xy = [0.1, 0.3, 0.5, 0.7, 0.9];
@@ -41,7 +51,7 @@ const CalibrationRegion = (function () {
           out.push({ x: xy[col], y: xy[row] });
       return out;
     }
-    throw new Error('getCalibPoints: nPoints must be 9 or 25');
+    throw new Error('getCalibPoints: nPoints must be 9, 12, or 25');
   }
 
   /**

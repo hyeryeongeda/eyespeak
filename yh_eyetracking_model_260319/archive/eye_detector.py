@@ -1,5 +1,7 @@
 """
-눈 영역 검출. OpenCV Haar cascade 기반.
+[ARCHIVED] 눈 영역 검출 — OpenCV Haar cascade 기반.
+
+현재 파이프라인은 MediaPipe 기반 검출을 사용합니다. 참고용으로만 보관합니다.
 파이프라인: 프레임 → detect() → 왼쪽/오른쪽 눈 크롭 RGB.
 """
 

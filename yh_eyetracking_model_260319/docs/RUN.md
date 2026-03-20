@@ -36,8 +36,10 @@ python app_gaze_web.py
 | `/` | GET | 9칸 그리드 데모 HTML |
 | `/api/health` | GET | 서버 상태 |
 | `/api/gaze` | POST | 프레임 이미지 → 시선 셀·비율 |
-| `/api/calibrate` | POST | 6포인트 캘리브레이션 |
+| `/api/calibrate` | POST | 6~12포인트 캘리브레이션 |
 | `/api/calibrate/reset` | POST | 캘리 초기화 |
+| `/api/calibrate/save` | POST | 캘리브레이션 저장 (user_id 필요) |
+| `/api/calibrate/load` | POST | 캘리브레이션 불러오기 (user_id 필요) |
 | `/api/selection` | POST | dwell time 선택 확정 (온라인 학습용) |
 
 ## 종료
