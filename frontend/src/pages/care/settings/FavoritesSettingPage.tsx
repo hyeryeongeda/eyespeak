@@ -133,7 +133,7 @@ export default function FavoritesSettingPage() {
                         {favCount}
                       </span>
                     )}
-                    <span className="text-[16px] text-[#718096]">{isOpen ? '▲' : '▼'}</span>
+                    <span className="text-[16px] text-[#718096]">{isOpen ? '−' : '+'}</span>
                   </div>
                 </button>
 

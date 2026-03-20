@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
   AUTH_RESET_PASSWORD: '/auth/reset-password',
   AUTH_REFRESH: '/auth/refresh',
   AUTH_WITHDRAW: '/auth/withdraw',
+  FAVORITES: '/favorites',
   RECOMMENDATION_CATEGORIES: '/recommendations/categories',
   RECOMMENDATION_SENTENCES: '/recommendations/sentences',
   RECOMMENDATION_COMPOSE: '/recommendations/compose',

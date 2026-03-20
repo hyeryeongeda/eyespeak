@@ -238,6 +238,14 @@ export const apiClient = {
       ...options,
     })
   },
+  put<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
+    return requestWithGuardianRefreshRetry<TResponse, TBody>({
+      method: 'PUT',
+      url,
+      data,
+      ...options,
+    })
+  },
   delete<TResponse, TBody = unknown>(
     url: string,
     data?: TBody,
