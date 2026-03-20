@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "FCM 토큰", description = "FCM 디바이스 토큰 등록/삭제 API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/fcm/token")
+@RequestMapping("/fcm/token")
 public class FcmTokenController {
 
     private final FcmTokenService fcmTokenService;

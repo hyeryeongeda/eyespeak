@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "채팅", description = "채팅 메시지 조회 API. 기본 20개씩 조회하며, 20개 미만일 경우 남은 메시지만 반환됩니다.")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/chat")
+@RequestMapping("/chat")
 public class ChatRestController {
 
     private final ChatService chatService;

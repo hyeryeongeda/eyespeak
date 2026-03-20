@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "호출", description = "환자→보호자 호출/SOS API")
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/calls")
+@RequestMapping("/calls")
 public class CallController {
 
     private final CallService callService;
