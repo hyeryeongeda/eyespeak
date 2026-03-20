@@ -8,6 +8,7 @@ import {
   getRemainingPatientCallCooldownMs,
   requestMockPatientCall,
 } from '../../../services/patientCallService'
+import { requestPatientRecalibration } from '../../../services/calibration/patientCalibrationService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import { useTracking } from '../../../hooks/useTracking'
 import { useDwell, type DwellPhase } from '../../../hooks/useDwell'
@@ -212,6 +213,19 @@ const logoutButtonStyle: CSSProperties = {
   backdropFilter: 'blur(8px)',
 }
 
+const topBarActionRowStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  flexWrap: 'wrap',
+}
+
+const recalibrationButtonStyle: CSSProperties = {
+  ...logoutButtonStyle,
+  border: '1px solid rgba(111, 147, 199, 0.28)',
+  color: '#44648a',
+}
+
 const featureGridStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
@@ -392,6 +406,11 @@ export default function PatientMainPage() {
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
 
+  const handleRecalibration = () => {
+    requestPatientRecalibration(user)
+    navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
+  }
+
   function closeCallOverlay() {
     setCallStatus('idle')
     setCooldownSeconds(0)
@@ -523,9 +542,14 @@ export default function PatientMainPage() {
               <p style={userTextStyle}>{user?.name ? `${user.name} 님` : '환자 메인'}</p>
               <p style={trackingTextStyle}>{trackingStatusText}</p>
             </div>
-            <button type="button" onClick={handleLogout} style={logoutButtonStyle}>
-              로그아웃
-            </button>
+            <div style={topBarActionRowStyle}>
+              <button type="button" onClick={handleRecalibration} style={recalibrationButtonStyle}>
+                재캘리브레이션
+              </button>
+              <button type="button" onClick={handleLogout} style={logoutButtonStyle}>
+                로그아웃
+              </button>
+            </div>
           </div>
 
           <div ref={gridRef} className="patient-main-grid" style={featureGridStyle}>

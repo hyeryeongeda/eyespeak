@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
+import { getPatientCalibrationStatusSnapshot } from '../../services/calibration/patientCalibrationService'
 import type { UserRole } from '../../types/auth'
-import { getAuthPathByRole, getHomePathByRole } from './routePaths'
+import { getAuthPathByRole, getHomePathByRole, ROUTE_PATHS } from './routePaths'
 
 interface ProtectedRouteProps {
   allowedRole: UserRole
@@ -10,6 +11,10 @@ interface ProtectedRouteProps {
 }
 
 interface PublicOnlyRouteProps {
+  children?: ReactNode
+}
+
+interface PatientCalibrationRouteProps {
   children?: ReactNode
 }
 
@@ -39,6 +44,24 @@ export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
 
   if (isAuthenticated && user) {
     return <Navigate to={getHomePathByRole(user.role)} replace />
+  }
+
+  return children ? <>{children}</> : <Outlet />
+}
+
+export function PatientCalibrationRoute({ children }: PatientCalibrationRouteProps) {
+  const { user } = useAuth()
+  const location = useLocation()
+  const calibrationStatus = getPatientCalibrationStatusSnapshot(user)
+  const calibrationRequired = calibrationStatus?.required ?? true
+  const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
+
+  if (calibrationRequired && !isCalibrationRoute) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_CALIBRATION} replace />
+  }
+
+  if (!calibrationRequired && isCalibrationRoute) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_MAIN} replace />
   }
 
   return children ? <>{children}</> : <Outlet />
