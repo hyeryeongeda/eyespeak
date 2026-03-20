@@ -3053,9 +3053,9 @@ INSERT INTO general_corpus (content, sentiment, weight, created_at) VALUES
 
 -- 2. 테스트용 USER / PATIENT / GUARDIAN / MATCHING
 -- (이미 있으면 SKIP)
-INSERT IGNORE INTO `user` (id, login_id, password, name, role, is_agree, created_at, updated_at)
+INSERT IGNORE INTO users (id, login_id, password, name, role, is_agree, created_at, updated_at)
 VALUES (1, 'patient001@test.com', '$2a$10$dummyhash', '김영수', 'PATIENT', true, NOW(), NOW());
-INSERT IGNORE INTO `user` (id, login_id, password, name, role, is_agree, created_at, updated_at)
+INSERT IGNORE INTO users (id, login_id, password, name, role, is_agree, created_at, updated_at)
 VALUES (2, 'guardian001@test.com', '$2a$10$dummyhash', '김미영', 'GUARDIAN', true, NOW(), NOW());
 
 INSERT IGNORE INTO patient (id, user_id, name, birth_year, gender, created_at, updated_at)
