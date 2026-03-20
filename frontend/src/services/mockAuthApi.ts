@@ -29,6 +29,7 @@ const DEMO_GUARDIAN_EMAIL = 'care123@eyespeak.mock'
 const DEMO_PATIENT_EMAIL = 'pat123@eyespeak.mock'
 const DEMO_PASSWORD = 'e205e205@'
 const DEMO_TEAM_CODE = 'TEAM123'
+const DEMO_MATCHING_ID = 1
 
 interface MockGuardianAccountRecord {
   userId: string
@@ -43,6 +44,7 @@ interface MockGuardianAccountRecord {
 interface MockPatientProfileRecord {
   patientId: string
   guardianUserId: string
+  matchingId: number
   name: string
   birthYear: number
   gender: 'M' | 'F'
@@ -95,6 +97,17 @@ function migrateDatabase(database: MockAuthDatabase) {
     }
   })
 
+  let nextMatchingId = 1
+
+  database.patientProfiles.forEach(patientProfile => {
+    if (!Number.isInteger(patientProfile.matchingId) || patientProfile.matchingId <= 0) {
+      patientProfile.matchingId = nextMatchingId
+      didMutate = true
+    }
+
+    nextMatchingId = Math.max(nextMatchingId, patientProfile.matchingId + 1)
+  })
+
   return didMutate
 }
 
@@ -114,6 +127,31 @@ function delay(ms = MOCK_NETWORK_DELAY_MS) {
   return new Promise<void>(resolve => {
     window.setTimeout(resolve, ms)
   })
+}
+
+function createMockNumericUserId(value: string) {
+  return Array.from(value).reduce((result, char) => {
+    return (result * 31 + char.charCodeAt(0)) % 2147483647
+  }, 17)
+}
+
+function createNextMatchingId(database: MockAuthDatabase) {
+  return (
+    database.patientProfiles.reduce((maxId, patientProfile) => {
+      return Math.max(maxId, patientProfile.matchingId)
+    }, 0) + 1
+  )
+}
+
+function findPatientProfileByGuardianUserId(
+  database: MockAuthDatabase,
+  guardianUserId: string,
+) {
+  return database.patientProfiles.find(profile => profile.guardianUserId === guardianUserId) ?? null
+}
+
+function findPatientProfileByPatientId(database: MockAuthDatabase, patientId: string) {
+  return database.patientProfiles.find(profile => profile.patientId === patientId) ?? null
 }
 
 function createSeedDatabase(): MockAuthDatabase {
@@ -136,6 +174,7 @@ function createSeedDatabase(): MockAuthDatabase {
       {
         patientId,
         guardianUserId,
+        matchingId: DEMO_MATCHING_ID,
         name: '환자 데모',
         birthYear: 1992,
         gender: 'M',
@@ -231,12 +270,16 @@ function createAuthResponse(params: {
   name: string
   email?: string
   teamCode?: string | null
+  userId?: number | null
+  matchingId?: number | null
 }): AuthResponseDto {
   return {
     accessToken: `mock-access:${params.role}:${params.id}:${Date.now()}`,
     refreshToken: `mock-refresh:${params.role}:${params.id}`,
     user: {
       id: params.id,
+      userId: params.userId ?? createMockNumericUserId(params.id),
+      matchingId: params.matchingId ?? null,
       role: params.role,
       name: params.name,
       email: params.email,
@@ -331,12 +374,18 @@ function handleLogin(request: LoginRequestDto) {
       })
     }
 
+    const patientProfile =
+      guardianAccount.patientId != null
+        ? findPatientProfileByPatientId(database, guardianAccount.patientId)
+        : null
+
     return createAuthResponse({
       id: guardianAccount.userId,
       role: 'guardian',
       name: guardianAccount.name,
       email: guardianAccount.email,
       teamCode: guardianAccount.teamCode,
+      matchingId: patientProfile?.matchingId ?? null,
     })
   }
 
@@ -352,12 +401,15 @@ function handleLogin(request: LoginRequestDto) {
     })
   }
 
+  const patientProfile = findPatientProfileByPatientId(database, patientAccount.patientId)
+
   return createAuthResponse({
     id: patientAccount.userId,
     role: 'patient',
     name: patientAccount.name,
     email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
+    matchingId: patientProfile?.matchingId ?? null,
   })
 }
 
@@ -500,6 +552,7 @@ function handleGuardianSignup(request: GuardianSignupRequestDto) {
     role: 'guardian',
     name: guardianRecord.name,
     email: guardianRecord.email,
+    matchingId: null,
   })
 }
 
@@ -551,6 +604,7 @@ function handleRegisterPatientInfo(
   const patientProfile: MockPatientProfileRecord = {
     patientId,
     guardianUserId,
+    matchingId: createNextMatchingId(database),
     name: request.name.trim(),
     birthYear: request.birthYear,
     gender: request.gender,
@@ -713,6 +767,7 @@ function handlePatientSignup(request: PatientSignupRequestDto) {
       name: patientAccount.name,
       email: patientAccount.loginId,
       teamCode: patientAccount.teamCode,
+      matchingId: patientProfile.matchingId,
     }),
     patientId: patientAccount.patientId,
     teamCode: patientAccount.teamCode,
@@ -753,12 +808,15 @@ function handleRefresh(request: RefreshRequestDto) {
       })
     }
 
+    const patientProfile = findPatientProfileByGuardianUserId(database, guardianRecord.userId)
+
     return createAuthResponse({
       id: guardianRecord.userId,
       role: 'guardian',
       name: guardianRecord.name,
       email: guardianRecord.email,
       teamCode: guardianRecord.teamCode,
+      matchingId: patientProfile?.matchingId ?? null,
     })
   }
 
@@ -772,12 +830,15 @@ function handleRefresh(request: RefreshRequestDto) {
     })
   }
 
+  const patientProfile = findPatientProfileByPatientId(database, patientAccount.patientId)
+
   return createAuthResponse({
     id: patientAccount.userId,
     role: 'patient',
     name: patientAccount.name,
     email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
+    matchingId: patientProfile?.matchingId ?? null,
   })
 }
 

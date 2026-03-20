@@ -34,6 +34,25 @@ function normalizeGuardianSessionExitReason(
   return value === 'idle-timeout' || value === 'refresh-failed' ? value : null
 }
 
+function normalizeStoredNumericId(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  const numericValue = Number(normalizedValue)
+  return Number.isFinite(numericValue) ? numericValue : null
+}
+
 export function getStoredRole(): UserRole | null {
   if (!isBrowser()) {
     return null
@@ -110,6 +129,8 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
 
   parsed.role = normalizedRole
   parsed.id = String(parsed.id ?? '')
+  parsed.userId = normalizeStoredNumericId(parsed.userId)
+  parsed.matchingId = normalizeStoredNumericId(parsed.matchingId)
 
   return (
     (parsed.role === 'guardian' || parsed.role === 'patient') &&

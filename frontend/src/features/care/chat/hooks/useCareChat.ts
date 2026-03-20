@@ -106,7 +106,7 @@ export function useCareChat(): UseCareChatReturn {
   // 메시지 발행
   const sendMessage = useCallback(
     (content: string) => {
-      if (!client || !connected || !user || user.matchingId == null) {
+      if (!client || !connected || !user || user.userId == null || user.matchingId == null) {
         return
       }
 
