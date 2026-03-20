@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,9 +36,8 @@ public class LeisureContentController {
                     content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
     })
     @GetMapping
-    public ApiResponse<List<LeisureContentResponse>> getContents() {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<List<LeisureContentResponse>> getContents(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         List<LeisureContentResponse> response = leisureContentService.getContents(userId);
         return ApiResponse.ok(response);
     }
@@ -57,9 +57,9 @@ public class LeisureContentController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Void> createContent(@Valid @RequestBody LeisureContentCreateRequest request) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<Void> createContent(@Valid @RequestBody LeisureContentCreateRequest request,
+                                              Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         leisureContentService.createContent(userId, request);
         return ApiResponse.created();
     }
@@ -78,9 +78,9 @@ public class LeisureContentController {
     public ApiResponse<Void> updateContent(
             @Parameter(description = "여가 콘텐츠의 고유 식별자 (GET 조회 응답의 id 필드)")
             @PathVariable Long contentId,
-            @Valid @RequestBody LeisureContentUpdateRequest request) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+            @Valid @RequestBody LeisureContentUpdateRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         leisureContentService.updateContent(userId, contentId, request);
         return ApiResponse.ok();
     }
@@ -96,9 +96,9 @@ public class LeisureContentController {
     @DeleteMapping("/{contentId}")
     public ApiResponse<Void> deleteContent(
             @Parameter(description = "여가 콘텐츠의 고유 식별자 (GET 조회 응답의 id 필드)")
-            @PathVariable Long contentId) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+            @PathVariable Long contentId,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         leisureContentService.deleteContent(userId, contentId);
         return ApiResponse.ok();
     }

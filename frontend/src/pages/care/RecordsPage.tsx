@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getDailySummaries } from '../../services/careSettingService'
 import type { DailySummary } from '../../types/care'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -15,6 +17,7 @@ const MOOD_LABELS: Record<string, string> = {
 }
 
 export default function RecordsPage() {
+  const navigate = useNavigate()
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
@@ -43,7 +46,9 @@ export default function RecordsPage() {
 
   const summaryMap = useMemo(() => {
     const map: Record<string, DailySummary> = {}
-    summaries.forEach((s) => { map[s.date] = s })
+    summaries.forEach(s => {
+      map[s.date] = s
+    })
     return map
   }, [summaries])
 
@@ -62,8 +67,14 @@ export default function RecordsPage() {
   const goMonth = (dir: -1 | 1) => {
     let newMonth = month + dir
     let newYear = year
-    if (newMonth < 1) { newMonth = 12; newYear-- }
-    if (newMonth > 12) { newMonth = 1; newYear++ }
+    if (newMonth < 1) {
+      newMonth = 12
+      newYear--
+    }
+    if (newMonth > 12) {
+      newMonth = 1
+      newYear++
+    }
     setMonth(newMonth)
     setYear(newYear)
     setSelectedDate(null)
@@ -72,11 +83,18 @@ export default function RecordsPage() {
   const formatDateStr = (day: number) =>
     `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 
-  const selectedSummary = selectedDate ? summaryMap[selectedDate] ?? null : null
+  const selectedSummary = selectedDate ? (summaryMap[selectedDate] ?? null) : null
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <header className="px-[18px] py-3 border-b border-[#E2E8F0] bg-[#FEFEFE] flex-shrink-0">
+      <header className="px-[18px] py-3 border-b border-[#E2E8F0] bg-[#FEFEFE] flex-shrink-0 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(ROUTE_PATHS.CARE_HOME)}
+          className="text-[20px] text-[#3D405B] min-w-[44px] min-h-[44px] flex items-center justify-center"
+        >
+          ‹
+        </button>
         <span className="text-[17px] font-bold text-[#3D405B]">소통 기록</span>
       </header>
 
@@ -106,7 +124,7 @@ export default function RecordsPage() {
 
         {/* 요일 헤더 */}
         <div className="grid grid-cols-7 mb-1">
-          {WEEKDAYS.map((day) => (
+          {WEEKDAYS.map(day => (
             <div key={day} className="text-center text-[12px] text-[#718096] py-1">
               {day}
             </div>
@@ -147,7 +165,9 @@ export default function RecordsPage() {
                   <span className={`text-[14px] ${isSelected ? 'font-bold' : ''}`}>{day}</span>
                   {summary && (
                     <div className="flex items-center gap-0.5 mt-0.5">
-                      <span className={`text-[10px] ${isSelected ? 'text-white/70' : 'text-[#718096]'}`}>
+                      <span
+                        className={`text-[10px] ${isSelected ? 'text-white/70' : 'text-[#718096]'}`}
+                      >
                         {summary.totalExpressions}
                       </span>
                       {summary.hasSos && (
@@ -181,19 +201,24 @@ export default function RecordsPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-[14px] text-[#718096]">기분</span>
                     <span className="text-[14px] text-[#3D405B]">
-                      {MOOD_LABELS[selectedSummary.mood.type] ?? selectedSummary.mood.type} (Lv.{selectedSummary.mood.level})
+                      {MOOD_LABELS[selectedSummary.mood.type] ?? selectedSummary.mood.type} (Lv.
+                      {selectedSummary.mood.level})
                     </span>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] text-[#718096]">보호자 호출</span>
-                  <span className="text-[14px] text-[#3D405B]">{selectedSummary.normalCallCount}번</span>
+                  <span className="text-[14px] text-[#3D405B]">
+                    {selectedSummary.normalCallCount}번
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] text-[#718096]">SOS 호출</span>
-                  <span className={`text-[14px] font-bold ${selectedSummary.sosCallCount > 0 ? 'text-red-500' : 'text-[#3D405B]'}`}>
+                  <span
+                    className={`text-[14px] font-bold ${selectedSummary.sosCallCount > 0 ? 'text-red-500' : 'text-[#3D405B]'}`}
+                  >
                     {selectedSummary.sosCallCount}번
                   </span>
                 </div>
@@ -203,7 +228,9 @@ export default function RecordsPage() {
                     <span className="text-[14px] text-[#718096]">가장 많이 한 표현</span>
                     {selectedSummary.topPhrases.map((p, i) => (
                       <div key={i} className="flex items-center justify-between pl-2">
-                        <span className="text-[13px] text-[#3D405B]">{i + 1}. {p.content}</span>
+                        <span className="text-[13px] text-[#3D405B]">
+                          {i + 1}. {p.content}
+                        </span>
                         <span className="text-[12px] text-[#A0AEC0]">{p.count}회</span>
                       </div>
                     ))}

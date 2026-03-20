@@ -25,10 +25,12 @@ spring:
 server:
   port: 8080
 
-# Python AI 서버
+# AI 서버 (로컬 Docker: eyespeak-ai-caregiver:5003, eyespeak-ai-tts:8000)
 ai:
   server:
-    url: http://localhost:5003
+    url: ${AI_SERVER_URL:http://eyespeak-ai-caregiver:5003}
+  tts:
+    url: ${AI_TTS_URL:http://eyespeak-ai-tts:8000}
 
 logging:
   level:

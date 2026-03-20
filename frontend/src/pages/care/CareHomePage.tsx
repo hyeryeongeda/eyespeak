@@ -38,13 +38,12 @@ export default function CareHomePage() {
               <p className="text-[15px] font-bold text-white leading-tight">
                 {patientName} 환자
               </p>
-              <p className="text-[12px] text-white/70 mt-0.5">ALS · 안정기</p>
             </div>
             <div className="w-2.5 h-2.5 rounded-full bg-[#48BB78] flex-shrink-0" />
           </div>
           <div className="border-t border-white/20 mt-3 pt-3 flex items-baseline justify-between">
             <div>
-              <p className="text-[12px] text-white/70">오늘 표현</p>
+              <p className="text-[13px] text-white/70">오늘 표현</p>
               <p className="text-[26px] font-extrabold text-white leading-tight">24회</p>
             </div>
             <div className="text-right">
@@ -64,23 +63,23 @@ export default function CareHomePage() {
           <span className="text-[28px]">💬</span>
           <div className="flex-1 min-w-0">
             <p className="text-[15px] font-bold text-[#3D405B]">채팅하기</p>
-            <p className="text-[12px] text-[#718096] mt-0.5">환자와 실시간 대화</p>
+            <p className="text-[13px] text-[#718096] mt-0.5">환자와 실시간 대화</p>
           </div>
           <span className="text-[#3D405B] text-[18px] font-bold">›</span>
         </button>
 
         {/* 오늘의 소통 기록 */}
-        <p className="text-[12px] font-bold text-[#2D3748] mt-4 mb-2">오늘의 소통</p>
+        <p className="text-[14px] font-bold text-[#2D3748] mt-4 mb-2">오늘의 소통</p>
         <div className="flex flex-col gap-[6px]">
           {TODAY_LOG.map((item, idx) => (
             <div
               key={idx}
               className="flex items-center gap-3 px-3 py-[10px] bg-[#F8FAFC] border border-[#E8EDF2] rounded-[10px]"
             >
-              <span className="text-[11px] text-[#A0AEC0] font-semibold w-[40px] flex-shrink-0">
+              <span className="text-[13px] text-[#A0AEC0] font-semibold w-[40px] flex-shrink-0">
                 {item.time}
               </span>
-              <span className="text-[13px] text-[#1A202C]">{item.text}</span>
+              <span className="text-[15px] text-[#1A202C]">{item.text}</span>
             </div>
           ))}
         </div>

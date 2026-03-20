@@ -181,6 +181,15 @@ public enum ErrorCode {
     TTS_FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "TTS-1105",
             "파일 저장에 실패하였습니다");
 
+    // ====== SETTING (환자 설정) ======
+
+    SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "SETTING-1101",
+            "환자 설정을 찾을 수 없습니다"),
+
+    INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
+            "허용되지 않는 설정값입니다");
+
+
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)
     private final String code;        // 우리가 정한 에러 코드 문자열 ("PATIENT-301")

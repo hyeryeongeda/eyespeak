@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,9 +34,8 @@ public class FavoriteController {
                     content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
     })
     @GetMapping
-    public ApiResponse<List<FavoriteResponse>> getFavorites() {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<List<FavoriteResponse>> getFavorites(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         List<FavoriteResponse> response = favoriteService.getFavorites(userId);
         return ApiResponse.ok(response);
     }
@@ -55,9 +55,9 @@ public class FavoriteController {
     })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Void> createFavorite(@Valid @RequestBody FavoriteCreateRequest request) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<Void> createFavorite(@Valid @RequestBody FavoriteCreateRequest request,
+                                               Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         favoriteService.createFavorite(userId, request);
         return ApiResponse.created();
     }
@@ -76,9 +76,9 @@ public class FavoriteController {
     public ApiResponse<Void> updateFavorite(
             @Parameter(description = "즐겨찾기 고유 식별자 (GET 조회 응답의 favoriteId)")
             @PathVariable Long favoriteId,
-            @Valid @RequestBody FavoriteUpdateRequest request) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+            @Valid @RequestBody FavoriteUpdateRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         favoriteService.updateFavorite(userId, favoriteId, request);
         return ApiResponse.ok();
     }
@@ -94,9 +94,9 @@ public class FavoriteController {
     @DeleteMapping("/{favoriteId}")
     public ApiResponse<Void> deleteFavorite(
             @Parameter(description = "즐겨찾기 고유 식별자 (GET 조회 응답의 favoriteId)")
-            @PathVariable Long favoriteId) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+            @PathVariable Long favoriteId,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         favoriteService.deleteFavorite(userId, favoriteId);
         return ApiResponse.ok();
     }
