@@ -134,3 +134,5 @@ save/
 # Python 캐시
 __pycache__/
 *.py[cod]
+
+FCM_key.json
