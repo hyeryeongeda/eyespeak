@@ -48,6 +48,8 @@ import PatientLayout from '../layouts/PatientLayout'
 import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
 
+const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
 const authRoutes = [
   {
     index: true,
@@ -246,46 +248,51 @@ const careRoutes = [
   },
 ]
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
+    {
+      path: ROUTE_PATHS.HOME,
+      element: <AppLayout />,
+      children: [
+        {
+          index: true,
+          element: <HomePage />,
+        },
+        {
+          path: ROUTE_SEGMENTS.AUTH.ROOT,
+          element: (
+            <PublicOnlyRoute>
+              <AuthLayout />
+            </PublicOnlyRoute>
+          ),
+          children: authRoutes,
+        },
+        {
+          path: ROUTE_SEGMENTS.PATIENT.ROOT,
+          element: (
+            <ProtectedRoute allowedRole="patient">
+              <PatientCalibrationRoute>
+                <PatientLayout />
+              </PatientCalibrationRoute>
+            </ProtectedRoute>
+          ),
+          children: patientRoutes,
+        },
+        {
+          path: ROUTE_SEGMENTS.CARE.ROOT,
+          element: (
+            <ProtectedRoute allowedRole="guardian">
+              <CareLayout />
+            </ProtectedRoute>
+          ),
+          children: careRoutes,
+        },
+      ],
+    },
+  ],
   {
-    path: ROUTE_PATHS.HOME,
-    element: <AppLayout />,
-    children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: ROUTE_SEGMENTS.AUTH.ROOT,
-        element: (
-          <PublicOnlyRoute>
-            <AuthLayout />
-          </PublicOnlyRoute>
-        ),
-        children: authRoutes,
-      },
-      {
-        path: ROUTE_SEGMENTS.PATIENT.ROOT,
-        element: (
-          <ProtectedRoute allowedRole="patient">
-            <PatientCalibrationRoute>
-              <PatientLayout />
-            </PatientCalibrationRoute>
-          </ProtectedRoute>
-        ),
-        children: patientRoutes,
-      },
-      {
-        path: ROUTE_SEGMENTS.CARE.ROOT,
-        element: (
-          <ProtectedRoute allowedRole="guardian">
-            <CareLayout />
-          </ProtectedRoute>
-        ),
-        children: careRoutes,
-      },
-    ],
+    basename: routerBasename,
   },
-])
+)
 
 export default router
