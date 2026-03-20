@@ -14,12 +14,12 @@ import {
   input,
   pageDesc,
   pageTitle,
-  pageWrapper,
   primaryButton,
   successBox,
   successMessage,
   textLink,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()
@@ -86,7 +86,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={card}>
         <AuthBrand subtitleText="비밀번호 재설정" />
 
@@ -157,6 +157,6 @@ export default function ResetPasswordPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

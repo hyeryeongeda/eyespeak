@@ -14,10 +14,10 @@ import {
   input,
   linkRow,
   pageTitle,
-  pageWrapper,
   primaryButton,
   textLink,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientLoginPage() {
   const navigate = useNavigate()
@@ -53,7 +53,7 @@ export default function PatientLoginPage() {
   }
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={card}>
         <AuthBrand subtitleText="환자 로그인" />
 
@@ -109,6 +109,6 @@ export default function PatientLoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }
