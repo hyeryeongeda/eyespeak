@@ -11,6 +11,7 @@ import {
   ACTIVATION_DELAY_OPTIONS,
 } from '../../../types/care'
 import type { DwellTimePreset, ActivationDelayPreset } from '../../../types/care'
+import { usePatientModeStore } from '../../../stores/patientModeStore'
 
 const DWELL_LABELS: Record<DwellTimePreset, { label: string; desc: string }> = {
   default: { label: '기본', desc: '1.0초 응시 후 선택' },
@@ -33,6 +34,9 @@ export default function DeviceSettingPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const setGlobalMenuDwellDurationMs = usePatientModeStore(
+    state => state.setGlobalMenuDwellDurationMs,
+  )
 
   useEffect(() => {
     const fetch = async () => {
@@ -74,6 +78,7 @@ export default function DeviceSettingPage() {
 
       setSavedDwell(dwellPreset)
       setSavedDelay(delayPreset)
+      setGlobalMenuDwellDurationMs(DWELL_TIME_OPTIONS[dwellPreset].value)
       setSuccessMsg('저장되었습니다.')
       setTimeout(() => setSuccessMsg(null), 2000)
     } catch {

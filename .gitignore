@@ -57,10 +57,6 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# 환경별 설정 (민감 정보 포함)
-application-prod.yml
-application-dev.yml
-
 # 빌드 바이너리
 bin/
 out/
