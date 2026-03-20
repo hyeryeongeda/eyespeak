@@ -14,7 +14,7 @@ function isBrowser() {
 }
 
 function getPatientStorageKey(session: AuthSession | null) {
-  return session?.role === 'patient' ? session.id : null
+  return session?.role === 'patient' ? String(session.id) : null
 }
 
 function isValidStoredCalibrationRecord(
