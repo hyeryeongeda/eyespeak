@@ -22,6 +22,8 @@ import e205.eyespeak.domain.setting.entity.TtsSetting;
 import e205.eyespeak.domain.setting.repository.TtsSettingRepository;
 import e205.eyespeak.domain.user.entity.User;
 import e205.eyespeak.domain.user.repository.UserRepository;
+import e205.eyespeak.domain.patient.repository.PatientRepository;
+import e205.eyespeak.global.enums.MatchingStatus;
 import e205.eyespeak.global.enums.Role;
 import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
@@ -38,6 +40,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final GuardianRepository guardianRepository;
+    private final PatientRepository patientRepository;
     private final MatchingRepository matchingRepository;
     private final TtsSettingRepository ttsSettingRepository;
     private final PasswordEncoder passwordEncoder;
@@ -111,12 +114,14 @@ public class AuthService {
         Matching matching = matchingRepository.findByInviteCode(request.getTeamCode())
                 .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 이미 연결된 팀코드인지 확인
+        // 매칭 상태 검증: PENDING일 때만 환자 가입 허용
+        if (matching.getStatus() != MatchingStatus.PENDING) {
+            throw new BusinessException(ErrorCode.INVITE_CODE_ALREADY_USED);
+        }
+
+        // Patient 레코드 존재 확인 (보호자 설문으로 생성된 상태)
         if (matching.getPatient() == null) {
             throw new BusinessException(ErrorCode.PATIENT_NOT_FOUND);
-        }
-        if (matching.getPatient().getUser() != null) {
-            throw new BusinessException(ErrorCode.PATIENT_ALREADY_EXISTS);
         }
 
         // 이메일 중복 검사
@@ -157,6 +162,7 @@ public class AuthService {
                         .role(user.getRole().name())
                         .name(user.getName())
                         .email(user.getLoginId())
+                        .teamCode(request.getTeamCode())
                         .build())
                 .patientId(matching.getPatient().getId())
                 .teamCode(request.getTeamCode())
@@ -182,6 +188,9 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtProvider.createRefreshToken(user.getId(), user.getRole());
 
+        // user → matching 조회하여 teamCode 가져오기
+        String teamCode = findTeamCode(user);
+
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -190,7 +199,22 @@ public class AuthService {
                         .role(user.getRole().name())
                         .name(user.getName())
                         .email(user.getLoginId())
+                        .teamCode(teamCode)
                         .build())
                 .build();
+    }
+
+    private String findTeamCode(User user) {
+        if (user.getRole() == Role.GUARDIAN) {
+            return guardianRepository.findByUserId(user.getId())
+                    .flatMap(guardian -> matchingRepository.findByGuardianId(guardian.getId()))
+                    .map(Matching::getInviteCode)
+                    .orElse(null);
+        } else {
+            return patientRepository.findByUserId(user.getId())
+                    .flatMap(patient -> matchingRepository.findByPatientId(patient.getId()))
+                    .map(Matching::getInviteCode)
+                    .orElse(null);
+        }
     }
 }
