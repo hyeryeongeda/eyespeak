@@ -4,36 +4,35 @@ import { ApiError, type ApiRequestOptions, type ApiSource, type ApiTransport } f
 import type { AuthResponseDto, AuthSession, RefreshRequestDto } from '../types/auth'
 import { API_ENDPOINTS } from './apiEndpoints'
 import { mapAuthResponseToSession } from './authSessionMapper'
-import {
-  applyActiveAuthSession,
-  getActiveAuthSession,
-} from './authSessionRegistry'
-import {
-  setStoredEntryMode,
-  setStoredRole,
-  storeGuardianSessionExitReason,
-} from './authStorage'
+import { applyActiveAuthSession, getActiveAuthSession } from './authSessionRegistry'
+import { setStoredEntryMode, setStoredRole, storeGuardianSessionExitReason } from './authStorage'
 import { mockApiTransport } from './mockAuthApi'
 
-const AUTH_API_MODE = import.meta.env.VITE_AUTH_API_MODE === 'real' ? 'real' : 'mock'
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+type ApiMode = 'real' | 'mock'
 
-function getApiSource(): ApiSource {
-  return AUTH_API_MODE === 'real' ? 'api' : 'mock'
-}
+const API_MODE: ApiMode =
+  import.meta.env.VITE_API_MODE === 'real' || import.meta.env.VITE_AUTH_API_MODE === 'real'
+    ? 'real'
+    : 'mock'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const DEFAULT_WITH_CREDENTIALS = import.meta.env.VITE_API_WITH_CREDENTIALS === 'true'
 
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 8000,
+  withCredentials: DEFAULT_WITH_CREDENTIALS,
 })
 
-interface ApiRequestInternalOptions<TBody = unknown> extends ApiRequestOptions<TBody> {
+type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody> & {
   skipGuardianRefreshRetry?: boolean
+}
+
+function getApiSource(): ApiSource {
+  return API_MODE === 'real' ? 'api' : 'mock'
 }
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
   if (value && typeof value === 'object' && 'data' in value) {
-    // ASSUMED: 실 API가 공통 응답 래퍼 { data, ... } 를 사용할 가능성을 우선 반영.
     return (value as { data: TResponse }).data
   }
 
@@ -55,7 +54,7 @@ function toApiError(error: unknown) {
       message:
         axiosError.response?.data?.message ??
         axiosError.message ??
-        'API 요청에 실패했습니다.',
+        'API request failed.',
       code: axiosError.response?.data?.code,
       details: axiosError.response?.data,
     })
@@ -64,28 +63,35 @@ function toApiError(error: unknown) {
   return new ApiError({
     statusCode: 500,
     source: getApiSource(),
-    message: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.',
+    message: error instanceof Error ? error.message : 'Unexpected error occurred.',
     details: error,
   })
 }
 
+function buildHeaders(
+  accessToken?: string | null,
+  headers?: Record<string, string>,
+): Record<string, string> | undefined {
+  const nextHeaders = { ...(headers ?? {}) }
+
+  if (accessToken) {
+    nextHeaders.Authorization = `Bearer ${accessToken}`
+  }
+
+  return Object.keys(nextHeaders).length > 0 ? nextHeaders : undefined
+}
+
 const realApiTransport: ApiTransport = {
-  async request<TResponse, TBody>({
-    method,
-    url,
-    data,
-    accessToken,
-  }: ApiRequestOptions<TBody>) {
+  async request<TResponse, TBody>(options: ApiRequestOptions<TBody>) {
     try {
       const response = await axiosInstance.request({
-        method,
-        url,
-        data,
-        headers: accessToken
-          ? {
-              Authorization: `Bearer ${accessToken}`,
-            }
-          : undefined,
+        method: options.method,
+        url: options.url,
+        data: options.data,
+        params: options.params,
+        headers: buildHeaders(options.accessToken, options.headers),
+        responseType: options.responseType,
+        withCredentials: options.withCredentials ?? DEFAULT_WITH_CREDENTIALS,
       })
 
       return unwrapApiEnvelope<TResponse>(response.data)
@@ -95,16 +101,16 @@ const realApiTransport: ApiTransport = {
   },
 }
 
-const activeTransport = AUTH_API_MODE === 'real' ? realApiTransport : mockApiTransport
+const activeTransport = API_MODE === 'real' ? realApiTransport : mockApiTransport
 let guardianRefreshPromise: Promise<AuthSession | null> | null = null
 
-function callTransport<TResponse, TBody = unknown>(options: ApiRequestInternalOptions<TBody>) {
+function callTransport<TResponse, TBody = unknown>(options: InternalRequestOptions<TBody>) {
   const { skipGuardianRefreshRetry: _skipGuardianRefreshRetry, ...transportOptions } = options
   return activeTransport.request<TResponse, TBody>(transportOptions)
 }
 
 function getGuardianRetrySession<TBody>(
-  options: ApiRequestInternalOptions<TBody>,
+  options: InternalRequestOptions<TBody>,
 ): AuthSession | null {
   if (options.skipGuardianRefreshRetry || options.url === API_ENDPOINTS.AUTH_REFRESH) {
     return null
@@ -144,6 +150,7 @@ async function refreshGuardianSession(): Promise<AuthSession | null> {
         },
         skipGuardianRefreshRetry: true,
       })
+
       const nextSession = mapAuthResponseToSession(response)
       applyActiveAuthSession(nextSession)
       return nextSession
@@ -162,7 +169,7 @@ async function refreshGuardianSession(): Promise<AuthSession | null> {
 }
 
 async function requestWithGuardianRefreshRetry<TResponse, TBody = unknown>(
-  options: ApiRequestInternalOptions<TBody>,
+  options: InternalRequestOptions<TBody>,
 ) {
   try {
     return await callTransport<TResponse, TBody>(options)
@@ -199,36 +206,45 @@ async function requestWithGuardianRefreshRetry<TResponse, TBody = unknown>(
   }
 }
 
+type SimpleRequestOptions<TBody = unknown> = Omit<ApiRequestOptions<TBody>, 'method' | 'url'>
+
 export const apiClient = {
   request<TResponse, TBody = unknown>(options: ApiRequestOptions<TBody>) {
     return requestWithGuardianRefreshRetry<TResponse, TBody>(options)
   },
-  post<TResponse, TBody = unknown>(
-    url: string,
-    data?: TBody,
-    options?: Pick<ApiRequestOptions<TBody>, 'accessToken'>,
-  ) {
+  get<TResponse>(url: string, options?: SimpleRequestOptions<never>) {
+    return requestWithGuardianRefreshRetry<TResponse, never>({
+      method: 'GET',
+      url,
+      ...options,
+    })
+  },
+  post<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
     return requestWithGuardianRefreshRetry<TResponse, TBody>({
       method: 'POST',
       url,
       data,
-      accessToken: options?.accessToken,
+      ...options,
     })
   },
   delete<TResponse, TBody = unknown>(
     url: string,
     data?: TBody,
-    options?: Pick<ApiRequestOptions<TBody>, 'accessToken'>,
+    options?: SimpleRequestOptions<TBody>,
   ) {
     return requestWithGuardianRefreshRetry<TResponse, TBody>({
       method: 'DELETE',
       url,
       data,
-      accessToken: options?.accessToken,
+      ...options,
     })
   },
 }
 
 export function getActiveApiMode() {
-  return AUTH_API_MODE
+  return API_MODE
+}
+
+export function getApiBaseUrl() {
+  return API_BASE_URL
 }

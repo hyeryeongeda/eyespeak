@@ -19,7 +19,7 @@ import type {
   RoutineCreateRequestDto,
   VerifiedTeamCode,
 } from '../types/patient'
-import { ApiError, type ApiTransport } from '../types/api'
+import { ApiError, type ApiRequestOptions, type ApiTransport } from '../types/api'
 import { normalizeTeamCode } from './authStorage'
 import { isValidEmail } from '../utils/validators'
 
@@ -854,12 +854,7 @@ export const mockApiTransport: ApiTransport = {
     url,
     data,
     accessToken,
-  }: {
-    method: 'GET' | 'POST' | 'DELETE'
-    url: string
-    data?: TBody
-    accessToken?: string | null
-  }) {
+  }: ApiRequestOptions<TBody>) {
     await delay()
 
     switch (`${method} ${url}`) {
