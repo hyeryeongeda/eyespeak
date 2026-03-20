@@ -32,8 +32,19 @@ function getApiSource(): ApiSource {
 }
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
-  if (value && typeof value === 'object' && 'data' in value) {
-    return (value as { data: TResponse }).data
+  if (!value || typeof value !== 'object') {
+    return value as TResponse
+  }
+
+  const envelope = value as Record<string, unknown>
+
+  if ('data' in envelope) {
+    return envelope.data as TResponse
+  }
+
+  // 일부 백엔드 응답이 payload를 cal 키로 내려주는 케이스 호환.
+  if ('cal' in envelope) {
+    return envelope.cal as TResponse
   }
 
   return value as TResponse
