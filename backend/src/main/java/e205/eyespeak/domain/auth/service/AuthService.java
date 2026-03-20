@@ -18,6 +18,8 @@ import e205.eyespeak.domain.guardian.entity.Guardian;
 import e205.eyespeak.domain.guardian.repository.GuardianRepository;
 import e205.eyespeak.domain.matching.entity.Matching;
 import e205.eyespeak.domain.matching.repository.MatchingRepository;
+import e205.eyespeak.domain.setting.entity.TtsSetting;
+import e205.eyespeak.domain.setting.repository.TtsSettingRepository;
 import e205.eyespeak.domain.user.entity.User;
 import e205.eyespeak.domain.user.repository.UserRepository;
 import e205.eyespeak.global.enums.Role;
@@ -37,6 +39,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final GuardianRepository guardianRepository;
     private final MatchingRepository matchingRepository;
+    private final TtsSettingRepository ttsSettingRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -128,6 +131,12 @@ public class AuthService {
 
         // Matching 상태를 LINKED로 변경
         matching.link();
+
+        // TTS 설정 자동 생성 (isEnabled=false, status=NONE)
+        TtsSetting ttsSetting = TtsSetting.builder()
+                .matching(matching)
+                .build();
+        ttsSettingRepository.save(ttsSetting);
 
         // JWT 발급
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole());

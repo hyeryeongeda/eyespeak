@@ -164,6 +164,23 @@ public enum ErrorCode {
     LEISURE_INVALID_URL(HttpStatus.BAD_REQUEST, "LEISURE-1005",
             "유효하지 않은 YouTube URL입니다"),
 
+    // ====== TTS (음성 설정) ======
+
+    TTS_SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "TTS-1101",
+            "TTS 설정을 찾을 수 없습니다"),
+
+    TTS_UNSUPPORTED_FORMAT(HttpStatus.BAD_REQUEST, "TTS-1102",
+            "지원하지 않는 파일 형식입니다"),
+
+    TTS_VOICE_FILE_LIMIT(HttpStatus.BAD_REQUEST, "TTS-1103",
+            "최대 10개까지 등록 가능합니다"),
+
+    TTS_VOICE_FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "TTS-1104",
+            "TTS 음성 파일을 찾을 수 없습니다"),
+
+    TTS_FILE_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "TTS-1105",
+            "파일 저장에 실패하였습니다");
+
     // ====== SETTING (환자 설정) ======
 
     SETTING_NOT_FOUND(HttpStatus.NOT_FOUND, "SETTING-1101",
@@ -171,6 +188,7 @@ public enum ErrorCode {
 
     INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
             "허용되지 않는 설정값입니다");
+
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
     private final HttpStatus status;  // HTTP 상태 코드 (404, 500 등)
