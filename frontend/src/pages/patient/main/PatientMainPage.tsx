@@ -16,6 +16,7 @@ import {
   getActivationDelayPreset,
   getDwellTimePreset,
 } from '../../../services/careSettingService'
+import { submitActiveEyeTrackingSelectionFeedback } from '../../../services/eyeTrackingSelectionFeedbackService'
 import { ACTIVATION_DELAY_OPTIONS, DWELL_TIME_OPTIONS } from '../../../types/care'
 
 type PatientMainTrackingTargetId = 'talk' | 'call' | 'leisure'
@@ -362,7 +363,7 @@ export default function PatientMainPage() {
   const overlayStatus = isOverlayVisible ? callStatus : null
   const trackingEnabled = !isOverlayVisible
 
-  const { hoveredTargetId, isPointerInside } = useTracking<PatientMainTrackingTargetId>({
+  const { hoveredTargetId, isPointerInside, inputSource } = useTracking<PatientMainTrackingTargetId>({
     containerRef: gridRef,
     enabled: trackingEnabled,
   })
@@ -445,6 +446,10 @@ export default function PatientMainPage() {
   }
 
   function handleTrackedSelect(targetId: PatientMainTrackingTargetId) {
+    if (inputSource === 'gaze') {
+      submitActiveEyeTrackingSelectionFeedback()
+    }
+
     if (targetId === 'talk') {
       navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
       return

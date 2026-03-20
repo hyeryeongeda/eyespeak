@@ -19,7 +19,6 @@ import {
   linkRow,
   pageDesc,
   pageTitle,
-  pageWrapper,
   primaryButton,
   progressRow,
   progressStep,
@@ -38,6 +37,7 @@ import {
   teamCodeValue,
   textLink,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
 
 const STEP_LABELS = ['계정', '환자 정보', '루틴', '완료']
 
@@ -82,7 +82,7 @@ export default function CareSignupPage() {
             : 0
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={{ ...card, maxWidth: '560px' }}>
         <AuthBrand subtitleText="보호자 회원가입" />
 
@@ -382,6 +382,6 @@ export default function CareSignupPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

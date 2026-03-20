@@ -1,23 +1,30 @@
 import type { CSSProperties } from 'react'
 
 export const pageWrapper: CSSProperties = {
+  width: '100%',
   height: '100%',
+  minHeight: '100%',
+  overflowX: 'hidden',
   overflowY: 'auto',
   background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px 20px',
+  justifyContent: 'flex-start',
+  boxSizing: 'border-box',
+  padding: 'clamp(16px, 4vw, 24px) clamp(12px, 4vw, 20px) clamp(24px, 6vw, 40px)',
+  WebkitOverflowScrolling: 'touch',
 }
 
 export const card: CSSProperties = {
   width: '100%',
   maxWidth: '420px',
+  margin: '0 auto',
   backgroundColor: '#ffffff',
-  borderRadius: '24px',
-  padding: '32px 28px',
+  borderRadius: 'clamp(18px, 4vw, 24px)',
+  padding: 'clamp(20px, 5vw, 32px) clamp(16px, 4vw, 28px)',
   boxShadow: '0 20px 48px rgba(40, 66, 90, 0.12)',
   border: '1px solid #dde7ed',
+  boxSizing: 'border-box',
 }
 
 export const logoWrap: CSSProperties = {
@@ -30,7 +37,7 @@ export const logoWrap: CSSProperties = {
 
 export const logoImage: CSSProperties = {
   display: 'block',
-  width: '176px',
+  width: 'clamp(132px, 36vw, 176px)',
   maxWidth: '100%',
   height: 'auto',
 }
@@ -52,7 +59,7 @@ export const subtitle: CSSProperties = {
 
 export const pageTitle: CSSProperties = {
   margin: '0 0 8px',
-  fontSize: '24px',
+  fontSize: 'clamp(22px, 5vw, 24px)',
   fontWeight: 700,
   color: '#203042',
   textAlign: 'center',
@@ -130,13 +137,13 @@ export const textLink: CSSProperties = {
 
 export const roleGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
   gap: '14px',
   marginBottom: '18px',
 }
 
 export const roleCard: CSSProperties = {
-  minHeight: '172px',
+  minHeight: 'clamp(132px, 34vw, 172px)',
   border: '1px solid #d4dfe7',
   borderRadius: '18px',
   padding: '20px 16px',
@@ -233,7 +240,7 @@ export const successMessage: CSSProperties = {
 
 export const progressRow: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))',
   gap: '8px',
   marginBottom: '18px',
 }
@@ -272,7 +279,7 @@ export const sectionDesc: CSSProperties = {
 
 export const choiceGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
   gap: '10px',
 }
 
@@ -325,7 +332,7 @@ export const tagButtonSelected: CSSProperties = {
 
 export const buttonRow: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
   gap: '10px',
 }
 
@@ -339,7 +346,7 @@ export const summaryBox: CSSProperties = {
 export const teamCodeValue: CSSProperties = {
   margin: '0 0 12px',
   color: '#203042',
-  fontSize: '28px',
+  fontSize: 'clamp(24px, 6vw, 28px)',
   fontWeight: 800,
   letterSpacing: '0.06em',
 }

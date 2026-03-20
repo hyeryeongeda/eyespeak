@@ -13,7 +13,6 @@ import {
   linkRow,
   pageDesc,
   pageTitle,
-  pageWrapper,
   primaryButton,
   secondaryButton,
   successBox,
@@ -21,6 +20,7 @@ import {
   teamCodeBox,
   textLink,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientSignupPage() {
   const {
@@ -43,7 +43,7 @@ export default function PatientSignupPage() {
   }, [])
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={card}>
         <AuthBrand subtitleText="환자 회원가입" />
 
@@ -171,6 +171,6 @@ export default function PatientSignupPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

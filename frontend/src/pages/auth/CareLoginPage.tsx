@@ -18,10 +18,10 @@ import {
   input,
   linkRow,
   pageTitle,
-  pageWrapper,
   primaryButton,
   textLink,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
 
 export default function CareLoginPage() {
   const navigate = useNavigate()
@@ -59,7 +59,7 @@ export default function CareLoginPage() {
   }
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={card}>
         <AuthBrand subtitleText="보호자 로그인" />
 
@@ -128,6 +128,6 @@ export default function CareLoginPage() {
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

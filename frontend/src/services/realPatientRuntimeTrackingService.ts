@@ -90,9 +90,10 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
           onTrackingStatusChange(status)
 
           if (status === 'ready') {
-            useGazeInputStore.getState().setPoint(
-              getViewportPointFromEyeTrackingFrame(frame),
-            )
+            useGazeInputStore.getState().setSnapshot({
+              ...getViewportPointFromEyeTrackingFrame(frame),
+              cell: frame.cell,
+            })
           } else {
             useGazeInputStore.getState().clearPoint()
           }

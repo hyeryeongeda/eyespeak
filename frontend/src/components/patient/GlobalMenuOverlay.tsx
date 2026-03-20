@@ -8,6 +8,7 @@ import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
 } from '../../services/patientModeBridge'
+import { submitActiveEyeTrackingSelectionFeedback } from '../../services/eyeTrackingSelectionFeedbackService'
 import {
   getRemainingPatientSosCooldownMs,
   requestMockPatientSos,
@@ -221,7 +222,7 @@ export default function GlobalMenuOverlay() {
   const isSosDisabled = sosRemainingMs > 0
   const sosCooldownSeconds = Math.ceil(sosRemainingMs / 1000)
 
-  const { hoveredTargetId } = useTracking<GlobalMenuTargetId>({
+  const { hoveredTargetId, inputSource } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
   })
@@ -231,7 +232,7 @@ export default function GlobalMenuOverlay() {
     dwellDurationMs,
     disabled: !isOpen || !isTrackingReady || pendingTargetId !== null,
     onCommit: targetId => {
-      queueAction(targetId)
+      queueAction(targetId, inputSource === 'gaze' ? 'gaze' : 'pointer')
     },
   })
 
@@ -274,13 +275,17 @@ export default function GlobalMenuOverlay() {
     setPendingTargetId(null)
   }, [isOpen])
 
-  function queueAction(targetId: GlobalMenuTargetId) {
+  function queueAction(targetId: GlobalMenuTargetId, source: 'pointer' | 'gaze' = 'pointer') {
     if (!isOpen || !isTrackingReady || pendingTargetId !== null) {
       return
     }
 
     if (targetId === 'sos' && isSosDisabled) {
       return
+    }
+
+    if (source === 'gaze') {
+      submitActiveEyeTrackingSelectionFeedback()
     }
 
     setPendingTargetId(targetId)

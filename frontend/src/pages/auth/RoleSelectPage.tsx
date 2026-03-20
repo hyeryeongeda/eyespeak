@@ -15,7 +15,6 @@ import {
   helperText,
   pageDesc,
   pageTitle,
-  pageWrapper,
   primaryButton,
   roleCard,
   roleCardSelected,
@@ -23,6 +22,7 @@ import {
   roleGrid,
   roleTitle,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
 
 const selectedStyle: CSSProperties = {
   ...roleCard,
@@ -60,7 +60,7 @@ export default function RoleSelectPage() {
   }
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={card}>
         <AuthBrand subtitleText="역할 선택" />
 
@@ -119,6 +119,6 @@ export default function RoleSelectPage() {
           </button>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }
