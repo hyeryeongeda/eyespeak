@@ -26,6 +26,20 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * [Unit 4] 채팅 비즈니스 로직
+ *
+ * <메시지 전송 흐름>
+ *   클라이언트 SEND /app/chat → ChatController → ChatService.sendMessage()
+ *     1. 매칭 조회
+ *     2. contentType별 검증 + content 결정
+ *     3. Message 엔티티 DB 저장
+ *     4. 발신자에게 WebSocket 응답 (저장 확인용)
+ *     5. 상대방이 온라인이면 WebSocket, 오프라인이면 FCM (Unit 7)
+ *
+ * @Transactional(readOnly = true): 클래스 레벨 기본값. 읽기 전용 트랜잭션 (DB 최적화).
+ * 쓰기가 필요한 메서드에만 @Transactional을 따로 붙여서 쓰기 가능으로 덮어씌운다.
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -83,6 +97,12 @@ public class ChatService {
         // else: Unit 7에서 FCM 연동
     }
 
+    /**
+     * contentType별 검증 + 실제 메시지 텍스트 결정
+     *   TEXT       → text 필드가 비어있으면 에러, 그대로 반환
+     *   PHRASE     → phraseId로 DB 조회 → Phrase.content 반환
+     *   EXPRESSION → expressionId로 DB 조회 → Expression.content 반환
+     */
     private String resolveContent(ChatMessageRequest request) {
         ContentType type = request.getContentType();
 
@@ -117,6 +137,11 @@ public class ChatService {
         }
     }
 
+    /**
+     * 매칭에서 상대방의 userId를 찾는다.
+     * 하나의 매칭에 환자 1명 + 보호자 1명이므로,
+     * 내가 PATIENT면 상대방은 Guardian의 userId, 내가 GUARDIAN이면 Patient의 userId.
+     */
     private Long getRecipientUserId(Role senderRole, Matching matching) {
         if (senderRole == Role.PATIENT) {
             return matching.getGuardian().getUser().getId();
