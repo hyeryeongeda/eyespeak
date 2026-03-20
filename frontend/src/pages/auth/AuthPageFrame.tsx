@@ -1,4 +1,4 @@
-import { type CSSProperties, type FocusEvent as ReactFocusEvent, type ReactNode, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { pageWrapper } from './authPageStyles'
 
@@ -38,61 +38,41 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
   const focusTimerRef = useRef<number | null>(null)
   const [viewportMetrics, setViewportMetrics] = useState<ViewportMetrics>(() => getViewportMetrics())
 
-  const syncViewportMetrics = useEffectEvent(() => {
-    setViewportMetrics(getViewportMetrics())
-  })
-
-  const scrollFocusedFieldIntoView = useEffectEvent((field: HTMLElement) => {
-    if (focusTimerRef.current !== null) {
-      window.clearTimeout(focusTimerRef.current)
-    }
-
-    focusTimerRef.current = window.setTimeout(() => {
-      field.scrollIntoView({
-        block: 'nearest',
-        inline: 'nearest',
-        behavior: viewportMetrics.keyboardInset > 0 ? 'smooth' : 'auto',
-      })
-    }, viewportMetrics.keyboardInset > 0 ? 220 : 0)
-  })
-
   useEffect(() => {
-    const activeElement = document.activeElement
-
-    if (activeElement instanceof HTMLElement) {
-      activeElement.blur()
-    }
-
     if (focusTimerRef.current !== null) {
       window.clearTimeout(focusTimerRef.current)
       focusTimerRef.current = null
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      syncViewportMetrics()
+      setViewportMetrics(getViewportMetrics())
       containerRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     })
 
     return () => {
       window.cancelAnimationFrame(frameId)
     }
-  }, [location.key, syncViewportMetrics])
+  }, [location.key])
 
   useEffect(() => {
-    syncViewportMetrics()
+    const handleViewportChange = () => {
+      setViewportMetrics(getViewportMetrics())
+    }
+
+    handleViewportChange()
 
     const viewport = window.visualViewport
 
-    viewport?.addEventListener('resize', syncViewportMetrics)
-    viewport?.addEventListener('scroll', syncViewportMetrics)
-    window.addEventListener('resize', syncViewportMetrics)
+    viewport?.addEventListener('resize', handleViewportChange)
+    viewport?.addEventListener('scroll', handleViewportChange)
+    window.addEventListener('resize', handleViewportChange)
 
     return () => {
-      viewport?.removeEventListener('resize', syncViewportMetrics)
-      viewport?.removeEventListener('scroll', syncViewportMetrics)
-      window.removeEventListener('resize', syncViewportMetrics)
+      viewport?.removeEventListener('resize', handleViewportChange)
+      viewport?.removeEventListener('scroll', handleViewportChange)
+      window.removeEventListener('resize', handleViewportChange)
     }
-  }, [syncViewportMetrics])
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -101,7 +81,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
       return
     }
 
-    const handleFocusIn = (event: FocusEvent | ReactFocusEvent<HTMLElement>) => {
+    const handleFocusIn = (event: FocusEvent) => {
       const target = event.target
 
       if (!(target instanceof HTMLElement)) {
@@ -112,7 +92,17 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
         return
       }
 
-      scrollFocusedFieldIntoView(target)
+      if (focusTimerRef.current !== null) {
+        window.clearTimeout(focusTimerRef.current)
+      }
+
+      focusTimerRef.current = window.setTimeout(() => {
+        target.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+          behavior: viewportMetrics.keyboardInset > 0 ? 'smooth' : 'auto',
+        })
+      }, viewportMetrics.keyboardInset > 0 ? 220 : 0)
     }
 
     container.addEventListener('focusin', handleFocusIn)
@@ -120,7 +110,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
     return () => {
       container.removeEventListener('focusin', handleFocusIn)
     }
-  }, [scrollFocusedFieldIntoView])
+  }, [viewportMetrics.keyboardInset])
 
   useEffect(() => {
     return () => {
