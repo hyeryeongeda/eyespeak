@@ -7,6 +7,8 @@ export type GuardianSessionExitReason = 'idle-timeout' | 'refresh-failed'
 
 export interface AuthSession {
   id: string
+  userId: number | null
+  matchingId: number | null
   role: UserRole
   name: string
   accessToken: string
@@ -23,6 +25,8 @@ export interface LoginFormValues {
 
 export interface AuthUserDto {
   id: string | number
+  userId?: string | number | null
+  matchingId?: string | number | null
   role: string
   name: string
   email?: string

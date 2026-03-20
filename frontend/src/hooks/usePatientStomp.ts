@@ -125,7 +125,7 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
       phraseId?: number | null
       exprId?: number | null
     }) => {
-      if (!client || !connected || !user || user.matchingId == null) {
+      if (!client || !connected || !user || user.userId == null || user.matchingId == null) {
         return
       }
 
@@ -147,7 +147,7 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
   // 호출/SOS 발행
   const sendCall = useCallback(
     (callType: StompCallType) => {
-      if (!client || !connected || !user || user.matchingId == null) {
+      if (!client || !connected || !user || user.userId == null || user.matchingId == null) {
         return
       }
 
