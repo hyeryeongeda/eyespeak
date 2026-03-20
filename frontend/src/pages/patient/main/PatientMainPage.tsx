@@ -135,6 +135,7 @@ function FeatureCard({
       disabled={disabled}
       aria-label={`${title} 카드`}
       data-tracking-id={trackingId && !disabled ? trackingId : undefined}
+      data-gaze-selection={trackingId && !disabled ? 'local' : undefined}
       style={{
         ...featureCardBase,
         background,
@@ -367,13 +368,16 @@ export default function PatientMainPage() {
     containerRef: gridRef,
     enabled: trackingEnabled,
   })
+  const isGazeSelectionActive = inputSource === 'gaze'
 
   const dwellState = useDwell<PatientMainTrackingTargetId>({
-    hoveredTargetId,
+    hoveredTargetId: isGazeSelectionActive ? hoveredTargetId : null,
     dwellDurationMs,
     activationDelayMs,
     disabled: !trackingEnabled,
-    onCommit: handleTrackedSelect,
+    onCommit: targetId => {
+      handleSelectTarget(targetId, 'gaze')
+    },
   })
 
   const trackingStatusText = useMemo(() => {
@@ -383,6 +387,10 @@ export default function PatientMainPage() {
 
     if (dwellState.activeTargetId && dwellState.phase !== 'idle') {
       return getTrackingStatusCopy(dwellState.phase, dwellState.remainingMs)
+    }
+
+    if (inputSource === 'pointer' && isPointerInside) {
+      return '\uB9C8\uC6B0\uC2A4\uB85C \uD074\uB9AD\uD558\uAC70\uB098 \uC2DC\uC120\uC744 \uACE0\uC815\uD574 \uC120\uD0DD\uD558\uC138\uC694.'
     }
 
     if (isPointerInside) {
@@ -398,6 +406,7 @@ export default function PatientMainPage() {
     dwellState.activeTargetId,
     dwellState.phase,
     dwellState.remainingMs,
+    inputSource,
     isOverlayVisible,
     isPointerInside,
   ])
@@ -445,8 +454,11 @@ export default function PatientMainPage() {
     }, 0)
   }
 
-  function handleTrackedSelect(targetId: PatientMainTrackingTargetId) {
-    if (inputSource === 'gaze') {
+  function handleSelectTarget(
+    targetId: PatientMainTrackingTargetId,
+    source: 'pointer' | 'gaze',
+  ) {
+    if (source === 'gaze') {
       submitActiveEyeTrackingSelectionFeedback()
     }
 
@@ -572,7 +584,7 @@ export default function PatientMainPage() {
                 dwellState.activeTargetId === 'talk' ? dwellState.remainingMs : 0
               }
               centered
-              onSelect={() => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)}
+              onSelect={() => handleSelectTarget('talk', 'pointer')}
             />
 
             <FeatureCard
@@ -588,7 +600,7 @@ export default function PatientMainPage() {
               dwellRemainingMs={
                 dwellState.activeTargetId === 'call' ? dwellState.remainingMs : 0
               }
-              onSelect={handleSelectCall}
+              onSelect={() => handleSelectTarget('call', 'pointer')}
               disabled={callStatus === 'requesting'}
               centered
             />
@@ -607,7 +619,7 @@ export default function PatientMainPage() {
                 dwellState.activeTargetId === 'leisure' ? dwellState.remainingMs : 0
               }
               centered
-              onSelect={() => navigate(ROUTE_PATHS.PATIENT_LEISURE)}
+              onSelect={() => handleSelectTarget('leisure', 'pointer')}
             />
           </div>
         </div>

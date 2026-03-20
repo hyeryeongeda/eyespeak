@@ -226,13 +226,14 @@ export default function GlobalMenuOverlay() {
     containerRef: gridRef,
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
   })
+  const isGazeSelectionActive = inputSource === 'gaze'
 
   useDwell<GlobalMenuTargetId>({
-    hoveredTargetId,
+    hoveredTargetId: isGazeSelectionActive ? hoveredTargetId : null,
     dwellDurationMs,
     disabled: !isOpen || !isTrackingReady || pendingTargetId !== null,
     onCommit: targetId => {
-      queueAction(targetId, inputSource === 'gaze' ? 'gaze' : 'pointer')
+      queueAction(targetId, 'gaze')
     },
   })
 
@@ -371,6 +372,7 @@ export default function GlobalMenuOverlay() {
             <button
               type="button"
               data-tracking-id={pendingTargetId === null ? 'yes' : undefined}
+              data-gaze-selection="local"
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('yes')}
               style={getMenuButtonStyle({
@@ -386,6 +388,7 @@ export default function GlobalMenuOverlay() {
             <button
               type="button"
               data-tracking-id={pendingTargetId === null ? 'no' : undefined}
+              data-gaze-selection="local"
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('no')}
               style={getMenuButtonStyle({
@@ -401,6 +404,7 @@ export default function GlobalMenuOverlay() {
             <button
               type="button"
               data-tracking-id={isSosDisabled || pendingTargetId !== null ? undefined : 'sos'}
+              data-gaze-selection="local"
               disabled={isSosDisabled || pendingTargetId !== null}
               onClick={() => queueAction('sos')}
               style={getMenuButtonStyle({
@@ -420,6 +424,7 @@ export default function GlobalMenuOverlay() {
             <button
               type="button"
               data-tracking-id={pendingTargetId === null ? 'home' : undefined}
+              data-gaze-selection="local"
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('home')}
               style={getMenuButtonStyle({

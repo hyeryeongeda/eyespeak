@@ -46,9 +46,15 @@ const CARE_DWELL_TIME_PRESET_STORAGE_KEY = 'careSetting:dwellTimePreset'
 const CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY = 'careSetting:activationDelayPreset'
 
 export const CARE_DWELL_TIME_PRESET_UPDATED_EVENT = 'care-setting:dwell-time-updated'
+export const CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT =
+  'care-setting:activation-delay-updated'
 
 export interface CareDwellTimePresetUpdatedDetail {
   preset: DwellTimePreset
+}
+
+export interface CareActivationDelayPresetUpdatedDetail {
+  preset: ActivationDelayPreset
 }
 
 function isBrowser() {
@@ -222,6 +228,18 @@ export async function getActivationDelayPreset(): Promise<ApiResponse<Activation
 export async function updateActivationDelayPreset(preset: ActivationDelayPreset): Promise<ApiResponse<ActivationDelayPreset>> {
   await delay()
   writeStoredPreset(CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY, preset)
+  if (isBrowser()) {
+    window.dispatchEvent(
+      new CustomEvent<CareActivationDelayPresetUpdatedDetail>(
+        CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
+        {
+          detail: {
+            preset,
+          },
+        },
+      ),
+    )
+  }
   return { success: true, data: preset, message: '저장 성공' }
 }
 
