@@ -13,14 +13,7 @@ export default function CareLayout() {
   const { pathname } = useLocation()
 
   return (
-    <div
-      className="flex flex-col bg-[#FEFEFE] overflow-hidden"
-      style={{
-        height: '100dvh',
-        paddingTop: 'var(--sat)',
-        paddingBottom: 'var(--sab)',
-      }}
-    >
+    <div className="flex flex-col bg-[#FEFEFE] overflow-hidden h-full">
       <div className="flex-1 overflow-hidden">
         <Outlet />
       </div>
