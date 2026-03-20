@@ -5,6 +5,6 @@ jwt:
   access-token-expiry: ${JWT_ACCESS_TOKEN_EXPIRY:1800000}
   refresh-token-expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
 
-# Nginx 리버스 프록시 뒤에서 Swagger가 올바른 경로로 api-docs를 요청하도록 설정
+# Nginx 리버스 프록시(/dev) 뒤에서 Swagger가 올바른 경로로 api-docs를 요청하도록 설정
 server:
   forward-headers-strategy: framework
