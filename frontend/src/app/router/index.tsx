@@ -61,10 +61,6 @@ const authRoutes = [
     element: <RoleSelectPage />,
   },
   {
-    path: ROUTE_SEGMENTS.AUTH.LOGIN,
-    element: <LoginPage />,
-  },
-  {
     path: ROUTE_SEGMENTS.AUTH.LOGIN_CARE,
     element: <CareLoginPage />,
   },
@@ -73,8 +69,8 @@ const authRoutes = [
     element: <PatientLoginPage />,
   },
   {
-    path: ROUTE_SEGMENTS.AUTH.SIGNUP,
-    element: <SignupPage />,
+    path: ROUTE_SEGMENTS.AUTH.LOGIN,
+    element: <LoginPage />,
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP_CARE,
@@ -83,6 +79,10 @@ const authRoutes = [
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP_PATIENT,
     element: <PatientSignupPage />,
+  },
+  {
+    path: ROUTE_SEGMENTS.AUTH.SIGNUP,
+    element: <SignupPage />,
   },
   {
     path: ROUTE_SEGMENTS.AUTH.RESET_PASSWORD,

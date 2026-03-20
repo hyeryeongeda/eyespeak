@@ -117,6 +117,13 @@ export const ROUTE_PATHS = {
   ...CARE_ROUTE_PATHS,
 } as const
 
+export function resolveAppPath(path: string) {
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, '')
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  return `${basePath}${normalizedPath}` || '/'
+}
+
 export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
   if (mode === 'login') {
     return role === 'guardian' ? ROUTE_PATHS.AUTH_LOGIN_CARE : ROUTE_PATHS.AUTH_LOGIN_PATIENT

@@ -1,4 +1,5 @@
 import { type CSSProperties, type FocusEvent as ReactFocusEvent, type ReactNode, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { pageWrapper } from './authPageStyles'
 
 interface ViewportMetrics {
@@ -32,6 +33,7 @@ function getViewportMetrics(): ViewportMetrics {
 }
 
 export default function AuthPageFrame({ children }: AuthPageFrameProps) {
+  const location = useLocation()
   const containerRef = useRef<HTMLElement | null>(null)
   const focusTimerRef = useRef<number | null>(null)
   const [viewportMetrics, setViewportMetrics] = useState<ViewportMetrics>(() => getViewportMetrics())
@@ -53,6 +55,28 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
       })
     }, viewportMetrics.keyboardInset > 0 ? 220 : 0)
   })
+
+  useEffect(() => {
+    const activeElement = document.activeElement
+
+    if (activeElement instanceof HTMLElement) {
+      activeElement.blur()
+    }
+
+    if (focusTimerRef.current !== null) {
+      window.clearTimeout(focusTimerRef.current)
+      focusTimerRef.current = null
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      syncViewportMetrics()
+      containerRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [location.key, syncViewportMetrics])
 
   useEffect(() => {
     syncViewportMetrics()
@@ -116,7 +140,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
   }
 
   return (
-    <main ref={containerRef} style={frameStyle}>
+    <main key={location.key} ref={containerRef} style={frameStyle}>
       {children}
     </main>
   )
