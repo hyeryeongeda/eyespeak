@@ -12,3 +12,6 @@ server:
 springdoc:
   cache:
     disabled: true
+  swagger-ui:
+    config-url: /dev/api/v1/v3/api-docs/swagger-config
+    url: /dev/api/v1/v3/api-docs
