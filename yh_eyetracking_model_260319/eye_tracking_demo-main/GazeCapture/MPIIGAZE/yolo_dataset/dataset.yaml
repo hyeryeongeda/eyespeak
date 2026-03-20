@@ -1,0 +1,12 @@
+# MPIIGaze Eye Detection Dataset
+# train: 209,051 images (persons p00~p11)
+# val  :   4,607 images (persons p12~p14)
+
+path: C:/Users/SSAFY/Desktop/GAZE-CAPTURE/GazeCapture/MPIIGAZE/yolo_dataset
+train: train.txt
+val:   val.txt
+
+nc: 2
+names:
+  0: right_eye
+  1: left_eye

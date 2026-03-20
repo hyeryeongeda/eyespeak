@@ -1,0 +1,865 @@
+<annotations>
+  <version>1.1</version>
+  <meta>
+    <task>
+      <id />
+      <project />
+      <name />
+      <size />
+      <mode>annotations</mode>
+      <overlap>0</overlap>
+      <bugtracker />
+      <flipped>False</flipped>
+      <created />
+      <updated />
+      <start_frame>0</start_frame>
+      <stop_frame>0</stop_frame>
+      <frame_filter>step=1</frame_filter>
+      <labels>
+        <label>
+          <name>"input labels"</name>
+          <attributes>
+          </attributes>
+        </label>
+      </labels>
+      <segments>
+        <segment>
+          <id>0</id>
+          <start>0</start>
+          <stop>0</stop>
+          <url />
+        </segment>
+      </segments>
+      <owner>
+        <username />
+        <email />
+      </owner>
+    </task>
+    <dumped />
+  </meta>
+  <image id="0" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0001.png" width="1024" height="1024">
+    <points label="right_center" points="573.60000000,472.50000000" />
+    <points label="left_center" points="456.70000000,469.20000000" />
+  </image>
+  <image id="1" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0026.png" width="1024" height="1024">
+    <points label="left_center" points="457.60000000,469.10000000" />
+    <points label="right_center" points="574.60000000,473.00000000" />
+  </image>
+  <image id="2" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0051.png" width="1024" height="1024">
+    <points label="left_center" points="459.60000000,469.70000000" />
+    <points label="right_center" points="577.00000000,474.30000000" />
+  </image>
+  <image id="3" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0076.png" width="1024" height="1024">
+    <points label="left_center" points="458.80000000,470.50000000" />
+    <points label="right_center" points="576.30000000,474.40000000" />
+  </image>
+  <image id="4" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0101.png" width="1024" height="1024">
+    <points label="left_center" points="459.90000000,472.60000000" />
+    <points label="right_center" points="578.40000000,477.50000000" />
+  </image>
+  <image id="5" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0126.png" width="1024" height="1024">
+    <points label="right_center" points="578.10000000,477.90000000" />
+    <points label="left_center" points="459.80000000,473.10000000" />
+  </image>
+  <image id="6" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0151.png" width="1024" height="1024" />
+  <image id="7" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0176.png" width="1024" height="1024">
+    <points label="right_center" points="578.00000000,478.10000000" />
+    <points label="left_center" points="459.20000000,474.10000000" />
+  </image>
+  <image id="8" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0201.png" width="1024" height="1024">
+    <points label="right_center" points="578.90000000,479.10000000" />
+    <points label="left_center" points="459.60000000,473.90000000" />
+  </image>
+  <image id="9" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0226.png" width="1024" height="1024">
+    <points label="left_center" points="458.60000000,475.30000000" />
+    <points label="right_center" points="578.60000000,479.50000000" />
+  </image>
+  <image id="10" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0251.png" width="1024" height="1024">
+    <points label="right_center" points="578.30000000,481.20000000" />
+    <points label="left_center" points="458.30000000,477.10000000" />
+  </image>
+  <image id="11" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0276.png" width="1024" height="1024">
+    <points label="left_center" points="458.30000000,476.70000000" />
+    <points label="right_center" points="578.40000000,481.30000000" />
+  </image>
+  <image id="12" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0301.png" width="1024" height="1024">
+    <points label="left_center" points="458.70000000,477.50000000" />
+    <points label="right_center" points="579.20000000,481.70000000" />
+  </image>
+  <image id="13" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0326.png" width="1024" height="1024">
+    <points label="left_center" points="458.80000000,480.80000000" />
+    <points label="right_center" points="580.10000000,484.50000000" />
+  </image>
+  <image id="14" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0351.png" width="1024" height="1024">
+    <points label="right_center" points="580.40000000,485.50000000" />
+    <points label="left_center" points="459.20000000,481.70000000" />
+  </image>
+  <image id="15" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0376.png" width="1024" height="1024">
+    <points label="right_center" points="580.90000000,485.20000000" />
+    <points label="left_center" points="460.20000000,481.00000000" />
+  </image>
+  <image id="16" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0401.png" width="1024" height="1024">
+    <points label="left_center" points="459.80000000,481.60000000" />
+    <points label="right_center" points="580.30000000,485.90000000" />
+  </image>
+  <image id="17" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0426.png" width="1024" height="1024">
+    <points label="left_center" points="460.10000000,482.30000000" />
+    <points label="right_center" points="581.60000000,486.20000000" />
+  </image>
+  <image id="18" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0451.png" width="1024" height="1024">
+    <points label="right_center" points="580.60000000,486.40000000" />
+    <points label="left_center" points="459.60000000,482.80000000" />
+  </image>
+  <image id="19" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0476.png" width="1024" height="1024">
+    <points label="left_center" points="460.70000000,482.90000000" />
+    <points label="right_center" points="582.10000000,486.10000000" />
+  </image>
+  <image id="20" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0501.png" width="1024" height="1024">
+    <points label="right_center" points="583.60000000,488.30000000" />
+    <points label="left_center" points="461.50000000,484.70000000" />
+  </image>
+  <image id="21" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0526.png" width="1024" height="1024">
+    <points label="left_center" points="461.40000000,485.00000000" />
+    <points label="right_center" points="583.40000000,488.60000000" />
+  </image>
+  <image id="22" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0551.png" width="1024" height="1024">
+    <points label="right_center" points="583.70000000,487.80000000" />
+    <points label="left_center" points="461.10000000,483.80000000" />
+  </image>
+  <image id="23" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0576.png" width="1024" height="1024">
+    <points label="right_center" points="583.40000000,487.90000000" />
+    <points label="left_center" points="461.10000000,484.20000000" />
+  </image>
+  <image id="24" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0601.png" width="1024" height="1024">
+    <points label="right_center" points="582.40000000,487.80000000" />
+    <points label="left_center" points="460.00000000,484.30000000" />
+  </image>
+  <image id="25" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0626.png" width="1024" height="1024">
+    <points label="left_center" points="460.00000000,485.20000000" />
+    <points label="right_center" points="582.20000000,487.90000000" />
+  </image>
+  <image id="26" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0651.png" width="1024" height="1024">
+    <points label="left_center" points="460.50000000,485.70000000" />
+    <points label="right_center" points="582.90000000,488.10000000" />
+  </image>
+  <image id="27" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0676.png" width="1024" height="1024" />
+  <image id="28" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0701.png" width="1024" height="1024">
+    <points label="right_center" points="582.60000000,490.40000000" />
+    <points label="left_center" points="459.80000000,488.00000000" />
+  </image>
+  <image id="29" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0726.png" width="1024" height="1024">
+    <points label="right_center" points="582.80000000,490.00000000" />
+    <points label="left_center" points="460.80000000,487.80000000" />
+  </image>
+  <image id="30" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0751.png" width="1024" height="1024">
+    <points label="left_center" points="459.80000000,489.00000000" />
+    <points label="right_center" points="582.10000000,490.70000000" />
+  </image>
+  <image id="31" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0776.png" width="1024" height="1024">
+    <points label="right_center" points="583.50000000,491.50000000" />
+    <points label="left_center" points="461.10000000,489.20000000" />
+  </image>
+  <image id="32" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0801.png" width="1024" height="1024">
+    <points label="left_center" points="461.40000000,490.00000000" />
+    <points label="right_center" points="584.00000000,492.10000000" />
+  </image>
+  <image id="33" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0826.png" width="1024" height="1024">
+    <points label="right_center" points="583.40000000,492.30000000" />
+    <points label="left_center" points="460.60000000,490.20000000" />
+  </image>
+  <image id="34" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0851.png" width="1024" height="1024">
+    <points label="right_center" points="585.40000000,490.90000000" />
+    <points label="left_center" points="462.30000000,488.70000000" />
+  </image>
+  <image id="35" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0876.png" width="1024" height="1024" />
+  <image id="36" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0901.png" width="1024" height="1024">
+    <points label="left_center" points="465.20000000,488.00000000" />
+    <points label="right_center" points="587.80000000,491.00000000" />
+  </image>
+  <image id="37" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0926.png" width="1024" height="1024">
+    <points label="left_center" points="465.00000000,488.10000000" />
+    <points label="right_center" points="587.90000000,490.90000000" />
+  </image>
+  <image id="38" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0951.png" width="1024" height="1024">
+    <points label="right_center" points="588.00000000,490.70000000" />
+    <points label="left_center" points="464.50000000,488.60000000" />
+  </image>
+  <image id="39" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_0976.png" width="1024" height="1024">
+    <points label="left_center" points="464.40000000,488.40000000" />
+    <points label="right_center" points="587.90000000,490.50000000" />
+  </image>
+  <image id="40" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1001.png" width="1024" height="1024">
+    <points label="left_center" points="463.00000000,487.50000000" />
+    <points label="right_center" points="585.60000000,489.30000000" />
+  </image>
+  <image id="41" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1026.png" width="1024" height="1024">
+    <points label="left_center" points="463.20000000,487.60000000" />
+    <points label="right_center" points="586.70000000,491.20000000" />
+  </image>
+  <image id="42" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1051.png" width="1024" height="1024" />
+  <image id="43" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1076.png" width="1024" height="1024">
+    <points label="left_center" points="465.40000000,489.00000000" />
+    <points label="right_center" points="588.70000000,491.80000000" />
+  </image>
+  <image id="44" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1101.png" width="1024" height="1024">
+    <points label="right_center" points="589.20000000,492.60000000" />
+    <points label="left_center" points="465.70000000,489.50000000" />
+  </image>
+  <image id="45" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1126.png" width="1024" height="1024">
+    <points label="left_center" points="465.60000000,490.00000000" />
+    <points label="right_center" points="589.30000000,493.10000000" />
+  </image>
+  <image id="46" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1151.png" width="1024" height="1024">
+    <points label="left_center" points="464.00000000,490.50000000" />
+    <points label="right_center" points="587.60000000,493.30000000" />
+  </image>
+  <image id="47" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1176.png" width="1024" height="1024">
+    <points label="left_center" points="463.20000000,489.70000000" />
+    <points label="right_center" points="587.00000000,492.70000000" />
+  </image>
+  <image id="48" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1201.png" width="1024" height="1024">
+    <points label="right_center" points="585.30000000,493.40000000" />
+    <points label="left_center" points="461.40000000,490.10000000" />
+  </image>
+  <image id="49" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1226.png" width="1024" height="1024">
+    <points label="left_center" points="463.10000000,490.90000000" />
+    <points label="right_center" points="586.70000000,494.40000000" />
+  </image>
+  <image id="50" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1251.png" width="1024" height="1024">
+    <points label="left_center" points="462.90000000,491.40000000" />
+    <points label="right_center" points="586.40000000,494.50000000" />
+  </image>
+  <image id="51" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1276.png" width="1024" height="1024">
+    <points label="right_center" points="587.60000000,495.60000000" />
+    <points label="left_center" points="464.10000000,492.10000000" />
+  </image>
+  <image id="52" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1301.png" width="1024" height="1024">
+    <points label="right_center" points="589.00000000,495.80000000" />
+    <points label="left_center" points="465.40000000,492.30000000" />
+  </image>
+  <image id="53" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1326.png" width="1024" height="1024">
+    <points label="right_center" points="589.20000000,495.70000000" />
+    <points label="left_center" points="465.50000000,492.00000000" />
+  </image>
+  <image id="54" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1351.png" width="1024" height="1024">
+    <points label="right_center" points="590.40000000,495.20000000" />
+    <points label="left_center" points="466.90000000,491.20000000" />
+  </image>
+  <image id="55" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1376.png" width="1024" height="1024">
+    <points label="left_center" points="466.70000000,490.90000000" />
+    <points label="right_center" points="590.40000000,494.80000000" />
+  </image>
+  <image id="56" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1401.png" width="1024" height="1024">
+    <points label="right_center" points="591.20000000,495.90000000" />
+    <points label="left_center" points="467.80000000,491.40000000" />
+  </image>
+  <image id="57" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1426.png" width="1024" height="1024">
+    <points label="left_center" points="467.70000000,491.80000000" />
+    <points label="right_center" points="591.00000000,496.30000000" />
+  </image>
+  <image id="58" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1451.png" width="1024" height="1024">
+    <points label="right_center" points="593.30000000,495.70000000" />
+    <points label="left_center" points="469.60000000,491.00000000" />
+  </image>
+  <image id="59" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1476.png" width="1024" height="1024">
+    <points label="left_center" points="471.20000000,491.30000000" />
+    <points label="right_center" points="594.80000000,496.40000000" />
+  </image>
+  <image id="60" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1501.png" width="1024" height="1024">
+    <points label="right_center" points="594.10000000,496.00000000" />
+    <points label="left_center" points="471.10000000,491.10000000" />
+  </image>
+  <image id="61" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1526.png" width="1024" height="1024">
+    <points label="left_center" points="471.80000000,491.20000000" />
+    <points label="right_center" points="594.90000000,495.90000000" />
+  </image>
+  <image id="62" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1551.png" width="1024" height="1024">
+    <points label="right_center" points="595.80000000,496.10000000" />
+    <points label="left_center" points="472.50000000,491.40000000" />
+  </image>
+  <image id="63" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1576.png" width="1024" height="1024">
+    <points label="right_center" points="598.80000000,496.10000000" />
+    <points label="left_center" points="475.80000000,491.00000000" />
+  </image>
+  <image id="64" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1601.png" width="1024" height="1024">
+    <points label="right_center" points="597.10000000,495.40000000" />
+    <points label="left_center" points="474.60000000,490.20000000" />
+  </image>
+  <image id="65" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1626.png" width="1024" height="1024">
+    <points label="left_center" points="473.30000000,489.70000000" />
+    <points label="right_center" points="596.10000000,494.90000000" />
+  </image>
+  <image id="66" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1651.png" width="1024" height="1024">
+    <points label="left_center" points="474.70000000,489.90000000" />
+    <points label="right_center" points="597.60000000,494.60000000" />
+  </image>
+  <image id="67" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1676.png" width="1024" height="1024">
+    <points label="left_center" points="474.20000000,488.30000000" />
+    <points label="right_center" points="597.20000000,493.00000000" />
+  </image>
+  <image id="68" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1701.png" width="1024" height="1024">
+    <points label="right_center" points="595.50000000,491.10000000" />
+    <points label="left_center" points="473.30000000,486.30000000" />
+  </image>
+  <image id="69" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1726.png" width="1024" height="1024">
+    <points label="left_center" points="473.80000000,485.40000000" />
+    <points label="right_center" points="596.50000000,491.00000000" />
+  </image>
+  <image id="70" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1751.png" width="1024" height="1024">
+    <points label="right_center" points="596.70000000,491.10000000" />
+    <points label="left_center" points="474.10000000,485.80000000" />
+  </image>
+  <image id="71" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_F_1776.png" width="1024" height="1024">
+    <points label="left_center" points="474.00000000,484.80000000" />
+    <points label="right_center" points="596.50000000,490.00000000" />
+  </image>
+  <image id="72" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0001.png" width="1024" height="1024">
+    <points label="left_center" points="450.00000000,417.90000000" />
+    <points label="right_center" points="549.10000000,420.80000000" />
+  </image>
+  <image id="73" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0026.png" width="1024" height="1024">
+    <points label="right_center" points="549.40000000,421.80000000" />
+    <points label="left_center" points="449.60000000,419.00000000" />
+  </image>
+  <image id="74" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0051.png" width="1024" height="1024">
+    <points label="left_center" points="450.00000000,419.20000000" />
+    <points label="right_center" points="549.80000000,422.40000000" />
+  </image>
+  <image id="75" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0076.png" width="1024" height="1024">
+    <points label="left_center" points="448.70000000,420.00000000" />
+    <points label="right_center" points="550.30000000,423.60000000" />
+  </image>
+  <image id="76" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0101.png" width="1024" height="1024">
+    <points label="left_center" points="447.50000000,421.70000000" />
+    <points label="right_center" points="548.90000000,424.80000000" />
+  </image>
+  <image id="77" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0126.png" width="1024" height="1024">
+    <points label="left_center" points="445.80000000,422.80000000" />
+    <points label="right_center" points="548.20000000,426.30000000" />
+  </image>
+  <image id="78" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0151.png" width="1024" height="1024">
+    <points label="left_center" points="446.10000000,423.00000000" />
+    <points label="right_center" points="548.80000000,427.10000000" />
+  </image>
+  <image id="79" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0176.png" width="1024" height="1024">
+    <points label="right_center" points="547.70000000,427.10000000" />
+    <points label="left_center" points="445.00000000,423.10000000" />
+  </image>
+  <image id="80" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0201.png" width="1024" height="1024">
+    <points label="right_center" points="548.60000000,427.80000000" />
+    <points label="left_center" points="444.90000000,424.60000000" />
+  </image>
+  <image id="81" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0226.png" width="1024" height="1024">
+    <points label="right_center" points="546.20000000,427.80000000" />
+    <points label="left_center" points="441.10000000,429.40000000" />
+  </image>
+  <image id="82" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0251.png" width="1024" height="1024">
+    <points label="right_center" points="545.40000000,429.50000000" />
+    <points label="left_center" points="441.90000000,425.60000000" />
+  </image>
+  <image id="83" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0276.png" width="1024" height="1024">
+    <points label="left_center" points="442.00000000,426.20000000" />
+    <points label="right_center" points="545.90000000,429.60000000" />
+  </image>
+  <image id="84" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0301.png" width="1024" height="1024">
+    <points label="right_center" points="546.10000000,430.10000000" />
+    <points label="left_center" points="442.20000000,426.50000000" />
+  </image>
+  <image id="85" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0326.png" width="1024" height="1024">
+    <points label="left_center" points="440.30000000,428.70000000" />
+    <points label="right_center" points="544.10000000,432.20000000" />
+  </image>
+  <image id="86" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0351.png" width="1024" height="1024">
+    <points label="right_center" points="545.20000000,434.30000000" />
+    <points label="left_center" points="440.90000000,429.80000000" />
+  </image>
+  <image id="87" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0376.png" width="1024" height="1024">
+    <points label="left_center" points="441.40000000,430.60000000" />
+    <points label="right_center" points="546.20000000,433.70000000" />
+  </image>
+  <image id="88" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0401.png" width="1024" height="1024">
+    <points label="right_center" points="546.00000000,434.40000000" />
+    <points label="left_center" points="441.60000000,429.80000000" />
+  </image>
+  <image id="89" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0426.png" width="1024" height="1024">
+    <points label="right_center" points="546.70000000,435.80000000" />
+    <points label="left_center" points="441.70000000,430.90000000" />
+  </image>
+  <image id="90" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0451.png" width="1024" height="1024">
+    <points label="right_center" points="545.70000000,434.60000000" />
+    <points label="left_center" points="440.90000000,430.90000000" />
+  </image>
+  <image id="91" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0476.png" width="1024" height="1024">
+    <points label="right_center" points="545.80000000,435.50000000" />
+    <points label="left_center" points="440.00000000,431.40000000" />
+  </image>
+  <image id="92" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0501.png" width="1024" height="1024">
+    <points label="left_center" points="440.40000000,432.40000000" />
+    <points label="right_center" points="546.20000000,436.30000000" />
+  </image>
+  <image id="93" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0526.png" width="1024" height="1024">
+    <points label="left_center" points="438.40000000,433.30000000" />
+    <points label="right_center" points="544.60000000,437.90000000" />
+  </image>
+  <image id="94" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0551.png" width="1024" height="1024">
+    <points label="right_center" points="545.70000000,437.10000000" />
+    <points label="left_center" points="439.00000000,432.80000000" />
+  </image>
+  <image id="95" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0576.png" width="1024" height="1024" />
+  <image id="96" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0601.png" width="1024" height="1024">
+    <points label="right_center" points="546.10000000,436.50000000" />
+    <points label="left_center" points="439.70000000,432.40000000" />
+  </image>
+  <image id="97" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0626.png" width="1024" height="1024">
+    <points label="right_center" points="545.00000000,438.00000000" />
+    <points label="left_center" points="438.90000000,433.60000000" />
+  </image>
+  <image id="98" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0651.png" width="1024" height="1024">
+    <points label="left_center" points="438.90000000,433.90000000" />
+    <points label="right_center" points="545.40000000,438.00000000" />
+  </image>
+  <image id="99" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0676.png" width="1024" height="1024">
+    <points label="left_center" points="436.90000000,434.40000000" />
+    <points label="right_center" points="542.50000000,438.20000000" />
+  </image>
+  <image id="100" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0701.png" width="1024" height="1024">
+    <points label="left_center" points="437.00000000,435.10000000" />
+    <points label="right_center" points="542.80000000,438.60000000" />
+  </image>
+  <image id="101" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0726.png" width="1024" height="1024">
+    <points label="right_center" points="543.20000000,439.40000000" />
+    <points label="left_center" points="437.00000000,435.80000000" />
+  </image>
+  <image id="102" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0751.png" width="1024" height="1024">
+    <points label="left_center" points="438.10000000,436.30000000" />
+    <points label="right_center" points="544.30000000,438.60000000" />
+  </image>
+  <image id="103" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0776.png" width="1024" height="1024">
+    <points label="right_center" points="546.40000000,439.90000000" />
+    <points label="left_center" points="439.30000000,435.90000000" />
+  </image>
+  <image id="104" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0801.png" width="1024" height="1024">
+    <points label="right_center" points="545.30000000,441.80000000" />
+    <points label="left_center" points="438.90000000,437.90000000" />
+  </image>
+  <image id="105" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0826.png" width="1024" height="1024">
+    <points label="left_center" points="438.70000000,438.20000000" />
+    <points label="right_center" points="545.20000000,441.40000000" />
+  </image>
+  <image id="106" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0851.png" width="1024" height="1024">
+    <points label="right_center" points="546.60000000,441.40000000" />
+    <points label="left_center" points="439.70000000,438.00000000" />
+  </image>
+  <image id="107" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0876.png" width="1024" height="1024">
+    <points label="right_center" points="546.10000000,440.70000000" />
+    <points label="left_center" points="439.30000000,437.30000000" />
+  </image>
+  <image id="108" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0901.png" width="1024" height="1024">
+    <points label="right_center" points="549.50000000,439.40000000" />
+    <points label="left_center" points="441.90000000,435.20000000" />
+  </image>
+  <image id="109" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0926.png" width="1024" height="1024">
+    <points label="left_center" points="441.00000000,436.80000000" />
+    <points label="right_center" points="549.20000000,440.90000000" />
+  </image>
+  <image id="110" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0951.png" width="1024" height="1024">
+    <points label="left_center" points="440.10000000,436.30000000" />
+    <points label="right_center" points="547.60000000,440.20000000" />
+  </image>
+  <image id="111" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_0976.png" width="1024" height="1024">
+    <points label="right_center" points="547.40000000,439.40000000" />
+    <points label="left_center" points="440.10000000,435.70000000" />
+  </image>
+  <image id="112" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1001.png" width="1024" height="1024">
+    <points label="left_center" points="439.90000000,435.20000000" />
+    <points label="right_center" points="546.80000000,439.30000000" />
+  </image>
+  <image id="113" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1026.png" width="1024" height="1024">
+    <points label="left_center" points="440.10000000,435.60000000" />
+    <points label="right_center" points="547.90000000,439.50000000" />
+  </image>
+  <image id="114" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1051.png" width="1024" height="1024">
+    <points label="left_center" points="440.60000000,435.40000000" />
+    <points label="right_center" points="548.30000000,439.80000000" />
+  </image>
+  <image id="115" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1076.png" width="1024" height="1024" />
+  <image id="116" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1101.png" width="1024" height="1024">
+    <points label="right_center" points="548.50000000,441.90000000" />
+    <points label="left_center" points="440.20000000,437.00000000" />
+  </image>
+  <image id="117" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1126.png" width="1024" height="1024">
+    <points label="right_center" points="547.60000000,442.70000000" />
+    <points label="left_center" points="439.10000000,437.20000000" />
+  </image>
+  <image id="118" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1151.png" width="1024" height="1024">
+    <points label="right_center" points="547.80000000,443.20000000" />
+    <points label="left_center" points="439.40000000,437.80000000" />
+  </image>
+  <image id="119" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1176.png" width="1024" height="1024">
+    <points label="left_center" points="438.40000000,437.20000000" />
+    <points label="right_center" points="546.40000000,442.20000000" />
+  </image>
+  <image id="120" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1201.png" width="1024" height="1024">
+    <points label="left_center" points="437.40000000,438.30000000" />
+    <points label="right_center" points="544.90000000,443.00000000" />
+  </image>
+  <image id="121" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1226.png" width="1024" height="1024">
+    <points label="right_center" points="546.10000000,443.20000000" />
+    <points label="left_center" points="438.20000000,438.00000000" />
+  </image>
+  <image id="122" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1251.png" width="1024" height="1024">
+    <points label="right_center" points="545.10000000,444.30000000" />
+    <points label="left_center" points="437.30000000,439.20000000" />
+  </image>
+  <image id="123" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1276.png" width="1024" height="1024">
+    <points label="left_center" points="438.50000000,439.40000000" />
+    <points label="right_center" points="547.00000000,444.70000000" />
+  </image>
+  <image id="124" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1301.png" width="1024" height="1024">
+    <points label="right_center" points="547.00000000,444.80000000" />
+    <points label="left_center" points="438.40000000,439.00000000" />
+  </image>
+  <image id="125" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1326.png" width="1024" height="1024">
+    <points label="right_center" points="547.20000000,445.30000000" />
+    <points label="left_center" points="438.70000000,439.40000000" />
+  </image>
+  <image id="126" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1351.png" width="1024" height="1024">
+    <points label="left_center" points="439.50000000,439.60000000" />
+    <points label="right_center" points="548.50000000,445.70000000" />
+  </image>
+  <image id="127" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1376.png" width="1024" height="1024">
+    <points label="right_center" points="550.10000000,444.90000000" />
+    <points label="left_center" points="441.20000000,438.60000000" />
+  </image>
+  <image id="128" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1401.png" width="1024" height="1024">
+    <points label="right_center" points="549.00000000,445.20000000" />
+    <points label="left_center" points="440.20000000,439.00000000" />
+  </image>
+  <image id="129" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1426.png" width="1024" height="1024">
+    <points label="left_center" points="440.70000000,439.10000000" />
+    <points label="right_center" points="549.10000000,445.50000000" />
+  </image>
+  <image id="130" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1451.png" width="1024" height="1024" />
+  <image id="131" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1476.png" width="1024" height="1024">
+    <points label="left_center" points="442.70000000,439.80000000" />
+    <points label="right_center" points="553.10000000,446.80000000" />
+  </image>
+  <image id="132" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1501.png" width="1024" height="1024">
+    <points label="right_center" points="553.90000000,445.20000000" />
+    <points label="left_center" points="443.80000000,438.40000000" />
+  </image>
+  <image id="133" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1526.png" width="1024" height="1024">
+    <points label="left_center" points="443.80000000,439.30000000" />
+    <points label="right_center" points="554.10000000,446.20000000" />
+  </image>
+  <image id="134" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1551.png" width="1024" height="1024">
+    <points label="left_center" points="444.80000000,439.20000000" />
+    <points label="right_center" points="554.60000000,446.10000000" />
+  </image>
+  <image id="135" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1576.png" width="1024" height="1024">
+    <points label="right_center" points="556.80000000,444.90000000" />
+    <points label="left_center" points="446.50000000,438.30000000" />
+  </image>
+  <image id="136" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1601.png" width="1024" height="1024">
+    <points label="left_center" points="447.40000000,438.70000000" />
+    <points label="right_center" points="557.90000000,445.80000000" />
+  </image>
+  <image id="137" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1626.png" width="1024" height="1024">
+    <points label="right_center" points="556.80000000,444.70000000" />
+    <points label="left_center" points="446.40000000,437.70000000" />
+  </image>
+  <image id="138" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1651.png" width="1024" height="1024">
+    <points label="right_center" points="558.10000000,443.90000000" />
+    <points label="left_center" points="447.40000000,436.80000000" />
+  </image>
+  <image id="139" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1676.png" width="1024" height="1024">
+    <points label="left_center" points="446.10000000,435.80000000" />
+    <points label="right_center" points="556.40000000,443.00000000" />
+  </image>
+  <image id="140" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1701.png" width="1024" height="1024">
+    <points label="left_center" points="446.10000000,434.70000000" />
+    <points label="right_center" points="556.10000000,441.20000000" />
+  </image>
+  <image id="141" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1726.png" width="1024" height="1024">
+    <points label="left_center" points="446.40000000,433.50000000" />
+    <points label="right_center" points="556.20000000,440.30000000" />
+  </image>
+  <image id="142" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1751.png" width="1024" height="1024">
+    <points label="left_center" points="446.80000000,433.40000000" />
+    <points label="right_center" points="556.50000000,440.10000000" />
+  </image>
+  <image id="143" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_L_1776.png" width="1024" height="1024">
+    <points label="left_center" points="446.80000000,432.80000000" />
+    <points label="right_center" points="556.40000000,439.60000000" />
+  </image>
+  <image id="144" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0001.png" width="1024" height="1024">
+    <points label="right_center" points="569.60000000,447.00000000" />
+    <points label="left_center" points="471.20000000,444.10000000" />
+  </image>
+  <image id="145" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0026.png" width="1024" height="1024">
+    <points label="left_center" points="471.80000000,444.70000000" />
+    <points label="right_center" points="570.30000000,448.30000000" />
+  </image>
+  <image id="146" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0051.png" width="1024" height="1024">
+    <points label="right_center" points="573.40000000,448.90000000" />
+    <points label="left_center" points="475.50000000,445.60000000" />
+  </image>
+  <image id="147" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0076.png" width="1024" height="1024">
+    <points label="right_center" points="573.40000000,450.20000000" />
+    <points label="left_center" points="476.20000000,446.40000000" />
+  </image>
+  <image id="148" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0101.png" width="1024" height="1024">
+    <points label="left_center" points="478.60000000,448.20000000" />
+    <points label="right_center" points="575.60000000,451.60000000" />
+  </image>
+  <image id="149" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0126.png" width="1024" height="1024">
+    <points label="left_center" points="479.80000000,449.10000000" />
+    <points label="right_center" points="577.50000000,452.90000000" />
+  </image>
+  <image id="150" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0151.png" width="1024" height="1024">
+    <points label="left_center" points="482.30000000,449.40000000" />
+    <points label="right_center" points="579.60000000,453.20000000" />
+  </image>
+  <image id="151" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0176.png" width="1024" height="1024">
+    <points label="right_center" points="578.00000000,453.60000000" />
+    <points label="left_center" points="480.80000000,449.50000000" />
+  </image>
+  <image id="152" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0201.png" width="1024" height="1024">
+    <points label="left_center" points="480.80000000,448.40000000" />
+    <points label="right_center" points="577.70000000,453.20000000" />
+  </image>
+  <image id="153" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0226.png" width="1024" height="1024">
+    <points label="left_center" points="481.40000000,450.60000000" />
+    <points label="right_center" points="579.20000000,454.90000000" />
+  </image>
+  <image id="154" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0251.png" width="1024" height="1024" />
+  <image id="155" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0276.png" width="1024" height="1024">
+    <points label="right_center" points="580.40000000,455.30000000" />
+    <points label="left_center" points="482.40000000,452.60000000" />
+  </image>
+  <image id="156" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0301.png" width="1024" height="1024">
+    <points label="left_center" points="483.60000000,453.10000000" />
+    <points label="right_center" points="580.10000000,456.00000000" />
+  </image>
+  <image id="157" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0326.png" width="1024" height="1024" />
+  <image id="158" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0351.png" width="1024" height="1024">
+    <points label="right_center" points="583.10000000,459.40000000" />
+    <points label="left_center" points="485.30000000,457.10000000" />
+  </image>
+  <image id="159" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0376.png" width="1024" height="1024">
+    <points label="right_center" points="583.30000000,459.80000000" />
+    <points label="left_center" points="486.30000000,457.50000000" />
+  </image>
+  <image id="160" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0401.png" width="1024" height="1024">
+    <points label="right_center" points="582.70000000,459.40000000" />
+    <points label="left_center" points="486.20000000,456.90000000" />
+  </image>
+  <image id="161" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0426.png" width="1024" height="1024">
+    <points label="left_center" points="487.90000000,458.30000000" />
+    <points label="right_center" points="584.40000000,460.40000000" />
+  </image>
+  <image id="162" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0451.png" width="1024" height="1024">
+    <points label="left_center" points="487.90000000,458.60000000" />
+    <points label="right_center" points="584.50000000,460.40000000" />
+  </image>
+  <image id="163" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0476.png" width="1024" height="1024" />
+  <image id="164" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0501.png" width="1024" height="1024">
+    <points label="left_center" points="490.70000000,459.80000000" />
+    <points label="right_center" points="587.20000000,461.50000000" />
+  </image>
+  <image id="165" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0526.png" width="1024" height="1024">
+    <points label="right_center" points="587.40000000,462.10000000" />
+    <points label="left_center" points="490.60000000,461.20000000" />
+  </image>
+  <image id="166" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0551.png" width="1024" height="1024">
+    <points label="left_center" points="491.70000000,460.60000000" />
+    <points label="right_center" points="588.10000000,462.30000000" />
+  </image>
+  <image id="167" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0576.png" width="1024" height="1024">
+    <points label="right_center" points="588.00000000,461.70000000" />
+    <points label="left_center" points="491.80000000,461.00000000" />
+  </image>
+  <image id="168" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0601.png" width="1024" height="1024">
+    <points label="right_center" points="588.60000000,461.10000000" />
+    <points label="left_center" points="492.20000000,460.20000000" />
+  </image>
+  <image id="169" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0626.png" width="1024" height="1024">
+    <points label="left_center" points="491.70000000,460.80000000" />
+    <points label="right_center" points="588.10000000,462.40000000" />
+  </image>
+  <image id="170" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0651.png" width="1024" height="1024" />
+  <image id="171" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0676.png" width="1024" height="1024">
+    <points label="left_center" points="489.30000000,462.50000000" />
+    <points label="right_center" points="586.50000000,462.80000000" />
+  </image>
+  <image id="172" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0701.png" width="1024" height="1024">
+    <points label="right_center" points="587.60000000,463.50000000" />
+    <points label="left_center" points="490.60000000,463.80000000" />
+  </image>
+  <image id="173" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0726.png" width="1024" height="1024">
+    <points label="left_center" points="491.00000000,464.30000000" />
+    <points label="right_center" points="587.80000000,464.20000000" />
+  </image>
+  <image id="174" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0751.png" width="1024" height="1024" />
+  <image id="175" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0776.png" width="1024" height="1024">
+    <points label="right_center" points="588.30000000,464.70000000" />
+    <points label="left_center" points="491.80000000,464.80000000" />
+  </image>
+  <image id="176" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0801.png" width="1024" height="1024">
+    <points label="left_center" points="493.60000000,467.10000000" />
+    <points label="right_center" points="589.60000000,466.20000000" />
+  </image>
+  <image id="177" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0826.png" width="1024" height="1024">
+    <points label="left_center" points="493.60000000,466.40000000" />
+    <points label="right_center" points="589.80000000,466.00000000" />
+  </image>
+  <image id="178" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0851.png" width="1024" height="1024" />
+  <image id="179" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0876.png" width="1024" height="1024">
+    <points label="left_center" points="495.60000000,466.00000000" />
+    <points label="right_center" points="591.30000000,465.90000000" />
+  </image>
+  <image id="180" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0901.png" width="1024" height="1024">
+    <points label="right_center" points="593.10000000,464.60000000" />
+    <points label="left_center" points="498.10000000,464.50000000" />
+  </image>
+  <image id="181" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0926.png" width="1024" height="1024">
+    <points label="left_center" points="497.90000000,465.10000000" />
+    <points label="right_center" points="593.50000000,464.90000000" />
+  </image>
+  <image id="182" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0951.png" width="1024" height="1024">
+    <points label="left_center" points="497.10000000,464.30000000" />
+    <points label="right_center" points="592.40000000,464.50000000" />
+  </image>
+  <image id="183" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_0976.png" width="1024" height="1024">
+    <points label="left_center" points="496.60000000,464.20000000" />
+    <points label="right_center" points="591.80000000,463.50000000" />
+  </image>
+  <image id="184" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1001.png" width="1024" height="1024">
+    <points label="right_center" points="591.60000000,463.90000000" />
+    <points label="left_center" points="496.40000000,463.70000000" />
+  </image>
+  <image id="185" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1026.png" width="1024" height="1024">
+    <points label="left_center" points="497.00000000,463.80000000" />
+    <points label="right_center" points="592.50000000,464.20000000" />
+  </image>
+  <image id="186" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1051.png" width="1024" height="1024">
+    <points label="right_center" points="592.40000000,464.50000000" />
+    <points label="left_center" points="496.30000000,464.40000000" />
+  </image>
+  <image id="187" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1076.png" width="1024" height="1024">
+    <points label="right_center" points="594.60000000,465.50000000" />
+    <points label="left_center" points="499.10000000,464.40000000" />
+  </image>
+  <image id="188" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1101.png" width="1024" height="1024">
+    <points label="right_center" points="594.60000000,466.20000000" />
+    <points label="left_center" points="499.00000000,465.40000000" />
+  </image>
+  <image id="189" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1126.png" width="1024" height="1024">
+    <points label="left_center" points="500.10000000,465.90000000" />
+    <points label="right_center" points="595.30000000,466.70000000" />
+  </image>
+  <image id="190" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1151.png" width="1024" height="1024">
+    <points label="left_center" points="499.10000000,466.80000000" />
+    <points label="right_center" points="594.30000000,467.40000000" />
+  </image>
+  <image id="191" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1176.png" width="1024" height="1024">
+    <points label="left_center" points="497.10000000,466.00000000" />
+    <points label="right_center" points="592.80000000,466.50000000" />
+  </image>
+  <image id="192" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1201.png" width="1024" height="1024">
+    <points label="left_center" points="495.30000000,467.00000000" />
+    <points label="right_center" points="591.40000000,467.10000000" />
+  </image>
+  <image id="193" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1226.png" width="1024" height="1024">
+    <points label="left_center" points="497.20000000,466.80000000" />
+    <points label="right_center" points="592.70000000,467.60000000" />
+  </image>
+  <image id="194" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1251.png" width="1024" height="1024">
+    <points label="left_center" points="497.10000000,467.40000000" />
+    <points label="right_center" points="592.80000000,467.80000000" />
+  </image>
+  <image id="195" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1276.png" width="1024" height="1024">
+    <points label="right_center" points="594.40000000,468.60000000" />
+    <points label="left_center" points="499.00000000,468.00000000" />
+  </image>
+  <image id="196" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1301.png" width="1024" height="1024">
+    <points label="right_center" points="593.90000000,468.80000000" />
+    <points label="left_center" points="498.60000000,468.10000000" />
+  </image>
+  <image id="197" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1326.png" width="1024" height="1024">
+    <points label="left_center" points="499.20000000,468.00000000" />
+    <points label="right_center" points="594.50000000,469.30000000" />
+  </image>
+  <image id="198" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1351.png" width="1024" height="1024">
+    <points label="left_center" points="501.80000000,468.10000000" />
+    <points label="right_center" points="596.20000000,469.30000000" />
+  </image>
+  <image id="199" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1376.png" width="1024" height="1024">
+    <points label="right_center" points="596.50000000,469.10000000" />
+    <points label="left_center" points="502.40000000,467.30000000" />
+  </image>
+  <image id="200" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1401.png" width="1024" height="1024">
+    <points label="right_center" points="595.20000000,469.10000000" />
+    <points label="left_center" points="500.80000000,467.70000000" />
+  </image>
+  <image id="201" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1426.png" width="1024" height="1024">
+    <points label="left_center" points="501.70000000,467.90000000" />
+    <points label="right_center" points="595.90000000,469.40000000" />
+  </image>
+  <image id="202" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1451.png" width="1024" height="1024">
+    <points label="left_center" points="504.20000000,466.90000000" />
+    <points label="right_center" points="597.80000000,468.80000000" />
+  </image>
+  <image id="203" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1476.png" width="1024" height="1024">
+    <points label="right_center" points="598.30000000,469.60000000" />
+    <points label="left_center" points="505.10000000,467.60000000" />
+  </image>
+  <image id="204" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1501.png" width="1024" height="1024">
+    <points label="left_center" points="504.40000000,467.20000000" />
+    <points label="right_center" points="598.20000000,469.00000000" />
+  </image>
+  <image id="205" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1526.png" width="1024" height="1024">
+    <points label="right_center" points="598.80000000,469.30000000" />
+    <points label="left_center" points="505.50000000,467.60000000" />
+  </image>
+  <image id="206" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1551.png" width="1024" height="1024">
+    <points label="right_center" points="598.60000000,469.50000000" />
+    <points label="left_center" points="506.00000000,467.50000000" />
+  </image>
+  <image id="207" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1576.png" width="1024" height="1024">
+    <points label="left_center" points="507.70000000,466.60000000" />
+    <points label="right_center" points="599.40000000,468.80000000" />
+  </image>
+  <image id="208" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1601.png" width="1024" height="1024">
+    <points label="right_center" points="600.30000000,468.80000000" />
+    <points label="left_center" points="508.30000000,467.20000000" />
+  </image>
+  <image id="209" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1626.png" width="1024" height="1024">
+    <points label="right_center" points="599.30000000,468.20000000" />
+    <points label="left_center" points="507.30000000,465.80000000" />
+  </image>
+  <image id="210" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1651.png" width="1024" height="1024">
+    <points label="left_center" points="507.50000000,464.90000000" />
+    <points label="right_center" points="600.00000000,467.70000000" />
+  </image>
+  <image id="211" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1676.png" width="1024" height="1024">
+    <points label="right_center" points="598.90000000,466.50000000" />
+    <points label="left_center" points="506.70000000,464.00000000" />
+  </image>
+  <image id="212" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1701.png" width="1024" height="1024">
+    <points label="right_center" points="598.40000000,464.80000000" />
+    <points label="left_center" points="506.00000000,462.50000000" />
+  </image>
+  <image id="213" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1726.png" width="1024" height="1024">
+    <points label="left_center" points="505.30000000,461.30000000" />
+    <points label="right_center" points="598.30000000,464.30000000" />
+  </image>
+  <image id="214" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1751.png" width="1024" height="1024">
+    <points label="left_center" points="506.60000000,461.90000000" />
+    <points label="right_center" points="599.30000000,464.50000000" />
+  </image>
+  <image id="215" name="2021/09/16/0916_G1/G1_002_30/NIA_EYE_G1_002_30_DEPTH_R_1776.png" width="1024" height="1024">
+    <points label="right_center" points="599.70000000,463.80000000" />
+    <points label="left_center" points="506.90000000,460.60000000" />
+  </image>
+</annotations>

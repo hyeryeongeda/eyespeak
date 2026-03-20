@@ -1,0 +1,8 @@
+# Test subset (500 train / 200 val)
+path: C:/Users/SSAFY/Desktop/GAZE-CAPTURE/GazeCapture/MPIIGAZE/yolo_dataset
+train: train_test.txt
+val:   val_test.txt
+nc: 2
+names:
+  0: right_eye
+  1: left_eye
