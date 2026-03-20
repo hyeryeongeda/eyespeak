@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import CareSettingLayout from './CareSettingLayout'
 import {
   getTtsSetting,
@@ -7,7 +7,10 @@ import {
   deleteTtsVoiceFile,
   uploadTtsVoiceFile,
 } from '../../../services/careSettingService'
+import { previewTts } from '../../../services/ttsService'
 import type { TtsSetting, TtsVoiceFile, TtsStatus } from '../../../types/care'
+import type { AudioPlaybackHandle } from '../../../types/tts'
+import { playAudioSource } from '../../../utils/audio'
 
 const STATUS_LABELS: Record<TtsStatus, { label: string; color: string }> = {
   NONE: { label: '미등록', color: 'bg-gray-100 text-gray-600' },
@@ -28,6 +31,7 @@ export default function TtsSettingPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+  const previewHandleRef = useRef<AudioPlaybackHandle | null>(null)
 
   const ACCEPTED_FORMATS = '.mp3,.wav,.mp4'
   const MAX_FILE_SIZE = 500 * 1024 * 1024   // 500MB
@@ -45,6 +49,11 @@ export default function TtsSettingPage() {
       }
     }
     fetchAll()
+
+    return () => {
+      previewHandleRef.current?.cleanup()
+      previewHandleRef.current = null
+    }
   }, [])
 
   const handleToggle = async () => {
@@ -141,10 +150,32 @@ export default function TtsSettingPage() {
     }
   }
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    if (isPlaying) return
+
+    setError(null)
+    previewHandleRef.current?.cleanup()
+    previewHandleRef.current = null
     setIsPlaying(true)
-    // Mock: 2초 후 재생 완료
-    setTimeout(() => setIsPlaying(false), 2000)
+
+    try {
+      const source = await previewTts({ text: SAMPLE_TEXT })
+      const handle = await playAudioSource(source)
+
+      previewHandleRef.current = handle
+      handle.audio.onended = () => {
+        handle.cleanup()
+        if (previewHandleRef.current === handle) {
+          previewHandleRef.current = null
+        }
+        setIsPlaying(false)
+      }
+    } catch {
+      previewHandleRef.current?.cleanup()
+      previewHandleRef.current = null
+      setIsPlaying(false)
+      setError('TTS 미리듣기에 실패했습니다.')
+    }
   }
 
   const formatDate = (dateStr: string) => {

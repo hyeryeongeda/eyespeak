@@ -9,17 +9,19 @@ import type {
   KeyboardRootMenu,
 } from '../types'
 import {
-  fetchComposeWords,
   fetchCustomTalkContext,
-  fetchGeneratedCustomSentences,
-  fetchRecommendedCustomSentences,
-  fetchVisibleCustomCategories,
   getNextComposeStep,
   getPreviousComposeStep,
   initializeCustomTalkKeyboard,
   saveComposeSelection,
-  submitCustomTalkUtterance,
 } from '../services/customTalkMockService'
+import {
+  fetchComposeWords,
+  fetchGeneratedCustomSentences,
+  fetchRecommendedCustomSentences,
+  fetchVisibleCustomCategories,
+  submitCustomTalkUtterance,
+} from '../../../../services/recommendationService'
 import {
   getKeyboardCharPage,
   getKeyboardGroupPage,
@@ -272,6 +274,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       const recommendedSentences = await fetchRecommendedCustomSentences({
         categoryKey: resolvedCategory,
         shouldFail: state.mockFlags.failRecommendedLoadOnce,
+        context: state.context,
       })
 
       set(currentState => ({
@@ -527,6 +530,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       const generatedSentences = await fetchGeneratedCustomSentences({
         draft: state.draft,
         shouldFail: state.mockFlags.failGeneratedLoadOnce,
+        context: state.context,
       })
 
       set(currentState => ({
