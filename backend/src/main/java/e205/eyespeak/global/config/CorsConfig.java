@@ -26,10 +26,8 @@ public class CorsConfig {
         // 허용할 출처(프론트엔드 주소)
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",         // 로컬 Docker 프론트
-                "http://localhost:5173"          // 로컬 Vite 프론트
-                // TODO: 도메인 추가하기
-                // "https://도메인.com",            // prod 프론트
-                // "https://dev.도메인.com"         // dev 프론트
+                "http://localhost:5173",         // 로컬 Vite 프론트
+                "https://j14e205.p.ssafy.io"    // dev/prod 서버
         ));
 
         // 허용할 HTTP 메서드
