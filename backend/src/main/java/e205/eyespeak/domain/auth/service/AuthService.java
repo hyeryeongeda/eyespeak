@@ -43,6 +43,12 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
+    public void checkEmail(String email) {
+        if (userRepository.existsByLoginId(email)) {
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
+        }
+    }
+
     @Transactional
     public AuthResponse signupGuardian(GuardianSignupRequest request) {
         // 이메일 중복 검사
@@ -75,6 +81,7 @@ public class AuthService {
         Role role;
         if ("CAREGIVER".equals(rawRole) || "GUARDIAN".equals(rawRole)) {
             role = Role.GUARDIAN;
+
         } else if ("PATIENT".equals(rawRole)) {
             role = Role.PATIENT;
         } else {
