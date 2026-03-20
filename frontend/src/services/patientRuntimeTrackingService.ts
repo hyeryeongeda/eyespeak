@@ -1,4 +1,6 @@
 import type { CalibrationTrackingStatus } from '../types/calibration'
+import { isEyeTrackingApiEnabled } from './eyeTrackingServiceConfig'
+import { createRealPatientRuntimeTrackingService } from './realPatientRuntimeTrackingService'
 
 export interface PatientRuntimeTrackingStartOptions {
   patientId: string
@@ -18,7 +20,9 @@ class NoopPatientRuntimeTrackingService implements PatientRuntimeTrackingService
   dispose() {}
 }
 
-let patientRuntimeTrackingServiceFactory = () => new NoopPatientRuntimeTrackingService()
+let patientRuntimeTrackingServiceFactory = isEyeTrackingApiEnabled()
+  ? createRealPatientRuntimeTrackingService
+  : () => new NoopPatientRuntimeTrackingService()
 
 export function createPatientRuntimeTrackingService(): PatientRuntimeTrackingService {
   return patientRuntimeTrackingServiceFactory()

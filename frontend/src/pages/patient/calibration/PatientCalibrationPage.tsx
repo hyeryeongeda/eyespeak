@@ -86,14 +86,15 @@ function getStatusMessage(args: {
 function GuideLines() {
   return (
     <div style={guideLineLayerStyle}>
-      <div style={{ ...horizontalGuideLineStyle, left: '12%', right: '12%', top: '16%' }} />
-      <div style={{ ...horizontalGuideLineStyle, left: '12%', right: '12%', top: '39%' }} />
-      <div style={{ ...horizontalGuideLineStyle, left: '12%', right: '12%', top: '67%' }} />
+      <div style={{ ...horizontalGuideLineStyle, left: '3%', right: '3%', top: '12%' }} />
+      <div style={{ ...horizontalGuideLineStyle, left: '3%', right: '3%', top: '82%' }} />
 
-      <div style={{ ...verticalGuideLineStyle, top: '16%', bottom: '33%', left: '12%' }} />
-      <div style={{ ...verticalGuideLineStyle, top: '16%', bottom: '33%', left: '38%' }} />
-      <div style={{ ...verticalGuideLineStyle, top: '16%', bottom: '33%', left: '62%' }} />
-      <div style={{ ...verticalGuideLineStyle, top: '16%', bottom: '33%', left: '88%' }} />
+      <div style={{ ...verticalGuideLineStyle, top: '12%', bottom: '18%', left: '3%' }} />
+      <div style={{ ...verticalGuideLineStyle, top: '12%', bottom: '18%', left: '20%' }} />
+      <div style={{ ...verticalGuideLineStyle, top: '12%', bottom: '18%', left: '40%' }} />
+      <div style={{ ...verticalGuideLineStyle, top: '12%', bottom: '18%', left: '60%' }} />
+      <div style={{ ...verticalGuideLineStyle, top: '12%', bottom: '18%', left: '80%' }} />
+      <div style={{ ...verticalGuideLineStyle, top: '12%', bottom: '18%', left: '97%' }} />
     </div>
   )
 }
@@ -110,6 +111,7 @@ export default function PatientCalibrationPage() {
   } = useCameraPermission()
   const calibration = useCalibrationFlow({
     enabled: permissionState === 'granted',
+    patientId: user?.id ?? null,
     previewStream: stream,
     videoRef,
   })
