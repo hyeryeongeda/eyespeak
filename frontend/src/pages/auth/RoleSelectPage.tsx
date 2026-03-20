@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { getAuthPathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
+import { useSearchParams } from 'react-router-dom'
+import { getAuthPathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import {
   getStoredEntryMode,
   getStoredRole,
@@ -30,7 +30,6 @@ const selectedStyle: CSSProperties = {
 }
 
 export default function RoleSelectPage() {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const savedMode = getStoredEntryMode()
   const modeParam = searchParams.get('mode')
@@ -56,7 +55,7 @@ export default function RoleSelectPage() {
     }
 
     setStoredEntryMode(mode)
-    navigate(getAuthPathByRole(mode, selectedRole))
+    window.location.assign(resolveAppPath(getAuthPathByRole(mode, selectedRole)))
   }
 
   return (
@@ -114,7 +113,11 @@ export default function RoleSelectPage() {
             {mode === 'login' ? '로그인 계속하기' : '회원가입 계속하기'}
           </button>
 
-          <button type="button" style={backButton} onClick={() => navigate(ROUTE_PATHS.HOME)}>
+          <button
+            type="button"
+            style={backButton}
+            onClick={() => window.location.assign(resolveAppPath(ROUTE_PATHS.HOME))}
+          >
             이전으로
           </button>
         </div>

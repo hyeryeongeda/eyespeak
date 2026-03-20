@@ -9,6 +9,7 @@ package e205.eyespeak.domain.auth.controller;
  * - POST /auth/log-out          : 로그아웃
  */
 
+import e205.eyespeak.domain.auth.dto.request.EmailCheckRequest;
 import e205.eyespeak.domain.auth.dto.request.GuardianSignupRequest;
 import e205.eyespeak.domain.auth.dto.request.LoginRequest;
 import e205.eyespeak.domain.auth.dto.request.PatientSignupRequest;
@@ -32,6 +33,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+
+    @PostMapping("/check-email")
+    public ResponseEntity<ApiResponse<Void>> checkEmail(
+            @Valid @RequestBody EmailCheckRequest request) {
+        authService.checkEmail(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.ok());
+    }
 
     @PostMapping("/sign-up/guardian")
     public ResponseEntity<ApiResponse<AuthResponse>> signupGuardian(

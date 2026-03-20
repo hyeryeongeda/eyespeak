@@ -1,4 +1,5 @@
-import { type CSSProperties, type FocusEvent as ReactFocusEvent, type ReactNode, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { pageWrapper } from './authPageStyles'
 
 interface ViewportMetrics {
@@ -32,43 +33,46 @@ function getViewportMetrics(): ViewportMetrics {
 }
 
 export default function AuthPageFrame({ children }: AuthPageFrameProps) {
+  const location = useLocation()
   const containerRef = useRef<HTMLElement | null>(null)
   const focusTimerRef = useRef<number | null>(null)
   const [viewportMetrics, setViewportMetrics] = useState<ViewportMetrics>(() => getViewportMetrics())
 
-  const syncViewportMetrics = useEffectEvent(() => {
-    setViewportMetrics(getViewportMetrics())
-  })
-
-  const scrollFocusedFieldIntoView = useEffectEvent((field: HTMLElement) => {
+  useEffect(() => {
     if (focusTimerRef.current !== null) {
       window.clearTimeout(focusTimerRef.current)
+      focusTimerRef.current = null
     }
 
-    focusTimerRef.current = window.setTimeout(() => {
-      field.scrollIntoView({
-        block: 'nearest',
-        inline: 'nearest',
-        behavior: viewportMetrics.keyboardInset > 0 ? 'smooth' : 'auto',
-      })
-    }, viewportMetrics.keyboardInset > 0 ? 220 : 0)
-  })
+    const frameId = window.requestAnimationFrame(() => {
+      setViewportMetrics(getViewportMetrics())
+      containerRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [location.key])
 
   useEffect(() => {
-    syncViewportMetrics()
+    const handleViewportChange = () => {
+      setViewportMetrics(getViewportMetrics())
+    }
+
+    handleViewportChange()
 
     const viewport = window.visualViewport
 
-    viewport?.addEventListener('resize', syncViewportMetrics)
-    viewport?.addEventListener('scroll', syncViewportMetrics)
-    window.addEventListener('resize', syncViewportMetrics)
+    viewport?.addEventListener('resize', handleViewportChange)
+    viewport?.addEventListener('scroll', handleViewportChange)
+    window.addEventListener('resize', handleViewportChange)
 
     return () => {
-      viewport?.removeEventListener('resize', syncViewportMetrics)
-      viewport?.removeEventListener('scroll', syncViewportMetrics)
-      window.removeEventListener('resize', syncViewportMetrics)
+      viewport?.removeEventListener('resize', handleViewportChange)
+      viewport?.removeEventListener('scroll', handleViewportChange)
+      window.removeEventListener('resize', handleViewportChange)
     }
-  }, [syncViewportMetrics])
+  }, [])
 
   useEffect(() => {
     const container = containerRef.current
@@ -77,7 +81,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
       return
     }
 
-    const handleFocusIn = (event: FocusEvent | ReactFocusEvent<HTMLElement>) => {
+    const handleFocusIn = (event: FocusEvent) => {
       const target = event.target
 
       if (!(target instanceof HTMLElement)) {
@@ -88,7 +92,17 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
         return
       }
 
-      scrollFocusedFieldIntoView(target)
+      if (focusTimerRef.current !== null) {
+        window.clearTimeout(focusTimerRef.current)
+      }
+
+      focusTimerRef.current = window.setTimeout(() => {
+        target.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+          behavior: viewportMetrics.keyboardInset > 0 ? 'smooth' : 'auto',
+        })
+      }, viewportMetrics.keyboardInset > 0 ? 220 : 0)
     }
 
     container.addEventListener('focusin', handleFocusIn)
@@ -96,7 +110,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
     return () => {
       container.removeEventListener('focusin', handleFocusIn)
     }
-  }, [scrollFocusedFieldIntoView])
+  }, [viewportMetrics.keyboardInset])
 
   useEffect(() => {
     return () => {
@@ -116,7 +130,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
   }
 
   return (
-    <main ref={containerRef} style={frameStyle}>
+    <main key={location.key} ref={containerRef} style={frameStyle}>
       {children}
     </main>
   )
