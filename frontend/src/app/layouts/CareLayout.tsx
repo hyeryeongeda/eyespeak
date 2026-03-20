@@ -13,26 +13,34 @@ export default function CareLayout() {
   const { pathname } = useLocation()
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#FEFEFE]">
+    <div
+      className="flex flex-col bg-[#FEFEFE] overflow-hidden"
+      style={{
+        height: '100dvh',
+        paddingTop: 'var(--sat)',
+        paddingBottom: 'var(--sab)',
+      }}
+    >
       <div className="flex-1 overflow-hidden">
         <Outlet />
       </div>
 
-      <nav className="flex border-t border-[#F0F4F8] pt-2 pb-[18px] bg-[#FEFEFE] flex-shrink-0">
+      <nav className="flex border-t border-[#F0F4F8] pt-2 pb-3 bg-[#FEFEFE] flex-shrink-0">
         {NAV_ITEMS.map(item => {
           const isActive = pathname === item.path
+            || (item.path === ROUTE_PATHS.CARE_SETTINGS && pathname.startsWith('/care/settings'))
 
           return (
             <button
               key={item.label}
               type="button"
               onClick={() => navigate(item.path)}
-              className={`flex-1 flex flex-col items-center min-h-[44px] ${
+              className={`flex-1 flex flex-col items-center min-h-[52px] justify-center ${
                 isActive ? 'text-[#3D405B]' : 'text-[#A0AEC0]'
               }`}
             >
-              <span className="text-[18px]">{item.icon}</span>
-              <span className="text-[10px] font-semibold mt-0.5">{item.label}</span>
+              <span className="text-[22px]">{item.icon}</span>
+              <span className="text-[13px] font-bold mt-1">{item.label}</span>
             </button>
           )
         })}
