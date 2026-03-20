@@ -1,4 +1,4 @@
-package e205.eyespeak.domain.communication.entity;
+package e205.eyespeak.domain.category.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -10,31 +10,27 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 /**
- * 계층형 표현 분류 (시드 데이터)
- * - 자기참조로 부모-자식 관계 표현
- * - depth: 0=최상위, 1=중간, 2=말단
- * - 수정 없음 (created_at만 존재, updated_at 없음)
+ * 선택 가능한 개별 표현 (시드 데이터)
+ * - Category에 속하는 구체적 문장
+ * - 예: "목이 마르다", "배가 아프다"
  */
 @Entity
-@Table(name = "category")
+@Table(name = "phrase")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class Category {
+public class Phrase {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id")
-    private Category parent;
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Column(nullable = false)
-    private String name;
-
-    @Column(nullable = false)
-    private Integer depth;
+    private String content;
 
     @Column(nullable = false)
     private Integer orderIndex;

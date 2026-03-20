@@ -1,6 +1,6 @@
 import { type FormEvent, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { useSearchParams } from 'react-router-dom'
+import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { requestPasswordReset } from '../../services/authService'
 import { getStoredRole } from '../../services/authStorage'
 import type { PasswordResetResponseDto, UserRole } from '../../types/auth'
@@ -152,9 +152,9 @@ export default function ResetPasswordPage() {
         ) : null}
 
         <div style={{ marginTop: '18px', textAlign: 'center' }}>
-          <Link to={loginPath} style={textLink}>
+          <a href={resolveAppPath(loginPath)} style={textLink}>
             로그인으로 돌아가기
-          </Link>
+          </a>
         </div>
       </div>
     </AuthPageFrame>

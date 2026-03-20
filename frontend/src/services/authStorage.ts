@@ -20,8 +20,12 @@ export function normalizeTeamCode(value: string) {
   return value.trim().toUpperCase()
 }
 
-function normalizeStoredRole(role: string | null | undefined): UserRole | null {
-  return role === 'guardian' || role === 'patient' ? role : null
+export function normalizeUserRole(role: string | null | undefined): UserRole | null {
+  const normalizedRole = role?.trim().toLowerCase()
+
+  return normalizedRole === 'guardian' || normalizedRole === 'patient'
+    ? normalizedRole
+    : null
 }
 
 function normalizeGuardianSessionExitReason(
@@ -36,7 +40,7 @@ export function getStoredRole(): UserRole | null {
   }
 
   const savedRole = sessionStorage.getItem(SELECTED_ROLE_STORAGE_KEY)
-  const normalizedRole = normalizeStoredRole(savedRole)
+  const normalizedRole = normalizeUserRole(savedRole)
 
   if (!normalizedRole && savedRole) {
     sessionStorage.removeItem(SELECTED_ROLE_STORAGE_KEY)
@@ -97,17 +101,20 @@ export function consumeGuardianSessionExitReason(): GuardianSessionExitReason | 
 }
 
 function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSession {
-  const normalizedRole = normalizeStoredRole(parsed.role)
+  const normalizedRole =
+    typeof parsed.role === 'string' ? normalizeUserRole(parsed.role) : null
 
   if (!normalizedRole) {
     return false
   }
 
   parsed.role = normalizedRole
+  parsed.id = String(parsed.id ?? '')
 
   return (
     (parsed.role === 'guardian' || parsed.role === 'patient') &&
     typeof parsed.id === 'string' &&
+    parsed.id.trim().length > 0 &&
     typeof parsed.name === 'string' &&
     typeof parsed.accessToken === 'string' &&
     (typeof parsed.refreshToken === 'string' || parsed.refreshToken === null)

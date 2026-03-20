@@ -1,6 +1,6 @@
 package e205.eyespeak.domain.log.entity;
 
-import e205.eyespeak.domain.communication.entity.Phrase;
+import e205.eyespeak.domain.category.entity.Phrase;
 import e205.eyespeak.domain.matching.entity.Matching;
 import e205.eyespeak.domain.recommendation.entity.Expression;
 import e205.eyespeak.domain.routine.entity.TimeSlot;

@@ -1,9 +1,12 @@
-package e205.eyespeak.domain.communication.dto.response;
+package e205.eyespeak.domain.category.dto.response;
 
-import e205.eyespeak.domain.communication.entity.Phrase;
+import e205.eyespeak.domain.category.entity.Phrase;
 import lombok.Builder;
 import lombok.Getter;
 
+/**
+ * 표현(Phrase) 응답 DTO — 카테고리에 속하는 개별 문장
+ */
 @Getter
 @Builder
 public class PhraseResponse {

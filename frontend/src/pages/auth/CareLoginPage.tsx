@@ -1,6 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { getHomePathByRole, ROUTE_PATHS } from '../../app/router/routePaths'
+import { getHomePathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
   consumeGuardianSessionExitReason,
@@ -24,7 +23,6 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function CareLoginPage() {
-  const navigate = useNavigate()
   const { login, isPending } = useAuth()
   const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
     consumeGuardianSessionExitReason(),
@@ -55,7 +53,7 @@ export default function CareLoginPage() {
       return
     }
 
-    navigate(getHomePathByRole(result.data.role), { replace: true })
+    window.location.replace(resolveAppPath(getHomePathByRole(result.data.role)))
   }
 
   return (
@@ -117,15 +115,15 @@ export default function CareLoginPage() {
         <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <Link to={`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=guardian`} style={textLink}>
+          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=guardian`)} style={textLink}>
             비밀번호 재설정
-          </Link>
-          <Link to={ROUTE_PATHS.AUTH_SIGNUP_CARE} style={textLink}>
+          </a>
+          <a href={resolveAppPath(ROUTE_PATHS.AUTH_SIGNUP_CARE)} style={textLink}>
             보호자 회원가입
-          </Link>
-          <Link to={`${ROUTE_PATHS.AUTH_ROLE}?mode=login`} style={textLink}>
+          </a>
+          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=login`)} style={textLink}>
             역할 다시 선택
-          </Link>
+          </a>
         </div>
       </div>
     </AuthPageFrame>

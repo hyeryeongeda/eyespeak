@@ -22,8 +22,8 @@ export interface LoginFormValues {
 }
 
 export interface AuthUserDto {
-  id: string
-  role: UserRole
+  id: string | number
+  role: string
   name: string
   email?: string
   teamCode?: string | null
