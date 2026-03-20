@@ -57,4 +57,9 @@ public class Patient extends BaseEntity {
         this.birthYear = birthYear;
         this.gender = gender;
     }
+
+    /** [Unit 6] FCM 토큰 등록/갱신/삭제. null을 넣으면 삭제 효과. */
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
 }

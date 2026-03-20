@@ -106,6 +106,20 @@ public enum ErrorCode {
             "본인의 매칭이 아닌 채팅에는 접근할 수 없습니다"),
     // → 요청자의 매칭 ID와 요청한 매칭 ID가 불일치 (남의 채팅 조회 시도)
 
+    // ====== FCM (푸시 알림) ======
+
+    FCM_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FCM-561",
+            "FCM 푸시 알림 전송에 실패하였습니다"),
+    // → Firebase 서버 장애, 네트워크 문제 등 (로그만 남기고 예외 전파하지 않음)
+
+    FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM-562",
+            "FCM 토큰이 등록되어 있지 않습니다"),
+    // → 상대방의 fcmToken이 null인 경우
+
+    FCM_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM-563",
+            "FCM 토큰을 등록할 사용자를 찾을 수 없습니다"),
+    // → FCM 토큰 등록/삭제 시 해당 userId의 사용자가 없는 경우
+
     // ====== COMMUNICATION (의사소통) ======
     // 특화소통 카테고리, 표현, 불편부위
 

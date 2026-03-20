@@ -53,6 +53,9 @@ dependencies {
 	// WebSocket (STOMP 기반 실시간 통신)
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
+	// Firebase Admin SDK (FCM 푸시 알림)
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
+
 	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
