@@ -13,7 +13,7 @@ export default function HomePage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        height: '100%',
         background: 'linear-gradient(180deg, #f4f9fc 0%, #eef4f7 100%)',
         display: 'flex',
         alignItems: 'center',
