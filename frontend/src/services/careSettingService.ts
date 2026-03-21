@@ -15,17 +15,20 @@ import type {
   TtsVoiceFile,
   UserWords,
 } from '../types/care'
-import { ACTIVATION_DELAY_OPTIONS, DWELL_TIME_OPTIONS } from '../types/care'
+import {
+  ACTIVATION_DELAY_OPTIONS,
+  DWELL_TIME_OPTIONS,
+  DWELL_TIME_MS_TO_PRESET,
+  ACTIVATION_DELAY_MS_TO_PRESET,
+} from '../types/care'
 import type {
   LeisureContentCreateRequestDto,
   LeisureContentResponseDto,
   LeisureContentUpdateRequestDto,
 } from '../types/leisure'
 import {
-  MOCK_ACTIVATION_DELAY_PRESET,
   MOCK_CATEGORIES,
   MOCK_DAILY_SUMMARIES,
-  MOCK_DWELL_TIME_PRESET,
   MOCK_EXPRESSIONS,
   MOCK_FAVORITE_PHRASES,
   MOCK_PATIENT_INFO,
@@ -41,11 +44,15 @@ import {
   updateLeisureContentApi,
 } from './leisureApi'
 import { getRoutinesApi, updateRoutinesApi } from './routineApi'
+import {
+  getDwellTimeApi,
+  updateDwellTimeApi,
+  getActivationDelayApi,
+  updateActivationDelayApi,
+} from './deviceSettingApi'
 import { GUARDIAN_SIGNUP_ROUTINE_SLOTS, ROUTINE_ACTIVITY_TAGS } from '../constants/routineCatalog'
 
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms))
-const CARE_DWELL_TIME_PRESET_STORAGE_KEY = 'careSetting:dwellTimePreset'
-const CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY = 'careSetting:activationDelayPreset'
 
 export const CARE_DWELL_TIME_PRESET_UPDATED_EVENT = 'care-setting:dwell-time-updated'
 export const CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT =
@@ -61,39 +68,6 @@ export interface CareActivationDelayPresetUpdatedDetail {
 
 function isBrowser() {
   return typeof window !== 'undefined'
-}
-
-function readStoredPreset<TPreset extends string>(
-  storageKey: string,
-  isValidPreset: (value: unknown) => value is TPreset,
-) {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const storedValue = localStorage.getItem(storageKey)
-
-  if (!storedValue || !isValidPreset(storedValue)) {
-    return null
-  }
-
-  return storedValue
-}
-
-function writeStoredPreset(storageKey: string, preset: string) {
-  if (!isBrowser()) {
-    return
-  }
-
-  localStorage.setItem(storageKey, preset)
-}
-
-function isDwellTimePreset(value: unknown): value is DwellTimePreset {
-  return typeof value === 'string' && value in DWELL_TIME_OPTIONS
-}
-
-function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
-  return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
 }
 
 export async function getPatientInfo(): Promise<ApiResponse<PatientInfo>> {
@@ -235,23 +209,18 @@ export async function deleteLeisureContent(id: number): Promise<ApiResponse<Leis
   }
 }
 
+// Dwell Time
 export async function getDwellTimePreset(): Promise<ApiResponse<DwellTimePreset>> {
-  await delay()
-
-  return {
-    success: true,
-    data:
-      readStoredPreset(CARE_DWELL_TIME_PRESET_STORAGE_KEY, isDwellTimePreset) ??
-      MOCK_DWELL_TIME_PRESET,
-    message: 'Fetched dwell time preset.',
-  }
+  const res = await getDwellTimeApi()
+  const preset = DWELL_TIME_MS_TO_PRESET[res.dwellTime] ?? 'default'
+  return { success: true, data: preset, message: 'Fetched dwell time preset.' }
 }
 
 export async function updateDwellTimePreset(
   preset: DwellTimePreset,
 ): Promise<ApiResponse<DwellTimePreset>> {
-  await delay()
-  writeStoredPreset(CARE_DWELL_TIME_PRESET_STORAGE_KEY, preset)
+  const ms = DWELL_TIME_OPTIONS[preset].value
+  await updateDwellTimeApi({ dwellTime: ms })
 
   if (isBrowser()) {
     window.dispatchEvent(
@@ -264,23 +233,18 @@ export async function updateDwellTimePreset(
   return { success: true, data: preset, message: 'Updated dwell time preset.' }
 }
 
+// Activation Delay
 export async function getActivationDelayPreset(): Promise<ApiResponse<ActivationDelayPreset>> {
-  await delay()
-
-  return {
-    success: true,
-    data:
-      readStoredPreset(CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY, isActivationDelayPreset) ??
-      MOCK_ACTIVATION_DELAY_PRESET,
-    message: 'Fetched activation delay preset.',
-  }
+  const res = await getActivationDelayApi()
+  const preset = ACTIVATION_DELAY_MS_TO_PRESET[res.activationDelay] ?? 'medium'
+  return { success: true, data: preset, message: 'Fetched activation delay preset.' }
 }
 
 export async function updateActivationDelayPreset(
   preset: ActivationDelayPreset,
 ): Promise<ApiResponse<ActivationDelayPreset>> {
-  await delay()
-  writeStoredPreset(CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY, preset)
+  const ms = ACTIVATION_DELAY_OPTIONS[preset].value
+  await updateActivationDelayApi({ activationDelay: ms })
 
   if (isBrowser()) {
     window.dispatchEvent(

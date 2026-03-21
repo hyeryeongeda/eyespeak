@@ -121,6 +121,22 @@ export const DWELL_TIME_OPTIONS: Record<DwellTimePreset, DwellTimeSetting> = {
   short: { preset: 'short', value: 600 },
 }
 
+// Dwell Time API DTO
+export interface DwellTimeResponseDto {
+  dwellTime: number
+  label: string
+}
+
+export interface DwellTimeRequestDto {
+  dwellTime: number
+}
+
+// ms → preset 역매핑
+export const DWELL_TIME_MS_TO_PRESET: Record<number, DwellTimePreset> = {
+  1000: 'default',
+  600: 'short',
+}
+
 
 // 기기 설정 — 입력 잠금 시간
 export type ActivationDelayPreset = 'none' | 'short' | 'medium' | 'long'
@@ -135,6 +151,24 @@ export const ACTIVATION_DELAY_OPTIONS: Record<ActivationDelayPreset, ActivationD
   short: { preset: 'short', value: 600 },
   medium: { preset: 'medium', value: 1000 },
   long: { preset: 'long', value: 1600 },
+}
+
+// Activation Delay API DTO
+export interface ActivationDelayResponseDto {
+  activationDelay: number
+  label: string
+}
+
+export interface ActivationDelayRequestDto {
+  activationDelay: number
+}
+
+// ms → preset 역매핑
+export const ACTIVATION_DELAY_MS_TO_PRESET: Record<number, ActivationDelayPreset> = {
+  0: 'none',
+  600: 'short',
+  1000: 'medium',
+  1600: 'long',
 }
 
 
