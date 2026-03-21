@@ -100,12 +100,12 @@ public class TtsController {
                     content = @Content(examples = @ExampleObject(value = "{\"code\":\"TTS-1104\",\"message\":\"TTS 음성 파일을 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
     })
     @DeleteMapping("/voices/{voiceFileId}")
-    public ApiResponse<Void> deleteVoice(
+    public ApiResponse<TtsSettingResponse> deleteVoice(
             Authentication authentication,
             @Parameter(description = "음성 파일의 고유 식별자 (GET 조회 응답의 id 필드)")
             @PathVariable Long voiceFileId) {
         Long userId = (Long) authentication.getPrincipal();
-        ttsService.deleteVoice(userId, voiceFileId);
-        return ApiResponse.ok();
+        TtsSettingResponse response = ttsService.deleteVoice(userId, voiceFileId);
+        return ApiResponse.ok(response);
     }
 }
