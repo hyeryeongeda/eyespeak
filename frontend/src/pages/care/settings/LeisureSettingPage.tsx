@@ -3,6 +3,7 @@ import CareSettingLayout from './CareSettingLayout'
 import {
   getLeisureContents,
   saveLeisureContent,
+  updateLeisureContent,
   deleteLeisureContent,
 } from '../../../services/careSettingService'
 import type { LeisureContentItem } from '../../../types/care'
@@ -12,13 +13,12 @@ const MAX_CONTENTS = 5
 type InputMode = 'url' | 'category'
 
 const CATEGORY_OPTIONS = [
-  '뉴스',
-  '음악',
-  '스포츠',
-  '엔터테인먼트',
-  '교육',
-  '자연/힐링',
-]
+  { value: 'sports', label: '스포츠' },
+  { value: 'news', label: '뉴스' },
+  { value: 'music', label: '음악' },
+  { value: 'radio', label: '라디오' },
+  { value: 'audiobook', label: '오디오북' },
+] as const
 
 export default function LeisureSettingPage() {
   const [contents, setContents] = useState<LeisureContentItem[]>([])
@@ -31,30 +31,57 @@ export default function LeisureSettingPage() {
   const [inputMode, setInputMode] = useState<InputMode>('url')
   const [urlInput, setUrlInput] = useState('')
   const [nameInput, setNameInput] = useState('')
-  const [categoryInput, setCategoryInput] = useState(CATEGORY_OPTIONS[0])
+  const [categoryInput, setCategoryInput] = useState<string>(CATEGORY_OPTIONS[0].value)
   const [isAdding, setIsAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
-  useEffect(() => {
-    const fetchContents = async () => {
-      try {
-        const res = await getLeisureContents()
-        if (res.success) setContents(res.data.sort((a, b) => a.position - b.position))
-      } catch {
-        setError('여가 콘텐츠를 불러오지 못했습니다.')
-      } finally {
-        setIsLoading(false)
-      }
+  // 수정 폼
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editMode, setEditMode] = useState<InputMode>('url')
+  const [editName, setEditName] = useState('')
+  const [editUrl, setEditUrl] = useState('')
+  const [editCategory, setEditCategory] = useState<string>(CATEGORY_OPTIONS[0].value)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const fetchContents = async () => {
+    try {
+      const res = await getLeisureContents()
+      if (res.success) setContents(res.data)
+    } catch {
+      setError('여가 콘텐츠를 불러오지 못했습니다.')
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchContents()
   }, [])
+
+  const showSuccess = (msg: string) => {
+    setSuccessMsg(msg)
+    setTimeout(() => setSuccessMsg(null), 2000)
+  }
+
+  const showError = (msg: string) => {
+    setError(msg)
+    setTimeout(() => setError(null), 2000)
+  }
 
   const resetForm = () => {
     setUrlInput('')
     setNameInput('')
-    setCategoryInput(CATEGORY_OPTIONS[0])
+    setCategoryInput(CATEGORY_OPTIONS[0].value)
     setInputMode('url')
     setShowForm(false)
+  }
+
+  const resetEditForm = () => {
+    setEditingId(null)
+    setEditName('')
+    setEditUrl('')
+    setEditCategory(CATEGORY_OPTIONS[0].value)
+    setEditMode('url')
   }
 
   const handleAdd = async () => {
@@ -62,14 +89,12 @@ export default function LeisureSettingPage() {
     const trimmedName = nameInput.trim()
 
     if (!trimmedName) {
-      setError('이름을 입력해주세요.')
-      setTimeout(() => setError(null), 2000)
+      showError('이름을 입력해주세요.')
       return
     }
 
     if (inputMode === 'url' && !urlInput.trim()) {
-      setError('URL을 입력해주세요.')
-      setTimeout(() => setError(null), 2000)
+      showError('URL을 입력해주세요.')
       return
     }
 
@@ -77,22 +102,65 @@ export default function LeisureSettingPage() {
     setError(null)
 
     try {
-      const res = await saveLeisureContent({
-        position: contents.length,
+      await saveLeisureContent({
         name: trimmedName,
-        url: inputMode === 'url' ? urlInput.trim() : null,
-        category: inputMode === 'category' ? categoryInput : null,
+        url: inputMode === 'url' ? urlInput.trim() : undefined,
+        category: inputMode === 'category' ? categoryInput : undefined,
       })
-      if (res.success && res.data) {
-        setContents((prev) => [...prev, res.data])
-        resetForm()
-        setSuccessMsg('등록되었습니다.')
-        setTimeout(() => setSuccessMsg(null), 2000)
-      }
+      await fetchContents()
+      resetForm()
+      showSuccess('등록되었습니다.')
     } catch {
-      setError('등록에 실패했습니다.')
+      showError('등록에 실패했습니다.')
     } finally {
       setIsAdding(false)
+    }
+  }
+
+  const handleEdit = (item: LeisureContentItem) => {
+    setEditingId(item.id)
+    setEditName(item.name)
+    if (item.url) {
+      setEditMode('url')
+      setEditUrl(item.url)
+      setEditCategory(CATEGORY_OPTIONS[0].value)
+    } else {
+      setEditMode('category')
+      setEditUrl('')
+      setEditCategory(item.category ?? CATEGORY_OPTIONS[0].value)
+    }
+  }
+
+  const handleUpdate = async () => {
+    if (editingId === null || isSaving) return
+    const trimmedName = editName.trim()
+
+    if (!trimmedName) {
+      showError('이름을 입력해주세요.')
+      return
+    }
+
+    if (editMode === 'url' && !editUrl.trim()) {
+      showError('URL을 입력해주세요.')
+      return
+    }
+
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      await updateLeisureContent(editingId, {
+        name: trimmedName,
+        url: editMode === 'url' ? editUrl.trim() : undefined,
+        category: editMode === 'category' ? editCategory : undefined,
+      })
+      await fetchContents()
+      resetEditForm()
+      showSuccess('수정되었습니다.')
+    } catch {
+      showError('수정에 실패했습니다.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -104,15 +172,19 @@ export default function LeisureSettingPage() {
     try {
       const res = await deleteLeisureContent(id)
       if (res.success) {
-        setContents((prev) => prev.filter((c) => c.id !== id))
-        setSuccessMsg('삭제되었습니다.')
-        setTimeout(() => setSuccessMsg(null), 2000)
+        await fetchContents()
+        showSuccess('삭제되었습니다.')
       }
     } catch {
-      setError('삭제에 실패했습니다.')
+      showError('삭제에 실패했습니다.')
     } finally {
       setDeletingId(null)
     }
+  }
+
+  const getCategoryLabel = (value: string | null) => {
+    if (!value) return value
+    return CATEGORY_OPTIONS.find((c) => c.value === value)?.label ?? value
   }
 
   if (isLoading) {
@@ -142,30 +214,122 @@ export default function LeisureSettingPage() {
               등록된 콘텐츠가 없습니다.
             </p>
           ) : (
-            contents.map((item, index) => (
-              <div
-                key={item.id}
-                className="p-4 rounded-xl bg-white border border-[#E2E8F0] flex items-center gap-3"
-              >
-                <span className="text-[14px] font-bold text-[#3D405B] w-6 text-center shrink-0">
-                  {index + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] text-[#1A202C] truncate">{item.name}</p>
-                  <p className="text-[12px] text-[#A0AEC0] truncate">
-                    {item.url ?? `카테고리: ${item.category}`}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  disabled={deletingId === item.id}
-                  className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-[#A0AEC0] active:text-red-500 shrink-0"
+            contents.map((item, index) =>
+              editingId === item.id ? (
+                /* 수정 폼 (인라인) */
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl border border-[#3D405B] bg-[#F7FAFC] flex flex-col gap-3"
                 >
-                  {deletingId === item.id ? '...' : '✕'}
-                </button>
-              </div>
-            ))
+                  {/* 모드 토글 */}
+                  <div className="flex rounded-lg overflow-hidden border border-[#E2E8F0]">
+                    {(['url', 'category'] as const).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setEditMode(mode)}
+                        className={`flex-1 min-h-[40px] text-[13px] font-medium transition-colors ${
+                          editMode === mode
+                            ? 'bg-[#3D405B] text-white'
+                            : 'bg-white text-[#718096]'
+                        }`}
+                      >
+                        {mode === 'url' ? 'YouTube URL' : '카테고리'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="콘텐츠 이름"
+                    className="w-full min-h-[44px] px-4 rounded-lg border border-[#CBD5E0] bg-white text-[15px] text-[#1A202C] placeholder:text-[#A0AEC0] focus:outline-none focus:border-[#3D405B]"
+                  />
+
+                  {editMode === 'url' ? (
+                    <input
+                      type="url"
+                      value={editUrl}
+                      onChange={(e) => setEditUrl(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="w-full min-h-[44px] px-4 rounded-lg border border-[#CBD5E0] bg-white text-[15px] text-[#1A202C] placeholder:text-[#A0AEC0] focus:outline-none focus:border-[#3D405B]"
+                    />
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <button
+                          key={cat.value}
+                          type="button"
+                          onClick={() => setEditCategory(cat.value)}
+                          className={`min-h-[36px] px-3 rounded-lg text-[13px] font-medium transition-colors ${
+                            editCategory === cat.value
+                              ? 'bg-[#3D405B] text-white'
+                              : 'bg-white text-[#718096] border border-[#E2E8F0]'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={resetEditForm}
+                      className="flex-1 min-h-[44px] rounded-lg bg-[#E2E8F0] text-[#718096] text-[14px] font-medium"
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUpdate}
+                      disabled={isSaving}
+                      className={`flex-1 min-h-[44px] rounded-lg text-[14px] font-bold transition-colors ${
+                        isSaving
+                          ? 'bg-[#E2E8F0] text-[#A0AEC0] cursor-not-allowed'
+                          : 'bg-[#3D405B] text-white active:bg-[#2D2F45]'
+                      }`}
+                    >
+                      {isSaving ? '저장 중...' : '저장'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* 일반 표시 */
+                <div
+                  key={item.id}
+                  className="p-4 rounded-xl bg-white border border-[#E2E8F0] flex items-center gap-3"
+                >
+                  <span className="text-[14px] font-bold text-[#3D405B] w-6 text-center shrink-0">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[14px] text-[#1A202C] truncate">{item.name}</p>
+                    <p className="text-[12px] text-[#A0AEC0] truncate">
+                      {item.url ?? `카테고리: ${item.categoryName ?? getCategoryLabel(item.category)}`}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(item)}
+                    disabled={deletingId === item.id}
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-[#718096] active:text-[#3D405B] shrink-0"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item.id)}
+                    disabled={deletingId === item.id}
+                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-[#A0AEC0] active:text-red-500 shrink-0"
+                  >
+                    {deletingId === item.id ? '...' : '✕'}
+                  </button>
+                </div>
+              ),
+            )
           )}
         </div>
 
@@ -225,16 +389,16 @@ export default function LeisureSettingPage() {
               <div className="flex flex-wrap gap-2">
                 {CATEGORY_OPTIONS.map((cat) => (
                   <button
-                    key={cat}
+                    key={cat.value}
                     type="button"
-                    onClick={() => setCategoryInput(cat)}
+                    onClick={() => setCategoryInput(cat.value)}
                     className={`min-h-[36px] px-3 rounded-lg text-[13px] font-medium transition-colors ${
-                      categoryInput === cat
+                      categoryInput === cat.value
                         ? 'bg-[#3D405B] text-white'
                         : 'bg-white text-[#718096] border border-[#E2E8F0]'
                     }`}
                   >
-                    {cat}
+                    {cat.label}
                   </button>
                 ))}
               </div>
