@@ -157,6 +157,57 @@ public class RecommendationController {
     }
 
     // =========================================================================
+    // 3. POST /recommendations/replies — 보호자 메시지 기반 추천 응답 조회
+    // =========================================================================
+
+    @Operation(summary = "보호자 메시지 기반 추천 응답 조회",
+            description = "보호자 메시지와 최근 대화 문맥을 기반으로 추천 응답을 생성합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "추천 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "메시지 내용 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"COMMON-101\",\"message\":\"입력값이 올바르지 않습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "매칭 정보 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "AI 추천 생성 실패",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"AI-701\",\"message\":\"AI 추천 생성에 실패하였습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
+    })
+    @PostMapping("/replies")
+    public ApiResponse<RepliesResponse> getReplies(
+            @RequestBody RepliesRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        Matching matching = getMatchingByUserId(userId);
+
+        if (request.getMessage() == null || request.getMessage().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("matching_id", matching.getId());
+        body.put("question", request.getMessage());
+        if (request.getHistory() != null) {
+            body.put("history", request.getHistory());
+        }
+
+        try {
+            Map result = restTemplate.postForObject(
+                    aiServerUrl + "/recommend/replies", buildRequest(body), Map.class);
+            List<Map<String, Object>> replyList = (List<Map<String, Object>>) result.get("replies");
+            List<ReplyDto> replies = replyList.stream()
+                    .map(r -> new ReplyDto(
+                            (String) r.get("id"),
+                            (String) r.get("label"),
+                            (String) r.get("intentKey"),
+                            (String) r.get("source"),
+                            ((Number) r.get("rank")).intValue()))
+                    .toList();
+            return ApiResponse.ok(new RepliesResponse(replies));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+        }
+    }
+
+    // =========================================================================
     // 공통 헬퍼
     // =========================================================================
 
@@ -208,6 +259,67 @@ public class RecommendationController {
 
         SentencesResponse(List<String> sentences) {
             this.sentences = sentences;
+        }
+    }
+
+    // --- /replies 요청/응답 ---
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "보호자 메시지 기반 추천 응답 요청")
+    public static class RepliesRequest {
+        @Schema(description = "보호자 메시지 내용", example = "오늘 기분은 어때?")
+        private String message;
+
+        @Schema(description = "최근 대화 이력 (선택)", nullable = true)
+        private List<HistoryItemDto> history;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "대화 이력 항목")
+    public static class HistoryItemDto {
+        @Schema(description = "발신자 (guardian / patient)", example = "guardian")
+        private String sender;
+
+        @Schema(description = "메시지 내용", example = "오늘 기분은 어때?")
+        private String content;
+    }
+
+    @Getter
+    @Schema(description = "보호자 메시지 기반 추천 응답")
+    public static class RepliesResponse {
+        @Schema(description = "추천 응답 목록")
+        private final List<ReplyDto> replies;
+
+        RepliesResponse(List<ReplyDto> replies) {
+            this.replies = replies;
+        }
+    }
+
+    @Getter
+    @Schema(description = "추천 응답 항목")
+    public static class ReplyDto {
+        @Schema(description = "응답 식별자", example = "reply-1")
+        private final String id;
+
+        @Schema(description = "응답 텍스트", example = "좋아요")
+        private final String label;
+
+        @Schema(description = "의도 키", example = "감정")
+        private final String intentKey;
+
+        @Schema(description = "추천 출처 (rule / context / fallback)", example = "context")
+        private final String source;
+
+        @Schema(description = "추천 순위", example = "1")
+        private final int rank;
+
+        ReplyDto(String id, String label, String intentKey, String source, int rank) {
+            this.id = id;
+            this.label = label;
+            this.intentKey = intentKey;
+            this.source = source;
+            this.rank = rank;
         }
     }
 

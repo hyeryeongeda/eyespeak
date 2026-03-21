@@ -1098,6 +1098,49 @@ def recommend_by_category():
     return jsonify({"sentences": sentences})
 
 
+@app.route("/recommend/replies", methods=["POST"])
+def recommend_replies():
+    """보호자 메시지 기반 추천 응답 생성"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+    question = data.get("question", "").strip()
+    history = data.get("history")
+
+    if not question:
+        return jsonify({"error": "메시지 내용이 필요합니다"}), 400
+
+    user_data = _load_user_data_from_db(matching_id)
+    if not user_data:
+        return jsonify({"error": "matching not found"}), 404
+
+    # 대화 이력이 있으면 컨텍스트에 추가
+    context = question
+    if history:
+        history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
+        context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
+
+    # 기존 추천 로직 재활용
+    candidates = _search_sentences_mixed(context, user_data["user_db"], sentiment_filter=None, intent_filter=None, k_total=6)
+    sentences = _refine_recommend(context, candidates, sentiment_context=None)
+
+    # 각 문장에 intent 분류 + 메타정보 추가
+    replies = []
+    for rank, sentence in enumerate(sentences, start=1):
+        sentiment, intent = _classify_sentence_keywords(sentence)
+        replies.append({
+            "id": f"reply-{rank}",
+            "label": sentence,
+            "intentKey": intent,
+            "source": "context",
+            "rank": rank,
+        })
+
+    _recommend_stats["recommend_calls"] += 1
+    _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
+
+    return jsonify({"replies": replies})
+
+
 @app.route("/debug/recommend-stats", methods=["GET"])
 def debug_recommend_stats():
     s = _recommend_stats

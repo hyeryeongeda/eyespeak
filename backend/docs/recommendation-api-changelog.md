@@ -210,7 +210,110 @@
 
 `POST /api/v1/recommendations/replies`
 
-(점검 예정)
+### 변경사항
+
+| 항목 | 변경 전 (원본 명세) | 변경 후 | 사유 |
+|---|---|---|---|
+| 요청 필드 | `messageId: Long` | `message: String` | FE 타입에 맞춤. 웹소켓으로 이미 받은 텍스트 직접 전달 |
+| 요청 필드 추가 | 없음 | `history?: [{ sender, content }]` (optional) | 대화 맥락 전달용 (FE 타입에 존재) |
+| 응답 필드명 | `sentences` | `replies` | FE 타입 `RepliesResponseDto.replies`에 맞춤 |
+| 응답 구조 | `[{ id: Long, content: String }]` | `[{ id: string, label: string, intentKey: string, source: string, rank: number }]` | FE 타입 `RecommendationReplyDto`에 맞춤 |
+| 응답 `guardianMessage` | 있음 | 삭제 | FE가 이미 보호자 메시지를 알고 있음 |
+| 에러 `COMMON-102` | 메시지를 찾을 수 없음 | 삭제 | DB 조회 안 하므로 불필요 |
+| 에러 `MATCHING-801` | | `MATCHING-803` | 에러코드 수정 |
+
+### 최종 명세
+
+**Request Body**
+
+```json
+{
+  "message": "오늘 기분은 어때?",
+  "history": [
+    { "sender": "guardian", "content": "밥 먹었어?" },
+    { "sender": "patient", "content": "네" }
+  ]
+}
+```
+
+- `message` (필수): 보호자 메시지 텍스트
+- `history` (선택): 최근 대화 이력 (없으면 null)
+
+**Response (200 OK)**
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "요청이 성공하였습니다",
+  "data": {
+    "replies": [
+      { "id": "reply-1", "label": "좋아요", "intentKey": "감정", "source": "context", "rank": 1 },
+      { "id": "reply-2", "label": "괜찮아요", "intentKey": "감정", "source": "context", "rank": 2 },
+      { "id": "reply-3", "label": "조금 힘들어요", "intentKey": "감정", "source": "context", "rank": 3 }
+    ]
+  }
+}
+```
+
+**Error Cases**
+
+| 상황 | 에러 코드 | HTTP 상태 |
+|---|---|---|
+| 메시지 내용 없음 | COMMON-101 | 400 |
+| 매칭 정보 없음 | MATCHING-803 | 404 |
+| AI 추천 생성 실패 | AI-701 | 500 |
+| AI 서버 타임아웃 | AI-702 | 502 |
+
+### 흐름도 (FE → BE → AI → DB)
+
+```
+1. 보호자가 웹소켓으로 "오늘 기분은 어때?" 메시지 전송
+2. 환자 화면에 보호자 메시지 표시 + 추천 답변 요청
+
+3. FE → BE 요청
+   POST /api/v1/recommendations/replies
+   Headers: { Authorization: "Bearer {JWT}" }
+   Body: { "message": "오늘 기분은 어때?", "history": [...] }
+
+4. BE (RecommendationController.getReplies)
+   - JWT에서 userId 추출
+   - userId → Matching 조회 → matchingId 획득
+   - message 검증 (null/blank 시 COMMON-101 에러)
+   - AI 서버에 요청 전달
+
+5. BE → AI 요청
+   POST http://eyespeak-ai-caregiver:5003/recommend/replies
+   Body: { "matching_id": 3, "question": "오늘 기분은 어때?", "history": [...] }
+
+6. AI (caregiver_server_db.py - recommend_replies)
+   - _load_user_data_from_db(3) 호출 → 사용자 표현/단어/기분/일정 로드
+   - history가 있으면 대화 맥락 컨텍스트 구성
+   - _search_sentences_mixed()로 후보 6개 검색
+   - _refine_recommend()로 LLM이 3개로 정제
+   - 각 문장에 _classify_sentence_keywords()로 intent 분류
+   - id, label, intentKey, source, rank 메타정보 생성
+
+7. AI → BE 응답
+   { "replies": [
+     { "id": "reply-1", "label": "좋아요", "intentKey": "감정", "source": "context", "rank": 1 },
+     ...
+   ]}
+
+8. BE → FE 응답
+   {
+     "code": "SUCCESS",
+     "message": "요청이 성공하였습니다",
+     "data": {
+       "replies": [
+         { "id": "reply-1", "label": "좋아요", "intentKey": "감정", "source": "context", "rank": 1 },
+         { "id": "reply-2", "label": "괜찮아요", "intentKey": "감정", "source": "context", "rank": 2 },
+         { "id": "reply-3", "label": "조금 힘들어요", "intentKey": "감정", "source": "context", "rank": 3 }
+       ]
+     }
+   }
+
+9. FE 화면에 추천 답변 3개 표시 (source, rank 정보 활용)
+```
 
 ---
 
