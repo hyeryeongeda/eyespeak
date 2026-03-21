@@ -1,0 +1,12 @@
+stages:
+  - build-test
+
+build_test:
+  stage: build-test
+  image: gradle:8.5-jdk17
+  script:
+    - cd backend
+    - chmod +x gradlew
+    - ./gradlew clean compileJava --no-daemon
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
