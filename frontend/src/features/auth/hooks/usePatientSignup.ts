@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { ROUTE_PATHS, resolveAppPath } from '../../../app/router/routePaths'
+import { useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { getPatientCalibrationStatus } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   clearVerifiedTeamCode,
@@ -19,6 +20,7 @@ const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
 }
 
 export function usePatientSignup() {
+  const navigate = useNavigate()
   const { setSession } = useAuth()
   const storedVerifiedTeamCode = getStoredVerifiedTeamCode()
   const [teamCode, setTeamCode] = useState(storedVerifiedTeamCode ?? '')
@@ -120,7 +122,7 @@ export function usePatientSignup() {
         ? ROUTE_PATHS.PATIENT_MAIN
         : ROUTE_PATHS.PATIENT_CALIBRATION
 
-    window.location.replace(resolveAppPath(nextPath))
+    navigate(nextPath, { replace: true })
   }
 
   return {

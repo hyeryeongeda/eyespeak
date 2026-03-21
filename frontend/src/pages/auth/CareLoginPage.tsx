@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { getHomePathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
@@ -23,6 +24,7 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function CareLoginPage() {
+  const navigate = useNavigate()
   const { login, isPending } = useAuth()
   const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
     consumeGuardianSessionExitReason(),
@@ -53,7 +55,7 @@ export default function CareLoginPage() {
       return
     }
 
-    window.location.replace(resolveAppPath(getHomePathByRole(result.data.role)))
+    navigate(getHomePathByRole(result.data.role), { replace: true })
   }
 
   return (

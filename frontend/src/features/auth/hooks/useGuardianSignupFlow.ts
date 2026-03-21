@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ROUTE_PATHS, resolveAppPath } from '../../../app/router/routePaths'
+import { useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import {
   createInitialPatientRoutines,
   GUARDIAN_SIGNUP_ROUTINE_SLOTS,
@@ -53,6 +54,7 @@ function toggleSelectedTag(
 }
 
 export function useGuardianSignupFlow() {
+  const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<GuardianSignupStep>('guardian-account')
   const [guardianAccount, setGuardianAccount] =
     useState<GuardianAccountFormValues>(INITIAL_GUARDIAN_ACCOUNT)
@@ -223,7 +225,7 @@ export function useGuardianSignupFlow() {
 
     setStoredRole('guardian')
     setStoredEntryMode('login')
-    window.location.replace(resolveAppPath(ROUTE_PATHS.AUTH_LOGIN_CARE))
+    navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, { replace: true })
   }
 
   return {
