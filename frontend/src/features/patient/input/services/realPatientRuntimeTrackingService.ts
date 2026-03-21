@@ -1,11 +1,12 @@
+import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 import {
   getViewportPointFromEyeTrackingFrame,
   isAbortError,
   mapEyeTrackingFrameToTrackingStatus,
   readEyeTrackingFrameFromVideo,
   waitForAbortableDelay,
-} from './eyeTrackingCore'
-import { getEyeTrackingRuntimePollIntervalMs } from './eyeTrackingServiceConfig'
+} from '../../../../services/eyeTrackingCore'
+import { getEyeTrackingRuntimePollIntervalMs } from '../../../../services/eyeTrackingServiceConfig'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import type { PatientRuntimeTrackingService } from './patientRuntimeTrackingService'
 import { ensurePatientEyeTrackingRuntimeReady } from './calibration/patientCalibrationService'
@@ -64,7 +65,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
   }: {
     eyeTrackingProfileId: string
     signal?: AbortSignal
-    onTrackingStatusChange: (status: import('../types/calibration').CalibrationTrackingStatus) => void
+    onTrackingStatusChange: (status: CalibrationTrackingStatus) => void
     onDoubleBlink: () => void
   }): Promise<void> {
     this.disposed = false

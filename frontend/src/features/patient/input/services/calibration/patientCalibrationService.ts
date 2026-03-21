@@ -1,13 +1,13 @@
-import type { AuthSession } from '../../types/auth'
-import type { ServiceResult } from '../../types/api'
+import type { AuthSession } from '../../../../../types/auth'
+import type { ServiceResult } from '../../../../../types/api'
 import type {
   PatientCalibrationStatus,
   StoredPatientCalibrationRecord,
-} from '../../types/calibration'
-import { PATIENT_CALIBRATION_STORAGE_KEY } from './calibrationConstants'
-import { loadEyeTrackingCalibrationApi } from '../eyeTrackingApi'
-import { isEyeTrackingApiEnabled } from '../eyeTrackingServiceConfig'
-import { isAbortError, waitForAbortableDelay } from '../eyeTrackingCore'
+} from '../../../../../types/calibration'
+import { PATIENT_CALIBRATION_STORAGE_KEY } from '../../../../../services/calibration/calibrationConstants'
+import { loadEyeTrackingCalibrationApi } from '../../../../../services/eyeTrackingApi'
+import { isEyeTrackingApiEnabled } from '../../../../../services/eyeTrackingServiceConfig'
+import { isAbortError, waitForAbortableDelay } from '../../../../../services/eyeTrackingCore'
 
 type StoredPatientCalibrationMap = Record<string, StoredPatientCalibrationRecord>
 const PATIENT_RECALIBRATION_SESSION_KEY = 'patientRecalibrationRequired'

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import usePatientGlobalMenuActionTarget from '../../../hooks/usePatientGlobalMenuActionTarget'
+import usePatientGlobalMenuActionTarget from '../../../features/patient/input/hooks/usePatientGlobalMenuActionTarget'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 
 interface PatientCallOverlayProps {

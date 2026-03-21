@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
-import { getPatientCalibrationStatusSnapshot } from '../../services/calibration/patientCalibrationService'
+import { getPatientCalibrationStatusSnapshot } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import type { UserRole } from '../../types/auth'
 import { getAuthPathByRole, getHomePathByRole, ROUTE_PATHS } from './routePaths'
 

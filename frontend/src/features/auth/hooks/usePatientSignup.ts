@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { ROUTE_PATHS, resolveAppPath } from '../../../app/router/routePaths'
+import { getPatientCalibrationStatus } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   clearVerifiedTeamCode,
   getStoredVerifiedTeamCode,
   storeVerifiedTeamCode,
 } from '../../../services/authStorage'
-import { getPatientCalibrationStatus } from '../../../services/calibration/patientCalibrationService'
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
 import { useAuth } from './useAuth'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'

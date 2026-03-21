@@ -1,10 +1,10 @@
 import { type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../features/auth/hooks/useAuth'
-import { requestPatientRecalibration } from '../../services/calibration/patientCalibrationService'
-import { isPatientTrackingBlocked, usePatientModeStore } from '../../stores/patientModeStore'
-import type { CalibrationTrackingStatus } from '../../types/calibration'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
+import { requestPatientRecalibration } from '../services/calibration/patientCalibrationService'
+import { isPatientTrackingBlocked, usePatientModeStore } from '../stores/patientModeStore'
+import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 
 const overlayStyle: CSSProperties = {
   position: 'fixed',

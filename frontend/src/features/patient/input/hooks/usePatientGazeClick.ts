@@ -4,7 +4,7 @@ import {
   CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
   getActivationDelayPreset,
   type CareActivationDelayPresetUpdatedDetail,
-} from '../services/careSettingService'
+} from '../../../../services/careSettingService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
   getInteractiveElementFromPoint,
@@ -16,7 +16,7 @@ import { usePatientModeStore } from '../stores/patientModeStore'
 import {
   ACTIVATION_DELAY_OPTIONS,
   type ActivationDelayPreset,
-} from '../types/care'
+} from '../../../../types/care'
 
 interface UsePatientGazeClickOptions {
   enabled?: boolean

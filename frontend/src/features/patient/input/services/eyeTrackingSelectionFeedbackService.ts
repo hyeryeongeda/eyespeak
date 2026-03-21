@@ -1,4 +1,4 @@
-import { submitEyeTrackingSelectionApi } from './eyeTrackingApi'
+import { submitEyeTrackingSelectionApi } from '../../../../services/eyeTrackingApi'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 
 export function submitActiveEyeTrackingSelectionFeedback() {

@@ -1,5 +1,5 @@
-import type { CalibrationTrackingStatus } from '../types/calibration'
-import { isEyeTrackingApiEnabled } from './eyeTrackingServiceConfig'
+import type { CalibrationTrackingStatus } from '../../../../types/calibration'
+import { isEyeTrackingApiEnabled } from '../../../../services/eyeTrackingServiceConfig'
 import { createRealPatientRuntimeTrackingService } from './realPatientRuntimeTrackingService'
 
 export interface PatientRuntimeTrackingStartOptions {

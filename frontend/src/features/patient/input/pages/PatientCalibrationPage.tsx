@@ -1,16 +1,16 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../features/auth/hooks/useAuth'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
 import {
   completePatientCalibration,
   getPatientEyeTrackingProfileId,
-} from '../../../services/calibration/patientCalibrationService'
+} from '../services/calibration/patientCalibrationService'
 import {
   getEyeTrackingConfigSnapshot,
   getEyeTrackingUiUrl,
-} from '../../../services/eyeTrackingServiceConfig'
-import { useGazeInputStore } from '../../../stores/gazeInputStore'
+} from '../../../../services/eyeTrackingServiceConfig'
+import { useGazeInputStore } from '../stores/gazeInputStore'
 
 type CalibrationPageState = 'loading' | 'saving' | 'ready' | 'error'
 

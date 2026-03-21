@@ -1,19 +1,19 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../features/auth/hooks/useAuth'
-import { useDwell } from '../../hooks/useDwell'
-import { useTracking } from '../../hooks/useTracking'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
+import { useDwell } from '../hooks/useDwell'
+import { useTracking } from '../hooks/useTracking'
 import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
-} from '../../services/patientModeBridge'
-import { submitActiveEyeTrackingSelectionFeedback } from '../../services/eyeTrackingSelectionFeedbackService'
+} from '../services/patientModeBridge'
+import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
   getRemainingPatientSosCooldownMs,
   requestMockPatientSos,
-} from '../../services/patientSosService'
-import { isPatientTrackingAvailable, usePatientModeStore } from '../../stores/patientModeStore'
+} from '../../../../services/patientSosService'
+import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
 
 type GlobalMenuTargetId = PatientGlobalMenuActionId
 

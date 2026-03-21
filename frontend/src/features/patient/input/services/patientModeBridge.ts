@@ -1,4 +1,4 @@
-import type { CalibrationTrackingStatus } from '../types/calibration'
+import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 
 export const PATIENT_DOUBLE_BLINK_EVENT = 'patient-tracking:double-blink'
 export const PATIENT_TRACKING_STATUS_EVENT = 'patient-tracking:status-change'
