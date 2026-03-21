@@ -11,6 +11,7 @@ import type {
   Phrase,
   FavoritePhrase,
   LeisureContentItem,
+  LeisureContentRequest,
   DwellTimePreset,
   ActivationDelayPreset,
   TtsSetting,
@@ -27,7 +28,6 @@ import {
   MOCK_CATEGORIES,
   MOCK_PHRASES,
   MOCK_FAVORITE_PHRASES,
-  MOCK_LEISURE_CONTENTS,
   MOCK_DWELL_TIME_PRESET,
   MOCK_ACTIVATION_DELAY_PRESET,
   MOCK_TTS_SETTING,
@@ -37,6 +37,12 @@ import {
   MOCK_DAILY_SUMMARIES,
 } from './mockCareData'
 import { getRoutinesApi, updateRoutinesApi } from './routineApi'
+import {
+  getLeisureContentsApi,
+  createLeisureContentApi,
+  updateLeisureContentApi,
+  deleteLeisureContentApi,
+} from './leisureApi'
 import { GUARDIAN_SIGNUP_ROUTINE_SLOTS, ROUTINE_ACTIVITY_TAGS } from '../constants/routineCatalog'
 
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms))
@@ -174,19 +180,27 @@ export async function removeFavoritePhrase(phraseId: number): Promise<ApiRespons
 
 // 여가 콘텐츠
 export async function getLeisureContents(): Promise<ApiResponse<LeisureContentItem[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_LEISURE_CONTENTS], message: '조회 성공' }
+  const data = await getLeisureContentsApi()
+  return { success: true, data, message: '조회 성공' }
 }
 
-export async function saveLeisureContent(item: Omit<LeisureContentItem, 'id' | 'matchingId'>): Promise<ApiResponse<LeisureContentItem>> {
-  await delay()
-  const created: LeisureContentItem = { id: Date.now(), matchingId: 1, ...item }
-  return { success: true, data: created, message: '등록 성공' }
+export async function saveLeisureContent(
+  item: LeisureContentRequest,
+): Promise<ApiResponse<null>> {
+  await createLeisureContentApi(item)
+  return { success: true, data: null, message: '등록 성공' }
+}
+
+export async function updateLeisureContent(
+  contentId: number,
+  item: LeisureContentRequest,
+): Promise<ApiResponse<null>> {
+  await updateLeisureContentApi(contentId, item)
+  return { success: true, data: null, message: '수정 성공' }
 }
 
 export async function deleteLeisureContent(id: number): Promise<ApiResponse<null>> {
-  await delay(200)
-  void id
+  await deleteLeisureContentApi(id)
   return { success: true, data: null, message: '삭제 성공' }
 }
 

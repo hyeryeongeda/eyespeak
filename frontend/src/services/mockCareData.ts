@@ -8,7 +8,6 @@ import type {
   Category,
   Phrase,
   FavoritePhrase,
-  LeisureContentItem,
   DwellTimePreset,
   ActivationDelayPreset,
   TtsSetting,
@@ -146,17 +145,6 @@ export const MOCK_FAVORITE_PHRASES: FavoritePhrase[] = [
   { id: 3, matchingId: 1, phraseId: 58 },
   { id: 4, matchingId: 1, phraseId: 22 },
   { id: 5, matchingId: 1, phraseId: 37 },
-]
-
-// ========================
-// 여가 콘텐츠
-// ========================
-
-export const MOCK_LEISURE_CONTENTS: LeisureContentItem[] = [
-  { id: 1, matchingId: 1, position: 0, name: 'KBS 뉴스 라이브', url: 'https://youtube.com/watch?v=mock001', category: 'news' },
-  { id: 2, matchingId: 1, position: 1, name: '클래식 음악 모음', url: 'https://youtube.com/watch?v=mock002', category: 'music' },
-  { id: 3, matchingId: 1, position: 2, name: '프로야구 하이라이트', url: 'https://youtube.com/watch?v=mock003', category: 'sports' },
-  { id: 4, matchingId: 1, position: 3, name: '라디오 낭독', url: null, category: 'audiobook' },
 ]
 
 // ========================
