@@ -10,6 +10,7 @@ public class AuthResponse {
     private String accessToken;
     private String refreshToken;
     private AuthUserDto user;
+    private Long matchingId;
 
     @Getter
     @Builder
