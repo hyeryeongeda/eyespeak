@@ -8,7 +8,6 @@ import {
 } from '../services/calibration/patientCalibrationService'
 import {
   getEyeTrackingConfigSnapshot,
-  getEyeTrackingUiUrl,
 } from '../../../../services/eyeTrackingServiceConfig'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 
@@ -49,7 +48,7 @@ export default function PatientCalibrationPage() {
   const eyeTrackingConfig = useMemo(() => getEyeTrackingConfigSnapshot(), [])
 
   const iframeUrl = useMemo(() => {
-    const baseUrl = getEyeTrackingUiUrl().trim().replace(/\/+$/, '')
+    const baseUrl = eyeTrackingConfig.uiUrl.trim().replace(/\/+$/, '')
 
     if (!baseUrl) {
       return ''
@@ -66,7 +65,7 @@ export default function PatientCalibrationPage() {
     }
 
     return `${baseUrl}/?${query.toString()}`
-  }, [eyeTrackingProfileId])
+  }, [eyeTrackingConfig.uiUrl, eyeTrackingProfileId])
 
   const allowedOrigin = useMemo(() => {
     if (!iframeUrl || typeof window === 'undefined') {

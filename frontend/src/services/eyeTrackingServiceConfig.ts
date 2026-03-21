@@ -1,4 +1,9 @@
+import { getActiveApiMode } from '../config/env'
+
 export type EyeTrackingApiMode = 'real' | 'mock' | 'disabled'
+
+const EYE_TRACKING_PROXY_PATH = '/eye-tracking-api'
+const envValues = import.meta.env as Record<string, string | undefined>
 
 function normalizeTextValue(value: string | undefined) {
   return value?.trim() ?? ''
@@ -37,19 +42,64 @@ function getPositiveNumber(value: string | undefined, fallback: number) {
   return parsed
 }
 
-const RAW_EYE_TRACKING_API_MODE = import.meta.env.VITE_EYE_TRACKING_API_MODE
+function readFirstEnvValue(keys: readonly string[]) {
+  for (const key of keys) {
+    const normalizedValue = normalizeTextValue(envValues[key])
+
+    if (normalizedValue) {
+      return normalizedValue
+    }
+  }
+
+  return ''
+}
+
+function stripTrailingSlashes(value: string) {
+  return value.replace(/\/+$/, '')
+}
+
+function stripApiSuffix(value: string) {
+  return value.replace(/\/api(?:\/v\d+)?\/?$/i, '')
+}
+
+const EXPLICIT_EYE_TRACKING_MODE = readFirstEnvValue([
+  'VITE_EYE_TRACKING_API_MODE',
+  'VITE_EYE_TRACKING_MODE',
+])
+const EXPLICIT_EYE_TRACKING_API_BASE_URL = readFirstEnvValue([
+  'VITE_EYE_TRACKING_API_BASE_URL',
+  'VITE_EYE_TRACKING_BASE_URL',
+])
+const EXPLICIT_EYE_TRACKING_UI_URL = readFirstEnvValue([
+  'VITE_EYE_TRACKING_UI_URL',
+  'VITE_EYE_TRACKING_URL',
+])
+const EYE_TRACKING_PROXY_TARGET = readFirstEnvValue(['VITE_EYE_TRACKING_PROXY_TARGET'])
+
+const hasExplicitEyeTrackingConnectionConfig = Boolean(
+  EXPLICIT_EYE_TRACKING_API_BASE_URL ||
+    EXPLICIT_EYE_TRACKING_UI_URL ||
+    EYE_TRACKING_PROXY_TARGET,
+)
+
+const RAW_EYE_TRACKING_API_MODE =
+  EXPLICIT_EYE_TRACKING_MODE ||
+  (hasExplicitEyeTrackingConnectionConfig ? 'real' : getActiveApiMode())
 const NORMALIZED_EYE_TRACKING_API_MODE = normalizeModeValue(RAW_EYE_TRACKING_API_MODE)
 const EYE_TRACKING_API_MODE = resolveEyeTrackingApiMode(RAW_EYE_TRACKING_API_MODE)
 const EYE_TRACKING_DIAGNOSTICS_ENABLED = Boolean(import.meta.env.DEV)
 
-const EYE_TRACKING_API_BASE_URL =
-  normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_API_BASE_URL) ||
-  (import.meta.env.DEV ? '/eye-tracking-api' : '')
+const EYE_TRACKING_API_BASE_URL = stripTrailingSlashes(
+  EXPLICIT_EYE_TRACKING_API_BASE_URL ||
+    (EYE_TRACKING_API_MODE === 'real' || import.meta.env.DEV ? EYE_TRACKING_PROXY_PATH : ''),
+)
 
-const EYE_TRACKING_UI_URL =
-  normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_UI_URL) ||
-  normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_PROXY_TARGET) ||
-  ''
+const EYE_TRACKING_UI_URL = stripTrailingSlashes(
+  EXPLICIT_EYE_TRACKING_UI_URL ||
+    stripApiSuffix(EYE_TRACKING_API_BASE_URL) ||
+    stripApiSuffix(EYE_TRACKING_PROXY_TARGET) ||
+    (EYE_TRACKING_API_MODE === 'real' ? EYE_TRACKING_PROXY_PATH : ''),
+)
 
 const EYE_TRACKING_REQUEST_TIMEOUT_MS = getPositiveNumber(
   import.meta.env.VITE_EYE_TRACKING_REQUEST_TIMEOUT_MS,
@@ -92,14 +142,14 @@ export function getActiveEyeTrackingApiMode() {
 
 export function getEyeTrackingConfigSnapshot() {
   return {
-    rawApiMode: RAW_EYE_TRACKING_API_MODE ?? '',
+    rawApiMode: RAW_EYE_TRACKING_API_MODE,
     normalizedApiMode: NORMALIZED_EYE_TRACKING_API_MODE,
     resolvedApiMode: EYE_TRACKING_API_MODE,
     apiEnabled: EYE_TRACKING_API_MODE === 'real',
     apiBaseUrl: EYE_TRACKING_API_BASE_URL,
     uiUrl: EYE_TRACKING_UI_URL,
     appBaseUrl: import.meta.env.BASE_URL,
-    proxyTarget: normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_PROXY_TARGET),
+    proxyTarget: EYE_TRACKING_PROXY_TARGET,
     diagnosticsEnabled: EYE_TRACKING_DIAGNOSTICS_ENABLED,
     isDevelopment: Boolean(import.meta.env.DEV),
   }

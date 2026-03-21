@@ -126,22 +126,6 @@ const painAreaGroupModelMap: Record<PainAreaGroupKey, PainAreaGroupModelDefiniti
   },
 }
 
-export const painAreaModelUrls = Array.from(
-  new Set(
-    [
-      fullBodyModelUrl,
-      ...Object.values(painAreaModelMap).flatMap(({ modelUrl, fallbackModelUrl }) => [
-        modelUrl,
-        fallbackModelUrl,
-      ]),
-      ...Object.values(painAreaGroupModelMap).flatMap(({ modelUrl, fallbackModelUrl }) => [
-        modelUrl,
-        fallbackModelUrl,
-      ]),
-    ],
-  ),
-)
-
 export function getFullBodyModelUrl() {
   return fullBodyModelUrl
 }

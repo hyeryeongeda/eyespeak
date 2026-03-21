@@ -17,9 +17,10 @@ import {
   isPatientTrackingBlocked,
   usePatientModeStore,
 } from '../../features/patient/input/stores/patientModeStore'
-import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../hooks/patientIncomingChatContext'
 import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
-import { ROUTE_PATHS } from '../router/routePaths'
+import { ensureAppFontsLoaded } from '../../styles/loadAppFonts'
 
 function PatientLayoutShell() {
   const chat = usePatientIncomingChat()
@@ -28,28 +29,29 @@ function PatientLayoutShell() {
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
-  const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
 
+  useEffect(() => {
+    void ensureAppFontsLoaded()
+  }, [])
+
   usePatientTrackingBridge({
-    enabled: !isCalibrationRoute,
+    enabled: true,
   })
   usePatientRuntimeTracking({
-    enabled: !isCalibrationRoute,
+    enabled: true,
     eyeTrackingProfileId,
   })
   usePatientGlobalMenuActionListener({
-    enabled: !isCalibrationRoute,
+    enabled: true,
   })
   usePatientGazeClick({
     enabled:
-      !isCalibrationRoute &&
-      !isGlobalMenuOpen &&
-      isPatientTrackingAvailable(trackingStatus),
+      !isGlobalMenuOpen && isPatientTrackingAvailable(trackingStatus),
   })
   usePatientModeDwellSync({
-    enabled: !isCalibrationRoute,
+    enabled: true,
   })
 
   useEffect(() => {
@@ -68,22 +70,20 @@ function PatientLayoutShell() {
     <>
       <Outlet />
 
-      {!isCalibrationRoute ? <GlobalMenuOverlay /> : null}
-      {!isCalibrationRoute ? <PatientTrackingGuardOverlay /> : null}
+      <GlobalMenuOverlay />
+      <PatientTrackingGuardOverlay />
 
-      {!isCalibrationRoute ? (
-        <IncomingInterruptOverlay
-          visible={chat.shouldShowInterruptOverlay}
-          message={chat.activeMessage}
-          unreadCount={chat.unreadCount}
-          currentRoute={chat.state.currentRoute}
-          pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
-          onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
-          onLater={chat.deferActiveMessage}
-        />
-      ) : null}
+      <IncomingInterruptOverlay
+        visible={chat.shouldShowInterruptOverlay}
+        message={chat.activeMessage}
+        unreadCount={chat.unreadCount}
+        currentRoute={chat.state.currentRoute}
+        pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
+        onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
+        onLater={chat.deferActiveMessage}
+      />
 
-      {!isCalibrationRoute && chat.shouldShowReplyOverlay ? (
+      {chat.shouldShowReplyOverlay ? (
         <ReplyModePanel
           overlay
           message={chat.activeReplyMessage}
@@ -113,7 +113,7 @@ function PatientLayoutShell() {
         />
       ) : null}
 
-      {!isCalibrationRoute && PATIENT_CHAT_DEV_PANEL_ENABLED ? (
+      {PATIENT_CHAT_DEV_PANEL_ENABLED ? (
         <DevChatTriggerPanel
           availablePresets={chat.availablePresets}
           nextSendOutcome={chat.state.nextSendOutcome}

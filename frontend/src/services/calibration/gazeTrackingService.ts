@@ -94,12 +94,16 @@ class MockGazeTrackingService implements GazeTrackingService {
   dispose() {}
 }
 
-let gazeTrackingServiceFactory = isEyeTrackingApiEnabled()
-  ? createRealGazeTrackingService
-  : () => new MockGazeTrackingService()
+let gazeTrackingServiceFactory: (() => GazeTrackingService) | null = null
 
 export function createGazeTrackingService(): GazeTrackingService {
-  return gazeTrackingServiceFactory()
+  if (gazeTrackingServiceFactory) {
+    return gazeTrackingServiceFactory()
+  }
+
+  return isEyeTrackingApiEnabled()
+    ? createRealGazeTrackingService()
+    : new MockGazeTrackingService()
 }
 
 export function registerGazeTrackingServiceFactory(factory: () => GazeTrackingService) {

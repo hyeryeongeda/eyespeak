@@ -1,55 +1,89 @@
+import { lazy, Suspense, type ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import HomePage from '../../pages/HomePage'
-import CareHomePage from '../../pages/care/CareHomePage'
-import CareSettingsPage from '../../pages/care/CareSettingsPage'
-import ChatPage from '../../pages/care/ChatPage'
-import RecordsPage from '../../pages/care/RecordsPage'
-import VoicePage from '../../pages/care/VoicePage'
-import PatientInfoPage from '../../pages/care/settings/PatientInfoPage'
-import RoutineSettingPage from '../../pages/care/settings/RoutineSettingPage'
-import FavoritesSettingPage from '../../pages/care/settings/FavoritesSettingPage'
-import LeisureSettingPage from '../../pages/care/settings/LeisureSettingPage'
-import DeviceSettingPage from '../../pages/care/settings/DeviceSettingPage'
-import TtsSettingPage from '../../pages/care/settings/TtsSettingPage'
-import WordsSettingPage from '../../pages/care/settings/WordsSettingPage'
-import ExpressionsPage from '../../pages/care/settings/ExpressionsPage'
-import CareLoginPage from '../../pages/auth/CareLoginPage'
-import CareSignupPage from '../../pages/auth/CareSignupPage'
-import LoginPage from '../../pages/auth/LoginPage'
-import PatientLoginPage from '../../pages/auth/PatientLoginPage'
-import PatientCalibrationPage from '../../features/patient/input/pages/PatientCalibrationPage'
-import TalkMainPage from '../../pages/patient/talk/TalkMainPage'
-import PatientMainPage from '../../pages/patient/main/PatientMainPage'
-import LeisureMainPage from '../../pages/patient/leisure/LeisureMainPage'
-import LeisureCategoryPage from '../../pages/patient/leisure/LeisureCategoryPage'
-import LeisurePlayerPage from '../../pages/patient/leisure/LeisurePlayerPage'
-import BodyMindPage from '../../pages/patient/body-mind/BodyMindPage'
-import BodyMindSecretionPage from '../../pages/patient/body-mind/BodyMindSecretionPage'
-import BodyMindBreathingPage from '../../pages/patient/body-mind/BodyMindBreathingPage'
-import BodyMindPainAreaPage from '../../pages/patient/body-mind/BodyMindPainAreaPage'
-import BodyMindPainPartPage from '../../pages/patient/body-mind/BodyMindPainPartPage'
-import BodyMindPainDetailPage from '../../pages/patient/body-mind/BodyMindPainDetailPage'
-import BodyMindCategoryListPage from '../../pages/patient/body-mind/BodyMindCategoryListPage'
-import BodyMindCategoryDetailPage from '../../pages/patient/body-mind/BodyMindCategoryDetailPage'
-import BodyMindPlaceholderPage from '../../pages/patient/body-mind/BodyMindPlaceholderPage'
-import FavoritesPage from '../../pages/patient/favorites/FavoritesPage'
-import CustomTalkDirectionPage from '../../features/patient/custom-talk/pages/CustomTalkDirectionPage'
-import CustomTalkRecommendPage from '../../features/patient/custom-talk/pages/CustomTalkRecommendPage'
-import CustomTalkComposePage from '../../features/patient/custom-talk/pages/CustomTalkComposePage'
-import CustomTalkGeneratedPage from '../../features/patient/custom-talk/pages/CustomTalkGeneratedPage'
-import CustomTalkKeyboardPage from '../../features/patient/custom-talk/pages/CustomTalkKeyboardPage'
-import PatientSignupPage from '../../pages/auth/PatientSignupPage'
-import ResetPasswordPage from '../../pages/auth/ResetPasswordPage'
-import RoleSelectPage from '../../pages/auth/RoleSelectPage'
-import SignupPage from '../../pages/auth/SignupPage'
 import AppLayout from '../layouts/AppLayout'
 import AuthLayout from '../layouts/AuthLayout'
-import CareLayout from '../layouts/CareLayout'
-import PatientLayout from '../layouts/PatientLayout'
 import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
 
+const HomePage = lazy(() => import('../../pages/HomePage'))
+const CareHomePage = lazy(() => import('../../pages/care/CareHomePage'))
+const CareSettingsPage = lazy(() => import('../../pages/care/CareSettingsPage'))
+const ChatPage = lazy(() => import('../../pages/care/ChatPage'))
+const RecordsPage = lazy(() => import('../../pages/care/RecordsPage'))
+const VoicePage = lazy(() => import('../../pages/care/VoicePage'))
+const PatientInfoPage = lazy(() => import('../../pages/care/settings/PatientInfoPage'))
+const RoutineSettingPage = lazy(() => import('../../pages/care/settings/RoutineSettingPage'))
+const FavoritesSettingPage = lazy(() => import('../../pages/care/settings/FavoritesSettingPage'))
+const LeisureSettingPage = lazy(() => import('../../pages/care/settings/LeisureSettingPage'))
+const DeviceSettingPage = lazy(() => import('../../pages/care/settings/DeviceSettingPage'))
+const TtsSettingPage = lazy(() => import('../../pages/care/settings/TtsSettingPage'))
+const WordsSettingPage = lazy(() => import('../../pages/care/settings/WordsSettingPage'))
+const ExpressionsPage = lazy(() => import('../../pages/care/settings/ExpressionsPage'))
+const CareLoginPage = lazy(() => import('../../pages/auth/CareLoginPage'))
+const CareSignupPage = lazy(() => import('../../pages/auth/CareSignupPage'))
+const LoginPage = lazy(() => import('../../pages/auth/LoginPage'))
+const PatientLoginPage = lazy(() => import('../../pages/auth/PatientLoginPage'))
+const PatientSignupPage = lazy(() => import('../../pages/auth/PatientSignupPage'))
+const ResetPasswordPage = lazy(() => import('../../pages/auth/ResetPasswordPage'))
+const RoleSelectPage = lazy(() => import('../../pages/auth/RoleSelectPage'))
+const SignupPage = lazy(() => import('../../pages/auth/SignupPage'))
+const PatientCalibrationPage = lazy(
+  () => import('../../features/patient/input/pages/PatientCalibrationPage'),
+)
+const TalkMainPage = lazy(() => import('../../pages/patient/talk/TalkMainPage'))
+const PatientMainPage = lazy(() => import('../../pages/patient/main/PatientMainPage'))
+const LeisureMainPage = lazy(() => import('../../pages/patient/leisure/LeisureMainPage'))
+const LeisureCategoryPage = lazy(() => import('../../pages/patient/leisure/LeisureCategoryPage'))
+const LeisurePlayerPage = lazy(() => import('../../pages/patient/leisure/LeisurePlayerPage'))
+const BodyMindPage = lazy(() => import('../../pages/patient/body-mind/BodyMindPage'))
+const BodyMindSecretionPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindSecretionPage'),
+)
+const BodyMindBreathingPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindBreathingPage'),
+)
+const BodyMindPainAreaPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindPainAreaPage'),
+)
+const BodyMindPainPartPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindPainPartPage'),
+)
+const BodyMindPainDetailPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindPainDetailPage'),
+)
+const BodyMindCategoryListPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindCategoryListPage'),
+)
+const BodyMindCategoryDetailPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindCategoryDetailPage'),
+)
+const BodyMindPlaceholderPage = lazy(
+  () => import('../../pages/patient/body-mind/BodyMindPlaceholderPage'),
+)
+const FavoritesPage = lazy(() => import('../../pages/patient/favorites/FavoritesPage'))
+const CustomTalkDirectionPage = lazy(
+  () => import('../../features/patient/custom-talk/pages/CustomTalkDirectionPage'),
+)
+const CustomTalkRecommendPage = lazy(
+  () => import('../../features/patient/custom-talk/pages/CustomTalkRecommendPage'),
+)
+const CustomTalkComposePage = lazy(
+  () => import('../../features/patient/custom-talk/pages/CustomTalkComposePage'),
+)
+const CustomTalkGeneratedPage = lazy(
+  () => import('../../features/patient/custom-talk/pages/CustomTalkGeneratedPage'),
+)
+const CustomTalkKeyboardPage = lazy(
+  () => import('../../features/patient/custom-talk/pages/CustomTalkKeyboardPage'),
+)
+const CareLayout = lazy(() => import('../layouts/CareLayout'))
+const PatientLayout = lazy(() => import('../layouts/PatientLayout'))
+
 const routerBasename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
+
+function withRouteSuspense(element: ReactNode) {
+  return <Suspense fallback={null}>{element}</Suspense>
+}
 
 const authRoutes = [
   {
@@ -58,115 +92,111 @@ const authRoutes = [
   },
   {
     path: ROUTE_SEGMENTS.AUTH.ROLE,
-    element: <RoleSelectPage />,
+    element: withRouteSuspense(<RoleSelectPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.LOGIN_CARE,
-    element: <CareLoginPage />,
+    element: withRouteSuspense(<CareLoginPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.LOGIN_PATIENT,
-    element: <PatientLoginPage />,
+    element: withRouteSuspense(<PatientLoginPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.LOGIN,
-    element: <LoginPage />,
+    element: withRouteSuspense(<LoginPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP_CARE,
-    element: <CareSignupPage />,
+    element: withRouteSuspense(<CareSignupPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP_PATIENT,
-    element: <PatientSignupPage />,
+    element: withRouteSuspense(<PatientSignupPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP,
-    element: <SignupPage />,
+    element: withRouteSuspense(<SignupPage />),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.RESET_PASSWORD,
-    element: <ResetPasswordPage />,
+    element: withRouteSuspense(<ResetPasswordPage />),
   },
 ]
 
-const patientRoutes = [
+const patientAppRoutes = [
   {
     index: true,
     element: <Navigate to={ROUTE_PATHS.PATIENT_MAIN} replace />,
   },
   {
-    path: ROUTE_SEGMENTS.PATIENT.CALIBRATION,
-    element: <PatientCalibrationPage />,
-  },
-  {
     path: ROUTE_SEGMENTS.PATIENT.MAIN,
-    element: <PatientMainPage />,
+    element: withRouteSuspense(<PatientMainPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.TALK_MAIN,
-    element: <TalkMainPage />,
+    element: withRouteSuspense(<TalkMainPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.LEISURE,
-    element: <LeisureMainPage />,
+    element: withRouteSuspense(<LeisureMainPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.LEISURE_CATEGORY,
-    element: <LeisureCategoryPage />,
+    element: withRouteSuspense(<LeisureCategoryPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.LEISURE_PLAYER,
-    element: <LeisurePlayerPage />,
+    element: withRouteSuspense(<LeisurePlayerPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND,
-    element: <BodyMindPage />,
+    element: withRouteSuspense(<BodyMindPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_SECRETION,
-    element: <BodyMindSecretionPage />,
+    element: withRouteSuspense(<BodyMindSecretionPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_BREATHING,
-    element: <BodyMindBreathingPage />,
+    element: withRouteSuspense(<BodyMindBreathingPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_AREA,
-    element: <BodyMindPainAreaPage />,
+    element: withRouteSuspense(<BodyMindPainAreaPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_PART,
-    element: <BodyMindPainPartPage />,
+    element: withRouteSuspense(<BodyMindPainPartPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_PAIN_DETAIL,
-    element: <BodyMindPainDetailPage />,
+    element: withRouteSuspense(<BodyMindPainDetailPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_POSTURE,
-    element: (
+    element: withRouteSuspense(
       <BodyMindPlaceholderPage
         code="PAT-BM-STUB"
-        title="자세 바꿔줘"
-        description="자세 변경 상세 화면은 스텁으로 우선 연결했습니다."
-        note="자세 바꿔줘 상세 항목은 추후 디자인과 표현 스펙이 확정되면 연결합니다."
+        title="?ë¨¯ê½­ è«›ë¶½í“­ä»¥?"
+        description="?ë¨¯ê½­ è¹‚Â€å¯ƒ??ê³¸ê½­ ?ë¶¾ãˆƒ?Â€ ?ã…½ë€…?ì‡°ì¤ˆ ?ê³—ê½‘ ?ê³Œê»?ë‰ë’¿?ëˆë–Ž."
+        note="?ë¨¯ê½­ è«›ë¶½í“­ä»¥??ê³¸ê½­ ??ã‰?Â€ ç•°ë·€ì‘ ?ë¶¿ì˜„?ë©¸ë‚µ ?ì’—ì½ ?ã…½ëŸº???ëº¤ì ™?ì„Žãˆƒ ?ê³Œê»?â‘¸ë•²??"
         backPath={ROUTE_PATHS.PATIENT_BODY_MIND}
-        backDescription="몸과마음 메인으로 돌아가기"
-      />
+        backDescription="ï§ë©¸ë‚µï§ë‰ì“¬ ï§Žë¶¿ì”¤?ì‡°ì¤ˆ ?ëš¯ë¸˜åª›Â€æ¹²?"
+      />,
     ),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_CATEGORIES,
-    element: <BodyMindCategoryListPage />,
+    element: withRouteSuspense(<BodyMindCategoryListPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_CATEGORY_DETAIL,
-    element: <BodyMindCategoryDetailPage />,
+    element: withRouteSuspense(<BodyMindCategoryDetailPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.FAVORITES,
-    element: <FavoritesPage />,
+    element: withRouteSuspense(<FavoritesPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_LEGACY,
@@ -174,23 +204,23 @@ const patientRoutes = [
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK,
-    element: <CustomTalkDirectionPage />,
+    element: withRouteSuspense(<CustomTalkDirectionPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_RECOMMEND,
-    element: <CustomTalkRecommendPage />,
+    element: withRouteSuspense(<CustomTalkRecommendPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_COMPOSE,
-    element: <CustomTalkComposePage />,
+    element: withRouteSuspense(<CustomTalkComposePage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_GENERATED,
-    element: <CustomTalkGeneratedPage />,
+    element: withRouteSuspense(<CustomTalkGeneratedPage />),
   },
   {
     path: ROUTE_SEGMENTS.PATIENT.CUSTOM_TALK_KEYBOARD,
-    element: <CustomTalkKeyboardPage />,
+    element: withRouteSuspense(<CustomTalkKeyboardPage />),
   },
 ]
 
@@ -201,55 +231,55 @@ const careRoutes = [
   },
   {
     path: ROUTE_SEGMENTS.CARE.HOME,
-    element: <CareHomePage />,
+    element: withRouteSuspense(<CareHomePage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.CHAT,
-    element: <ChatPage />,
+    element: withRouteSuspense(<ChatPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.RECORD,
-    element: <RecordsPage />,
+    element: withRouteSuspense(<RecordsPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS,
-    element: <CareSettingsPage />,
+    element: withRouteSuspense(<CareSettingsPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_PATIENT_INFO,
-    element: <PatientInfoPage />,
+    element: withRouteSuspense(<PatientInfoPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_ROUTINE,
-    element: <RoutineSettingPage />,
+    element: withRouteSuspense(<RoutineSettingPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_FAVORITES,
-    element: <FavoritesSettingPage />,
+    element: withRouteSuspense(<FavoritesSettingPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_LEISURE,
-    element: <LeisureSettingPage />,
+    element: withRouteSuspense(<LeisureSettingPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_DEVICE,
-    element: <DeviceSettingPage />,
+    element: withRouteSuspense(<DeviceSettingPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_TTS,
-    element: <TtsSettingPage />,
+    element: withRouteSuspense(<TtsSettingPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_WORDS,
-    element: <WordsSettingPage />,
+    element: withRouteSuspense(<WordsSettingPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_EXPRESSIONS,
-    element: <ExpressionsPage />,
+    element: withRouteSuspense(<ExpressionsPage />),
   },
   {
     path: ROUTE_SEGMENTS.CARE.VOICE,
-    element: <VoicePage />,
+    element: withRouteSuspense(<VoicePage />),
   },
 ]
 
@@ -261,7 +291,7 @@ const router = createBrowserRouter(
       children: [
         {
           index: true,
-          element: <HomePage />,
+          element: withRouteSuspense(<HomePage />),
         },
         {
           path: ROUTE_SEGMENTS.AUTH.ROOT,
@@ -276,18 +306,25 @@ const router = createBrowserRouter(
           path: ROUTE_SEGMENTS.PATIENT.ROOT,
           element: (
             <ProtectedRoute allowedRole="patient">
-              <PatientCalibrationRoute>
-                <PatientLayout />
-              </PatientCalibrationRoute>
+              <PatientCalibrationRoute />
             </ProtectedRoute>
           ),
-          children: patientRoutes,
+          children: [
+            {
+              path: ROUTE_SEGMENTS.PATIENT.CALIBRATION,
+              element: withRouteSuspense(<PatientCalibrationPage />),
+            },
+            {
+              element: withRouteSuspense(<PatientLayout />),
+              children: patientAppRoutes,
+            },
+          ],
         },
         {
           path: ROUTE_SEGMENTS.CARE.ROOT,
           element: (
             <ProtectedRoute allowedRole="guardian">
-              <CareLayout />
+              {withRouteSuspense(<CareLayout />)}
             </ProtectedRoute>
           ),
           children: careRoutes,

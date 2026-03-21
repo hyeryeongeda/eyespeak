@@ -20,12 +20,16 @@ class NoopPatientRuntimeTrackingService implements PatientRuntimeTrackingService
   dispose() {}
 }
 
-let patientRuntimeTrackingServiceFactory = isEyeTrackingApiEnabled()
-  ? createRealPatientRuntimeTrackingService
-  : () => new NoopPatientRuntimeTrackingService()
+let patientRuntimeTrackingServiceFactory: (() => PatientRuntimeTrackingService) | null = null
 
 export function createPatientRuntimeTrackingService(): PatientRuntimeTrackingService {
-  return patientRuntimeTrackingServiceFactory()
+  if (patientRuntimeTrackingServiceFactory) {
+    return patientRuntimeTrackingServiceFactory()
+  }
+
+  return isEyeTrackingApiEnabled()
+    ? createRealPatientRuntimeTrackingService()
+    : new NoopPatientRuntimeTrackingService()
 }
 
 export function registerPatientRuntimeTrackingServiceFactory(

@@ -9,7 +9,6 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react'
-import { painAreaModelUrls } from '../bodyMindPainModels'
 
 const cardStyle: CSSProperties = {
   width: '100%',
@@ -159,10 +158,6 @@ function Placeholder() {
     </div>
   )
 }
-
-painAreaModelUrls.forEach(modelUrl => {
-  useGLTF.preload(modelUrl)
-})
 
 export default function BodyMindPainGuideCard({
   badge,
