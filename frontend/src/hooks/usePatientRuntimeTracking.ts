@@ -4,18 +4,21 @@ import {
   emitPatientTrackingStatus,
 } from '../services/patientModeBridge'
 import { createPatientRuntimeTrackingService } from '../services/patientRuntimeTrackingService'
+import { useGazeInputStore } from '../stores/gazeInputStore'
 
 interface UsePatientRuntimeTrackingOptions {
   enabled?: boolean
-  patientId: string | null
+  eyeTrackingProfileId: string | null
 }
 
 export function usePatientRuntimeTracking({
   enabled = true,
-  patientId,
+  eyeTrackingProfileId,
 }: UsePatientRuntimeTrackingOptions) {
   useEffect(() => {
-    if (!enabled || !patientId) {
+    if (!enabled || !eyeTrackingProfileId) {
+      useGazeInputStore.getState().clearPoint()
+      emitPatientTrackingStatus('idle')
       return
     }
 
@@ -24,7 +27,7 @@ export function usePatientRuntimeTracking({
 
     void Promise.resolve(
       runtimeTrackingService.start({
-        patientId,
+        eyeTrackingProfileId,
         signal: controller.signal,
         onDoubleBlink: () => {
           emitPatientDoubleBlink()
@@ -43,7 +46,7 @@ export function usePatientRuntimeTracking({
       controller.abort()
       runtimeTrackingService.dispose()
     }
-  }, [enabled, patientId])
+  }, [enabled, eyeTrackingProfileId])
 }
 
 export default usePatientRuntimeTracking

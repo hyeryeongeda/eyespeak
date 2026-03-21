@@ -12,6 +12,7 @@ import usePatientModeDwellSync from '../../hooks/usePatientModeDwellSync'
 import usePatientRuntimeTracking from '../../hooks/usePatientRuntimeTracking'
 import usePatientTrackingBridge from '../../hooks/usePatientTrackingBridge'
 import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { getPatientEyeTrackingProfileId } from '../../services/calibration/patientCalibrationService'
 import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
 import {
   isPatientTrackingAvailable,
@@ -29,13 +30,14 @@ function PatientLayoutShell() {
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
+  const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
 
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
   usePatientRuntimeTracking({
     enabled: !isCalibrationRoute,
-    patientId: user?.id ?? null,
+    eyeTrackingProfileId,
   })
   usePatientGlobalMenuActionListener({
     enabled: !isCalibrationRoute,

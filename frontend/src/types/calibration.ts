@@ -44,4 +44,6 @@ export interface PatientCalibrationStatus {
 
 export interface StoredPatientCalibrationRecord {
   completedAt: string
+  eyeTrackingProfileId: string | null
+  runtimeVerifiedAt: string | null
 }

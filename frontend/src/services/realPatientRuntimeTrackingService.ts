@@ -5,15 +5,49 @@ import {
   readEyeTrackingFrameFromVideo,
   waitForAbortableDelay,
 } from './eyeTrackingCore'
-import { loadEyeTrackingCalibrationApi } from './eyeTrackingApi'
 import { getEyeTrackingRuntimePollIntervalMs } from './eyeTrackingServiceConfig'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import type { PatientRuntimeTrackingService } from './patientRuntimeTrackingService'
+import { ensurePatientEyeTrackingRuntimeReady } from './calibration/patientCalibrationService'
 
 function stopMediaStream(stream: MediaStream | null) {
   stream?.getTracks().forEach(track => {
     track.stop()
   })
+}
+
+async function warmUpStoredCalibration(eyeTrackingProfileId: string, signal?: AbortSignal) {
+  try {
+    const result = await ensurePatientEyeTrackingRuntimeReady(eyeTrackingProfileId, {
+      attempts: 6,
+      delayMs: 300,
+      signal,
+    })
+
+    if (import.meta.env.DEV && result.success && result.attempts > 1) {
+      console.info('[eye-tracking] runtime calibration warm-up recovered after retry', {
+        eyeTrackingProfileId,
+        attempts: result.attempts,
+      })
+    }
+
+    return result
+  } catch (error) {
+    if (signal?.aborted || isAbortError(error)) {
+      throw error
+    }
+
+    const message =
+      error instanceof Error && error.message.trim()
+        ? error.message
+        : 'Eye tracking calibration load failed.'
+
+    return {
+      success: false as const,
+      attempts: 1,
+      message,
+    }
+  }
 }
 
 class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService {
@@ -23,12 +57,12 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
   private disposed = false
 
   async start({
-    patientId,
+    eyeTrackingProfileId,
     signal,
     onDoubleBlink,
     onTrackingStatusChange,
   }: {
-    patientId: string
+    eyeTrackingProfileId: string
     signal?: AbortSignal
     onTrackingStatusChange: (status: import('../types/calibration').CalibrationTrackingStatus) => void
     onDoubleBlink: () => void
@@ -72,9 +106,19 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
         // Muted autoplay can still be delayed on some browsers until camera metadata is ready.
       })
 
-      await loadEyeTrackingCalibrationApi(patientId, signal).catch(() => {
-        // Runtime tracking can still proceed without a stored calibration.
-      })
+      const calibrationWarmupResult = await warmUpStoredCalibration(eyeTrackingProfileId, signal)
+
+      if (!calibrationWarmupResult.success) {
+        onTrackingStatusChange('tracking-unstable')
+
+        if (import.meta.env.DEV) {
+          console.warn('[eye-tracking] runtime calibration warm-up failed', {
+            eyeTrackingProfileId,
+            attempts: calibrationWarmupResult.attempts,
+            message: calibrationWarmupResult.message,
+          })
+        }
+      }
 
       let lastDoubleBlinkAt = 0
 
