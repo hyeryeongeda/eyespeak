@@ -12,8 +12,7 @@ import type {
   Phrase,
   RoutineRequestItem,
   RoutineSlotState,
-  TtsSetting,
-  TtsVoiceFile,
+  TtsSettingsResponse,
   UserWords,
 } from '../types/care'
 import {
@@ -33,10 +32,14 @@ import {
   MOCK_FAVORITE_PHRASES,
   MOCK_PATIENT_INFO,
   MOCK_PHRASES,
-  MOCK_TTS_SETTING,
-  MOCK_TTS_VOICE_FILES,
   MOCK_USER_WORDS,
 } from './mockCareData'
+import {
+  getTtsSettingsApi,
+  toggleTtsSettingsApi,
+  uploadTtsVoicesApi,
+  deleteTtsVoiceApi,
+} from './ttsApi'
 import {
   createLeisureContentApi,
   deleteLeisureContentApi,
@@ -261,45 +264,24 @@ export async function updateActivationDelayPreset(
   return { success: true, data: preset, message: 'Updated activation delay preset.' }
 }
 
-export async function getTtsSetting(): Promise<ApiResponse<TtsSetting>> {
-  await delay()
-  return { success: true, data: { ...MOCK_TTS_SETTING }, message: 'Fetched TTS setting.' }
+export async function getTtsSettings(): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await getTtsSettingsApi()
+  return { success: true, data, message: 'Fetched TTS settings.' }
 }
 
-export async function updateTtsEnabled(isEnabled: boolean): Promise<ApiResponse<TtsSetting>> {
-  await delay()
-  return {
-    success: true,
-    data: { ...MOCK_TTS_SETTING, isEnabled },
-    message: 'Updated TTS setting.',
-  }
+export async function toggleTtsEnabled(): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await toggleTtsSettingsApi()
+  return { success: true, data, message: 'Toggled TTS setting.' }
 }
 
-export async function getTtsVoiceFiles(): Promise<ApiResponse<TtsVoiceFile[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_TTS_VOICE_FILES], message: 'Fetched TTS voice files.' }
+export async function uploadTtsVoiceFiles(files: File[]): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await uploadTtsVoicesApi(files)
+  return { success: true, data, message: 'Uploaded TTS voice files.' }
 }
 
-export async function deleteTtsVoiceFile(id: number): Promise<ApiResponse<null>> {
-  await delay(200)
-  void id
+export async function deleteTtsVoice(voiceFileId: number): Promise<ApiResponse<null>> {
+  await deleteTtsVoiceApi(voiceFileId)
   return { success: true, data: null, message: 'Deleted TTS voice file.' }
-}
-
-export async function uploadTtsVoiceFile(file: File): Promise<ApiResponse<TtsVoiceFile>> {
-  await delay(500)
-
-  return {
-    success: true,
-    data: {
-      id: Date.now(),
-      ttsSettingId: 1,
-      fileUrl: `https://s3.example.com/tts/${file.name}`,
-      fileName: file.name,
-      createdAt: new Date().toISOString(),
-    },
-    message: 'Uploaded TTS voice file.',
-  }
 }
 
 export async function getUserWords(): Promise<ApiResponse<UserWords>> {

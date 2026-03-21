@@ -1,77 +1,57 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import CareSettingLayout from './CareSettingLayout'
 import {
-  getTtsSetting,
-  updateTtsEnabled,
-  getTtsVoiceFiles,
-  deleteTtsVoiceFile,
-  uploadTtsVoiceFile,
+  getTtsSettings,
+  toggleTtsEnabled,
+  deleteTtsVoice,
+  uploadTtsVoiceFiles,
 } from '../../../services/careSettingService'
-import { previewTts } from '../../../services/ttsService'
-import type { TtsSetting, TtsVoiceFile, TtsStatus } from '../../../types/care'
-import type { AudioPlaybackHandle } from '../../../types/tts'
-import { playAudioSource } from '../../../utils/audio'
-
-const STATUS_LABELS: Record<TtsStatus, { label: string; color: string }> = {
-  NONE: { label: '미등록', color: 'bg-gray-100 text-gray-600' },
-  TRAINING: { label: '학습 중', color: 'bg-yellow-100 text-yellow-700' },
-  READY: { label: '학습 완료', color: 'bg-green-100 text-green-700' },
-  FAILED: { label: '학습 실패', color: 'bg-red-100 text-red-700' },
-}
-
-const SAMPLE_TEXT = '안녕하세요, 오늘 기분이 좋아요'
+import type { TtsSettingsResponse, TtsVoiceFile } from '../../../types/care'
 
 export default function TtsSettingPage() {
-  const [setting, setSetting] = useState<TtsSetting | null>(null)
-  const [files, setFiles] = useState<TtsVoiceFile[]>([])
+  const [settings, setSettings] = useState<TtsSettingsResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isToggling, setIsToggling] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const previewHandleRef = useRef<AudioPlaybackHandle | null>(null)
 
   const ACCEPTED_FORMATS = '.mp3,.wav,.mp4'
-  const MAX_FILE_SIZE = 500 * 1024 * 1024   // 500MB
 
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchSettings = async () => {
       try {
-        const [settingRes, filesRes] = await Promise.all([getTtsSetting(), getTtsVoiceFiles()])
-        if (settingRes.success) setSetting(settingRes.data)
-        if (filesRes.success) setFiles(filesRes.data)
+        const res = await getTtsSettings()
+        if (res.success) setSettings(res.data)
       } catch {
         setError('TTS 설정을 불러오지 못했습니다.')
       } finally {
         setIsLoading(false)
       }
     }
-    fetchAll()
-
-    return () => {
-      previewHandleRef.current?.cleanup()
-      previewHandleRef.current = null
-    }
+    fetchSettings()
   }, [])
 
+  const showMessage = (setter: typeof setError | typeof setSuccessMsg, msg: string) => {
+    setter(msg)
+    setTimeout(() => setter(null), 3000)
+  }
+
   const handleToggle = async () => {
-    if (!setting || isToggling) return
+    if (!settings || isToggling) return
     setIsToggling(true)
     setError(null)
 
-    const newEnabled = !setting.isEnabled
     try {
-      const res = await updateTtsEnabled(newEnabled)
+      const res = await toggleTtsEnabled()
       if (res.success && res.data) {
-        setSetting(res.data)
-        if (newEnabled && files.length === 0) {
-          setSuccessMsg('등록된 음성이 없어 기본 음성이 적용됩니다.')
+        setSettings(res.data)
+        if (res.data.isEnabled && res.data.voiceFiles.length === 0) {
+          showMessage(setSuccessMsg, '등록된 음성이 없어 기본 음성이 적용됩니다.')
         } else {
-          setSuccessMsg('환자 모드 재시작 시 적용됩니다.')
+          showMessage(setSuccessMsg, '환자 모드 재시작 시 적용됩니다.')
         }
-        setTimeout(() => setSuccessMsg(null), 3000)
       }
     } catch {
       setError('설정 변경에 실패했습니다.')
@@ -86,16 +66,20 @@ export default function TtsSettingPage() {
     setError(null)
 
     try {
-      const res = await deleteTtsVoiceFile(id)
+      const res = await deleteTtsVoice(id)
       if (res.success) {
-        const remaining = files.filter(f => f.id !== id)
-        setFiles(remaining)
+        setSettings(prev => {
+          if (!prev) return prev
+          const remaining = prev.voiceFiles.filter(f => f.id !== id)
+          return { ...prev, voiceFiles: remaining }
+        })
+
+        const remaining = settings?.voiceFiles.filter(f => f.id !== id) ?? []
         if (remaining.length === 0) {
-          setSuccessMsg('모든 파일이 삭제되었습니다. TTS 사용 시 기본 음성이 적용됩니다.')
+          showMessage(setSuccessMsg, '모든 파일이 삭제되었습니다. TTS 사용 시 기본 음성이 적용됩니다.')
         } else {
-          setSuccessMsg('파일이 삭제되었습니다.')
+          showMessage(setSuccessMsg, '파일이 삭제되었습니다.')
         }
-        setTimeout(() => setSuccessMsg(null), 3000)
       }
     } catch {
       setError('삭제에 실패했습니다.')
@@ -108,73 +92,27 @@ export default function TtsSettingPage() {
     const selectedFiles = e.target.files
     if (!selectedFiles || selectedFiles.length === 0) return
 
-    // input 초기화 (같은 파일 재선택 가능하게)
     e.target.value = ''
-
     setError(null)
 
-    // 파일 수 체크
-    if (files.length + selectedFiles.length > 10) {
-      setError('최대 10개까지 등록 가능합니다.')
-      setTimeout(() => setError(null), 3000)
+    const currentCount = settings?.voiceFiles.length ?? 0
+    if (currentCount + selectedFiles.length > 10) {
+      showMessage(setError, '최대 10개까지 등록 가능합니다.')
       return
     }
-
-    for (const file of Array.from(selectedFiles)) {
-      // 개별 용량 체크
-      if (file.size > MAX_FILE_SIZE) {
-        setError(`파일 용량이 초과되었습니다. (최대 500MB) - ${file.name}`)
-        setTimeout(() => setError(null), 3000)
-        return
-      }
-    }
-
-    // 총 용량은 mock에서는 정확히 체크 불가 (TtsVoiceFile에 size 없음)
-    // BE 연동 시 서버에서 검증
 
     setIsUploading(true)
 
     try {
-      for (const file of Array.from(selectedFiles)) {
-        const res = await uploadTtsVoiceFile(file)
-        if (res.success && res.data) {
-          setFiles((prev) => [...prev, res.data])
-        }
+      const res = await uploadTtsVoiceFiles(Array.from(selectedFiles))
+      if (res.success && res.data) {
+        setSettings(res.data)
+        showMessage(setSuccessMsg, '파일이 등록되었습니다.')
       }
-      setSuccessMsg('파일이 등록되었습니다. 음성 학습을 시작합니다.')
-      setTimeout(() => setSuccessMsg(null), 3000)
     } catch {
       setError('업로드에 실패했습니다.')
     } finally {
       setIsUploading(false)
-    }
-  }
-
-  const handlePreview = async () => {
-    if (isPlaying) return
-
-    setError(null)
-    previewHandleRef.current?.cleanup()
-    previewHandleRef.current = null
-    setIsPlaying(true)
-
-    try {
-      const source = await previewTts({ text: SAMPLE_TEXT })
-      const handle = await playAudioSource(source)
-
-      previewHandleRef.current = handle
-      handle.audio.onended = () => {
-        handle.cleanup()
-        if (previewHandleRef.current === handle) {
-          previewHandleRef.current = null
-        }
-        setIsPlaying(false)
-      }
-    } catch {
-      previewHandleRef.current?.cleanup()
-      previewHandleRef.current = null
-      setIsPlaying(false)
-      setError('TTS 미리듣기에 실패했습니다.')
     }
   }
 
@@ -183,7 +121,7 @@ export default function TtsSettingPage() {
     return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`
   }
 
-  if (isLoading || !setting) {
+  if (isLoading || !settings) {
     return (
       <CareSettingLayout title="맞춤 음성 (TTS)">
         <div className="flex items-center justify-center h-40">
@@ -193,7 +131,7 @@ export default function TtsSettingPage() {
     )
   }
 
-  const statusInfo = STATUS_LABELS[setting.status]
+  const files: TtsVoiceFile[] = settings.voiceFiles
 
   return (
     <CareSettingLayout title="맞춤 음성 (TTS)">
@@ -203,7 +141,7 @@ export default function TtsSettingPage() {
           <div>
             <p className="text-[15px] font-bold text-[#3D405B]">TTS 사용</p>
             <p className="text-[12px] text-[#718096] mt-0.5">
-              {setting.isEnabled ? '맞춤 음성 활성화됨' : '비활성화됨'}
+              {settings.isEnabled ? '맞춤 음성 활성화됨' : '비활성화됨'}
             </p>
           </div>
           <button
@@ -211,44 +149,16 @@ export default function TtsSettingPage() {
             onClick={handleToggle}
             disabled={isToggling}
             className={`w-[52px] h-[30px] rounded-full transition-colors relative p-0 border-none outline-none ${
-              setting.isEnabled ? 'bg-[#3D405B]' : 'bg-[#CBD5E0]'
+              settings.isEnabled ? 'bg-[#3D405B]' : 'bg-[#CBD5E0]'
             }`}
           >
             <span
               className={`absolute top-[3px] left-0 w-[24px] h-[24px] rounded-full bg-white shadow transition-transform duration-200 ${
-                setting.isEnabled ? 'translate-x-[25px]' : 'translate-x-[3px]'
+                settings.isEnabled ? 'translate-x-[25px]' : 'translate-x-[3px]'
               }`}
             />
           </button>
         </div>
-
-        {/* 학습 상태 */}
-        <div className="flex items-center justify-between p-4 rounded-xl bg-[#F0F4F8]">
-          <span className="text-[14px] text-[#3D405B]">학습 상태</span>
-          <span className={`text-[13px] px-3 py-1 rounded-full font-medium ${statusInfo.color}`}>
-            {statusInfo.label}
-          </span>
-        </div>
-
-        {/* 미리듣기 (READY일 때만) */}
-        {setting.status === 'READY' && (
-          <div className="p-4 rounded-xl bg-white border border-[#E2E8F0] flex flex-col gap-3">
-            <p className="text-[14px] text-[#3D405B] font-medium">미리듣기</p>
-            <p className="text-[13px] text-[#718096]">"{SAMPLE_TEXT}"</p>
-            <button
-              type="button"
-              onClick={handlePreview}
-              disabled={isPlaying}
-              className={`min-h-[44px] rounded-lg text-[14px] font-bold transition-colors ${
-                isPlaying
-                  ? 'bg-[#E2E8F0] text-[#A0AEC0] cursor-not-allowed'
-                  : 'bg-[#3D405B] text-white active:bg-[#2D2F45]'
-              }`}
-            >
-              {isPlaying ? '재생 중...' : '재생'}
-            </button>
-          </div>
-        )}
 
         {/* 안내 문구 */}
         <div className="p-3 rounded-lg bg-[#F0F4F8]">
