@@ -321,7 +321,108 @@
 
 `POST /api/v1/recommendations/words`
 
-(점검 예정)
+### 변경사항
+
+| 항목 | 변경 전 (원본 명세) | 변경 후 | 사유 |
+|---|---|---|---|
+| `step` 값 형식 | 대문자 (`SUBJECT`) | 소문자 (`subject`) | FE 타입 `RecommendationComposeStep` |
+| `selectedWords` | 있음 | 유지 (FE에 추가 요청) | AI 맥락 추천에 필수 |
+| 요청 필드 추가 | 없음 | `categoryKey` (optional) | FE 타입에 존재 |
+| 요청 필드 추가 | 없음 | `refreshCount` (optional) | FE 타입에 존재 |
+| 응답 `words` 구조 | `[{ id: Long, content: String }]` | `string[]` | FE 타입 `words: string[]` |
+| 에러 `MATCHING-801` | | `MATCHING-803` | 에러코드 수정 |
+
+### FE 추가 필요 사항
+
+`RecommendationWordsRequestDto`에 `selectedWords` 필드 추가 필요:
+```typescript
+selectedWords?: { subject?: string, object?: string }
+```
+
+### 최종 명세
+
+**Request Body**
+
+```json
+{
+  "step": "object",
+  "categoryKey": "mood",
+  "refreshCount": 0,
+  "selectedWords": {
+    "subject": "나"
+  }
+}
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "요청이 성공하였습니다",
+  "data": {
+    "step": "subject",
+    "words": ["나", "머리", "배", "오늘"]
+  }
+}
+```
+
+**Error Cases**
+
+| 상황 | 에러 코드 | HTTP 상태 |
+|---|---|---|
+| step 값 없음 | COMMON-101 | 400 |
+| 매칭 정보 없음 | MATCHING-803 | 404 |
+| AI 추천 생성 실패 | AI-701 | 500 |
+| AI 서버 타임아웃 | AI-702 | 502 |
+
+### BE 매핑 (FE ↔ AI 변환)
+
+| FE step | AI category | 설명 |
+|---|---|---|
+| `subject` | `subjects` | 주어 |
+| `object` | `objects` | 목적어 |
+| `predicate` | `verbs` | 서술어 |
+| `punctuation` | `punctuation` | 문장부호 |
+
+### 흐름도 (FE → BE → AI → DB)
+
+```
+1. 환자가 단어 조합 모드 진입, 주어 단계 시작
+
+2. FE → BE 요청
+   POST /api/v1/recommendations/words
+   Headers: { Authorization: "Bearer {JWT}" }
+   Body: { "step": "subject" }
+
+3. BE (RecommendationController.getWords)
+   - JWT에서 userId 추출 → matchingId 조회
+   - step 검증 + FE step("subject") → AI category("subjects") 변환
+   - selectedWords가 있으면 AI 형식으로 변환
+   - AI 서버에 요청 전달
+
+4. BE → AI 요청
+   POST http://eyespeak-ai-caregiver:5003/words
+   Body: { "matching_id": 3, "category": "subjects", "question": "추천 단어 조회" }
+
+5. AI (caregiver_server_db.py - get_words)
+   - user_words 테이블에서 단어 풀 조회
+   - 임베딩 유사도 + 사용 빈도 + selectedWords 맥락 부스트로 점수 계산
+   - LLM 필터링 후 상위 4개 반환
+
+6. AI → BE 응답
+   { "words": ["나", "머리", "배", "오늘"] }
+
+7. BE → FE 응답
+   {
+     "code": "SUCCESS",
+     "message": "요청이 성공하였습니다",
+     "data": { "step": "subject", "words": ["나", "머리", "배", "오늘"] }
+   }
+
+8. FE 화면에 추천 단어 4개 표시
+   환자가 "나" 선택 → 다음 단계(object) 요청 시 selectedWords: { subject: "나" } 포함
+```
 
 ---
 

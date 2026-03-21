@@ -208,6 +208,73 @@ public class RecommendationController {
     }
 
     // =========================================================================
+    // 4. POST /recommendations/words — 단계별 추천 단어 조회
+    // =========================================================================
+
+    // FE step → AI category 매핑
+    private static final Map<String, String> STEP_TO_AI_CATEGORY = Map.of(
+            "subject", "subjects",
+            "object", "objects",
+            "predicate", "verbs",
+            "punctuation", "punctuation"
+    );
+
+    @Operation(summary = "단계별 추천 단어 조회",
+            description = "단어 조합 단계에서 현재 단계(subject/object/predicate/punctuation)에 맞는 추천 단어를 조회합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "추천 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "step 값 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"COMMON-101\",\"message\":\"입력값이 올바르지 않습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "매칭 정보 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "AI 추천 생성 실패",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"AI-701\",\"message\":\"AI 추천 생성에 실패하였습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
+    })
+    @PostMapping("/words")
+    public ApiResponse<WordsResponse> getWords(
+            @RequestBody WordsRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        Matching matching = getMatchingByUserId(userId);
+
+        if (request.getStep() == null || request.getStep().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        // FE step(소문자) → AI category 변환
+        String aiCategory = STEP_TO_AI_CATEGORY.get(request.getStep().toLowerCase());
+        if (aiCategory == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("matching_id", matching.getId());
+        body.put("category", aiCategory);
+        body.put("question", "추천 단어 조회"); // AI 서버 필수값
+
+        // selectedWords → AI 서버 형식으로 변환
+        if (request.getSelectedWords() != null) {
+            Map<String, Object> aiSelectedWords = new HashMap<>();
+            if (request.getSelectedWords().getSubject() != null) {
+                aiSelectedWords.put("subjects", request.getSelectedWords().getSubject());
+            }
+            if (request.getSelectedWords().getObject() != null) {
+                aiSelectedWords.put("objects", request.getSelectedWords().getObject());
+            }
+            body.put("selected_words", aiSelectedWords);
+        }
+
+        try {
+            Map result = restTemplate.postForObject(
+                    aiServerUrl + "/words", buildRequest(body), Map.class);
+            List<String> words = (List<String>) result.get("words");
+            return ApiResponse.ok(new WordsResponse(request.getStep(), words));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+        }
+    }
+
+    // =========================================================================
     // 공통 헬퍼
     // =========================================================================
 
@@ -259,6 +326,50 @@ public class RecommendationController {
 
         SentencesResponse(List<String> sentences) {
             this.sentences = sentences;
+        }
+    }
+
+    // --- /words 요청/응답 ---
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "단계별 추천 단어 요청")
+    public static class WordsRequest {
+        @Schema(description = "현재 단계 (subject / object / predicate / punctuation)", example = "subject")
+        private String step;
+
+        @Schema(description = "카테고리 키 (선택)", example = "mood", nullable = true)
+        private String categoryKey;
+
+        @Schema(description = "새로고침 횟수 (선택)", example = "0", nullable = true)
+        private Integer refreshCount;
+
+        @Schema(description = "이전 단계에서 선택한 단어 (선택)", nullable = true)
+        private SelectedWordsDto selectedWords;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "이전 단계 선택값")
+    public static class SelectedWordsDto {
+        @Schema(description = "선택한 주어", example = "나", nullable = true)
+        private String subject;
+
+        @Schema(description = "선택한 목적어", example = "물", nullable = true)
+        private String object;
+    }
+
+    @Getter
+    @Schema(description = "단계별 추천 단어 응답")
+    public static class WordsResponse {
+        @Schema(description = "현재 단계", example = "subject")
+        private final String step;
+
+        @Schema(description = "추천 단어 목록", example = "[\"나\", \"머리\", \"배\", \"오늘\"]")
+        private final List<String> words;
+
+        WordsResponse(String step, List<String> words) {
+            this.step = step;
+            this.words = words;
         }
     }
 
