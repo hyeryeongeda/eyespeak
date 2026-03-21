@@ -1,7 +1,7 @@
 stages:
   - build-test
 
-build_test:
+build_test_backend:
   stage: build-test
   image: amazoncorretto:21-alpine
   script:
@@ -10,3 +10,52 @@ build_test:
     - ./gradlew clean compileJava --no-daemon
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - backend/**/*
+
+build_test_frontend:
+  stage: build-test
+  image: node:20-alpine
+  script:
+    - cd frontend
+    - npm ci
+    - npm run build
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - frontend/**/*
+
+build_test_ai_eyetracking:
+  stage: build-test
+  image: python:3.11-slim
+  script:
+    - cd ai-eyetracking
+    - pip install --quiet -r requirements.txt
+    - python -m py_compile *.py
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - ai-eyetracking/**/*
+
+build_test_ai_tts:
+  stage: build-test
+  image: python:3.11-slim
+  script:
+    - cd ai-tts
+    - pip install --quiet -r requirements.txt
+    - python -m py_compile *.py
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - ai-tts/**/*
+
+build_test_ai_recommend:
+  stage: build-test
+  image: python:3.11-slim
+  script:
+    - cd ai-recommend
+    - python -m py_compile *.py
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      changes:
+        - ai-recommend/**/*
