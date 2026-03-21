@@ -2,7 +2,7 @@ import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
-import { requestPatientRecalibration } from '../../../services/calibration/patientCalibrationService'
+import { requestPatientRecalibration } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   getPatientCallCooldownSeconds,
   getRemainingPatientCallCooldownMs,

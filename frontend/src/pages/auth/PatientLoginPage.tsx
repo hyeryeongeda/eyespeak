@@ -1,8 +1,8 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
+import { requestPatientRecalibration } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
-import { requestPatientRecalibration } from '../../services/calibration/patientCalibrationService'
 import AuthBrand from './AuthBrand'
 import {
   card,

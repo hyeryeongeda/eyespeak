@@ -1,24 +1,24 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import GlobalMenuOverlay from '../../components/patient/GlobalMenuOverlay'
+import GlobalMenuOverlay from '../../features/patient/input/components/GlobalMenuOverlay'
 import IncomingInterruptOverlay from '../../components/patient/chat/IncomingInterruptOverlay'
 import ReplyModePanel from '../../components/patient/chat/ReplyModePanel'
 import DevChatTriggerPanel from '../../components/patient/chat/DevChatTriggerPanel'
-import PatientTrackingGuardOverlay from '../../components/patient/PatientTrackingGuardOverlay'
+import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
-import usePatientGlobalMenuActionListener from '../../hooks/usePatientGlobalMenuActionListener'
-import usePatientGazeClick from '../../hooks/usePatientGazeClick'
-import usePatientModeDwellSync from '../../hooks/usePatientModeDwellSync'
-import usePatientRuntimeTracking from '../../hooks/usePatientRuntimeTracking'
-import usePatientTrackingBridge from '../../hooks/usePatientTrackingBridge'
-import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
-import { getPatientEyeTrackingProfileId } from '../../services/calibration/patientCalibrationService'
-import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
+import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
+import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGazeClick'
+import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
+import usePatientRuntimeTracking from '../../features/patient/input/hooks/usePatientRuntimeTracking'
+import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
+import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   isPatientTrackingAvailable,
   isPatientTrackingBlocked,
   usePatientModeStore,
-} from '../../stores/patientModeStore'
+} from '../../features/patient/input/stores/patientModeStore'
+import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
 import { ROUTE_PATHS } from '../router/routePaths'
 
 function PatientLayoutShell() {
