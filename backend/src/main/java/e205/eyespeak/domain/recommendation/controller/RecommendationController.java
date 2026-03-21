@@ -275,6 +275,61 @@ public class RecommendationController {
     }
 
     // =========================================================================
+    // 5. POST /recommendations/compose — 단어 조합 기반 생성 문장 조회
+    // =========================================================================
+
+    @Operation(summary = "단어 조합 기반 문장 생성",
+            description = "환자가 선택한 단어 조합(주어/목적어/서술어/문장부호)을 바탕으로 자연스러운 문장 3개를 생성합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "생성 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "선택 단어 전부 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"COMMON-101\",\"message\":\"입력값이 올바르지 않습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "매칭 정보 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "AI 추천 생성 실패",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"AI-701\",\"message\":\"AI 추천 생성에 실패하였습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
+    })
+    @PostMapping("/compose")
+    public ApiResponse<ComposeResponse> compose(
+            @RequestBody ComposeRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        getMatchingByUserId(userId); // 매칭 검증
+
+        // 단어가 하나도 없으면 에러
+        if (request.getSubject() == null && request.getObject() == null
+                && request.getPredicate() == null && request.getPunctuation() == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        // AI 서버에 words 리스트로 변환 (null은 빈 문자열로)
+        List<String> words = List.of(
+                request.getSubject() != null ? request.getSubject() : "",
+                request.getObject() != null ? request.getObject() : "",
+                request.getPredicate() != null ? request.getPredicate() : "",
+                request.getPunctuation() != null ? request.getPunctuation() : ""
+        );
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("words", words);
+        body.put("question", ""); // AI 서버 필수값
+
+        // guardianMessage가 있으면 question에 활용
+        if (request.getGuardianMessage() != null) {
+            body.put("question", request.getGuardianMessage());
+        }
+
+        try {
+            Map result = restTemplate.postForObject(
+                    aiServerUrl + "/generate", buildRequest(body), Map.class);
+            List<String> sentences = (List<String>) result.get("sentences");
+            return ApiResponse.ok(new ComposeResponse(sentences));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+        }
+    }
+
+    // =========================================================================
     // 공통 헬퍼
     // =========================================================================
 
@@ -325,6 +380,44 @@ public class RecommendationController {
         private final List<String> sentences;
 
         SentencesResponse(List<String> sentences) {
+            this.sentences = sentences;
+        }
+    }
+
+    // --- /compose 요청/응답 ---
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "단어 조합 기반 문장 생성 요청")
+    public static class ComposeRequest {
+        @Schema(description = "카테고리 키 (선택)", example = "mood", nullable = true)
+        private String categoryKey;
+
+        @Schema(description = "선택한 주어 (건너뛰기 시 null)", example = "나", nullable = true)
+        private String subject;
+
+        @Schema(description = "선택한 목적어 (건너뛰기 시 null)", example = "물", nullable = true)
+        private String object;
+
+        @Schema(description = "선택한 서술어 (건너뛰기 시 null)", example = "마시다", nullable = true)
+        private String predicate;
+
+        @Schema(description = "문장 부호 (건너뛰기 시 null)", example = ".", nullable = true)
+        private String punctuation;
+
+        @Schema(description = "보호자 메시지 (선택)", nullable = true)
+        private String guardianMessage;
+
+        @Schema(description = "최근 대화 메시지 목록 (선택)", nullable = true)
+        private List<String> recentMessages;
+    }
+
+    @Getter
+    @Schema(description = "단어 조합 기반 문장 생성 응답")
+    public static class ComposeResponse {
+        @Schema(description = "생성된 문장 목록 (최대 3개)", example = "[\"나 물 마시고 싶어.\", \"나 물 좀 줘.\", \"나 물 마실래.\"]")
+        private final List<String> sentences;
+
+        ComposeResponse(List<String> sentences) {
             this.sentences = sentences;
         }
     }

@@ -430,7 +430,88 @@ selectedWords?: { subject?: string, object?: string }
 
 `POST /api/v1/recommendations/compose`
 
-(점검 예정)
+### 변경사항
+
+| 항목 | 변경 전 (원본 명세) | 변경 후 | 사유 |
+|---|---|---|---|
+| 요청 필드 추가 | 없음 | `categoryKey` (optional) | FE 타입에 존재 |
+| 요청 필드 추가 | 없음 | `guardianMessage` (optional) | 보호자 메시지 맥락 |
+| 요청 필드 추가 | 없음 | `recentMessages` (optional) | 최근 대화 맥락 |
+| 응답 `sentences` 구조 | `[{ id: Long, content: String }]` | `string[]` | FE 타입 `sentences: string[]` |
+| 에러 `MATCHING-801` | | `MATCHING-803` | 에러코드 수정 |
+
+### 최종 명세
+
+**Request Body**
+
+```json
+{
+  "subject": "나",
+  "object": "물",
+  "predicate": "마시다",
+  "punctuation": ".",
+  "categoryKey": "mood",
+  "guardianMessage": null,
+  "recentMessages": null
+}
+```
+
+**Response (200 OK)**
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "요청이 성공하였습니다",
+  "data": {
+    "sentences": ["나 물 마시고 싶어.", "나 물 좀 줘.", "나 물 마실래."]
+  }
+}
+```
+
+**Error Cases**
+
+| 상황 | 에러 코드 | HTTP 상태 |
+|---|---|---|
+| 선택 단어 전부 없음 | COMMON-101 | 400 |
+| 매칭 정보 없음 | MATCHING-803 | 404 |
+| AI 추천 생성 실패 | AI-701 | 500 |
+| AI 서버 타임아웃 | AI-702 | 502 |
+
+### 흐름도 (FE → BE → AI → DB)
+
+```
+1. 환자가 단어 조합 완료 (주어: "나", 목적어: "물", 서술어: "마시다", 부호: ".")
+
+2. FE → BE 요청
+   POST /api/v1/recommendations/compose
+   Headers: { Authorization: "Bearer {JWT}" }
+   Body: { "subject": "나", "object": "물", "predicate": "마시다", "punctuation": "." }
+
+3. BE (RecommendationController.compose)
+   - JWT에서 userId 추출 → matchingId 조회 (매칭 검증)
+   - 단어 전부 null인지 검증
+   - subject/object/predicate/punctuation → ["나", "물", "마시다", "."] 리스트 변환
+   - AI 서버에 요청 전달
+
+4. BE → AI 요청
+   POST http://eyespeak-ai-caregiver:5003/generate
+   Body: { "words": ["나", "물", "마시다", "."], "question": "" }
+
+5. AI (caregiver_server_db.py - generate)
+   - _generate_from_words()로 LLM이 단어 조합을 자연스러운 문장 3개로 생성
+
+6. AI → BE 응답
+   { "sentences": ["나 물 마시고 싶어.", "나 물 좀 줘.", "나 물 마실래."] }
+
+7. BE → FE 응답
+   {
+     "code": "SUCCESS",
+     "message": "요청이 성공하였습니다",
+     "data": { "sentences": ["나 물 마시고 싶어.", "나 물 좀 줘.", "나 물 마실래."] }
+   }
+
+8. FE 화면에 생성된 문장 3개 표시, 환자가 하나 선택
+```
 
 ---
 
