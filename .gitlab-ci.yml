@@ -3,7 +3,7 @@ stages:
 
 build_test:
   stage: build-test
-  image: eclipse-temurin:21-jdk
+  image: amazoncorretto:21-alpine
   script:
     - cd backend
     - chmod +x gradlew
