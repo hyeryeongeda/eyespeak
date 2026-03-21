@@ -1,29 +1,37 @@
-import type { AuthSession } from '../../../../../types/auth'
+import { ROUTE_PATHS } from '../../../../../app/router/routePaths'
+import { PATIENT_CALIBRATION_STORAGE_KEY } from '../../../../../services/calibration/calibrationConstants'
+import { isAbortError, waitForAbortableDelay } from '../../../../../services/eyeTrackingCore'
+import { loadEyeTrackingCalibrationApi } from '../../../../../services/eyeTrackingApi'
+import { isEyeTrackingApiEnabled } from '../../../../../services/eyeTrackingServiceConfig'
 import type { ServiceResult } from '../../../../../types/api'
+import type { AuthSession } from '../../../../../types/auth'
 import type {
+  PatientAuthEntryPoint,
   PatientCalibrationLocationState,
   PatientCalibrationStatus,
   PatientPostAuthNotice,
+  PatientPostAuthState,
   StoredPatientCalibrationRecord,
 } from '../../../../../types/calibration'
-import { PATIENT_CALIBRATION_STORAGE_KEY } from '../../../../../services/calibration/calibrationConstants'
-import { loadEyeTrackingCalibrationApi } from '../../../../../services/eyeTrackingApi'
-import { isEyeTrackingApiEnabled } from '../../../../../services/eyeTrackingServiceConfig'
-import { isAbortError, waitForAbortableDelay } from '../../../../../services/eyeTrackingCore'
-import { ROUTE_PATHS } from '../../../../../app/router/routePaths'
 
 type StoredPatientCalibrationMap = Record<string, StoredPatientCalibrationRecord>
+
 const PATIENT_RECALIBRATION_SESSION_KEY = 'patientRecalibrationRequired'
 const EYE_TRACKING_CALIBRATION_SYNC_ATTEMPTS = 5
 const EYE_TRACKING_CALIBRATION_SYNC_DELAY_MS = 400
 
 interface ResolvePatientPostAuthDestinationOptions {
-  entryPoint: 'login' | 'signup'
+  entryPoint: PatientAuthEntryPoint
 }
 
 interface ResolvedPatientPostAuthDestination {
   path: string
   state?: PatientCalibrationLocationState
+}
+
+export interface ResolvedPatientPostAuthFlow {
+  destination: ResolvedPatientPostAuthDestination
+  postAuthState: PatientPostAuthState
 }
 
 function isBrowser() {
@@ -125,6 +133,83 @@ function getEyeTrackingCalibrationFailureMessage(error: unknown) {
     : 'Failed to load the stored eye tracking calibration.'
 }
 
+function getForcedRecalibrationPatientId() {
+  if (!isBrowser()) {
+    return null
+  }
+
+  return sessionStorage.getItem(PATIENT_RECALIBRATION_SESSION_KEY)
+}
+
+function setForcedRecalibrationPatientId(patientId: string) {
+  if (!isBrowser()) {
+    return
+  }
+
+  sessionStorage.setItem(PATIENT_RECALIBRATION_SESSION_KEY, patientId)
+}
+
+function clearForcedRecalibrationPatientId(patientId: string) {
+  if (!isBrowser()) {
+    return
+  }
+
+  if (getForcedRecalibrationPatientId() === patientId) {
+    sessionStorage.removeItem(PATIENT_RECALIBRATION_SESSION_KEY)
+  }
+}
+
+function buildCalibrationStatus(
+  record: StoredPatientCalibrationRecord | null,
+): PatientCalibrationStatus {
+  return {
+    required: record === null,
+    completedAt: record?.completedAt ?? null,
+  }
+}
+
+function getAuthSuccessMessage(entryPoint: PatientAuthEntryPoint) {
+  return entryPoint === 'signup'
+    ? 'Signup is complete and the patient session is now active.'
+    : 'Login is complete and the patient session is now active.'
+}
+
+function buildPostAuthNotice(
+  options: ResolvePatientPostAuthDestinationOptions,
+  calibrationMessage?: string,
+): PatientPostAuthNotice {
+  return {
+    authSuccessMessage: getAuthSuccessMessage(options.entryPoint),
+    calibrationMessage,
+  }
+}
+
+function buildPatientPostAuthState(
+  options: ResolvePatientPostAuthDestinationOptions,
+  status: PatientPostAuthState['status'],
+  calibrationMessage?: string,
+): PatientPostAuthState {
+  return {
+    status,
+    entryPoint: options.entryPoint,
+    notice: buildPostAuthNotice(options, calibrationMessage),
+  }
+}
+
+export function getPatientPostAuthNotice(
+  postAuthState: PatientPostAuthState | null | undefined,
+) {
+  return postAuthState?.status === 'calibration-required' ? postAuthState.notice : null
+}
+
+export function buildPatientCalibrationLocationState(
+  postAuthState: PatientPostAuthState | null | undefined,
+): PatientCalibrationLocationState | undefined {
+  const notice = getPatientPostAuthNotice(postAuthState)
+
+  return notice ? { postAuthNotice: notice } : undefined
+}
+
 export async function ensurePatientEyeTrackingRuntimeReady(
   profileId: string,
   options?: {
@@ -169,54 +254,6 @@ export async function ensurePatientEyeTrackingRuntimeReady(
     success: false as const,
     message: lastMessage,
     attempts,
-  }
-}
-
-function getForcedRecalibrationPatientId() {
-  if (!isBrowser()) {
-    return null
-  }
-
-  return sessionStorage.getItem(PATIENT_RECALIBRATION_SESSION_KEY)
-}
-
-function setForcedRecalibrationPatientId(patientId: string) {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.setItem(PATIENT_RECALIBRATION_SESSION_KEY, patientId)
-}
-
-function clearForcedRecalibrationPatientId(patientId: string) {
-  if (!isBrowser()) {
-    return
-  }
-
-  if (getForcedRecalibrationPatientId() === patientId) {
-    sessionStorage.removeItem(PATIENT_RECALIBRATION_SESSION_KEY)
-  }
-}
-
-function buildCalibrationStatus(
-  record: StoredPatientCalibrationRecord | null,
-): PatientCalibrationStatus {
-  return {
-    required: record === null,
-    completedAt: record?.completedAt ?? null,
-  }
-}
-
-function buildPostAuthNotice(
-  options: ResolvePatientPostAuthDestinationOptions,
-  calibrationMessage?: string,
-): PatientPostAuthNotice {
-  return {
-    authSuccessMessage:
-      options.entryPoint === 'signup'
-        ? '회원가입이 완료되었고 환자 계정으로 로그인되었습니다.'
-        : '환자 로그인이 완료되었습니다.',
-    calibrationMessage,
   }
 }
 
@@ -268,7 +305,7 @@ export async function getPatientCalibrationStatus(
       success: false,
       source: 'mock',
       statusCode: 401,
-      message: '환자 로그인 정보가 없습니다. 다시 로그인해주세요.',
+      message: 'Patient session is missing. Please log in again.',
     }
   }
 
@@ -279,41 +316,85 @@ export async function getPatientCalibrationStatus(
   }
 }
 
-export async function resolvePatientPostAuthDestination(
+export async function resolvePatientPostAuthFlow(
   session: AuthSession | null,
   options: ResolvePatientPostAuthDestinationOptions,
-): Promise<ResolvedPatientPostAuthDestination> {
+): Promise<ResolvedPatientPostAuthFlow> {
+  if (import.meta.env.DEV) {
+    console.info('[auth] patient authentication succeeded', {
+      entryPoint: options.entryPoint,
+      patientId: session?.id ?? null,
+      authMode: session?.authMode ?? null,
+    })
+  }
+
   const calibrationStatus = await getPatientCalibrationStatus(session)
 
   if (!calibrationStatus.success) {
+    const postAuthState = buildPatientPostAuthState(
+      options,
+      'calibration-required',
+      'Authentication already succeeded. We could not verify calibration status, so the next step is calibration.',
+    )
+
+    if (import.meta.env.DEV) {
+      console.warn('[auth] patient calibration status check failed after authentication', {
+        entryPoint: options.entryPoint,
+        patientId: session?.id ?? null,
+        message: calibrationStatus.message,
+        statusCode: calibrationStatus.statusCode,
+      })
+    }
+
     return {
-      path: ROUTE_PATHS.PATIENT_CALIBRATION,
-      state: {
-        postAuthNotice: buildPostAuthNotice(
-          options,
-          '로그인은 성공했지만 보정 상태를 확인하지 못해 초기 설정 화면으로 이동했습니다.',
-        ),
+      destination: {
+        path: ROUTE_PATHS.PATIENT_CALIBRATION,
+        state: buildPatientCalibrationLocationState(postAuthState),
       },
+      postAuthState,
     }
   }
 
   if (calibrationStatus.data.required) {
+    const postAuthState = buildPatientPostAuthState(
+      options,
+      'calibration-required',
+      options.entryPoint === 'signup'
+        ? 'Signup is complete and the patient session is active. Continue with calibration to finish setup.'
+        : 'Login is complete. Continue with calibration before entering the patient workspace.',
+    )
+
+    if (import.meta.env.DEV) {
+      console.info('[auth] patient calibration required after authentication', {
+        entryPoint: options.entryPoint,
+        patientId: session?.id ?? null,
+      })
+    }
+
     return {
-      path: ROUTE_PATHS.PATIENT_CALIBRATION,
-      state: {
-        postAuthNotice: buildPostAuthNotice(
-          options,
-          options.entryPoint === 'signup'
-            ? '계속 사용하려면 첫 시선 보정을 진행해주세요.'
-            : '이 계정은 시선 보정이 필요합니다. 계속 사용하려면 보정을 진행해주세요.',
-        ),
+      destination: {
+        path: ROUTE_PATHS.PATIENT_CALIBRATION,
+        state: buildPatientCalibrationLocationState(postAuthState),
       },
+      postAuthState,
     }
   }
 
   return {
-    path: ROUTE_PATHS.PATIENT_MAIN,
+    destination: {
+      path: ROUTE_PATHS.PATIENT_MAIN,
+    },
+    postAuthState: buildPatientPostAuthState(options, 'authenticated'),
   }
+}
+
+export async function resolvePatientPostAuthDestination(
+  session: AuthSession | null,
+  options: ResolvePatientPostAuthDestinationOptions,
+): Promise<ResolvedPatientPostAuthDestination> {
+  const resolvedFlow = await resolvePatientPostAuthFlow(session, options)
+
+  return resolvedFlow.destination
 }
 
 export async function completePatientCalibration(
@@ -326,7 +407,7 @@ export async function completePatientCalibration(
       success: false,
       source: 'mock',
       statusCode: 401,
-      message: '환자 로그인 정보가 없습니다. 다시 로그인해주세요.',
+      message: 'Patient session is missing. Please log in again.',
     }
   }
 
@@ -386,7 +467,7 @@ export async function completePatientCalibration(
       success: false,
       source: 'mock',
       statusCode: 500,
-      message: '캘리브레이션 완료 상태를 저장하지 못했습니다. 다시 시도해주세요.',
+      message: 'Calibration completed, but saving the calibration state failed. Please try again.',
     }
   }
 }

@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
-import { resolvePatientPostAuthDestination } from '../../features/patient/input/services/calibration/patientCalibrationService'
+import { resolvePatientPostAuthFlow } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
 import AuthBrand from './AuthBrand'
 import {
@@ -21,7 +21,7 @@ import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientLoginPage() {
   const navigate = useNavigate()
-  const { login, isPending } = useAuth()
+  const { login, isPending, setPatientPostAuth } = useAuth()
   const [form, setForm] = useState({
     identifier: '',
     password: '',
@@ -44,17 +44,19 @@ export default function PatientLoginPage() {
     })
 
     if (!result.success) {
-      setError(result.message)
+      setPatientPostAuth(null)
+      setError(`Login failed. ${result.message}`)
       return
     }
 
-    const destination = await resolvePatientPostAuthDestination(result.data, {
+    const resolvedPostAuthFlow = await resolvePatientPostAuthFlow(result.data, {
       entryPoint: 'login',
     })
+    setPatientPostAuth(resolvedPostAuthFlow.postAuthState)
 
-    navigate(destination.path, {
+    navigate(resolvedPostAuthFlow.destination.path, {
       replace: true,
-      state: destination.state,
+      state: resolvedPostAuthFlow.destination.state,
     })
   }
 

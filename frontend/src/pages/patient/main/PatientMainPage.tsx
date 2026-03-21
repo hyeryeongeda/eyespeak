@@ -248,7 +248,7 @@ const responsiveStyle = `
 
 export default function PatientMainPage() {
   const navigate = useNavigate()
-  const { logout, user } = useAuth()
+  const { logout, user, clearPatientPostAuth } = useAuth()
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
 
@@ -271,6 +271,7 @@ export default function PatientMainPage() {
   }
 
   const handleRecalibration = () => {
+    clearPatientPostAuth()
     requestPatientRecalibration(user)
     navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
   }

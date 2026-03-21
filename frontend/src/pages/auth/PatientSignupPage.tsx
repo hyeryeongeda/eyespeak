@@ -112,6 +112,10 @@ export default function PatientSignupPage() {
               </p>
             </div>
 
+            <p style={{ ...successMessage, marginTop: '12px' }}>
+              회원가입이 끝난 뒤 calibration 또는 eye-tracking 준비에 문제가 생겨도, 회원가입 자체는 실패로 처리하지 않습니다.
+            </p>
+
             <div style={formStack}>
               <input
                 type="text"

@@ -225,7 +225,13 @@ export function useGuardianSignupFlow() {
 
     setStoredRole('guardian')
     setStoredEntryMode('login')
-    navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, { replace: true })
+    navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, {
+      replace: true,
+      state: {
+        signupCompleted: true,
+        guardianEmail: guardianAccount.email.trim().toLowerCase(),
+      },
+    })
   }
 
   return {

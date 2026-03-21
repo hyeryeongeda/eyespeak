@@ -359,6 +359,15 @@ export default function CareSignupPage() {
               </p>
             </div>
 
+            <div style={infoBox}>
+              <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+                가입 상태
+              </p>
+              <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+                보호자 회원가입은 완료되었고, 현재는 아직 로그인하지 않은 상태입니다. 아래 버튼으로 로그인 화면으로 이동해 주세요.
+              </p>
+            </div>
+
             {copyMessage ? <p style={successMessage}>{copyMessage}</p> : null}
 
             <div style={buttonRow}>

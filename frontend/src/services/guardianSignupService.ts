@@ -53,13 +53,19 @@ export async function signUpGuardian(
     )
 
     if (!patientRegistrationResult.success) {
-      return patientRegistrationResult
+      return {
+        ...patientRegistrationResult,
+        message: `Guardian signup could not finish patient profile registration. ${patientRegistrationResult.message}`,
+      }
     }
 
     const routineRegistrationResult = await createPatientRoutines(input.patientRoutines, session)
 
     if (!routineRegistrationResult.success) {
-      return routineRegistrationResult
+      return {
+        ...routineRegistrationResult,
+        message: `Guardian signup could not finish patient routine setup. ${routineRegistrationResult.message}`,
+      }
     }
 
     return {
