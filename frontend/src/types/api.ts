@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
 
-export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 export type ApiMode = 'mock' | 'real'
 
 export type ApiSource = 'mock' | 'api'

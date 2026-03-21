@@ -10,8 +10,6 @@ import type {
   FavoritePhrase,
   DwellTimePreset,
   ActivationDelayPreset,
-  TtsSetting,
-  TtsVoiceFile,
   Call,
   UserWords,
   Expression,
@@ -151,23 +149,6 @@ export const MOCK_FAVORITE_PHRASES: FavoritePhrase[] = [
 
 export const MOCK_DWELL_TIME_PRESET: DwellTimePreset = 'default'
 export const MOCK_ACTIVATION_DELAY_PRESET: ActivationDelayPreset = 'medium'
-
-// ========================
-// TTS 설정
-// ========================
-
-export const MOCK_TTS_SETTING: TtsSetting = {
-  id: 1,
-  matchingId: 1,
-  isEnabled: true,
-  status: 'READY',
-}
-
-export const MOCK_TTS_VOICE_FILES: TtsVoiceFile[] = [
-  { id: 1, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_001.wav', fileName: '이환자_음성샘플_01.wav', createdAt: '2026-02-20T10:00:00' },
-  { id: 2, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_002.wav', fileName: '이환자_음성샘플_02.wav', createdAt: '2026-02-20T10:05:00' },
-  { id: 3, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_003.wav', fileName: '이환자_음성샘플_03.wav', createdAt: '2026-02-20T10:10:00' },
-]
 
 // ========================
 // 호출 기록

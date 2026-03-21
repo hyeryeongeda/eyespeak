@@ -173,18 +173,16 @@ export const ACTIVATION_DELAY_MS_TO_PRESET: Record<number, ActivationDelayPreset
 
 
 // TTS 설정
-export interface TtsSetting {
-  id: number
-  matchingId: number
+export interface TtsSettingsResponse {
   isEnabled: boolean
   status: TtsStatus
+  voiceFiles: TtsVoiceFile[]
 }
 
 export interface TtsVoiceFile {
   id: number
-  ttsSettingId: number
-  fileUrl: string
   fileName: string
+  fileUrl: string
   createdAt: string
 }
 
