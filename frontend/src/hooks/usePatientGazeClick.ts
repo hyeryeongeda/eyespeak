@@ -10,6 +10,7 @@ import {
   getInteractiveElementFromPoint,
   getInteractiveElementSelectionKey,
 } from '../services/trackingService'
+import { PATIENT_DOUBLE_BLINK_EVENT } from '../services/patientModeBridge'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import { usePatientModeStore } from '../stores/patientModeStore'
 import {
@@ -20,6 +21,8 @@ import {
 interface UsePatientGazeClickOptions {
   enabled?: boolean
 }
+
+const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
 
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
   return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
@@ -33,6 +36,7 @@ export function usePatientGazeClick({
   const [activationDelayMs, setActivationDelayMs] =
     useState(ACTIVATION_DELAY_OPTIONS.medium.value)
   const activeElementRef = useRef<HTMLElement | null>(null)
+  const lastDoubleBlinkAtRef = useRef(0)
 
   const gazeTarget = useMemo(() => {
     if (!enabled || !gazePoint) {
@@ -54,6 +58,27 @@ export function usePatientGazeClick({
   useEffect(() => {
     activeElementRef.current = gazeTarget?.element ?? null
   }, [gazeTarget])
+
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') {
+      return
+    }
+
+    const handleDoubleBlink = () => {
+      lastDoubleBlinkAtRef.current = Date.now()
+      activeElementRef.current = null
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] double blink detected while dwell is active')
+      }
+    }
+
+    window.addEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink)
+
+    return () => {
+      window.removeEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink)
+    }
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) {
@@ -113,10 +138,47 @@ export function usePatientGazeClick({
     activationDelayMs,
     disabled: !enabled || !gazeTarget,
     onCommit: () => {
+      const now = Date.now()
+
+      if (now - lastDoubleBlinkAtRef.current <= DOUBLE_BLINK_COMMIT_GUARD_MS) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] skipped dwell commit because a double blink just fired', {
+            targetKey: gazeTarget?.key ?? null,
+          })
+        }
+
+        return
+      }
+
+      if (usePatientModeStore.getState().isGlobalMenuOpen) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] skipped dwell commit because the global menu is open', {
+            targetKey: gazeTarget?.key ?? null,
+          })
+        }
+
+        return
+      }
+
       const targetElement = activeElementRef.current
 
       if (!targetElement || !targetElement.isConnected) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] skipped dwell commit because the active target is unavailable', {
+            targetKey: gazeTarget?.key ?? null,
+          })
+        }
+
         return
+      }
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] dwell commit', {
+          targetKey: gazeTarget?.key ?? null,
+          dwellDurationMs,
+          activationDelayMs,
+          tagName: targetElement.tagName,
+        })
       }
 
       submitActiveEyeTrackingSelectionFeedback()

@@ -289,6 +289,13 @@ export default function GlobalMenuOverlay() {
       submitActiveEyeTrackingSelectionFeedback()
     }
 
+    if (import.meta.env.DEV) {
+      console.info('[patient-input] global menu action queued', {
+        targetId,
+        source,
+      })
+    }
+
     setPendingTargetId(targetId)
 
     if (actionTimerRef.current !== null) {
@@ -309,19 +316,43 @@ export default function GlobalMenuOverlay() {
 
     try {
       if (targetId === 'yes') {
-        emitPatientGlobalMenuAction('yes')
+        const handled = emitPatientGlobalMenuAction('yes')
+
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu action committed', {
+            targetId,
+            handled,
+          })
+        }
+
         closeGlobalMenu()
         return
       }
 
       if (targetId === 'no') {
-        emitPatientGlobalMenuAction('no')
+        const handled = emitPatientGlobalMenuAction('no')
+
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu action committed', {
+            targetId,
+            handled,
+          })
+        }
+
         closeGlobalMenu()
         return
       }
 
       if (targetId === 'home') {
-        emitPatientGlobalMenuAction('home')
+        const handled = emitPatientGlobalMenuAction('home')
+
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu action committed', {
+            targetId,
+            handled,
+          })
+        }
+
         closeGlobalMenu()
         navigate(ROUTE_PATHS.PATIENT_MAIN)
         return
@@ -331,10 +362,25 @@ export default function GlobalMenuOverlay() {
       setSosRemainingMs(getRemainingPatientSosCooldownMs(patientId))
 
       if (!result.success) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu SOS request failed', {
+            targetId,
+            message: result.message,
+          })
+        }
+
         return
       }
 
-      emitPatientGlobalMenuAction('sos')
+      const handled = emitPatientGlobalMenuAction('sos')
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] global menu action committed', {
+          targetId,
+          handled,
+        })
+      }
+
       closeGlobalMenu()
     } finally {
       setPendingTargetId(null)
