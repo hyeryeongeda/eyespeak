@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import {
@@ -11,6 +11,7 @@ import {
   getEyeTrackingUiUrl,
 } from '../../../../services/eyeTrackingServiceConfig'
 import { useGazeInputStore } from '../stores/gazeInputStore'
+import type { PatientCalibrationLocationState } from '../../../../types/calibration'
 
 type CalibrationPageState = 'loading' | 'saving' | 'ready' | 'error'
 
@@ -42,11 +43,15 @@ function normalizeMessageUserId(value: string | number | undefined) {
 
 export default function PatientCalibrationPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const [pageState, setPageState] = useState<CalibrationPageState>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+  const routeState = (location.state as PatientCalibrationLocationState | null) ?? null
   const eyeTrackingProfileId = useMemo(() => getPatientEyeTrackingProfileId(user), [user])
   const eyeTrackingConfig = useMemo(() => getEyeTrackingConfigSnapshot(), [])
+  const authSuccessMessage = routeState?.postAuthNotice?.authSuccessMessage ?? ''
+  const calibrationNoticeMessage = routeState?.postAuthNotice?.calibrationMessage ?? ''
 
   const iframeUrl = useMemo(() => {
     const baseUrl = getEyeTrackingUiUrl().trim().replace(/\/+$/, '')
@@ -150,6 +155,14 @@ export default function PatientCalibrationPage() {
         : pageState === 'error'
           ? errorMessage
           : ''
+
+  const environmentNoticeMessage = useMemo(() => {
+    if (user?.authMode !== 'mock' || eyeTrackingConfig.resolvedApiMode === 'mock') {
+      return ''
+    }
+
+    return '현재 인증은 mock 세션으로 완료되었고, 시선 보정은 별도 eye-tracking 환경 설정의 영향을 받습니다.'
+  }, [eyeTrackingConfig.resolvedApiMode, user?.authMode])
 
   useEffect(() => {
     if (!blockingErrorMessage || !import.meta.env.DEV) {
@@ -255,6 +268,19 @@ export default function PatientCalibrationPage() {
         <section style={errorPanelStyle}>
           <p style={errorEyebrowStyle}>Patient Calibration</p>
           <h1 style={errorTitleStyle}>Calibration screen unavailable</h1>
+          {authSuccessMessage || calibrationNoticeMessage || environmentNoticeMessage ? (
+            <div style={successPanelStyle}>
+              {authSuccessMessage ? (
+                <p style={successTitleStyle}>{authSuccessMessage}</p>
+              ) : null}
+              {calibrationNoticeMessage ? (
+                <p style={successDescriptionStyle}>{calibrationNoticeMessage}</p>
+              ) : null}
+              {environmentNoticeMessage ? (
+                <p style={successDescriptionStyle}>{environmentNoticeMessage}</p>
+              ) : null}
+            </div>
+          ) : null}
           <p style={errorDescriptionStyle}>{blockingErrorMessage}</p>
           <dl style={debugListStyle}>
             {debugItems.map(([label, value]) => (
@@ -277,6 +303,24 @@ export default function PatientCalibrationPage() {
 
           <div style={overlayLayerStyle}>
             <div style={labelBadgeStyle}>Patient Calibration</div>
+
+            {authSuccessMessage || calibrationNoticeMessage || environmentNoticeMessage ? (
+              <div style={noticeStackStyle}>
+                {authSuccessMessage ? (
+                  <div style={successCardStyle}>
+                    <p style={successCardTitleStyle}>{authSuccessMessage}</p>
+                    {calibrationNoticeMessage ? (
+                      <p style={successCardDescriptionStyle}>{calibrationNoticeMessage}</p>
+                    ) : null}
+                    {environmentNoticeMessage ? (
+                      <p style={successCardDescriptionStyle}>{environmentNoticeMessage}</p>
+                    ) : null}
+                  </div>
+                ) : environmentNoticeMessage ? (
+                  <div style={infoCardStyle}>{environmentNoticeMessage}</div>
+                ) : null}
+              </div>
+            ) : null}
 
             {overlayMessage ? (
               <div
@@ -319,9 +363,10 @@ const overlayLayerStyle: CSSProperties = {
   pointerEvents: 'none',
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'space-between',
+  justifyContent: 'flex-start',
   padding: '20px',
   boxSizing: 'border-box',
+  gap: '14px',
 }
 
 const labelBadgeStyle: CSSProperties = {
@@ -340,6 +385,7 @@ const labelBadgeStyle: CSSProperties = {
 
 const statusCardStyle: CSSProperties = {
   alignSelf: 'center',
+  marginTop: 'auto',
   marginBottom: '24px',
   maxWidth: 'min(720px, calc(100vw - 40px))',
   padding: '16px 22px',
@@ -396,6 +442,79 @@ const errorDescriptionStyle: CSSProperties = {
   fontSize: '16px',
   lineHeight: 1.7,
   color: 'rgba(226, 232, 240, 0.92)',
+}
+
+const successPanelStyle: CSSProperties = {
+  maxWidth: '840px',
+  padding: '18px 20px',
+  borderRadius: '20px',
+  backgroundColor: 'rgba(14, 116, 144, 0.14)',
+  border: '1px solid rgba(125, 211, 252, 0.28)',
+}
+
+const successTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#e0f2fe',
+  fontSize: '16px',
+  fontWeight: 800,
+}
+
+const successDescriptionStyle: CSSProperties = {
+  margin: '8px 0 0',
+  color: 'rgba(226, 232, 240, 0.92)',
+  fontSize: '14px',
+  lineHeight: 1.6,
+}
+
+const noticeStackStyle: CSSProperties = {
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '10px',
+  pointerEvents: 'none',
+}
+
+const successCardStyle: CSSProperties = {
+  width: 'min(720px, calc(100vw - 40px))',
+  padding: '16px 22px',
+  borderRadius: '20px',
+  backgroundColor: 'rgba(8, 47, 73, 0.74)',
+  border: '1px solid rgba(125, 211, 252, 0.3)',
+  boxShadow: '0 18px 36px rgba(2, 6, 23, 0.28)',
+  backdropFilter: 'blur(16px)',
+}
+
+const successCardTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#e0f2fe',
+  fontSize: '15px',
+  fontWeight: 800,
+  lineHeight: 1.5,
+  textAlign: 'center',
+}
+
+const successCardDescriptionStyle: CSSProperties = {
+  margin: '8px 0 0',
+  color: 'rgba(226, 232, 240, 0.92)',
+  fontSize: '14px',
+  fontWeight: 600,
+  lineHeight: 1.6,
+  textAlign: 'center',
+}
+
+const infoCardStyle: CSSProperties = {
+  width: 'min(720px, calc(100vw - 40px))',
+  padding: '14px 20px',
+  borderRadius: '18px',
+  backgroundColor: 'rgba(15, 23, 42, 0.72)',
+  border: '1px solid rgba(148, 163, 184, 0.22)',
+  color: 'rgba(226, 232, 240, 0.92)',
+  fontSize: '14px',
+  fontWeight: 600,
+  lineHeight: 1.6,
+  textAlign: 'center',
+  backdropFilter: 'blur(16px)',
 }
 
 const debugListStyle: CSSProperties = {

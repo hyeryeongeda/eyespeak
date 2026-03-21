@@ -107,6 +107,9 @@ export default function PatientSignupPage() {
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
                 팀코드 확인이 끝나면 이메일 형식의 환자 로그인 계정을 생성할 수 있습니다.
               </p>
+              <p style={{ margin: '8px 0 0', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+                계정 생성이 완료되면 자동 로그인되며, 로그인 성공 후 시선 보정이 필요한 경우에만 별도로 안내합니다.
+              </p>
             </div>
 
             <div style={formStack}>
