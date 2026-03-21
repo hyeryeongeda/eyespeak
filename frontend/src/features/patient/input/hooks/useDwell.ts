@@ -41,7 +41,6 @@ export function useDwell<TTarget extends string>({
 
   useEffect(() => {
     if (disabled || !hoveredTargetId) {
-      setDwellState(INITIAL_DWELL_STATE)
       return
     }
 
@@ -97,6 +96,10 @@ export function useDwell<TTarget extends string>({
       window.cancelAnimationFrame(frameId)
     }
   }, [activationDelayMs, disabled, dwellDurationMs, hoveredTargetId])
+
+  if (disabled || !hoveredTargetId) {
+    return INITIAL_DWELL_STATE
+  }
 
   return dwellState
 }

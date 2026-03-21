@@ -17,7 +17,8 @@ import {
   isPatientTrackingBlocked,
   usePatientModeStore,
 } from '../../features/patient/input/stores/patientModeStore'
-import { usePatientIncomingChat, PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../hooks/patientIncomingChatContext'
 import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
 import { ROUTE_PATHS } from '../router/routePaths'
 

@@ -9,6 +9,8 @@ const SENTIMENT_LABELS: Record<SentimentType, { label: string; color: string }> 
   NEUTRAL: { label: '중립', color: 'bg-gray-100 text-gray-600' },
 }
 
+const DEFAULT_EXPRESSION_CATEGORIES = ['?듭쬆', '?뺢뎄', '媛먯젙', '?쇱긽'] as const
+
 type FilterSentiment = SentimentType | 'ALL'
 
 export default function ExpressionsPage() {
@@ -33,13 +35,11 @@ export default function ExpressionsPage() {
   }, [])
 
   // ERD note 기반 기본 카테고리 + 데이터에서 추가 카테고리 자동 병합
-  const EXPRESSION_CATEGORIES = ['통증', '욕구', '감정', '일상'] as const
-
   const categories = useMemo(() => {
     const fromData = expressions
       .map((e) => e.category)
       .filter((c): c is string => c !== null)
-    return [...new Set([...EXPRESSION_CATEGORIES, ...fromData])].sort()
+    return [...new Set([...DEFAULT_EXPRESSION_CATEGORIES, ...fromData])].sort()
   }, [expressions])
 
   const filtered = useMemo(() => {

@@ -1,11 +1,4 @@
-import {
-  createContext,
-  type PropsWithChildren,
-  useContext,
-  useEffect,
-  useReducer,
-  useRef,
-} from 'react'
+import { type PropsWithChildren, useEffect, useReducer, useRef } from 'react'
 import {
   PATIENT_CHAT_MESSAGE_PRESETS,
   PATIENT_CHAT_RESPONSE_TIMEOUT_MS,
@@ -16,6 +9,10 @@ import {
   buildManualWordBank,
 } from '../services/mockSuggestionService'
 import { fetchSuggestedReplies, sendPatientReply } from '../services/recommendationService'
+import {
+  PatientIncomingChatContext,
+  type PatientIncomingChatContextValue,
+} from './patientIncomingChatContext'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
@@ -508,40 +505,6 @@ function getMessageById(messages: PatientChatMessage[], messageId: string | null
   return messages.find(message => message.id === messageId) ?? null
 }
 
-interface PatientIncomingChatContextValue {
-  state: PatientChatSessionState
-  activeMessage: PatientChatMessage | null
-  activeReplyMessage: PatientChatMessage | null
-  latestUnresolvedMessage: PatientChatMessage | null
-  unreadCount: number
-  unresolvedCount: number
-  shouldShowInterruptOverlay: boolean
-  shouldShowReplyOverlay: boolean
-  isTalkRoute: boolean
-  manualWordBank: string[]
-  timeoutMs: number
-  availablePresets: typeof PATIENT_CHAT_MESSAGE_PRESETS
-  setRoutePathname: (pathname: string) => void
-  triggerIncomingPreset: (presetKey: (typeof PATIENT_CHAT_MESSAGE_PRESETS)[number]['key'], options?: { messageId?: string }) => void
-  triggerDuplicateMessage: () => void
-  openLatestPendingReply: () => void
-  enterReplyMode: (messageId?: string) => void
-  retrySuggestions: () => void
-  openManualInputSelect: () => void
-  setManualInputMode: (mode: PatientChatManualInputMode) => void
-  updateManualDraft: (draft: string) => void
-  appendManualWord: (word: string) => void
-  clearManualDraft: () => void
-  sendSuggestedReply: (suggestion: PatientSuggestedResponse) => Promise<void>
-  sendManualReply: () => Promise<void>
-  deferActiveMessage: () => void
-  closeReplyMode: () => void
-  setNextSendOutcome: (outcome: PatientChatSendOutcome) => void
-}
-
-const PatientIncomingChatContext =
-  createContext<PatientIncomingChatContextValue | null>(null)
-
 export function PatientIncomingChatProvider({
   pathname,
   children,
@@ -955,14 +918,4 @@ export function PatientIncomingChatProvider({
       {children}
     </PatientIncomingChatContext.Provider>
   )
-}
-
-export function usePatientIncomingChat() {
-  const context = useContext(PatientIncomingChatContext)
-
-  if (!context) {
-    throw new Error('usePatientIncomingChat must be used within PatientIncomingChatProvider')
-  }
-
-  return context
 }

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
 import ReplyModePanel from '../../../components/patient/chat/ReplyModePanel'
-import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 
 const pageWrap: CSSProperties = {
   minHeight: '100dvh',

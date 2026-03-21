@@ -92,7 +92,6 @@ export function createStompClient(
     client.debug = (msg: string) => {
       // STOMP heartbeat 로그는 너무 빈번하므로 제외
       if (!msg.startsWith('>>> PING') && !msg.startsWith('<<< PONG')) {
-        // eslint-disable-next-line no-console
         console.debug('[STOMP]', msg)
       }
     }

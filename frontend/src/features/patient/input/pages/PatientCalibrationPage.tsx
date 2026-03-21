@@ -141,7 +141,9 @@ export default function PatientCalibrationPage() {
   )
 
   const overlayMessage =
-    pageState === 'saving'
+    blockingErrorMessage
+      ? blockingErrorMessage
+      : pageState === 'saving'
       ? 'Calibration completed. Verifying runtime readiness...'
       : pageState === 'loading'
         ? 'Preparing the camera and calibration screen...'
@@ -165,8 +167,6 @@ export default function PatientCalibrationPage() {
 
   useEffect(() => {
     if (blockingErrorMessage) {
-      setPageState('error')
-      setErrorMessage(blockingErrorMessage)
       return
     }
 
@@ -282,7 +282,7 @@ export default function PatientCalibrationPage() {
               <div
                 style={{
                   ...statusCardStyle,
-                  ...(pageState === 'error' ? statusCardErrorStyle : null),
+                  ...((blockingErrorMessage || pageState === 'error') ? statusCardErrorStyle : null),
                 }}
               >
                 {overlayMessage}

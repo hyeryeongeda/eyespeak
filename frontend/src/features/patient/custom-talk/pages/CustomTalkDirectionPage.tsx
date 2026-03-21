@@ -9,7 +9,7 @@ import {
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import type { CustomCategoryKey, CustomTalkContextSummary } from '../types'
-import { usePatientIncomingChat } from '../../../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
 
 const centerStackStyle: CSSProperties = {

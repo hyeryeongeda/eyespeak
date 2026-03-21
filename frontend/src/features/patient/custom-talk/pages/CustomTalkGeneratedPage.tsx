@@ -73,20 +73,23 @@ export default function CustomTalkGeneratedPage() {
   const hasComposeValue = Boolean(
     draft.subject || draft.object || draft.predicate || draft.punctuation,
   )
+  const hasCategoryKey = Boolean(draft.categoryKey)
 
-  if (!draft.categoryKey) {
+  useEffect(() => {
+    if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {
+      return
+    }
+
+    void buildGeneratedSentences()
+  }, [buildGeneratedSentences, generatedSentences.length, hasCategoryKey, hasComposeValue])
+
+  if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
 
   if (!hasComposeValue) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE} replace />
   }
-
-  useEffect(() => {
-    if (generatedSentences.length === 0) {
-      void buildGeneratedSentences()
-    }
-  }, [buildGeneratedSentences, generatedSentences.length])
 
   const visibleGeneratedSentences = getVisibleGeneratedSentences(generatedSentences)
 

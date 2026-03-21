@@ -73,16 +73,19 @@ export default function CustomTalkRecommendPage() {
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const startCompose = useCustomTalkStore(state => state.startCompose)
-
-  if (!draft.categoryKey) {
-    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
-  }
+  const hasCategoryKey = Boolean(draft.categoryKey)
 
   useEffect(() => {
-    if (recommendedSentences.length === 0) {
-      void loadRecommendedSentences(draft.categoryKey)
+    if (!hasCategoryKey || recommendedSentences.length > 0) {
+      return
     }
-  }, [draft.categoryKey, loadRecommendedSentences, recommendedSentences.length])
+
+    void loadRecommendedSentences(draft.categoryKey)
+  }, [draft.categoryKey, hasCategoryKey, loadRecommendedSentences, recommendedSentences.length])
+
+  if (!hasCategoryKey) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
+  }
 
   const categoryLabel =
     CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === draft.categoryKey)?.title ?? '맞춤대화'

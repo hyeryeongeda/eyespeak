@@ -12,7 +12,7 @@ import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
-import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {

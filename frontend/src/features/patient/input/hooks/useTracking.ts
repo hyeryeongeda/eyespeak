@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type RefObject } from 'react'
+import { useEffect, useState, type RefObject } from 'react'
 import {
   getTrackingTargetIdFromPoint,
   isPointInsideElement,
@@ -28,42 +28,13 @@ export function useTracking<TTarget extends string>({
   containerRef,
   enabled = true,
 }: UseTrackingOptions): TrackingState<TTarget> {
-  const gazePoint = useGazeInputStore(state => state.point)
   const [trackingState, setTrackingState] =
     useState<TrackingState<TTarget>>(INITIAL_TRACKING_STATE)
-
-  const gazeTrackingState = useMemo<TrackingState<TTarget>>(() => {
-    if (!enabled || !gazePoint) {
-      return INITIAL_TRACKING_STATE
-    }
-
-    const container = containerRef.current
-
-    if (!container) {
-      return INITIAL_TRACKING_STATE
-    }
-
-    const isPointerInside = isPointInsideElement(gazePoint.clientX, gazePoint.clientY, container)
-
-    if (!isPointerInside) {
-      return INITIAL_TRACKING_STATE
-    }
-
-    return {
-      hoveredTargetId: getTrackingTargetIdFromPoint<TTarget>(
-        gazePoint.clientX,
-        gazePoint.clientY,
-        container,
-      ),
-      isPointerInside: true,
-      pointerType: 'gaze',
-      inputSource: 'gaze',
-    }
-  }, [containerRef, enabled, gazePoint])
+  const [gazeTrackingState, setGazeTrackingState] =
+    useState<TrackingState<TTarget>>(INITIAL_TRACKING_STATE)
 
   useEffect(() => {
     if (!enabled) {
-      setTrackingState(INITIAL_TRACKING_STATE)
       return
     }
 
@@ -115,6 +86,58 @@ export function useTracking<TTarget extends string>({
       window.removeEventListener('blur', resetTracking)
     }
   }, [containerRef, enabled])
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    let frameId = 0
+
+    const updateFromPoint = () => {
+      const gazePoint = useGazeInputStore.getState().point
+      const container = containerRef.current
+
+      if (!gazePoint || !container) {
+        setGazeTrackingState(INITIAL_TRACKING_STATE)
+        return
+      }
+
+      const isPointerInside = isPointInsideElement(gazePoint.clientX, gazePoint.clientY, container)
+
+      if (!isPointerInside) {
+        setGazeTrackingState(INITIAL_TRACKING_STATE)
+        return
+      }
+
+      setGazeTrackingState({
+        hoveredTargetId: getTrackingTargetIdFromPoint<TTarget>(
+          gazePoint.clientX,
+          gazePoint.clientY,
+          container,
+        ),
+        isPointerInside: true,
+        pointerType: 'gaze',
+        inputSource: 'gaze',
+      })
+    }
+
+    frameId = window.requestAnimationFrame(updateFromPoint)
+
+    const unsubscribe = useGazeInputStore.subscribe(() => {
+      window.cancelAnimationFrame(frameId)
+      frameId = window.requestAnimationFrame(updateFromPoint)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      unsubscribe()
+    }
+  }, [containerRef, enabled])
+
+  if (!enabled) {
+    return INITIAL_TRACKING_STATE
+  }
 
   return gazeTrackingState.isPointerInside ? gazeTrackingState : trackingState
 }

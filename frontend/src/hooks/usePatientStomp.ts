@@ -84,7 +84,10 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
 
   // 콜백을 ref 로 안정화 — 렌더마다 새 객체여도 구독 재생성 방지
   const callbacksRef = useRef(callbacks)
-  callbacksRef.current = callbacks
+
+  useEffect(() => {
+    callbacksRef.current = callbacks
+  }, [callbacks])
 
   // 구독
   useEffect(() => {

@@ -54,6 +54,7 @@ export interface UseStompClientReturn {
 export function useStompClient(enabled = true): UseStompClientReturn {
   const accessToken = useAuthStore(state => state.user?.accessToken ?? null)
   const [status, setStatus] = useState<StompConnectionStatus>('disconnected')
+  const [client, setClient] = useState<EyeSpeakStompClient | null>(null)
   const clientRef = useRef<EyeSpeakStompClient | null>(null)
 
   // cleanup 함수 — useEffect 와 reconnect 양쪽에서 사용
@@ -65,6 +66,7 @@ export function useStompClient(enabled = true): UseStompClientReturn {
         // deactivate 실패는 무시 (이미 끊어진 상태 등)
       }
       clientRef.current = null
+      setClient(null)
     }
   }, [])
 
@@ -97,20 +99,29 @@ export function useStompClient(enabled = true): UseStompClientReturn {
     )
 
     clientRef.current = stompClient
+    setClient(stompClient)
     stompClient.activate()
   }, [accessToken, enabled])
 
   // mount / token 변경 / enabled 변경 시 재연결
   useEffect(() => {
     if (!enabled || !accessToken) {
-      void cleanup()
-      setStatus('disconnected')
-      return
+      const timeoutId = window.setTimeout(() => {
+        void cleanup()
+        setStatus('disconnected')
+      }, 0)
+
+      return () => {
+        window.clearTimeout(timeoutId)
+      }
     }
 
-    connect()
+    const timeoutId = window.setTimeout(() => {
+      connect()
+    }, 0)
 
     return () => {
+      window.clearTimeout(timeoutId)
       void cleanup()
     }
   }, [accessToken, enabled, connect, cleanup])
@@ -123,7 +134,7 @@ export function useStompClient(enabled = true): UseStompClientReturn {
   }, [cleanup, connect])
 
   return {
-    client: clientRef.current,
+    client,
     status,
     reconnect,
   }

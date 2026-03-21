@@ -84,7 +84,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
   }, [location.key, syncViewportMetrics])
 
   useEffect(() => {
-    syncViewportMetrics()
+    const frameId = window.requestAnimationFrame(syncViewportMetrics)
 
     const viewport = window.visualViewport
 
@@ -93,6 +93,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
     window.addEventListener('resize', syncViewportMetrics)
 
     return () => {
+      window.cancelAnimationFrame(frameId)
       viewport?.removeEventListener('resize', syncViewportMetrics)
       viewport?.removeEventListener('scroll', syncViewportMetrics)
       window.removeEventListener('resize', syncViewportMetrics)
