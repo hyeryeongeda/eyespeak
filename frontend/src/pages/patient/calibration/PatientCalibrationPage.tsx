@@ -14,7 +14,7 @@ interface EyeTrackingCalibrationMessage {
   source?: string
   type?: 'calibration-ready' | 'calibration-complete' | 'calibration-error'
   message?: string
-  userId?: string
+  userId?: string | number
 }
 
 const EYE_TRACKING_MESSAGE_SOURCE = 'eyespeak-eye-tracking'
@@ -41,12 +41,12 @@ export default function PatientCalibrationPage() {
       autostart: '1',
     })
 
-    if (user?.id) {
-      query.set('userId', user.id)
+    if (user?.userId != null) {
+      query.set('userId', String(user.userId))
     }
 
     return `${baseUrl}/?${query.toString()}`
-  }, [user?.id])
+  }, [user?.userId])
 
   const allowedOrigin = useMemo(() => {
     if (!iframeUrl || typeof window === 'undefined') {

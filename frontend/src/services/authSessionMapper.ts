@@ -44,16 +44,23 @@ function normalizeNumericId(rawId: string | number | null | undefined): number |
 }
 
 export function mapAuthResponseToSession(response: AuthResponseDto): AuthSession {
+  const normalizedUserId =
+    normalizeNumericId(response.user.userId) ??
+    normalizeNumericId(response.user.id)
+  const normalizedMatchingId =
+    normalizeNumericId(response.user.matchingId) ??
+    normalizeNumericId(response.matchingId)
+
   return {
     id: normalizeSessionId(response.user.id),
-    userId: normalizeNumericId(response.user.userId ?? response.user.id),
-    matchingId: normalizeNumericId(response.user.matchingId),
+    userId: normalizedUserId,
+    matchingId: normalizedMatchingId,
     role: normalizeUserRole(String(response.user.role ?? '')),
     name: response.user.name,
     email: response.user.email,
     teamCode: response.user.teamCode ?? null,
     accessToken: response.accessToken,
-    refreshToken: response.refreshToken,
+    refreshToken: response.refreshToken ?? null,
   }
 }
 

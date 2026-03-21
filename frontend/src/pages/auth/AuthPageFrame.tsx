@@ -1,4 +1,11 @@
-import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 import { useLocation } from 'react-router-dom'
 import { pageWrapper } from './authPageStyles'
 
@@ -32,11 +39,33 @@ function getViewportMetrics(): ViewportMetrics {
   }
 }
 
+function isSameViewportMetrics(previous: ViewportMetrics, next: ViewportMetrics) {
+  return (
+    previous.height === next.height &&
+    previous.keyboardInset === next.keyboardInset
+  )
+}
+
 export default function AuthPageFrame({ children }: AuthPageFrameProps) {
   const location = useLocation()
   const containerRef = useRef<HTMLElement | null>(null)
   const focusTimerRef = useRef<number | null>(null)
+  const keyboardInsetRef = useRef(0)
   const [viewportMetrics, setViewportMetrics] = useState<ViewportMetrics>(() => getViewportMetrics())
+
+  useEffect(() => {
+    keyboardInsetRef.current = viewportMetrics.keyboardInset
+  }, [viewportMetrics.keyboardInset])
+
+  const syncViewportMetrics = useCallback(() => {
+    const nextMetrics = getViewportMetrics()
+
+    setViewportMetrics(previousMetrics => {
+      return isSameViewportMetrics(previousMetrics, nextMetrics)
+        ? previousMetrics
+        : nextMetrics
+    })
+  }, [])
 
   useEffect(() => {
     if (focusTimerRef.current !== null) {
@@ -45,34 +74,30 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      setViewportMetrics(getViewportMetrics())
+      syncViewportMetrics()
       containerRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     })
 
     return () => {
       window.cancelAnimationFrame(frameId)
     }
-  }, [location.key])
+  }, [location.key, syncViewportMetrics])
 
   useEffect(() => {
-    const handleViewportChange = () => {
-      setViewportMetrics(getViewportMetrics())
-    }
-
-    handleViewportChange()
+    syncViewportMetrics()
 
     const viewport = window.visualViewport
 
-    viewport?.addEventListener('resize', handleViewportChange)
-    viewport?.addEventListener('scroll', handleViewportChange)
-    window.addEventListener('resize', handleViewportChange)
+    viewport?.addEventListener('resize', syncViewportMetrics)
+    viewport?.addEventListener('scroll', syncViewportMetrics)
+    window.addEventListener('resize', syncViewportMetrics)
 
     return () => {
-      viewport?.removeEventListener('resize', handleViewportChange)
-      viewport?.removeEventListener('scroll', handleViewportChange)
-      window.removeEventListener('resize', handleViewportChange)
+      viewport?.removeEventListener('resize', syncViewportMetrics)
+      viewport?.removeEventListener('scroll', syncViewportMetrics)
+      window.removeEventListener('resize', syncViewportMetrics)
     }
-  }, [])
+  }, [syncViewportMetrics])
 
   useEffect(() => {
     const container = containerRef.current
@@ -96,13 +121,16 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
         window.clearTimeout(focusTimerRef.current)
       }
 
+      const keyboardInset = keyboardInsetRef.current
+
       focusTimerRef.current = window.setTimeout(() => {
         target.scrollIntoView({
           block: 'nearest',
           inline: 'nearest',
-          behavior: viewportMetrics.keyboardInset > 0 ? 'smooth' : 'auto',
+          behavior: keyboardInset > 0 ? 'smooth' : 'auto',
         })
-      }, viewportMetrics.keyboardInset > 0 ? 220 : 0)
+        focusTimerRef.current = null
+      }, keyboardInset > 0 ? 220 : 0)
     }
 
     container.addEventListener('focusin', handleFocusIn)
@@ -110,12 +138,13 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
     return () => {
       container.removeEventListener('focusin', handleFocusIn)
     }
-  }, [viewportMetrics.keyboardInset])
+  }, [])
 
   useEffect(() => {
     return () => {
       if (focusTimerRef.current !== null) {
         window.clearTimeout(focusTimerRef.current)
+        focusTimerRef.current = null
       }
     }
   }, [])
@@ -130,7 +159,7 @@ export default function AuthPageFrame({ children }: AuthPageFrameProps) {
   }
 
   return (
-    <main key={location.key} ref={containerRef} style={frameStyle}>
+    <main ref={containerRef} style={frameStyle}>
       {children}
     </main>
   )

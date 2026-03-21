@@ -25,8 +25,8 @@ export interface LoginFormValues {
 
 export interface AuthUserDto {
   id: string | number
-  userId?: string | number | null
-  matchingId?: string | number | null
+  userId: string | number
+  matchingId: string | number | null
   role: string
   name: string
   email?: string
@@ -36,6 +36,7 @@ export interface AuthUserDto {
 export interface AuthResponseDto {
   accessToken: string
   refreshToken: string | null
+  matchingId?: string | number | null
   user: AuthUserDto
 }
 
