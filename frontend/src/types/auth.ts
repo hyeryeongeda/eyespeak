@@ -7,6 +7,16 @@ export type AuthEntryMode = 'login' | 'signup'
 
 export type GuardianSessionExitReason = 'idle-timeout' | 'refresh-failed'
 
+export interface AuthRedirectTarget {
+  pathname: string
+  search?: string
+  hash?: string
+}
+
+export interface AuthRouteState {
+  from?: AuthRedirectTarget
+}
+
 export interface AuthSession {
   id: string
   userId: number | null
