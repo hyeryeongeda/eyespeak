@@ -3,7 +3,7 @@ stages:
 
 build_test:
   stage: build-test
-  image: gradle:8.5-jdk17
+  image: eclipse-temurin:21-jdk
   script:
     - cd backend
     - chmod +x gradlew
