@@ -5,7 +5,8 @@
 
 import type {
   PatientInfo,
-  RoutineSlotWithTags,
+  RoutineSlotState,
+  RoutineRequestItem,
   Category,
   Phrase,
   FavoritePhrase,
@@ -18,16 +19,11 @@ import type {
   Expression,
   DailySummary,
   ApiResponse,
-  TimeSlot,
-  ActivityTag,
 } from '../types/care'
 import { DWELL_TIME_OPTIONS, ACTIVATION_DELAY_OPTIONS } from '../types/care'
 
 import {
   MOCK_PATIENT_INFO,
-  MOCK_TIME_SLOTS,
-  MOCK_ACTIVITY_TAGS,
-  MOCK_ROUTINES,
   MOCK_CATEGORIES,
   MOCK_PHRASES,
   MOCK_FAVORITE_PHRASES,
@@ -40,6 +36,8 @@ import {
   MOCK_EXPRESSIONS,
   MOCK_DAILY_SUMMARIES,
 } from './mockCareData'
+import { getRoutinesApi, updateRoutinesApi } from './routineApi'
+import { GUARDIAN_SIGNUP_ROUTINE_SLOTS, ROUTINE_ACTIVITY_TAGS } from '../constants/routineCatalog'
 
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms))
 const CARE_DWELL_TIME_PRESET_STORAGE_KEY = 'careSetting:dwellTimePreset'
@@ -107,25 +105,40 @@ export async function updatePatientInfo(info: Partial<PatientInfo>): Promise<Api
 }
 
 
-// 루틴
-export async function getTimeSlots(): Promise<ApiResponse<TimeSlot[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_TIME_SLOTS], message: '조회 성공' }
+// 루틴 — 활동 태그 목록 (상수)
+export function getActivityTags() {
+  return ROUTINE_ACTIVITY_TAGS
 }
 
-export async function getActivityTags(): Promise<ApiResponse<ActivityTag[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_ACTIVITY_TAGS], message: '조회 성공' }
+// 루틴 조회 — GET /routines → RoutineSlotState[] 변환
+export async function getRoutines(): Promise<ApiResponse<RoutineSlotState[]>> {
+  try {
+    const response = await getRoutinesApi()
+    const routines: RoutineSlotState[] = response.routines.map((item) => ({
+      timeSlotId: item.timeSlotId,
+      timeSlotName: item.timeSlotName,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      activityTagId: item.activityTagId,
+    }))
+    return { success: true, data: routines, message: '조회 성공' }
+  } catch {
+    // 404 — 루틴 미등록 → 빈 슬롯 7개 반환
+    const emptyRoutines: RoutineSlotState[] = GUARDIAN_SIGNUP_ROUTINE_SLOTS.map((slot) => ({
+      timeSlotId: slot.id,
+      timeSlotName: slot.label,
+      startTime: slot.timeRange.split(' ~ ')[0],
+      endTime: slot.timeRange.split(' ~ ')[1],
+      activityTagId: null,
+    }))
+    return { success: true, data: emptyRoutines, message: '루틴 미등록' }
+  }
 }
 
-export async function getRoutines(): Promise<ApiResponse<RoutineSlotWithTags[]>> {
-  await delay()
-  return { success: true, data: MOCK_ROUTINES.map(r => ({ ...r })), message: '조회 성공' }
-}
-
-export async function updateRoutines(routines: RoutineSlotWithTags[]): Promise<ApiResponse<RoutineSlotWithTags[]>> {
-  await delay()
-  return { success: true, data: routines, message: '저장 성공' }
+// 루틴 저장 — PUT /routines
+export async function saveRoutines(routines: RoutineRequestItem[]): Promise<ApiResponse<null>> {
+  await updateRoutinesApi(routines)
+  return { success: true, data: null, message: '저장 성공' }
 }
 
 
