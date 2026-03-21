@@ -46,6 +46,53 @@
 | 토큰 만료 | AUTH-201 | 401 |
 | 매칭 정보 없음 | MATCHING-803 | 404 |
 
+### 흐름도 (FE → BE → AI → DB)
+
+```
+1. 환자가 맞춤대화 진입
+
+2. FE → BE 요청
+   GET /api/v1/recommendations/categories
+   Headers: { Authorization: "Bearer {JWT}" }
+
+3. BE (RecommendationController.getCategories)
+   - JWT에서 userId 추출
+   - userId → Guardian/Patient → Matching 조회 → matchingId 획득
+   - AI 서버에 hint 요청 전달
+
+4. BE → AI 요청
+   POST http://eyespeak-ai-caregiver:5003/recommend/hints
+   Body: { "matching_id": 3 }
+
+5. AI (caregiver_server_db.py - recommend_hints)
+   - daily_mood에서 오늘 기분 조회 → mood_hint (예: "기분 좋음")
+   - routine_slot_tag에서 현재 시간대 활동 조회 → schedule_hint (예: "경관식/수분 섭취")
+   - usage_log에서 가장 많이 쓴 표현 조회 → frequent_hint (예: "어깨 아파")
+   - usage_log에서 가장 최근 사용한 표현 조회 → recent_hint (예: "물 좀 줘")
+
+6. AI → BE 응답
+   { "mood_hint": "기분 좋음", "schedule_hint": "경관식/수분 섭취",
+     "frequent_hint": "어깨 아파", "recent_hint": "물 좀 줘" }
+
+7. BE: 고정 카테고리 4개 + hint 조합
+
+8. BE → FE 응답
+   {
+     "code": "SUCCESS",
+     "message": "요청이 성공하였습니다",
+     "data": {
+       "categories": [
+         { "key": "mood", "title": "오늘의 기분", "description": "기분 기반 추천", "hint": "기분 좋음" },
+         { "key": "schedule", "title": "오늘 일정", "description": "일정 기반 추천", "hint": "경관식/수분 섭취" },
+         { "key": "frequent", "title": "자주 쓴 표현", "description": "자주 사용한 표현 추천", "hint": "어깨 아파" },
+         { "key": "recent", "title": "직전 사용", "description": "최근 사용 표현 추천", "hint": "물 좀 줘" }
+       ]
+     }
+   }
+
+9. FE 화면에 카테고리 카드 4개 표시 (각 카드에 hint 포함)
+```
+
 ### hint 데이터 출처
 
 | key | DB 테이블 | 조회 내용 |
@@ -107,6 +154,55 @@
 | 매칭 정보 없음 | MATCHING-803 | 404 |
 | AI 추천 생성 실패 | AI-701 | 500 |
 | AI 서버 타임아웃 | AI-702 | 502 |
+
+### 흐름도 (FE → BE → AI → DB)
+
+```
+1. 환자가 "오늘의 기분" 카드 선택
+
+2. FE → BE 요청
+   POST /api/v1/recommendations/sentences
+   Headers: { Authorization: "Bearer {JWT}" }
+   Body: { "categoryKey": "mood" }
+
+3. BE (RecommendationController.getSentences)
+   - JWT에서 userId 추출
+   - userId → Guardian/Patient → Matching 조회 → matchingId 획득
+   - categoryKey 검증 (null/blank 시 COMMON-101 에러)
+   - AI 서버에 요청 전달
+
+4. BE → AI 요청
+   POST http://eyespeak-ai-caregiver:5003/recommend/category
+   Body: { "matching_id": 3, "recommend_type": "mood" }
+
+5. AI (caregiver_server_db.py - recommend_by_category)
+   - recommend_type 매핑 (대소문자 모두 처리: "mood"/"MOOD" → "mood")
+   - _load_user_data_from_db(3) 호출
+     → daily_mood에서 오늘 기분 조회 (예: "HAPPY")
+     → routine_slot_tag에서 일정 조회
+     → usage_log에서 자주/최근 사용 표현 조회
+   - 카테고리별 분기:
+     - mood: "환자의 오늘 기분은 '기분 좋음'입니다..." → context_question 생성
+     - schedule: 현재 시간대 활동 기반 context_question
+     - frequent: 가장 많이 쓴 표현 기반 context_question
+     - recent: 최근 사용 표현 기반 context_question
+   - _search_sentences_mixed()로 후보 6개 검색 (임베딩 유사도)
+   - _refine_recommend()로 LLM이 3개로 정제
+
+6. AI → BE 응답
+   { "sentences": ["오늘 기분이 좋아요", "조금 피곤해요", "머리가 아파요"] }
+
+7. BE → FE 응답
+   {
+     "code": "SUCCESS",
+     "message": "요청이 성공하였습니다",
+     "data": {
+       "sentences": ["오늘 기분이 좋아요", "조금 피곤해요", "머리가 아파요"]
+     }
+   }
+
+8. FE 화면에 추천 문장 3개 표시
+```
 
 ---
 
