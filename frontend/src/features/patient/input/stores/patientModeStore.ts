@@ -27,7 +27,7 @@ interface PatientModeState {
 const initialState = {
   isGlobalMenuOpen: false,
   globalMenuDwellDurationMs: PATIENT_GLOBAL_MENU_DWELL_MS,
-  trackingStatus: 'ready' as const,
+  trackingStatus: 'idle' as const,
 }
 
 export const usePatientModeStore = create<PatientModeState>((set, get) => ({

@@ -19,7 +19,7 @@ export function usePatientTrackingBridge({
       return
     }
 
-    usePatientModeStore.getState().setTrackingStatus('ready')
+    usePatientModeStore.getState().setTrackingStatus('idle')
 
     const handleDoubleBlink = () => {
       if (import.meta.env.DEV) {
