@@ -22,6 +22,7 @@ import type {
   ApiResponse,
 } from '../types/care'
 import { DWELL_TIME_OPTIONS, ACTIVATION_DELAY_OPTIONS } from '../types/care'
+import type { LeisureContentCreateRequestDto, LeisureContentResponseDto } from '../types/leisure'
 
 import {
   MOCK_PATIENT_INFO,
@@ -36,6 +37,11 @@ import {
   MOCK_EXPRESSIONS,
   MOCK_DAILY_SUMMARIES,
 } from './mockCareData'
+import {
+  createLeisureContentApi,
+  deleteLeisureContentApi,
+  getLeisureContentsApi,
+} from './leisureApi'
 import { getRoutinesApi, updateRoutinesApi } from './routineApi'
 import {
   getLeisureContentsApi,
@@ -179,7 +185,18 @@ export async function removeFavoritePhrase(phraseId: number): Promise<ApiRespons
 
 
 // 여가 콘텐츠
+function mapLeisureContentResponseToItem(item: LeisureContentResponseDto): LeisureContentItem {
+  return {
+    id: item.id,
+    name: item.name,
+    url: item.url,
+    category: item.category,
+    categoryName: item.categoryName,
+  }
+}
+
 export async function getLeisureContents(): Promise<ApiResponse<LeisureContentItem[]>> {
+<<<<<<< Updated upstream
   const data = await getLeisureContentsApi()
   return { success: true, data, message: '조회 성공' }
 }
@@ -201,9 +218,69 @@ export async function updateLeisureContent(
 
 export async function deleteLeisureContent(id: number): Promise<ApiResponse<null>> {
   await deleteLeisureContentApi(id)
+=======
+  try {
+    const response = await getLeisureContentsApi()
+
+    return {
+      success: true,
+      data: response.map(mapLeisureContentResponseToItem),
+      message: '議고쉶 ?깃났',
+    }
+  } catch (error) {
+    console.error('Failed to fetch leisure contents.', error)
+    throw error
+  }
+}
+
+async function legacyGetLeisureContentsMock(): Promise<ApiResponse<LeisureContentItem[]>> {
+  await delay()
+  return { success: true, data: [...MOCK_LEISURE_CONTENTS], message: '조회 성공' }
+}
+
+void legacyGetLeisureContentsMock
+
+export async function saveLeisureContent(
+  item: LeisureContentCreateRequestDto,
+): Promise<ApiResponse<LeisureContentItem[]>> {
+  try {
+    await createLeisureContentApi(item)
+    return await getLeisureContents()
+  } catch (error) {
+    console.error('Failed to save leisure content.', error)
+    throw error
+  }
+}
+
+async function legacySaveLeisureContentMock(
+  item: Omit<LeisureContentItem, 'id' | 'matchingId'>,
+): Promise<ApiResponse<LeisureContentItem>> {
+  await delay()
+  const created: LeisureContentItem = { id: Date.now(), matchingId: 1, ...item }
+  return { success: true, data: created, message: '등록 성공' }
+}
+
+void legacySaveLeisureContentMock
+
+export async function deleteLeisureContent(id: number): Promise<ApiResponse<LeisureContentItem[]>> {
+  try {
+    await deleteLeisureContentApi(id)
+    return await getLeisureContents()
+  } catch (error) {
+    console.error('Failed to delete leisure content.', error)
+    throw error
+  }
+}
+
+async function legacyDeleteLeisureContentMock(id: number): Promise<ApiResponse<null>> {
+  await delay(200)
+  void id
+>>>>>>> Stashed changes
   return { success: true, data: null, message: '삭제 성공' }
 }
 
+
+void legacyDeleteLeisureContentMock
 
 // Dwell Time
 export async function getDwellTimePreset(): Promise<ApiResponse<DwellTimePreset>> {

@@ -99,7 +99,8 @@ export default function RelatedContentOverlay({
   onClose,
 }: RelatedContentOverlayProps) {
   const actionBusy = status === 'loading' || status === 'refreshing' || status === 'selecting'
-  const shouldShowState = contents.length === 0 && (status === 'loading' || status === 'empty' || status === 'error')
+  const shouldShowState =
+    contents.length === 0 && (status === 'loading' || status === 'empty' || status === 'error')
   const contentSlots = Array.from({ length: 4 }, (_, index) => contents[index] ?? null)
 
   let statePanel = null
@@ -108,31 +109,31 @@ export default function RelatedContentOverlay({
     statePanel = (
       <LeisureLoadingState
         title="연관 콘텐츠를 불러오는 중입니다"
-        description="현재 영상과 비슷한 추천 영상을 준비하고 있습니다."
+        description="같은 카테고리의 재생 가능한 영상을 다시 조회하고 있습니다."
       />
     )
   } else if (status === 'empty') {
     statePanel = (
       <LeisureEmptyState
-        title="추천 영상을 찾지 못했습니다"
-        description="다른 콘텐츠 보기 목록에 표시할 영상이 아직 없습니다."
+        title="연관 콘텐츠가 없습니다"
+        description="같은 카테고리에서 재생 가능한 추가 콘텐츠를 찾지 못했습니다."
       />
     )
   } else if (status === 'error') {
     statePanel = (
       <LeisureErrorState
-        title="추천 영상을 불러올 수 없습니다"
-        description="잠시 후 다시 시도하거나 현재 영상을 계속 시청할 수 있습니다."
+        title="연관 콘텐츠를 불러오지 못했습니다"
+        description="잠시 후 다시 시도하거나 이전 화면으로 돌아가 주세요."
       />
     )
   }
 
   return (
-    <div style={overlayBackdropStyle} role="dialog" aria-modal="true" aria-label="연관 콘텐츠 보기">
+    <div style={overlayBackdropStyle} role="dialog" aria-modal="true" aria-label="연관 콘텐츠">
       <div style={overlayPanelStyle}>
         <LeisureSectionHeader
           title={title}
-          description={`${categoryLabel} 추천 영상 4개를 빠르게 바꿔가며 선택할 수 있습니다.`}
+          description={`${categoryLabel} 카테고리의 추가 콘텐츠를 표시합니다.`}
         />
 
         {noticeMessage ? <div style={noticeStyle}>{noticeMessage}</div> : null}
@@ -176,7 +177,7 @@ export default function RelatedContentOverlay({
           <div style={{ ...slotStyle, gridColumn: 3, gridRow: 1 }}>
             <LeisureActionCard
               title="새로고침"
-              description="추천 영상 4개를 다시 불러옵니다"
+              description="연관 콘텐츠 목록을 다시 조회합니다."
               tone={tone}
               busy={status === 'refreshing'}
               disabled={actionBusy}
@@ -188,7 +189,7 @@ export default function RelatedContentOverlay({
           <div style={{ ...slotStyle, gridColumn: 3, gridRow: 2 }}>
             <LeisureActionCard
               title="닫기"
-              description="현재 재생 화면으로 돌아갑니다"
+              description="오버레이를 닫고 플레이어로 돌아갑니다."
               tone="slate"
               busy={status === 'closing'}
               disabled={status === 'selecting'}

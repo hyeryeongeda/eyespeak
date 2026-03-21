@@ -1,10 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { LeisureCategory } from '../../../../types/leisure'
-import {
-  leisureCardBaseStyle,
-  leisurePillStyle,
-  leisureToneMap,
-} from './leisureTheme'
+import { leisureCardBaseStyle, leisurePillStyle, leisureToneMap } from './leisureTheme'
 
 const titleStyle: CSSProperties = {
   margin: 0,
@@ -69,7 +65,7 @@ export default function LeisureCategoryCard({
       aria-label={`${category.label} 카테고리`}
     >
       <span style={{ ...leisurePillStyle, color: toneStyle.accent }}>
-        {badge ?? `추천 ${contentCount}개`}
+        {badge ?? `콘텐츠 ${contentCount}개`}
       </span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <h3

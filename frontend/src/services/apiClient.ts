@@ -10,11 +10,9 @@ import { mockApiTransport } from './mockAuthApi'
 
 type ApiMode = 'real' | 'mock'
 
-const API_MODE: ApiMode =
-  import.meta.env.VITE_API_MODE === 'real' || import.meta.env.VITE_AUTH_API_MODE === 'real'
-    ? 'real'
-    : 'mock'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+const configuredApiMode = import.meta.env.VITE_API_MODE ?? import.meta.env.VITE_AUTH_API_MODE
+const API_MODE: ApiMode = configuredApiMode === 'mock' ? 'mock' : 'real'
 const DEFAULT_WITH_CREDENTIALS = import.meta.env.VITE_API_WITH_CREDENTIALS === 'true'
 
 const axiosInstance = axios.create({

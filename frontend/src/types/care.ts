@@ -1,4 +1,6 @@
 // 채팅
+import type { LeisureCategoryId } from './leisure'
+
 export type ChatMessageSender = 'guardian' | 'patient'
 
 export interface ChatMessage {
@@ -97,6 +99,7 @@ export interface FavoritePhrase {
 // 여가 콘텐츠
 export interface LeisureContentItem {
   id: number
+<<<<<<< Updated upstream
   name: string
   url: string | null
   category: string | null
@@ -107,6 +110,14 @@ export interface LeisureContentRequest {
   name: string
   url?: string
   category?: string
+=======
+  matchingId?: number
+  position?: number
+  name: string
+  url: string | null
+  category: LeisureCategoryId | null
+  categoryName?: string | null
+>>>>>>> Stashed changes
 }
 
 

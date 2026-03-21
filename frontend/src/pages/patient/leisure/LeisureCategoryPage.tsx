@@ -1,13 +1,9 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import {
-  ROUTE_PATHS,
-  getPatientLeisurePlayerPath,
-} from '../../../app/router/routePaths'
+import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
 import {
   fetchLeisureCategoryRecommendations,
   getLeisureCategoryById,
-  parseLeisureMockScenario,
 } from '../../../services/leisureService'
 import type { LeisureCategoryStatus, LeisureContent } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
@@ -21,19 +17,19 @@ import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 function getCategoryStatusText(status: LeisureCategoryStatus) {
   switch (status) {
     case 'loading':
-      return '추천 영상을 준비하고 있습니다'
+      return '콘텐츠를 불러오는 중'
     case 'refreshing':
-      return '추천 영상을 새로고침 중입니다'
+      return '목록을 새로고침하는 중'
     case 'empty':
-      return '등록된 영상이 없습니다'
+      return '재생 가능한 콘텐츠 없음'
     case 'selecting':
-      return '영상을 선택했습니다'
+      return '콘텐츠 선택 중'
     case 'transitioning':
-      return '재생 화면으로 이동합니다'
+      return '다음 화면으로 이동 중'
     case 'error':
-      return '추천 영상을 불러올 수 없습니다'
+      return '콘텐츠를 불러오지 못함'
     default:
-      return '추천 영상 4개와 액션 2개를 표시합니다'
+      return '재생할 콘텐츠를 선택하세요'
   }
 }
 
@@ -62,6 +58,12 @@ const slotStyle: CSSProperties = {
   display: 'flex',
 }
 
+const hiddenSlotStyle: CSSProperties = {
+  ...slotStyle,
+  visibility: 'hidden',
+  pointerEvents: 'none',
+}
+
 const stateAreaStyle: CSSProperties = {
   ...slotStyle,
   gridColumn: '1 / span 2',
@@ -85,9 +87,6 @@ export default function LeisureCategoryPage() {
   const location = useLocation()
   const params = useParams()
   const category = getLeisureCategoryById(params.categoryId)
-  const searchParams = new URLSearchParams(location.search)
-  const initialScenario = parseLeisureMockScenario(searchParams.get('categoryScenario'))
-  const refreshScenario = parseLeisureMockScenario(searchParams.get('categoryRefreshScenario'))
 
   const [status, setStatus] = useState<LeisureCategoryStatus>('idle')
   const [contents, setContents] = useState<LeisureContent[]>([])
@@ -105,7 +104,7 @@ export default function LeisureCategoryPage() {
       setNoticeMessage(null)
 
       try {
-        const data = await fetchLeisureCategoryRecommendations(category.id, initialScenario)
+        const data = await fetchLeisureCategoryRecommendations(category.id)
 
         if (!isMounted) {
           return
@@ -113,7 +112,9 @@ export default function LeisureCategoryPage() {
 
         setContents(data.contents)
         setStatus(data.contents.length > 0 ? 'visible' : 'empty')
-      } catch {
+      } catch (error) {
+        console.error('Failed to load leisure category contents.', error)
+
         if (!isMounted) {
           return
         }
@@ -129,26 +130,26 @@ export default function LeisureCategoryPage() {
     return () => {
       isMounted = false
     }
-  }, [category, initialScenario])
+  }, [category])
 
   if (!category) {
     return (
       <LeisureLayout
         code="PAT-LEISURE-002"
-        title="추천 카테고리"
-        description="존재하지 않는 여가 카테고리입니다."
-        statusText="잘못된 경로입니다"
-        contextLabel="카테고리 확인 필요"
+        title="여가 카테고리"
+        description="유효하지 않은 카테고리 경로입니다."
+        statusText="카테고리를 찾을 수 없음"
+        contextLabel="잘못된 접근"
       >
         <section style={pagePanelStyle}>
           <LeisureErrorState
-            title="선택한 카테고리를 찾을 수 없습니다"
-            description="여가 메인으로 돌아가 카테고리를 다시 선택해 주세요."
+            title="카테고리를 찾을 수 없습니다"
+            description="여가 메인으로 돌아가서 다시 선택해 주세요."
           />
           <div style={{ maxWidth: '320px' }}>
             <LeisureActionCard
               title="뒤로가기"
-              description="여가 메인으로 돌아갑니다"
+              description="여가 메인 화면으로 돌아갑니다."
               tone="slate"
               slotId="invalid-category-back"
               onSelect={() => navigate({ pathname: ROUTE_PATHS.PATIENT_LEISURE, search: location.search })}
@@ -169,7 +170,7 @@ export default function LeisureCategoryPage() {
       {
         state: {
           fromPath: location.pathname,
-          fromLabel: `${category.label} 추천`,
+          fromLabel: `${category.label} 콘텐츠`,
           categoryId: category.id,
         },
       },
@@ -182,23 +183,24 @@ export default function LeisureCategoryPage() {
     setNoticeMessage(null)
 
     try {
-      const data = await fetchLeisureCategoryRecommendations(category.id, refreshScenario, {
+      const data = await fetchLeisureCategoryRecommendations(category.id, {
         refresh: true,
       })
 
       setContents(data.contents)
       setStatus(data.contents.length > 0 ? 'visible' : 'empty')
-    } catch {
+    } catch (error) {
+      console.error('Failed to refresh leisure category contents.', error)
       setStatus(hasExistingContents ? 'visible' : 'error')
-      setNoticeMessage('추천 영상을 불러올 수 없습니다. 기존 목록을 유지합니다.')
+      setNoticeMessage('새로고침에 실패했습니다. 잠시 후 다시 시도해 주세요.')
     }
   }
 
   let recommendationArea = (
     <div className="leisure-category-state" style={stateAreaStyle}>
       <LeisureLoadingState
-        title="추천 영상을 불러오는 중입니다"
-        description="카테고리에 맞는 영상 4개를 준비하고 있습니다."
+        title="카테고리 콘텐츠를 불러오는 중입니다"
+        description="실제 API에서 재생 가능한 영상을 조회하고 있습니다."
       />
     </div>
   )
@@ -207,8 +209,8 @@ export default function LeisureCategoryPage() {
     recommendationArea = (
       <div className="leisure-category-state" style={stateAreaStyle}>
         <LeisureErrorState
-          title="추천 영상을 불러올 수 없습니다"
-          description="잠시 후 다시 시도해 주세요."
+          title="콘텐츠를 불러오지 못했습니다"
+          description="네트워크 상태를 확인한 뒤 다시 시도해 주세요."
         />
       </div>
     )
@@ -216,8 +218,8 @@ export default function LeisureCategoryPage() {
     recommendationArea = (
       <div className="leisure-category-state" style={stateAreaStyle}>
         <LeisureEmptyState
-          title="등록된 영상이 없습니다"
-          description="이 카테고리에는 아직 추천 영상이 준비되지 않았습니다."
+          title="재생 가능한 콘텐츠가 없습니다"
+          description="이 카테고리에 연결된 유효한 YouTube URL이 아직 없습니다."
         />
       </div>
     )
@@ -241,7 +243,16 @@ export default function LeisureCategoryPage() {
                 onSelect={() => handleSelectContent(content)}
               />
             </div>
-          ) : null,
+          ) : (
+            <div
+              key={`category-placeholder-${index}`}
+              style={{
+                ...hiddenSlotStyle,
+                gridColumn: index % 2 === 0 ? 1 : 2,
+                gridRow: index < 2 ? 1 : 2,
+              }}
+            />
+          ),
         )}
       </>
     )
@@ -250,10 +261,10 @@ export default function LeisureCategoryPage() {
   return (
     <LeisureLayout
       code="PAT-LEISURE-002"
-      title={`${category.label} 추천`}
-      description={`${category.description} 기준으로 YouTube mock 추천 영상을 4개씩 보여줍니다.`}
+      title={`${category.label} 콘텐츠`}
+      description={`${category.description} 실제 API에 연결된 재생 가능한 콘텐츠만 표시합니다.`}
       statusText={getCategoryStatusText(status)}
-      contextLabel="6분할 화면 · refresh mock 지원"
+      contextLabel="6분할 화면 · API 연결"
       hideHeader
     >
       <section style={pagePanelStyle}>
@@ -265,7 +276,7 @@ export default function LeisureCategoryPage() {
           <div style={{ ...slotStyle, gridColumn: 3, gridRow: 1 }}>
             <LeisureActionCard
               title="새로고침"
-              description="다른 추천 영상 4개를 다시 불러옵니다"
+              description="현재 카테고리의 목록을 다시 조회합니다."
               tone={category.tone}
               busy={status === 'refreshing'}
               disabled={status === 'loading' || status === 'selecting' || status === 'refreshing'}
@@ -279,7 +290,7 @@ export default function LeisureCategoryPage() {
           <div style={{ ...slotStyle, gridColumn: 3, gridRow: 2 }}>
             <LeisureActionCard
               title="뒤로가기"
-              description="여가 메인으로 돌아갑니다"
+              description="여가 메인으로 돌아갑니다."
               tone="slate"
               disabled={status === 'selecting'}
               slotId="category-back"
