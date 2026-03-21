@@ -1,3 +1,5 @@
+import { getActiveApiMode } from '../config/env'
+import type { ApiMode } from '../types/api'
 import type {
   AuthEntryMode,
   AuthSession,
@@ -60,6 +62,21 @@ function normalizeStoredOptionalText(value: unknown): string | null {
 
   const normalizedValue = value.trim()
   return normalizedValue ? normalizedValue : null
+}
+
+function normalizeStoredAuthMode(
+  value: unknown,
+  accessToken: string | null | undefined,
+): ApiMode | null {
+  if (value === 'mock' || value === 'real') {
+    return value
+  }
+
+  if (typeof accessToken !== 'string' || !accessToken.trim()) {
+    return null
+  }
+
+  return accessToken.startsWith('mock-access:') ? 'mock' : 'real'
 }
 
 export function getStoredRole(): UserRole | null {
@@ -142,6 +159,13 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
   parsed.matchingId = normalizeStoredNumericId(parsed.matchingId)
   parsed.refreshToken = normalizeStoredOptionalText(parsed.refreshToken)
   parsed.teamCode = normalizeStoredOptionalText(parsed.teamCode)
+  const normalizedAuthMode = normalizeStoredAuthMode(parsed.authMode, parsed.accessToken)
+
+  if (!normalizedAuthMode) {
+    return false
+  }
+
+  parsed.authMode = normalizedAuthMode
 
   return (
     (parsed.role === 'guardian' || parsed.role === 'patient') &&
@@ -149,7 +173,9 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
     parsed.id.trim().length > 0 &&
     typeof parsed.name === 'string' &&
     typeof parsed.accessToken === 'string' &&
-    (typeof parsed.refreshToken === 'string' || parsed.refreshToken === null)
+    parsed.accessToken.trim().length > 0 &&
+    (typeof parsed.refreshToken === 'string' || parsed.refreshToken === null) &&
+    (parsed.authMode === 'mock' || parsed.authMode === 'real')
   )
 }
 
@@ -179,7 +205,10 @@ export function getStoredAuthSession(): AuthSession | null {
     const parsed = JSON.parse(savedSession) as Partial<AuthSession>
 
     if (isValidStoredSession(parsed)) {
-      if (!shouldPersistAuthSession(parsed.role)) {
+      if (
+        !shouldPersistAuthSession(parsed.role) ||
+        parsed.authMode !== getActiveApiMode()
+      ) {
         clearStoredAuthSession()
         return null
       }

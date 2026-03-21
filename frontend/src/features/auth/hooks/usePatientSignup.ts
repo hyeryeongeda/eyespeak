@@ -7,9 +7,9 @@ import {
   storeVerifiedTeamCode,
 } from '../../../services/authStorage'
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
-import { useAuth } from './useAuth'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
 import { isValidEmail, validatePassword } from '../../../utils/validators'
+import { useAuth } from './useAuth'
 
 const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   name: '',
@@ -48,10 +48,14 @@ export function usePatientSignup() {
     setTeamCode(result.data.teamCode)
     setPatientAccount(prev => ({
       ...prev,
-      name: prev.name || result.data.patientName,
+      name: prev.name || result.data.patientName || '',
     }))
     storeVerifiedTeamCode(result.data.teamCode)
-    setInfoMessage('팀코드 확인이 완료되었습니다.')
+    setInfoMessage(
+      result.data.verificationMode === 'provisional'
+        ? '팀코드를 저장했습니다. 실제 유효성은 회원가입 요청 시 백엔드에서 확인됩니다.'
+        : '팀코드 확인이 완료되었습니다.',
+    )
   }
 
   const handleResetTeamCode = () => {
@@ -67,17 +71,17 @@ export function usePatientSignup() {
     setInfoMessage('')
 
     if (!verifiedTeamCode) {
-      setErrorMessage('팀코드 확인을 먼저 완료해주세요.')
+      setErrorMessage('팀코드 확인을 먼저 완료해 주세요.')
       return
     }
 
     if (!patientAccount.name.trim() || !patientAccount.loginId.trim()) {
-      setErrorMessage('환자 이름과 로그인 이메일을 입력해주세요.')
+      setErrorMessage('환자 이름과 로그인 이메일을 입력해 주세요.')
       return
     }
 
     if (!isValidEmail(patientAccount.loginId)) {
-      setErrorMessage('올바른 이메일 형식의 로그인 이메일을 입력해주세요.')
+      setErrorMessage('이메일 형식의 로그인 계정을 입력해 주세요.')
       return
     }
 

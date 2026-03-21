@@ -33,6 +33,7 @@ function isSameSession(previous: AuthSession | null, next: AuthSession | null) {
     previous.userId === next.userId &&
     previous.matchingId === next.matchingId &&
     previous.role === next.role &&
+    previous.authMode === next.authMode &&
     previous.name === next.name &&
     previous.accessToken === next.accessToken &&
     previous.refreshToken === next.refreshToken &&

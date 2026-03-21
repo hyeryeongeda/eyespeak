@@ -1,4 +1,6 @@
 // 백엔드 명세 기준 role 값을 그대로 사용한다.
+import type { ApiMode } from './api'
+
 export type UserRole = 'guardian' | 'patient'
 
 export type AuthEntryMode = 'login' | 'signup'
@@ -10,6 +12,7 @@ export interface AuthSession {
   userId: number | null
   matchingId: number | null
   role: UserRole
+  authMode: ApiMode
   name: string
   accessToken: string
   refreshToken: string | null
