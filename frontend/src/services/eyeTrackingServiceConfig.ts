@@ -4,6 +4,15 @@ function normalizeTextValue(value: string | undefined) {
   return value?.trim() ?? ''
 }
 
+function joinBasePath(basePath: string | undefined, suffix: string) {
+  const normalizedBasePath = normalizeTextValue(basePath).replace(/\/+$/, '')
+  const normalizedSuffix = suffix.startsWith('/') ? suffix : `/${suffix}`
+
+  return normalizedBasePath && normalizedBasePath !== '/'
+    ? `${normalizedBasePath}${normalizedSuffix}`
+    : normalizedSuffix
+}
+
 function normalizeModeValue(value: string | undefined) {
   return normalizeTextValue(value).toLowerCase()
 }
@@ -41,13 +50,15 @@ const RAW_EYE_TRACKING_API_MODE = import.meta.env.VITE_EYE_TRACKING_API_MODE
 const NORMALIZED_EYE_TRACKING_API_MODE = normalizeModeValue(RAW_EYE_TRACKING_API_MODE)
 const EYE_TRACKING_API_MODE = resolveEyeTrackingApiMode(RAW_EYE_TRACKING_API_MODE)
 const EYE_TRACKING_DIAGNOSTICS_ENABLED = Boolean(import.meta.env.DEV)
+const DEFAULT_EYE_TRACKING_PROXY_PATH = joinBasePath(import.meta.env.BASE_URL, '/eye-tracking-api')
 
 const EYE_TRACKING_API_BASE_URL =
   normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_API_BASE_URL) ||
-  (import.meta.env.DEV ? '/eye-tracking-api' : '')
+  (import.meta.env.DEV ? DEFAULT_EYE_TRACKING_PROXY_PATH : '')
 
 const EYE_TRACKING_UI_URL =
   normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_UI_URL) ||
+  (import.meta.env.DEV ? DEFAULT_EYE_TRACKING_PROXY_PATH : '') ||
   normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_PROXY_TARGET) ||
   ''
 
