@@ -13,10 +13,8 @@ import type {
   TtsSetting,
   TtsVoiceFile,
   Call,
-  DailySummary,
   UserWords,
   Expression,
-  DailyMood,
 } from '../types/care'
 
 // ========================
@@ -182,60 +180,6 @@ export const MOCK_CALLS: Call[] = [
   { id: 4, matchingId: 1, type: 'NORMAL', status: 'MISSED', createdAt: '2026-03-18T03:00:00' },
   { id: 5, matchingId: 1, type: 'NORMAL', status: 'RECEIVED', createdAt: '2026-03-18T09:00:00' },
   { id: 6, matchingId: 1, type: 'SOS', status: 'PENDING', createdAt: '2026-03-19T10:00:00' },
-]
-
-// ========================
-// 소통 기록 캘린더
-// ========================
-
-export const MOCK_DAILY_MOODS: DailyMood[] = [
-  { id: 1, matchingId: 1, moodDate: '2026-03-15', moodType: 'HAPPY', moodLevel: 4, createdAt: '2026-03-15T07:30:00' },
-  { id: 2, matchingId: 1, moodDate: '2026-03-16', moodType: 'TIRED', moodLevel: 3, createdAt: '2026-03-16T08:00:00' },
-  { id: 3, matchingId: 1, moodDate: '2026-03-17', moodType: 'CALM', moodLevel: 3, createdAt: '2026-03-17T07:45:00' },
-  { id: 4, matchingId: 1, moodDate: '2026-03-18', moodType: 'ANXIOUS', moodLevel: 4, createdAt: '2026-03-18T08:10:00' },
-  { id: 5, matchingId: 1, moodDate: '2026-03-19', moodType: 'JOYFUL', moodLevel: 5, createdAt: '2026-03-19T07:30:00' },
-]
-
-export const MOCK_DAILY_SUMMARIES: DailySummary[] = [
-  {
-    date: '2026-03-17',
-    totalExpressions: 18,
-    hasSos: true,
-    topPhrases: [
-      { content: '물을 마시고 싶어요', count: 4 },
-      { content: '자세를 바꿔주세요', count: 3 },
-      { content: '기분이 좋아요', count: 2 },
-    ],
-    normalCallCount: 2,
-    sosCallCount: 1,
-    mood: { type: 'CALM', level: 3 },
-  },
-  {
-    date: '2026-03-18',
-    totalExpressions: 24,
-    hasSos: false,
-    topPhrases: [
-      { content: '머리가 아파요', count: 3 },
-      { content: '물을 마시고 싶어요', count: 3 },
-      { content: '고마워', count: 2 },
-      { content: '음악 틀어줘', count: 2 },
-    ],
-    normalCallCount: 2,
-    sosCallCount: 0,
-    mood: { type: 'ANXIOUS', level: 4 },
-  },
-  {
-    date: '2026-03-19',
-    totalExpressions: 12,
-    hasSos: true,
-    topPhrases: [
-      { content: '기분이 좋아요', count: 3 },
-      { content: '음악 틀어줘', count: 2 },
-    ],
-    normalCallCount: 0,
-    sosCallCount: 1,
-    mood: { type: 'JOYFUL', level: 5 },
-  },
 ]
 
 // ========================
