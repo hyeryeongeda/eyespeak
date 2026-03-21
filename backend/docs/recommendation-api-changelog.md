@@ -519,4 +519,18 @@ selectedWords?: { subject?: string, object?: string }
 
 `POST /api/v1/recommendations/send`
 
-(점검 예정)
+### 상태: 추후 구현 예정
+
+### 미루는 이유
+
+1. **기존 채팅 API(ChatController)와 역할 중복** — 메시지 저장 + 웹소켓 전송은 이미 채팅 쪽에서 처리 중. 별도로 만들면 로직이 이중화됨
+2. **FE 타입과 명세서 차이가 큼** — 명세서는 `content/contentType/phraseId/exprId`, FE는 `text/source/replyToId`로 구조가 완전히 다름. FE와 협의 후 확정 필요
+3. **웹소켓 연동이 아직 mock 상태** — FE 웹소켓이 real 연동된 후 채팅 전송 흐름과 함께 구현하는 게 깔끔함
+4. **expressions/usage_log 기록 로직** — AI 서버의 `/expressions/use`와 연결해야 하는데, 채팅 메시지 저장과 동시에 처리해야 트랜잭션 관리가 명확함
+
+### 구현 시 고려사항
+
+- 기존 `ChatController.sendMessage()`를 확장할지, `/recommendations/send`를 별도로 만들지 결정 필요
+- `contentType`(DB 저장용 TEXT/PHRASE/EXPRESSION)과 `source`(FE 추적용 recommended/generated/manual) 둘 다 필요할 수 있음
+- 메시지 전송 후 AI 서버 `/expressions/use` 호출로 expressions + usage_log 기록
+- 웹소켓으로 보호자에게 실시간 전송
