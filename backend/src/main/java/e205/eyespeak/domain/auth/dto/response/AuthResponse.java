@@ -16,6 +16,8 @@ public class AuthResponse {
     @Builder
     public static class AuthUserDto {
         private Long id;
+        private Long userId;
+        private Long matchingId;
         private String role;
         private String name;
         private String email;
