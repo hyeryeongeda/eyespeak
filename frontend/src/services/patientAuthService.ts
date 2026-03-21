@@ -32,6 +32,15 @@ function mapPatientSignupInputToRequest(input: PatientSignupInput): PatientSignu
   }
 }
 
+function prefixFailureMessage(prefix: string, error: unknown, fallbackMessage: string) {
+  const failure = createServiceFailure(error, fallbackMessage)
+
+  return {
+    ...failure,
+    message: `${prefix} ${failure.message}`,
+  }
+}
+
 export async function verifyTeamCode(
   teamCode: string,
 ): Promise<ServiceResult<VerifiedTeamCode>> {
@@ -43,7 +52,7 @@ export async function verifyTeamCode(
       success: false,
       source: resolveApiSource(apiMode),
       statusCode: 400,
-      message: '팀코드를 입력해 주세요.',
+      message: '팀 코드를 입력해 주세요.',
     }
   }
 
@@ -68,7 +77,11 @@ export async function verifyTeamCode(
       },
     }
   } catch (error) {
-    return createServiceFailure(error, '팀코드 확인에 실패했습니다.')
+    return prefixFailureMessage(
+      'Team code verification failed.',
+      error,
+      '팀 코드 확인에 실패했습니다.',
+    )
   }
 }
 
@@ -95,6 +108,10 @@ export async function signUpPatient(
       },
     }
   } catch (error) {
-    return createServiceFailure(error, '환자 회원가입에 실패했습니다.')
+    return prefixFailureMessage(
+      'Patient signup failed.',
+      error,
+      '환자 회원가입에 실패했습니다.',
+    )
   }
 }

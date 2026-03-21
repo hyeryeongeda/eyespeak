@@ -1,17 +1,18 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { getEyeTrackingConfigSnapshot, getEyeTrackingUiUrl } from '../../../../services/eyeTrackingServiceConfig'
+import type {
+  PatientCalibrationIssueKind,
+  PatientCalibrationLocationState,
+} from '../../../../types/calibration'
 import { useAuth } from '../../../auth/hooks/useAuth'
+import { useGazeInputStore } from '../stores/gazeInputStore'
 import {
   completePatientCalibration,
   getPatientEyeTrackingProfileId,
+  getPatientPostAuthNotice,
 } from '../services/calibration/patientCalibrationService'
-import {
-  getEyeTrackingConfigSnapshot,
-  getEyeTrackingUiUrl,
-} from '../../../../services/eyeTrackingServiceConfig'
-import { useGazeInputStore } from '../stores/gazeInputStore'
-import type { PatientCalibrationLocationState } from '../../../../types/calibration'
 
 type CalibrationPageState = 'loading' | 'saving' | 'ready' | 'error'
 
@@ -44,14 +45,16 @@ function normalizeMessageUserId(value: string | number | undefined) {
 export default function PatientCalibrationPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user } = useAuth()
+  const { user, patientPostAuth, clearPatientPostAuth } = useAuth()
   const [pageState, setPageState] = useState<CalibrationPageState>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+  const [issueKind, setIssueKind] = useState<PatientCalibrationIssueKind>('none')
   const routeState = (location.state as PatientCalibrationLocationState | null) ?? null
+  const postAuthNotice = routeState?.postAuthNotice ?? getPatientPostAuthNotice(patientPostAuth)
   const eyeTrackingProfileId = useMemo(() => getPatientEyeTrackingProfileId(user), [user])
   const eyeTrackingConfig = useMemo(() => getEyeTrackingConfigSnapshot(), [])
-  const authSuccessMessage = routeState?.postAuthNotice?.authSuccessMessage ?? ''
-  const calibrationNoticeMessage = routeState?.postAuthNotice?.calibrationMessage ?? ''
+  const authSuccessMessage = postAuthNotice?.authSuccessMessage ?? ''
+  const calibrationNoticeMessage = postAuthNotice?.calibrationMessage ?? ''
 
   const iframeUrl = useMemo(() => {
     const baseUrl = getEyeTrackingUiUrl().trim().replace(/\/+$/, '')
@@ -102,7 +105,7 @@ export default function PatientCalibrationPage() {
 
   const blockingErrorMessage = useMemo(() => {
     if (eyeTrackingConfig.resolvedApiMode !== 'real') {
-      return `Eye tracking is not running in real mode for this frontend bundle (resolved mode: ${eyeTrackingConfig.resolvedApiMode}). If your env file already says real, restart the frontend build/dev server and verify the active bundle is not stale.`
+      return `Eye tracking is not running in real mode for this frontend bundle (resolved mode: ${eyeTrackingConfig.resolvedApiMode}). If your env file already says real, restart the frontend build or dev server and verify the active bundle is not stale.`
     }
 
     if (!eyeTrackingProfileId) {
@@ -118,50 +121,66 @@ export default function PatientCalibrationPage() {
     }
 
     return ''
-  }, [allowedOrigin, eyeTrackingConfig.resolvedApiMode, eyeTrackingProfileId, iframeUrl, isLocalEyeTrackingUiOnRemoteHost])
+  }, [
+    allowedOrigin,
+    eyeTrackingConfig.resolvedApiMode,
+    eyeTrackingProfileId,
+    iframeUrl,
+    isLocalEyeTrackingUiOnRemoteHost,
+  ])
 
-  const debugItems = useMemo(
-    () => {
-      const items: Array<[string, string]> = [
-        ['Resolved mode', eyeTrackingConfig.resolvedApiMode],
-        ['Eye tracking UI URL', eyeTrackingConfig.uiUrl || '(unset)'],
-        ['Eye tracking profile id', eyeTrackingProfileId || '(missing)'],
-        ['Iframe origin', allowedOrigin || '(invalid)'],
-        ['App origin', typeof window === 'undefined' ? '(unknown)' : window.location.origin],
-      ]
+  const debugItems = useMemo(() => {
+    const items: Array<[string, string]> = [
+      ['Resolved mode', eyeTrackingConfig.resolvedApiMode],
+      ['Eye tracking UI URL', eyeTrackingConfig.uiUrl || '(unset)'],
+      ['Eye tracking profile id', eyeTrackingProfileId || '(missing)'],
+      ['Iframe origin', allowedOrigin || '(invalid)'],
+      ['App origin', typeof window === 'undefined' ? '(unknown)' : window.location.origin],
+    ]
 
-      if (eyeTrackingConfig.diagnosticsEnabled) {
-        items.splice(
-          1,
-          0,
-          ['Raw mode', eyeTrackingConfig.rawApiMode || '(unset)'],
-          ['Normalized mode', eyeTrackingConfig.normalizedApiMode || '(unset)'],
-          ['Eye tracking API base URL', eyeTrackingConfig.apiBaseUrl || '(unset)'],
-        )
-      }
+    if (eyeTrackingConfig.diagnosticsEnabled) {
+      items.splice(
+        1,
+        0,
+        ['Raw mode', eyeTrackingConfig.rawApiMode || '(unset)'],
+        ['Normalized mode', eyeTrackingConfig.normalizedApiMode || '(unset)'],
+        ['Eye tracking API base URL', eyeTrackingConfig.apiBaseUrl || '(unset)'],
+      )
+    }
 
-      return items
-    },
-    [allowedOrigin, eyeTrackingConfig, eyeTrackingProfileId],
-  )
+    return items
+  }, [allowedOrigin, eyeTrackingConfig, eyeTrackingProfileId])
 
-  const overlayMessage =
+  const statusTitle =
+    blockingErrorMessage
+      ? 'Calibration entry failed'
+      : pageState === 'saving'
+        ? 'Verifying eye-tracking runtime'
+        : pageState === 'loading'
+          ? 'Preparing calibration screen'
+          : issueKind === 'eye-tracking-preparation-failed'
+            ? 'Eye-tracking preparation failed'
+            : issueKind === 'calibration-failed'
+              ? 'Calibration failed'
+              : ''
+
+  const statusDescription =
     blockingErrorMessage
       ? blockingErrorMessage
       : pageState === 'saving'
-      ? 'Calibration completed. Verifying runtime readiness...'
-      : pageState === 'loading'
-        ? 'Preparing the camera and calibration screen...'
-        : pageState === 'error'
-          ? errorMessage
-          : ''
+        ? 'Calibration completed. Verifying runtime readiness before entering the patient workspace.'
+        : pageState === 'loading'
+          ? 'Preparing the camera and calibration screen...'
+          : pageState === 'error'
+            ? errorMessage
+            : ''
 
   const environmentNoticeMessage = useMemo(() => {
     if (user?.authMode !== 'mock' || eyeTrackingConfig.resolvedApiMode === 'mock') {
       return ''
     }
 
-    return '현재 인증은 mock 세션으로 완료되었고, 시선 보정은 별도 eye-tracking 환경 설정의 영향을 받습니다.'
+    return 'Development note: authentication already succeeded in mock mode. Any issue on this screen is happening in calibration or eye-tracking setup, not during login.'
   }, [eyeTrackingConfig.resolvedApiMode, user?.authMode])
 
   useEffect(() => {
@@ -169,7 +188,7 @@ export default function PatientCalibrationPage() {
       return
     }
 
-    console.warn('[eye-tracking] calibration page blocked', {
+    console.warn('[calibration] entry failed before the calibration UI became usable', {
       reason: blockingErrorMessage,
       config: eyeTrackingConfig,
       eyeTrackingProfileId,
@@ -179,7 +198,23 @@ export default function PatientCalibrationPage() {
   }, [allowedOrigin, blockingErrorMessage, eyeTrackingConfig, eyeTrackingProfileId, iframeUrl])
 
   useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      user?.authMode !== 'mock' ||
+      eyeTrackingConfig.resolvedApiMode !== 'real'
+    ) {
+      return
+    }
+
+    console.info('[auth] mock auth succeeded and calibration is using the real eye-tracking stack', {
+      patientId: user.id,
+      eyeTrackingProfileId,
+    })
+  }, [eyeTrackingConfig.resolvedApiMode, eyeTrackingProfileId, user])
+
+  useEffect(() => {
     if (blockingErrorMessage) {
+      setIssueKind('calibration-entry-failed')
       return
     }
 
@@ -194,6 +229,7 @@ export default function PatientCalibrationPage() {
       isSaving = true
       setPageState('saving')
       setErrorMessage('')
+      setIssueKind('none')
 
       const result = await completePatientCalibration(user)
 
@@ -204,10 +240,24 @@ export default function PatientCalibrationPage() {
       if (!result.success) {
         isSaving = false
         setPageState('error')
-        setErrorMessage(result.message)
+        setIssueKind('eye-tracking-preparation-failed')
+        setErrorMessage(
+          `Eye-tracking runtime preparation failed after authentication. ${result.message}`,
+        )
+
+        if (import.meta.env.DEV) {
+          console.warn('[calibration] eye-tracking runtime preparation failed after calibration', {
+            patientId: user?.id ?? null,
+            eyeTrackingProfileId,
+            message: result.message,
+            statusCode: result.statusCode,
+          })
+        }
+
         return
       }
 
+      clearPatientPostAuth()
       useGazeInputStore.getState().clearPoint()
       navigate(ROUTE_PATHS.PATIENT_MAIN, { replace: true })
     }
@@ -240,12 +290,23 @@ export default function PatientCalibrationPage() {
       if (payload.type === 'calibration-ready') {
         setPageState(currentState => (currentState === 'loading' ? 'ready' : currentState))
         setErrorMessage('')
+        setIssueKind('none')
         return
       }
 
       if (payload.type === 'calibration-error') {
         setPageState('error')
-        setErrorMessage(payload.message || 'Calibration failed.')
+        setIssueKind('calibration-failed')
+        setErrorMessage(payload.message || 'The calibration flow reported an error.')
+
+        if (import.meta.env.DEV) {
+          console.warn('[calibration] calibration UI reported an error', {
+            patientId: user?.id ?? null,
+            eyeTrackingProfileId,
+            message: payload.message ?? null,
+          })
+        }
+
         return
       }
 
@@ -260,14 +321,21 @@ export default function PatientCalibrationPage() {
       isMounted = false
       window.removeEventListener('message', handleMessage)
     }
-  }, [allowedOrigin, blockingErrorMessage, eyeTrackingProfileId, navigate, user])
+  }, [
+    allowedOrigin,
+    blockingErrorMessage,
+    clearPatientPostAuth,
+    eyeTrackingProfileId,
+    navigate,
+    user,
+  ])
 
   return (
     <main style={pageStyle}>
       {blockingErrorMessage ? (
         <section style={errorPanelStyle}>
           <p style={errorEyebrowStyle}>Patient Calibration</p>
-          <h1 style={errorTitleStyle}>Calibration screen unavailable</h1>
+          <h1 style={errorTitleStyle}>Calibration entry failed</h1>
           {authSuccessMessage || calibrationNoticeMessage || environmentNoticeMessage ? (
             <div style={successPanelStyle}>
               {authSuccessMessage ? (
@@ -322,14 +390,15 @@ export default function PatientCalibrationPage() {
               </div>
             ) : null}
 
-            {overlayMessage ? (
+            {statusTitle || statusDescription ? (
               <div
                 style={{
                   ...statusCardStyle,
                   ...((blockingErrorMessage || pageState === 'error') ? statusCardErrorStyle : null),
                 }}
               >
-                {overlayMessage}
+                {statusTitle ? <p style={statusTitleStyle}>{statusTitle}</p> : null}
+                {statusDescription ? <p style={statusDescriptionStyle}>{statusDescription}</p> : null}
               </div>
             ) : null}
           </div>
@@ -394,16 +463,30 @@ const statusCardStyle: CSSProperties = {
   border: '1px solid rgba(125, 211, 252, 0.24)',
   boxShadow: '0 18px 36px rgba(2, 6, 23, 0.32)',
   color: '#f8fafc',
-  fontSize: '15px',
-  fontWeight: 700,
-  lineHeight: 1.5,
-  textAlign: 'center',
   backdropFilter: 'blur(16px)',
 }
 
 const statusCardErrorStyle: CSSProperties = {
   border: '1px solid rgba(251, 146, 60, 0.38)',
   color: '#ffe7cf',
+}
+
+const statusTitleStyle: CSSProperties = {
+  margin: 0,
+  color: 'inherit',
+  fontSize: '15px',
+  fontWeight: 800,
+  lineHeight: 1.5,
+  textAlign: 'center',
+}
+
+const statusDescriptionStyle: CSSProperties = {
+  margin: '8px 0 0',
+  color: 'inherit',
+  fontSize: '14px',
+  fontWeight: 600,
+  lineHeight: 1.6,
+  textAlign: 'center',
 }
 
 const errorPanelStyle: CSSProperties = {

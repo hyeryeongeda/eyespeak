@@ -86,7 +86,7 @@ function getWarningCopy(status: CalibrationTrackingStatus) {
 
 export default function PatientTrackingGuardOverlay() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, clearPatientPostAuth } = useAuth()
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
 
@@ -98,6 +98,7 @@ export default function PatientTrackingGuardOverlay() {
 
   const handleRecalibration = () => {
     closeGlobalMenu()
+    clearPatientPostAuth()
     requestPatientRecalibration(user)
     navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
   }

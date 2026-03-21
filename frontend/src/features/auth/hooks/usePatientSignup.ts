@@ -9,7 +9,7 @@ import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthServ
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
 import { isValidEmail, validatePassword } from '../../../utils/validators'
 import { useAuth } from './useAuth'
-import { resolvePatientPostAuthDestination } from '../../patient/input/services/calibration/patientCalibrationService'
+import { resolvePatientPostAuthFlow } from '../../patient/input/services/calibration/patientCalibrationService'
 
 const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   name: '',
@@ -20,7 +20,7 @@ const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
 
 export function usePatientSignup() {
   const navigate = useNavigate()
-  const { setSession } = useAuth()
+  const { setSession, setPatientPostAuth } = useAuth()
   const storedVerifiedTeamCode = getStoredVerifiedTeamCode()
   const [teamCode, setTeamCode] = useState(storedVerifiedTeamCode ?? '')
   const [verifiedTeamCode, setVerifiedTeamCode] = useState<VerifiedTeamCode | null>(null)
@@ -108,19 +108,21 @@ export function usePatientSignup() {
     setIsLoading(false)
 
     if (!result.success) {
+      setPatientPostAuth(null)
       setErrorMessage(result.message)
       return
     }
 
     clearVerifiedTeamCode()
     setSession(result.data.session)
-    const destination = await resolvePatientPostAuthDestination(result.data.session, {
+    const resolvedPostAuthFlow = await resolvePatientPostAuthFlow(result.data.session, {
       entryPoint: 'signup',
     })
+    setPatientPostAuth(resolvedPostAuthFlow.postAuthState)
 
-    navigate(destination.path, {
+    navigate(resolvedPostAuthFlow.destination.path, {
       replace: true,
-      state: destination.state,
+      state: resolvedPostAuthFlow.destination.state,
     })
   }
 

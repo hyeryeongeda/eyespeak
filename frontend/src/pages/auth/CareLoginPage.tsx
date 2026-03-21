@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { getHomePathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
@@ -23,14 +23,21 @@ import {
 } from './authPageStyles'
 import AuthPageFrame from './AuthPageFrame'
 
+interface CareLoginLocationState {
+  signupCompleted?: boolean
+  guardianEmail?: string
+}
+
 export default function CareLoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { login, isPending } = useAuth()
+  const locationState = (location.state as CareLoginLocationState | null) ?? null
   const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
     consumeGuardianSessionExitReason(),
   )
   const [form, setForm] = useState({
-    identifier: '',
+    identifier: locationState?.guardianEmail ?? '',
     password: '',
   })
   const [error, setError] = useState('')
@@ -51,7 +58,7 @@ export default function CareLoginPage() {
     })
 
     if (!result.success) {
-      setError(result.message)
+      setError(`Login failed. ${result.message}`)
       return
     }
 
@@ -83,6 +90,17 @@ export default function CareLoginPage() {
               {sessionNotice === 'idle-timeout'
                 ? '오랫동안 활동이 없어 보호자 세션이 자동으로 종료되었습니다. 다시 로그인해주세요.'
                 : '보호자 세션을 갱신하지 못해 다시 로그인이 필요합니다.'}
+            </p>
+          </div>
+        ) : null}
+
+        {locationState?.signupCompleted ? (
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+              가입 완료 안내
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              보호자 회원가입은 이미 완료되었습니다. 자동 로그인은 되지 않으니, 방금 만든 보호자 계정으로 로그인해 주세요.
             </p>
           </div>
         ) : null}
