@@ -22,6 +22,14 @@ export function usePatientTrackingBridge({
     usePatientModeStore.getState().setTrackingStatus('ready')
 
     const handleDoubleBlink = () => {
+      if (import.meta.env.DEV) {
+        const isGlobalMenuOpen = usePatientModeStore.getState().isGlobalMenuOpen
+
+        console.info('[patient-input] double blink bridge event', {
+          globalMenuBeforeToggle: isGlobalMenuOpen,
+        })
+      }
+
       usePatientModeStore.getState().handleDoubleBlink()
     }
 
@@ -30,6 +38,12 @@ export function usePatientTrackingBridge({
 
       if (!isCalibrationTrackingStatus(status)) {
         return
+      }
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] tracking status changed', {
+          status,
+        })
       }
 
       usePatientModeStore.getState().setTrackingStatus(status)
