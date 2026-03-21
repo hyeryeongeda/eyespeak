@@ -329,3 +329,4 @@ export async function getDailyRecord(date: string): Promise<ApiResponse<DailyRec
   const res = await getDailyRecordApi(date)
   return { success: true, data: res, message: 'Fetched daily record.' }
 }
+

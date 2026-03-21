@@ -204,3 +204,4 @@ export const MOCK_EXPRESSIONS: Expression[] = [
   { id: 4, matchingId: 1, content: '가족들 보고 싶어', sentiment: 'NEUTRAL', category: '감정', lastUsed: '2026-03-15T11:00:00', createdAt: '2026-03-08T10:00:00' },
   { id: 5, matchingId: 1, content: '오늘 약 먹었어?', sentiment: 'NEUTRAL', category: '일상', lastUsed: null, createdAt: '2026-03-18T08:00:00' },
 ]
+
