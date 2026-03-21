@@ -381,6 +381,8 @@
   const AUTO_START = searchParams.get('autostart') === '1';
   const EMBED_USER_ID = (searchParams.get('userId') || '').trim();
   const MESSAGE_SOURCE = 'eyespeak-eye-tracking';
+  const DEFAULT_DWELL_TIME_SEC = 1.5;
+  const SELECTION_COOLDOWN_MS = 500;
 
   // ===== 설정 =====
   const CALIB_N        = 12;      // 12포인트 캘리브레이션
@@ -605,7 +607,10 @@
   let faceGuideStart = 0;
   const FACE_GUIDE_SEC = 5;     // 얼굴 가이드 표시 시간 (5초)
   let gazeIdx = -1, gazeSince = 0;
-  const GAZE_PROGRESS_MAX_MS = 2000;  // 2초면 progress bar 100%
+  let dwellLockedIdx = -1;
+  let lastSelectionAt = 0;
+  let dwellTimeSec = DEFAULT_DWELL_TIME_SEC;
+  let gazeProgressMaxMs = DEFAULT_DWELL_TIME_SEC * 1000;
   let inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
   let calibIdx = 0, calibData = [], lastCalibCollect = 0;
   let cam = null;
@@ -631,6 +636,74 @@
     cells[idx].classList.add('selected');
     setTimeout(() => cells[idx].classList.remove('selected'), 800);
   }
+  function resetGazeSelectionState(clearHot = false) {
+    gazeIdx = -1;
+    gazeSince = 0;
+    dwellLockedIdx = -1;
+    cells.forEach(c => c.querySelector('.progress').style.width = '0%');
+    if (clearHot) {
+      cells.forEach(c => c.classList.remove('hot'));
+    }
+  }
+  function setSystemState(nextState) {
+    systemState = nextState;
+    if (nextState === 'ACTIVE') {
+      cells.forEach(c => c.classList.remove('dimmed'));
+      return;
+    }
+    cells.forEach(c => c.classList.add('dimmed'));
+    setHot(-1);
+    resetGazeSelectionState(false);
+  }
+  function findCellIndexFromPoint(x, y) {
+    for (let i = 0; i < cells.length; i++) {
+      const rect = cells[i].getBoundingClientRect();
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  function persistSelection(idx, source) {
+    if (source !== 'dwell') {
+      return;
+    }
+    fetch('/api/selection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cell: idx })
+    }).catch(() => {});
+  }
+  function commitSelection(idx, source) {
+    if (systemState !== 'ACTIVE' || idx < 0 || idx >= cells.length) {
+      return false;
+    }
+    const nowMs = performance.now();
+    if (nowMs - lastSelectionAt < SELECTION_COOLDOWN_MS) {
+      return false;
+    }
+    lastSelectionAt = nowMs;
+    dwellLockedIdx = idx;
+    cells[idx].querySelector('.progress').style.width = '100%';
+    flashSelected(idx);
+    showToast((idx + 1) + '번 선택!');
+    notifyParent('cell-selected', { cell: idx, cellNumber: idx + 1, source });
+    persistSelection(idx, source);
+    return true;
+  }
+  async function loadRuntimeConfig() {
+    try {
+      const response = await fetch('/api/runtime-config');
+      const result = await response.json().catch(() => ({}));
+      const nextDwellTimeSec = Number(result && result.dwell_time_sec);
+      if (response.ok && Number.isFinite(nextDwellTimeSec) && nextDwellTimeSec > 0) {
+        dwellTimeSec = nextDwellTimeSec;
+        gazeProgressMaxMs = dwellTimeSec * 1000;
+      }
+    } catch (error) {
+      console.warn('Runtime config load failed, using defaults.', error);
+    }
+  }
 
   // ===== 캘리브레이션 =====
   function getCalibPx() {
@@ -646,7 +719,9 @@
     calibCountdownStart = 0;
     earSamples = [];
     coef = null;
+    lastSelectionAt = 0;
     inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
+    resetGazeSelectionState(true);
     cells.forEach(c => { c.classList.remove('hot', 'selected'); c.querySelector('.progress').style.width = '0%'; });
 
     calibEl.classList.add('show');
@@ -727,14 +802,13 @@
         const mean = earSamples.reduce((a, b) => a + b, 0) / earSamples.length;
         trigger.setThreshold(Math.max(0.10, mean * 0.6));
       }
-      systemState = 'IDLE';
-      cells.forEach(c => c.classList.add('dimmed'));
+      setSystemState('ACTIVE');
       calibEl.classList.remove('show');
       countdownBig.classList.remove('show');
       calibArrow.classList.remove('show');
       document.getElementById('camWrap').classList.remove('guiding');
       document.getElementById('btnCal').disabled = false;
-      statusEl.textContent = '캘리브레이션 완료!';
+      statusEl.textContent = '캘리브레이션 완료! 바로 선택할 수 있습니다.';
       showToast('캘리브레이션 완료');
       setTimeout(() => statusEl.textContent = '', 2000);
 
@@ -755,6 +829,7 @@
     const hasFace = results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
 
     if (!hasFace) {
+      resetGazeSelectionState(true);
       debugEl.textContent = '얼굴 없음 — 카메라를 정면으로 봐주세요';
       if (calibEl.classList.contains('show')) {
         calibText.textContent = '⚠ 얼굴을 인식할 수 없습니다 — 카메라를 봐주세요';
@@ -871,6 +946,7 @@
 
     // 캘리 없으면 대기
     if (!coef) {
+      resetGazeSelectionState(true);
       debugEl.textContent = '캘리브레이션 버튼을 눌러주세요';
       return;
     }
@@ -881,52 +957,57 @@
       g.xNorm, g.yNorm, coef.cx, coef.cy, window.innerWidth, window.innerHeight
     );
 
-    // 가장 가까운 셀 찾기
-    const centers = getTileCenters();
-    let idx = 0, bestD2 = Infinity;
-    for (let i = 0; i < centers.length; i++) {
-      const dx = screen.x - centers[i][0], dy = screen.y - centers[i][1];
-      const d2 = dx * dx + dy * dy;
-      if (d2 < bestD2) { bestD2 = d2; idx = i; }
-    }
-
-    // 관성 적용
-    const result = CalibrationRegion.applyInertia(idx, inertiaState, performance.now(), { holdMs: INERTIA_HOLD_MS });
-    inertiaState = result.state;
-    const stableIdx = result.idx;
-
     // EAR + 트리거
     const ear = getEAR(lm);
     const now_sec = performance.now() / 1000;
     const trig = (systemState !== 'CALIBRATING') ? trigger.update(ear, now_sec) : 'none';
+    const idx = findCellIndexFromPoint(screen.x, screen.y);
+    let stableIdx = -1;
 
-    setHot(stableIdx);
-    debugEl.textContent = `셀:${stableIdx + 1} | 시선:(${Math.round(screen.x)},${Math.round(screen.y)}) | EAR:${ear.toFixed(3)} | 트리거:${trig} | 상태:${systemState}`;
+    if (idx >= 0) {
+      const result = CalibrationRegion.applyInertia(idx, inertiaState, performance.now(), { holdMs: INERTIA_HOLD_MS });
+      inertiaState = result.state;
+      stableIdx = result.idx;
+    } else {
+      inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
+      resetGazeSelectionState(true);
+    }
+
+    if (systemState === 'ACTIVE' && stableIdx >= 0) {
+      setHot(stableIdx);
+    } else {
+      setHot(-1);
+      resetGazeSelectionState(false);
+    }
+    debugEl.textContent =
+      `셀:${stableIdx >= 0 ? stableIdx + 1 : '-'} | 시선:(${Math.round(screen.x)},${Math.round(screen.y)}) | EAR:${ear.toFixed(3)} | 트리거:${trig} | 응시:${dwellTimeSec.toFixed(1)}s | 상태:${systemState}`;
 
     // 연속 응시 progress bar
     const nowMs = performance.now();
-    if (stableIdx !== gazeIdx) {
+    if (systemState !== 'ACTIVE' || stableIdx < 0) {
+      resetGazeSelectionState(false);
+    } else if (stableIdx !== gazeIdx) {
       gazeIdx = stableIdx;
       gazeSince = nowMs;
+      dwellLockedIdx = -1;
       cells.forEach(c => c.querySelector('.progress').style.width = '0%');
     } else {
       const elapsed = nowMs - gazeSince;
-      const pct = Math.min(100, (elapsed / GAZE_PROGRESS_MAX_MS) * 100);
+      const pct = Math.min(100, (elapsed / gazeProgressMaxMs) * 100);
       cells[stableIdx].querySelector('.progress').style.width = pct + '%';
+      if (elapsed >= gazeProgressMaxMs && dwellLockedIdx !== stableIdx) {
+        commitSelection(stableIdx, 'dwell');
+      }
     }
 
     // 트리거 처리
     if (trig === 'select' && systemState === 'ACTIVE') {
-      flashSelected(stableIdx);
-      showToast((stableIdx + 1) + '번 선택!');
+      commitSelection(stableIdx, 'blink');
     } else if (trig === 'start' && systemState === 'IDLE') {
-      systemState = 'ACTIVE';
-      cells.forEach(c => c.classList.remove('dimmed'));
+      setSystemState('ACTIVE');
       showToast('시스템 시작');
     } else if (trig === 'stop' && systemState === 'ACTIVE') {
-      systemState = 'IDLE';
-      cells.forEach(c => c.classList.add('dimmed'));
-      setHot(-1);
+      setSystemState('IDLE');
       showToast('시스템 정지');
     } else if (trig === 'sos') {
       showToast('🆘 SOS 긴급!');
@@ -963,9 +1044,11 @@
       .then(r => r.json())
       .then(d => {
         if (d.ok) {
+          if (Array.isArray(d.poly_coeff_x) && Array.isArray(d.poly_coeff_y)) {
+            coef = { cx: d.poly_coeff_x, cy: d.poly_coeff_y };
+          }
           showToast('불러오기 완료: ' + userId);
-          systemState = 'IDLE';
-          cells.forEach(c => c.classList.add('dimmed'));
+          setSystemState('ACTIVE');
         } else {
           showToast('불러오기 실패: 데이터 없음');
         }
@@ -988,7 +1071,7 @@
   document.getElementById('btnReset').addEventListener('click', () => {
     trigger.reset();
     earSamples = [];
-    systemState = 'IDLE';
+    setSystemState('IDLE');
     faceGuidePhase = false;
     faceGuideOverlay.classList.remove('show');
     guideCam.srcObject = null;
@@ -1000,6 +1083,7 @@
     document.getElementById('camWrap').classList.remove('guiding');
     cells.forEach(c => { c.classList.add('dimmed'); c.classList.remove('hot', 'selected'); c.querySelector('.progress').style.width = '0%'; });
     coef = null;
+    lastSelectionAt = 0;
     inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
     showToast('캘리 초기화됨');
   });
@@ -1045,6 +1129,7 @@
   }
 
   // CDN 스크립트가 로드된 후 초기화
+  void loadRuntimeConfig();
   if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
     initMediaPipe();
   } else {

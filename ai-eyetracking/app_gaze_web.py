@@ -17,6 +17,7 @@ from flask import Flask, request, jsonify, send_from_directory
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger("gaze")
 
+from config_gaze import DWELL_TIME_SEC
 from eye_speak.pipeline.legacy_gaze_pipeline import GazePipeline
 
 app = Flask(__name__, static_folder=None)
@@ -53,7 +54,12 @@ def api_calibrate():
         return jsonify({"ok": False, "error": "need 6-12 calibration points"}), 400
     pipe.set_calibration(cal)
     log.info("%d포인트 캘리 적용: %s", len(cal), cal)
-    return jsonify({"ok": True})
+    coeff_x, coeff_y = pipe._poly.export_coefficients()
+    return jsonify({
+        "ok": True,
+        "poly_coeff_x": coeff_x,
+        "poly_coeff_y": coeff_y,
+    })
 
 
 @app.route("/api/calibrate/reset", methods=["POST"])
@@ -85,7 +91,15 @@ def api_calibrate_load():
     ok = pipe.load_calibration(user_id)
     if ok:
         log.info("캘리 로드 완료: %s", user_id)
-    return jsonify({"ok": ok, "calibrated": pipe.calibration is not None})
+    if ok:
+        coeff_x, coeff_y = pipe._poly.export_coefficients()
+        return jsonify({
+            "ok": True,
+            "calibrated": pipe.calibration is not None,
+            "poly_coeff_x": coeff_x,
+            "poly_coeff_y": coeff_y,
+        })
+    return jsonify({"ok": False, "calibrated": pipe.calibration is not None})
 
 
 @app.route("/api/selection", methods=["POST"])
@@ -101,6 +115,14 @@ def api_selection():
         return jsonify({"status": "error", "error": "cell must be int"}), 400
     pipe.record_selection(cell)
     return jsonify({"status": "ok"})
+
+
+@app.route("/api/runtime-config", methods=["GET"])
+def api_runtime_config():
+    return jsonify({
+        "status": "ok",
+        "dwell_time_sec": DWELL_TIME_SEC,
+    })
 
 
 @app.route("/api/health", methods=["GET"])
