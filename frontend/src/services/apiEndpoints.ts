@@ -28,5 +28,4 @@ export const API_ENDPOINTS = {
   EYE_TRACKING_CALIBRATE_LOAD: '/api/calibrate/load',
   EYE_TRACKING_SELECTION: '/api/selection',
   EYE_TRACKING_HEALTH: '/api/health',
-  LEISURE_CONTENTS: '/leisure-contents',
 } as const

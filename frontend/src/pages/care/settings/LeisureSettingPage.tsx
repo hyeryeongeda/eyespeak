@@ -4,11 +4,7 @@ import {
   deleteLeisureContent,
   getLeisureContents,
   saveLeisureContent,
-<<<<<<< Updated upstream
   updateLeisureContent,
-  deleteLeisureContent,
-=======
->>>>>>> Stashed changes
 } from '../../../services/careSettingService'
 import type { LeisureContentItem } from '../../../types/care'
 import type { LeisureCategoryId } from '../../../types/leisure'
@@ -17,31 +13,29 @@ const MAX_CONTENTS = 5
 
 type InputMode = 'url' | 'category'
 
-<<<<<<< Updated upstream
 const CATEGORY_OPTIONS = [
   { value: 'sports', label: '스포츠' },
   { value: 'news', label: '뉴스' },
   { value: 'music', label: '음악' },
   { value: 'radio', label: '라디오' },
   { value: 'audiobook', label: '오디오북' },
-] as const
-=======
-const BACKEND_CATEGORY_OPTIONS = [
-  { label: '뉴스', value: 'news' },
-  { label: '음악', value: 'music' },
-  { label: '스포츠', value: 'sports' },
-  { label: '라디오', value: 'radio' },
-  { label: '오디오북', value: 'audiobook' },
-] as const
+] as const satisfies ReadonlyArray<{ value: LeisureCategoryId; label: string }>
+
+function getCategoryLabel(value: LeisureCategoryId | null | undefined) {
+  if (!value) {
+    return null
+  }
+
+  return CATEGORY_OPTIONS.find(category => category.value === value)?.label ?? value
+}
 
 function formatContentMeta(item: LeisureContentItem) {
   if (item.url) {
     return item.url
   }
 
-  return `카테고리: ${item.categoryName ?? item.category ?? '미지정'}`
+  return `카테고리: ${item.categoryName ?? getCategoryLabel(item.category) ?? '미지정'}`
 }
->>>>>>> Stashed changes
 
 export default function LeisureSettingPage() {
   const [contents, setContents] = useState<LeisureContentItem[]>([])
@@ -53,46 +47,24 @@ export default function LeisureSettingPage() {
   const [inputMode, setInputMode] = useState<InputMode>('url')
   const [urlInput, setUrlInput] = useState('')
   const [nameInput, setNameInput] = useState('')
-<<<<<<< Updated upstream
-  const [categoryInput, setCategoryInput] = useState<string>(CATEGORY_OPTIONS[0].value)
+  const [categoryInput, setCategoryInput] = useState<LeisureCategoryId>(CATEGORY_OPTIONS[0].value)
   const [isAdding, setIsAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
-  // 수정 폼
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editMode, setEditMode] = useState<InputMode>('url')
   const [editName, setEditName] = useState('')
   const [editUrl, setEditUrl] = useState('')
-  const [editCategory, setEditCategory] = useState<string>(CATEGORY_OPTIONS[0].value)
+  const [editCategory, setEditCategory] = useState<LeisureCategoryId>(CATEGORY_OPTIONS[0].value)
   const [isSaving, setIsSaving] = useState(false)
 
-  const fetchContents = async () => {
-    try {
-      const res = await getLeisureContents()
-      if (res.success) setContents(res.data)
-    } catch {
-      setError('여가 콘텐츠를 불러오지 못했습니다.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
-    fetchContents()
-=======
-  const [categoryInput, setCategoryInput] = useState<LeisureCategoryId>(
-    BACKEND_CATEGORY_OPTIONS[0].value,
-  )
-  const [isAdding, setIsAdding] = useState(false)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
-
-  useEffect(() => {
-    const fetchContents = async () => {
+    const loadContents = async () => {
       try {
-        const res = await getLeisureContents()
+        const response = await getLeisureContents()
 
-        if (res.success) {
-          setContents(res.data)
+        if (response.success) {
+          setContents(response.data)
         }
       } catch (loadError) {
         console.error('Failed to load leisure contents.', loadError)
@@ -102,28 +74,23 @@ export default function LeisureSettingPage() {
       }
     }
 
-    void fetchContents()
->>>>>>> Stashed changes
+    void loadContents()
   }, [])
 
-  const showSuccess = (msg: string) => {
-    setSuccessMsg(msg)
+  const showSuccess = (message: string) => {
+    setSuccessMsg(message)
     setTimeout(() => setSuccessMsg(null), 2000)
   }
 
-  const showError = (msg: string) => {
-    setError(msg)
+  const showError = (message: string) => {
+    setError(message)
     setTimeout(() => setError(null), 2000)
   }
 
   const resetForm = () => {
     setUrlInput('')
     setNameInput('')
-<<<<<<< Updated upstream
     setCategoryInput(CATEGORY_OPTIONS[0].value)
-=======
-    setCategoryInput(BACKEND_CATEGORY_OPTIONS[0].value)
->>>>>>> Stashed changes
     setInputMode('url')
     setShowForm(false)
   }
@@ -142,27 +109,19 @@ export default function LeisureSettingPage() {
     }
 
     if (contents.length >= MAX_CONTENTS) {
-      setError(`최대 ${MAX_CONTENTS}개까지만 등록할 수 있습니다.`)
+      showError(`최대 ${MAX_CONTENTS}개까지만 등록할 수 있습니다.`)
       return
     }
 
     const trimmedName = nameInput.trim()
 
     if (!trimmedName) {
-<<<<<<< Updated upstream
-      showError('이름을 입력해주세요.')
-=======
-      setError('콘텐츠 이름을 입력해 주세요.')
->>>>>>> Stashed changes
+      showError('콘텐츠 이름을 입력해 주세요.')
       return
     }
 
     if (inputMode === 'url' && !urlInput.trim()) {
-<<<<<<< Updated upstream
-      showError('URL을 입력해주세요.')
-=======
-      setError('YouTube URL을 입력해 주세요.')
->>>>>>> Stashed changes
+      showError('YouTube URL을 입력해 주세요.')
       return
     }
 
@@ -170,33 +129,20 @@ export default function LeisureSettingPage() {
     setError(null)
 
     try {
-<<<<<<< Updated upstream
-      await saveLeisureContent({
-=======
-      const res = await saveLeisureContent({
->>>>>>> Stashed changes
+      const response = await saveLeisureContent({
         name: trimmedName,
-        url: inputMode === 'url' ? urlInput.trim() : undefined,
-        category: inputMode === 'category' ? categoryInput : undefined,
+        url: inputMode === 'url' ? urlInput.trim() : null,
+        category: inputMode === 'category' ? categoryInput : null,
       })
-<<<<<<< Updated upstream
-      await fetchContents()
-      resetForm()
-      showSuccess('등록되었습니다.')
-    } catch {
-      showError('등록에 실패했습니다.')
-=======
 
-      if (res.success) {
-        setContents(res.data)
+      if (response.success) {
+        setContents(response.data)
         resetForm()
-        setSuccessMsg('콘텐츠가 저장되었습니다.')
-        setTimeout(() => setSuccessMsg(null), 2000)
+        showSuccess('콘텐츠가 등록되었습니다.')
       }
     } catch (saveError) {
       console.error('Failed to save leisure content.', saveError)
-      setError('콘텐츠 저장에 실패했습니다.')
->>>>>>> Stashed changes
+      showError('콘텐츠 등록에 실패했습니다.')
     } finally {
       setIsAdding(false)
     }
@@ -205,28 +151,33 @@ export default function LeisureSettingPage() {
   const handleEdit = (item: LeisureContentItem) => {
     setEditingId(item.id)
     setEditName(item.name)
+
     if (item.url) {
       setEditMode('url')
       setEditUrl(item.url)
       setEditCategory(CATEGORY_OPTIONS[0].value)
-    } else {
-      setEditMode('category')
-      setEditUrl('')
-      setEditCategory(item.category ?? CATEGORY_OPTIONS[0].value)
+      return
     }
+
+    setEditMode('category')
+    setEditUrl('')
+    setEditCategory(item.category ?? CATEGORY_OPTIONS[0].value)
   }
 
   const handleUpdate = async () => {
-    if (editingId === null || isSaving) return
+    if (editingId === null || isSaving) {
+      return
+    }
+
     const trimmedName = editName.trim()
 
     if (!trimmedName) {
-      showError('이름을 입력해주세요.')
+      showError('콘텐츠 이름을 입력해 주세요.')
       return
     }
 
     if (editMode === 'url' && !editUrl.trim()) {
-      showError('URL을 입력해주세요.')
+      showError('YouTube URL을 입력해 주세요.')
       return
     }
 
@@ -234,16 +185,20 @@ export default function LeisureSettingPage() {
     setError(null)
 
     try {
-      await updateLeisureContent(editingId, {
+      const response = await updateLeisureContent(editingId, {
         name: trimmedName,
-        url: editMode === 'url' ? editUrl.trim() : undefined,
-        category: editMode === 'category' ? editCategory : undefined,
+        url: editMode === 'url' ? editUrl.trim() : null,
+        category: editMode === 'category' ? editCategory : null,
       })
-      await fetchContents()
-      resetEditForm()
-      showSuccess('수정되었습니다.')
-    } catch {
-      showError('수정에 실패했습니다.')
+
+      if (response.success) {
+        setContents(response.data)
+        resetEditForm()
+        showSuccess('콘텐츠가 수정되었습니다.')
+      }
+    } catch (updateError) {
+      console.error('Failed to update leisure content.', updateError)
+      showError('콘텐츠 수정에 실패했습니다.')
     } finally {
       setIsSaving(false)
     }
@@ -258,38 +213,24 @@ export default function LeisureSettingPage() {
     setError(null)
 
     try {
-      const res = await deleteLeisureContent(id)
+      const response = await deleteLeisureContent(id)
 
-      if (res.success) {
-<<<<<<< Updated upstream
-        await fetchContents()
-        showSuccess('삭제되었습니다.')
-      }
-    } catch {
-      showError('삭제에 실패했습니다.')
-=======
-        setContents(res.data)
-        setSuccessMsg('콘텐츠가 삭제되었습니다.')
-        setTimeout(() => setSuccessMsg(null), 2000)
+      if (response.success) {
+        setContents(response.data)
+        showSuccess('콘텐츠가 삭제되었습니다.')
       }
     } catch (deleteError) {
       console.error('Failed to delete leisure content.', deleteError)
-      setError('콘텐츠 삭제에 실패했습니다.')
->>>>>>> Stashed changes
+      showError('콘텐츠 삭제에 실패했습니다.')
     } finally {
       setDeletingId(null)
     }
   }
 
-  const getCategoryLabel = (value: string | null) => {
-    if (!value) return value
-    return CATEGORY_OPTIONS.find((c) => c.value === value)?.label ?? value
-  }
-
   if (isLoading) {
     return (
-      <CareSettingLayout title="여가 설정">
-        <div className="flex items-center justify-center h-40">
+      <CareSettingLayout title="여가 콘텐츠">
+        <div className="flex h-40 items-center justify-center">
           <span className="text-[14px] text-[#718096]">콘텐츠를 불러오는 중입니다.</span>
         </div>
       </CareSettingLayout>
@@ -297,10 +238,10 @@ export default function LeisureSettingPage() {
   }
 
   return (
-    <CareSettingLayout title="여가 설정">
+    <CareSettingLayout title="여가 콘텐츠">
       <div className="mt-6 flex flex-col gap-4">
-        <p className="text-center text-[13px] text-[#718096]">
-          환자 여가 화면에 표시할 콘텐츠를 등록합니다. 최대 {MAX_CONTENTS}개까지 저장할 수
+        <p className="text-[13px] text-[#718096]">
+          환자가 시청할 여가 콘텐츠를 등록하세요. 최대 {MAX_CONTENTS}개까지 저장할 수
           있습니다.
         </p>
 
@@ -310,25 +251,22 @@ export default function LeisureSettingPage() {
         <div className="flex flex-col gap-2">
           {contents.length === 0 ? (
             <p className="py-8 text-center text-[14px] text-[#A0AEC0]">
-              등록된 여가 콘텐츠가 없습니다.
+              등록된 콘텐츠가 없습니다.
             </p>
           ) : (
-<<<<<<< Updated upstream
             contents.map((item, index) =>
               editingId === item.id ? (
-                /* 수정 폼 (인라인) */
                 <div
                   key={item.id}
-                  className="p-4 rounded-xl border border-[#3D405B] bg-[#F7FAFC] flex flex-col gap-3"
+                  className="flex flex-col gap-3 rounded-xl border border-[#3D405B] bg-[#F7FAFC] p-4"
                 >
-                  {/* 모드 토글 */}
-                  <div className="flex rounded-lg overflow-hidden border border-[#E2E8F0]">
-                    {(['url', 'category'] as const).map((mode) => (
+                  <div className="flex overflow-hidden rounded-lg border border-[#E2E8F0]">
+                    {(['url', 'category'] as const).map(mode => (
                       <button
                         key={mode}
                         type="button"
                         onClick={() => setEditMode(mode)}
-                        className={`flex-1 min-h-[40px] text-[13px] font-medium transition-colors ${
+                        className={`min-h-[40px] flex-1 text-[13px] font-medium transition-colors ${
                           editMode === mode
                             ? 'bg-[#3D405B] text-white'
                             : 'bg-white text-[#718096]'
@@ -342,33 +280,33 @@ export default function LeisureSettingPage() {
                   <input
                     type="text"
                     value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
+                    onChange={event => setEditName(event.target.value)}
                     placeholder="콘텐츠 이름"
-                    className="w-full min-h-[44px] px-4 rounded-lg border border-[#CBD5E0] bg-white text-[15px] text-[#1A202C] placeholder:text-[#A0AEC0] focus:outline-none focus:border-[#3D405B]"
+                    className="min-h-[44px] w-full rounded-lg border border-[#CBD5E0] bg-white px-4 text-[15px] text-[#1A202C] placeholder:text-[#A0AEC0] focus:border-[#3D405B] focus:outline-none"
                   />
 
                   {editMode === 'url' ? (
                     <input
                       type="url"
                       value={editUrl}
-                      onChange={(e) => setEditUrl(e.target.value)}
+                      onChange={event => setEditUrl(event.target.value)}
                       placeholder="https://youtube.com/watch?v=..."
-                      className="w-full min-h-[44px] px-4 rounded-lg border border-[#CBD5E0] bg-white text-[15px] text-[#1A202C] placeholder:text-[#A0AEC0] focus:outline-none focus:border-[#3D405B]"
+                      className="min-h-[44px] w-full rounded-lg border border-[#CBD5E0] bg-white px-4 text-[15px] text-[#1A202C] placeholder:text-[#A0AEC0] focus:border-[#3D405B] focus:outline-none"
                     />
                   ) : (
                     <div className="flex flex-wrap gap-2">
-                      {CATEGORY_OPTIONS.map((cat) => (
+                      {CATEGORY_OPTIONS.map(category => (
                         <button
-                          key={cat.value}
+                          key={category.value}
                           type="button"
-                          onClick={() => setEditCategory(cat.value)}
-                          className={`min-h-[36px] px-3 rounded-lg text-[13px] font-medium transition-colors ${
-                            editCategory === cat.value
+                          onClick={() => setEditCategory(category.value)}
+                          className={`min-h-[36px] rounded-lg px-3 text-[13px] font-medium transition-colors ${
+                            editCategory === category.value
                               ? 'bg-[#3D405B] text-white'
-                              : 'bg-white text-[#718096] border border-[#E2E8F0]'
+                              : 'border border-[#E2E8F0] bg-white text-[#718096]'
                           }`}
                         >
-                          {cat.label}
+                          {category.label}
                         </button>
                       ))}
                     </div>
@@ -378,7 +316,7 @@ export default function LeisureSettingPage() {
                     <button
                       type="button"
                       onClick={resetEditForm}
-                      className="flex-1 min-h-[44px] rounded-lg bg-[#E2E8F0] text-[#718096] text-[14px] font-medium"
+                      className="min-h-[44px] flex-1 rounded-lg bg-[#E2E8F0] text-[14px] font-medium text-[#718096]"
                     >
                       취소
                     </button>
@@ -386,9 +324,9 @@ export default function LeisureSettingPage() {
                       type="button"
                       onClick={handleUpdate}
                       disabled={isSaving}
-                      className={`flex-1 min-h-[44px] rounded-lg text-[14px] font-bold transition-colors ${
+                      className={`min-h-[44px] flex-1 rounded-lg text-[14px] font-bold transition-colors ${
                         isSaving
-                          ? 'bg-[#E2E8F0] text-[#A0AEC0] cursor-not-allowed'
+                          ? 'cursor-not-allowed bg-[#E2E8F0] text-[#A0AEC0]'
                           : 'bg-[#3D405B] text-white active:bg-[#2D2F45]'
                       }`}
                     >
@@ -397,25 +335,22 @@ export default function LeisureSettingPage() {
                   </div>
                 </div>
               ) : (
-                /* 일반 표시 */
                 <div
                   key={item.id}
-                  className="p-4 rounded-xl bg-white border border-[#E2E8F0] flex items-center gap-3"
+                  className="flex items-center gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4"
                 >
-                  <span className="text-[14px] font-bold text-[#3D405B] w-6 text-center shrink-0">
+                  <span className="w-6 shrink-0 text-center text-[14px] font-bold text-[#3D405B]">
                     {index + 1}
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] text-[#1A202C] truncate">{item.name}</p>
-                    <p className="text-[12px] text-[#A0AEC0] truncate">
-                      {item.url ?? `카테고리: ${item.categoryName ?? getCategoryLabel(item.category)}`}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] text-[#1A202C]">{item.name}</p>
+                    <p className="truncate text-[12px] text-[#A0AEC0]">{formatContentMeta(item)}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => handleEdit(item)}
                     disabled={deletingId === item.id}
-                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-[#718096] active:text-[#3D405B] shrink-0"
+                    className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg text-[#718096] active:text-[#3D405B]"
                   >
                     수정
                   </button>
@@ -423,37 +358,13 @@ export default function LeisureSettingPage() {
                     type="button"
                     onClick={() => handleDelete(item.id)}
                     disabled={deletingId === item.id}
-                    className="min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg text-[#A0AEC0] active:text-red-500 shrink-0"
+                    className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg text-[#A0AEC0] active:text-red-500"
                   >
-                    {deletingId === item.id ? '...' : '✕'}
+                    {deletingId === item.id ? '...' : '삭제'}
                   </button>
                 </div>
               ),
             )
-=======
-            contents.map((item, index) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 rounded-xl border border-[#E2E8F0] bg-white p-4"
-              >
-                <span className="w-6 shrink-0 text-center text-[14px] font-bold text-[#3D405B]">
-                  {index + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] text-[#1A202C]">{item.name}</p>
-                  <p className="truncate text-[12px] text-[#A0AEC0]">{formatContentMeta(item)}</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(item.id)}
-                  disabled={deletingId === item.id}
-                  className="flex min-h-[36px] min-w-[36px] shrink-0 items-center justify-center rounded-lg text-[#A0AEC0] active:text-red-500"
-                >
-                  {deletingId === item.id ? '...' : '삭제'}
-                </button>
-              </div>
-            ))
->>>>>>> Stashed changes
           )}
         </div>
 
@@ -505,30 +416,18 @@ export default function LeisureSettingPage() {
               />
             ) : (
               <div className="flex flex-wrap gap-2">
-                {BACKEND_CATEGORY_OPTIONS.map(category => (
+                {CATEGORY_OPTIONS.map(category => (
                   <button
-<<<<<<< Updated upstream
-                    key={cat.value}
-                    type="button"
-                    onClick={() => setCategoryInput(cat.value)}
-                    className={`min-h-[36px] px-3 rounded-lg text-[13px] font-medium transition-colors ${
-                      categoryInput === cat.value
-=======
                     key={category.value}
                     type="button"
                     onClick={() => setCategoryInput(category.value)}
                     className={`min-h-[36px] rounded-lg px-3 text-[13px] font-medium transition-colors ${
                       categoryInput === category.value
->>>>>>> Stashed changes
                         ? 'bg-[#3D405B] text-white'
                         : 'border border-[#E2E8F0] bg-white text-[#718096]'
                     }`}
                   >
-<<<<<<< Updated upstream
-                    {cat.label}
-=======
                     {category.label}
->>>>>>> Stashed changes
                   </button>
                 ))}
               </div>
@@ -552,7 +451,7 @@ export default function LeisureSettingPage() {
                     : 'bg-[#3D405B] text-white active:bg-[#2D2F45]'
                 }`}
               >
-                {isAdding ? '저장 중...' : '저장'}
+                {isAdding ? '등록 중...' : '등록'}
               </button>
             </div>
           </div>
