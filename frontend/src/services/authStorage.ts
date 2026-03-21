@@ -53,6 +53,15 @@ function normalizeStoredNumericId(value: unknown): number | null {
   return Number.isFinite(numericValue) ? numericValue : null
 }
 
+function normalizeStoredOptionalText(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+  return normalizedValue ? normalizedValue : null
+}
+
 export function getStoredRole(): UserRole | null {
   if (!isBrowser()) {
     return null
@@ -131,6 +140,8 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
   parsed.id = String(parsed.id ?? '')
   parsed.userId = normalizeStoredNumericId(parsed.userId)
   parsed.matchingId = normalizeStoredNumericId(parsed.matchingId)
+  parsed.refreshToken = normalizeStoredOptionalText(parsed.refreshToken)
+  parsed.teamCode = normalizeStoredOptionalText(parsed.teamCode)
 
   return (
     (parsed.role === 'guardian' || parsed.role === 'patient') &&

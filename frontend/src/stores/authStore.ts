@@ -19,6 +19,52 @@ interface AuthStoreState {
   clearSession: () => void
 }
 
+function isSameSession(previous: AuthSession | null, next: AuthSession | null) {
+  if (previous === next) {
+    return true
+  }
+
+  if (!previous || !next) {
+    return false
+  }
+
+  return (
+    previous.id === next.id &&
+    previous.userId === next.userId &&
+    previous.matchingId === next.matchingId &&
+    previous.role === next.role &&
+    previous.name === next.name &&
+    previous.accessToken === next.accessToken &&
+    previous.refreshToken === next.refreshToken &&
+    previous.email === next.email &&
+    previous.teamCode === next.teamCode
+  )
+}
+
+function getNextAuthStoreState(
+  state: AuthStoreState,
+  session: AuthSession | null,
+  isPending: boolean,
+) {
+  const hasSameSession = isSameSession(state.user, session)
+  const nextIsAuthenticated = session !== null
+
+  if (
+    state.isAuthenticated === nextIsAuthenticated &&
+    state.isPending === isPending &&
+    hasSameSession
+  ) {
+    return state
+  }
+
+  return {
+    ...state,
+    isAuthenticated: nextIsAuthenticated,
+    user: hasSameSession ? state.user : session,
+    isPending,
+  }
+}
+
 const initialSession = getStoredAuthSession()
 syncActiveAuthSession(initialSession)
 
@@ -27,6 +73,10 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
   user: initialSession,
   isPending: false,
   login: async payload => {
+    const applySession = (session: AuthSession | null, isPending = false) => {
+      set(state => getNextAuthStoreState(state, session, isPending))
+    }
+
     set({ isPending: true })
 
     const result = await loginService(payload)
@@ -34,24 +84,20 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     if (!result.success) {
       clearStoredAuthSession()
       syncActiveAuthSession(null)
-      set({
-        isAuthenticated: false,
-        user: null,
-        isPending: false,
-      })
+      applySession(null, false)
       return result
     }
 
     persistAuthSession(result.data)
     syncActiveAuthSession(result.data)
-    set({
-      isAuthenticated: true,
-      user: result.data,
-      isPending: false,
-    })
+    applySession(result.data, false)
     return result
   },
   logout: async () => {
+    const applySession = (session: AuthSession | null, isPending = false) => {
+      set(state => getNextAuthStoreState(state, session, isPending))
+    }
+
     const currentSession = get().user
 
     set({ isPending: true })
@@ -59,13 +105,13 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     clearStoredAuthSession()
     syncActiveAuthSession(null)
 
-    set({
-      isAuthenticated: false,
-      user: null,
-      isPending: false,
-    })
+    applySession(null, false)
   },
   refreshSession: async () => {
+    const applySession = (session: AuthSession | null, isPending = false) => {
+      set(state => getNextAuthStoreState(state, session, isPending))
+    }
+
     const currentSession = get().user
 
     const result = await refreshSessionService(currentSession)
@@ -73,55 +119,35 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     if (!result.success) {
       clearStoredAuthSession()
       syncActiveAuthSession(null)
-      set({
-        isAuthenticated: false,
-        user: null,
-      })
+      applySession(null, false)
       return result
     }
 
     persistAuthSession(result.data)
     syncActiveAuthSession(result.data)
-    set({
-      isAuthenticated: true,
-      user: result.data,
-    })
+    applySession(result.data, false)
 
     return result
   },
   setSession: session => {
     persistAuthSession(session)
     syncActiveAuthSession(session)
-    set({
-      isAuthenticated: true,
-      user: session,
-    })
+    set(state => getNextAuthStoreState(state, session, false))
   },
   clearSession: () => {
     clearStoredAuthSession()
     syncActiveAuthSession(null)
-    set({
-      isAuthenticated: false,
-      user: null,
-    })
+    set(state => getNextAuthStoreState(state, null, false))
   },
 }))
 
 registerAuthSessionUpdater(session => {
   if (session) {
     persistAuthSession(session)
-    useAuthStore.setState({
-      isAuthenticated: true,
-      user: session,
-      isPending: false,
-    })
+    useAuthStore.setState(state => getNextAuthStoreState(state, session, false))
     return
   }
 
   clearStoredAuthSession()
-  useAuthStore.setState({
-    isAuthenticated: false,
-    user: null,
-    isPending: false,
-  })
+  useAuthStore.setState(state => getNextAuthStoreState(state, null, false))
 })
