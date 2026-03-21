@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -110,6 +111,52 @@ public class RecommendationController {
     }
 
     // =========================================================================
+    // 2. POST /recommendations/sentences — 카테고리 기반 추천 문장 조회
+    // =========================================================================
+
+    @Operation(summary = "카테고리 기반 추천 문장 조회",
+            description = "선택한 카테고리(mood/schedule/frequent/recent)에 맞는 추천 문장 3개를 생성합니다.")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "추천 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "카테고리 값 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"COMMON-101\",\"message\":\"입력값이 올바르지 않습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "매칭 정보 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "AI 추천 생성 실패",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"AI-701\",\"message\":\"AI 추천 생성에 실패하였습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
+    })
+    @PostMapping("/sentences")
+    public ApiResponse<SentencesResponse> getSentences(
+            @RequestBody SentencesRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        Matching matching = getMatchingByUserId(userId);
+
+        if (request.getCategoryKey() == null || request.getCategoryKey().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("matching_id", matching.getId());
+        body.put("recommend_type", request.getCategoryKey());
+        if (request.getGuardianMessage() != null) {
+            body.put("guardian_message", request.getGuardianMessage());
+        }
+        if (request.getRecentMessages() != null) {
+            body.put("recent_messages", request.getRecentMessages());
+        }
+
+        try {
+            Map result = restTemplate.postForObject(
+                    aiServerUrl + "/recommend/category", buildRequest(body), Map.class);
+            List<String> sentences = (List<String>) result.get("sentences");
+            return ApiResponse.ok(new SentencesResponse(sentences));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+        }
+    }
+
+    // =========================================================================
     // 공통 헬퍼
     // =========================================================================
 
@@ -137,6 +184,32 @@ public class RecommendationController {
     // =========================================================================
     // DTO
     // =========================================================================
+
+    // --- /sentences 요청/응답 ---
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "카테고리 기반 추천 문장 요청")
+    public static class SentencesRequest {
+        @Schema(description = "카테고리 키 (mood / schedule / frequent / recent)", example = "mood")
+        private String categoryKey;
+
+        @Schema(description = "보호자 메시지 (선택)", example = "오늘 기분이 어때?", nullable = true)
+        private String guardianMessage;
+
+        @Schema(description = "최근 대화 메시지 목록 (선택)", nullable = true)
+        private List<String> recentMessages;
+    }
+
+    @Getter
+    @Schema(description = "카테고리 기반 추천 문장 응답")
+    public static class SentencesResponse {
+        @Schema(description = "추천 문장 목록 (최대 3개)", example = "[\"오늘 기분이 좋아요\", \"조금 피곤해요\", \"머리가 아파요\"]")
+        private final List<String> sentences;
+
+        SentencesResponse(List<String> sentences) {
+            this.sentences = sentences;
+        }
+    }
 
     // --- /categories 응답 ---
     @Getter

@@ -61,7 +61,52 @@
 
 `POST /api/v1/recommendations/sentences`
 
-(점검 예정)
+### 변경사항
+
+| 항목 | 변경 전 (원본 명세) | 변경 후 | 사유 |
+|---|---|---|---|
+| 요청 필드명 `category` | `category` | `categoryKey` | FE 타입(`RecommendationSentencesRequestDto.categoryKey`)과 일치 |
+| 카테고리 값 형식 | 대문자 (`MOOD`) | 소문자 (`mood`) | FE 타입 `RecommendationCategoryKey = 'mood' \| 'schedule' \| 'frequent' \| 'recent'` |
+| 요청 필드 추가 | 없음 | `guardianMessage` (optional) | 보호자 메시지 맥락 전달용 (FE 타입에 존재) |
+| 요청 필드 추가 | 없음 | `recentMessages` (optional) | 최근 대화 맥락 전달용 (FE 타입에 존재) |
+| 응답 구조 변경 | `[{ id: Long, content: String }]` | `string[]` | AI 실시간 생성 문장에 PK 없음, FE 타입(`sentences: string[]`)에 맞춤 |
+
+### 최종 명세
+
+**Request Body**
+
+```json
+{
+  "categoryKey": "mood",
+  "guardianMessage": "오늘 기분이 어때?",
+  "recentMessages": ["좋아", "배고파"]
+}
+```
+
+- `categoryKey` (필수): mood / schedule / frequent / recent
+- `guardianMessage` (선택): 보호자가 보낸 메시지 (없으면 null)
+- `recentMessages` (선택): 최근 대화 메시지 목록 (없으면 null)
+
+**Response (200 OK)**
+
+```json
+{
+  "code": "SUCCESS",
+  "message": "요청이 성공하였습니다",
+  "data": {
+    "sentences": ["오늘 기분이 좋아요", "조금 피곤해요", "머리가 아파요"]
+  }
+}
+```
+
+**Error Cases**
+
+| 상황 | 에러 코드 | HTTP 상태 |
+|---|---|---|
+| categoryKey 값 없음 | COMMON-101 | 400 |
+| 매칭 정보 없음 | MATCHING-803 | 404 |
+| AI 추천 생성 실패 | AI-701 | 500 |
+| AI 서버 타임아웃 | AI-702 | 502 |
 
 ---
 
