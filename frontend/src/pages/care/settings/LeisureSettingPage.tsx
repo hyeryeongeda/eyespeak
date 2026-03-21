@@ -31,7 +31,7 @@ export default function LeisureSettingPage() {
   const [inputMode, setInputMode] = useState<InputMode>('url')
   const [urlInput, setUrlInput] = useState('')
   const [nameInput, setNameInput] = useState('')
-  const [categoryInput, setCategoryInput] = useState(CATEGORY_OPTIONS[0].value)
+  const [categoryInput, setCategoryInput] = useState<string>(CATEGORY_OPTIONS[0].value)
   const [isAdding, setIsAdding] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
