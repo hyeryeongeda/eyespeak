@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { getPatientCalibrationStatus } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   clearVerifiedTeamCode,
   getStoredVerifiedTeamCode,
@@ -11,6 +9,7 @@ import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthServ
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
 import { isValidEmail, validatePassword } from '../../../utils/validators'
 import { useAuth } from './useAuth'
+import { resolvePatientPostAuthDestination } from '../../patient/input/services/calibration/patientCalibrationService'
 
 const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   name: '',
@@ -115,14 +114,14 @@ export function usePatientSignup() {
 
     clearVerifiedTeamCode()
     setSession(result.data.session)
+    const destination = await resolvePatientPostAuthDestination(result.data.session, {
+      entryPoint: 'signup',
+    })
 
-    const calibrationStatus = await getPatientCalibrationStatus(result.data.session)
-    const nextPath =
-      calibrationStatus.success && !calibrationStatus.data.required
-        ? ROUTE_PATHS.PATIENT_MAIN
-        : ROUTE_PATHS.PATIENT_CALIBRATION
-
-    navigate(nextPath, { replace: true })
+    navigate(destination.path, {
+      replace: true,
+      state: destination.state,
+    })
   }
 
   return {

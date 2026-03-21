@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
-import { requestPatientRecalibration } from '../../features/patient/input/services/calibration/patientCalibrationService'
+import { resolvePatientPostAuthDestination } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
 import AuthBrand from './AuthBrand'
 import {
@@ -48,8 +48,14 @@ export default function PatientLoginPage() {
       return
     }
 
-    requestPatientRecalibration(result.data)
-    navigate(ROUTE_PATHS.PATIENT_CALIBRATION, { replace: true })
+    const destination = await resolvePatientPostAuthDestination(result.data, {
+      entryPoint: 'login',
+    })
+
+    navigate(destination.path, {
+      replace: true,
+      state: destination.state,
+    })
   }
 
   return (
@@ -95,7 +101,9 @@ export default function PatientLoginPage() {
           </button>
         </form>
 
-        <p style={helperText}>로그인 후 환자 시선 캘리브레이션을 다시 진행합니다.</p>
+        <p style={helperText}>
+          로그인 성공 후에는 계정 상태를 먼저 확인하고, 필요한 경우에만 시선 보정 단계로 안내합니다.
+        </p>
 
         <div style={linkRow}>
           <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=patient`)} style={textLink}>

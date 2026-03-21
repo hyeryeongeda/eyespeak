@@ -1,18 +1,30 @@
 import type { AuthSession } from '../../../../../types/auth'
 import type { ServiceResult } from '../../../../../types/api'
 import type {
+  PatientCalibrationLocationState,
   PatientCalibrationStatus,
+  PatientPostAuthNotice,
   StoredPatientCalibrationRecord,
 } from '../../../../../types/calibration'
 import { PATIENT_CALIBRATION_STORAGE_KEY } from '../../../../../services/calibration/calibrationConstants'
 import { loadEyeTrackingCalibrationApi } from '../../../../../services/eyeTrackingApi'
 import { isEyeTrackingApiEnabled } from '../../../../../services/eyeTrackingServiceConfig'
 import { isAbortError, waitForAbortableDelay } from '../../../../../services/eyeTrackingCore'
+import { ROUTE_PATHS } from '../../../../../app/router/routePaths'
 
 type StoredPatientCalibrationMap = Record<string, StoredPatientCalibrationRecord>
 const PATIENT_RECALIBRATION_SESSION_KEY = 'patientRecalibrationRequired'
 const EYE_TRACKING_CALIBRATION_SYNC_ATTEMPTS = 5
 const EYE_TRACKING_CALIBRATION_SYNC_DELAY_MS = 400
+
+interface ResolvePatientPostAuthDestinationOptions {
+  entryPoint: 'login' | 'signup'
+}
+
+interface ResolvedPatientPostAuthDestination {
+  path: string
+  state?: PatientCalibrationLocationState
+}
 
 function isBrowser() {
   return typeof window !== 'undefined'
@@ -195,6 +207,19 @@ function buildCalibrationStatus(
   }
 }
 
+function buildPostAuthNotice(
+  options: ResolvePatientPostAuthDestinationOptions,
+  calibrationMessage?: string,
+): PatientPostAuthNotice {
+  return {
+    authSuccessMessage:
+      options.entryPoint === 'signup'
+        ? '회원가입이 완료되었고 환자 계정으로 로그인되었습니다.'
+        : '환자 로그인이 완료되었습니다.',
+    calibrationMessage,
+  }
+}
+
 export function getPatientCalibrationStatusSnapshot(
   session: AuthSession | null,
 ): PatientCalibrationStatus | null {
@@ -251,6 +276,43 @@ export async function getPatientCalibrationStatus(
     success: true,
     source: 'mock',
     data: getPatientCalibrationStatusSnapshot(session) ?? buildCalibrationStatus(null),
+  }
+}
+
+export async function resolvePatientPostAuthDestination(
+  session: AuthSession | null,
+  options: ResolvePatientPostAuthDestinationOptions,
+): Promise<ResolvedPatientPostAuthDestination> {
+  const calibrationStatus = await getPatientCalibrationStatus(session)
+
+  if (!calibrationStatus.success) {
+    return {
+      path: ROUTE_PATHS.PATIENT_CALIBRATION,
+      state: {
+        postAuthNotice: buildPostAuthNotice(
+          options,
+          '로그인은 성공했지만 보정 상태를 확인하지 못해 초기 설정 화면으로 이동했습니다.',
+        ),
+      },
+    }
+  }
+
+  if (calibrationStatus.data.required) {
+    return {
+      path: ROUTE_PATHS.PATIENT_CALIBRATION,
+      state: {
+        postAuthNotice: buildPostAuthNotice(
+          options,
+          options.entryPoint === 'signup'
+            ? '계속 사용하려면 첫 시선 보정을 진행해주세요.'
+            : '이 계정은 시선 보정이 필요합니다. 계속 사용하려면 보정을 진행해주세요.',
+        ),
+      },
+    }
+  }
+
+  return {
+    path: ROUTE_PATHS.PATIENT_MAIN,
   }
 }
 

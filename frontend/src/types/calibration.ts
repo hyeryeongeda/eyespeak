@@ -47,3 +47,12 @@ export interface StoredPatientCalibrationRecord {
   eyeTrackingProfileId: string | null
   runtimeVerifiedAt: string | null
 }
+
+export interface PatientPostAuthNotice {
+  authSuccessMessage: string
+  calibrationMessage?: string
+}
+
+export interface PatientCalibrationLocationState {
+  postAuthNotice?: PatientPostAuthNotice
+}
