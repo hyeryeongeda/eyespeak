@@ -922,6 +922,96 @@ def record_expression_use():
     return jsonify({"ok": True, "message": "expression recorded"})
 
 
+@app.route("/recommend/hints", methods=["POST"])
+def recommend_hints():
+    """카테고리 카드에 표시할 hint 데이터 조회"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+
+    mood_hint = None
+    schedule_hint = None
+    frequent_hint = None
+    recent_hint = None
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # 1. mood hint — 오늘의 기분
+            cur.execute("""
+                SELECT mood_type FROM daily_mood
+                WHERE matching_id = %s AND mood_date = CURDATE()
+            """, (matching_id,))
+            mood_row = cur.fetchone()
+            if mood_row:
+                mood_map = {
+                    "HAPPY": "기분 좋음", "SAD": "슬픔", "CALM": "평온",
+                    "JOYFUL": "즐거움", "ANXIOUS": "불안", "ANGRY": "화남", "TIRED": "피곤"
+                }
+                mood_hint = mood_map.get(mood_row["mood_type"], mood_row["mood_type"])
+
+            # 2. schedule hint — 현재 시간대 활동
+            hour = datetime.now().hour
+            if hour < 9:
+                slot_id = 1
+            elif hour < 12:
+                slot_id = 2
+            elif hour < 15:
+                slot_id = 3
+            elif hour < 18:
+                slot_id = 4
+            elif hour < 21:
+                slot_id = 5
+            elif hour < 24:
+                slot_id = 6
+            else:
+                slot_id = 7
+
+            cur.execute("""
+                SELECT at.name AS activity
+                FROM routine_slot_tag rst
+                JOIN activity_tag at ON at.id = rst.activity_tag_id
+                WHERE rst.matching_id = %s AND rst.time_slot_id = %s
+                LIMIT 1
+            """, (matching_id, slot_id))
+            schedule_row = cur.fetchone()
+            if schedule_row:
+                schedule_hint = schedule_row["activity"]
+
+            # 3. frequent hint — 가장 많이 쓴 표현
+            cur.execute("""
+                SELECT e.content AS text, COUNT(*) AS cnt
+                FROM usage_log ul
+                JOIN expressions e ON e.id = ul.expr_id
+                WHERE ul.matching_id = %s
+                GROUP BY ul.expr_id
+                ORDER BY cnt DESC LIMIT 1
+            """, (matching_id,))
+            freq_row = cur.fetchone()
+            if freq_row:
+                frequent_hint = freq_row["text"]
+
+            # 4. recent hint — 가장 최근 사용한 표현
+            cur.execute("""
+                SELECT e.content AS text
+                FROM usage_log ul
+                JOIN expressions e ON e.id = ul.expr_id
+                WHERE ul.matching_id = %s
+                ORDER BY ul.used_at DESC LIMIT 1
+            """, (matching_id,))
+            recent_row = cur.fetchone()
+            if recent_row:
+                recent_hint = recent_row["text"]
+    finally:
+        conn.close()
+
+    return jsonify({
+        "mood_hint": mood_hint,
+        "schedule_hint": schedule_hint,
+        "frequent_hint": frequent_hint,
+        "recent_hint": recent_hint,
+    })
+
+
 @app.route("/debug/recommend-stats", methods=["GET"])
 def debug_recommend_stats():
     s = _recommend_stats
