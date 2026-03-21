@@ -1,15 +1,16 @@
-import { signUpGuardianApi } from './authApi'
-import { mapAuthResponseToSession } from './authSessionMapper'
-import { registerPatientInfo } from './patientService'
-import { createPatientRoutines } from './routineService'
-import type { GuardianAccountFormValues } from '../types/auth'
-import type { AuthSession } from '../types/auth'
+import { getActiveApiMode, resolveApiSource } from '../config/env'
+import type { ServiceResult } from '../types/api'
+import type { AuthSession, GuardianAccountFormValues } from '../types/auth'
 import type {
   PatientProfileFormValues,
   PatientRoutinesFormValues,
 } from '../types/patient'
-import type { ServiceResult } from '../types/api'
 import { createServiceFailure } from '../utils/errorMapper'
+import { signUpGuardianApi } from './authApi'
+import { mapAuthResponseToSession } from './authSessionMapper'
+import { signUpGuardianMockApi } from './mockAuthApi'
+import { registerPatientInfo } from './patientService'
+import { createPatientRoutines } from './routineService'
 
 export interface GuardianSignupFlowInput {
   guardianAccount: GuardianAccountFormValues
@@ -34,13 +35,16 @@ function mapGuardianAccountToSignupRequest(guardianAccount: GuardianAccountFormV
 export async function signUpGuardian(
   input: GuardianSignupFlowInput,
 ): Promise<ServiceResult<GuardianSignupFlowSuccess>> {
-  try {
-    const authResponse = await signUpGuardianApi(
-      mapGuardianAccountToSignupRequest(input.guardianAccount),
-    )
-    const session = mapAuthResponseToSession(authResponse)
+  const authMode = getActiveApiMode()
 
-    // TODO(BE): 보호자 계정 생성 후 환자 정보 저장 실패 시 롤백/재시도 정책 확정 필요.
+  try {
+    const request = mapGuardianAccountToSignupRequest(input.guardianAccount)
+    const authResponse =
+      authMode === 'mock'
+        ? await signUpGuardianMockApi(request)
+        : await signUpGuardianApi(request)
+    const session = mapAuthResponseToSession(authResponse, authMode)
+
     const patientRegistrationResult = await registerPatientInfo(
       {
         patientProfile: input.patientProfile,
@@ -60,7 +64,7 @@ export async function signUpGuardian(
 
     return {
       success: true,
-      source: authResponse.accessToken.startsWith('mock-') ? 'mock' : 'api',
+      source: resolveApiSource(authMode),
       data: {
         session: {
           ...session,

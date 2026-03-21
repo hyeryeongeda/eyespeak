@@ -1,3 +1,4 @@
+import type { ApiMode } from '../types/api'
 import type { AuthResponseDto, AuthSession } from '../types/auth'
 
 function normalizeSessionId(rawId: string | number): string {
@@ -43,7 +44,10 @@ function normalizeNumericId(rawId: string | number | null | undefined): number |
   return Number.isFinite(numericId) ? numericId : null
 }
 
-export function mapAuthResponseToSession(response: AuthResponseDto): AuthSession {
+export function mapAuthResponseToSession(
+  response: AuthResponseDto,
+  authMode: ApiMode,
+): AuthSession {
   const normalizedUserId =
     normalizeNumericId(response.user.userId) ??
     normalizeNumericId(response.user.id)
@@ -56,6 +60,7 @@ export function mapAuthResponseToSession(response: AuthResponseDto): AuthSession
     userId: normalizedUserId,
     matchingId: normalizedMatchingId,
     role: normalizeUserRole(String(response.user.role ?? '')),
+    authMode,
     name: response.user.name,
     email: response.user.email,
     teamCode: response.user.teamCode ?? null,

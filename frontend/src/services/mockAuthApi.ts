@@ -906,6 +906,7 @@ export async function findMockTeamCode(
   return {
     teamCode: patientProfile.teamCode,
     patientName: patientProfile.name,
+    verificationMode: 'lookup',
   }
 }
 
@@ -948,6 +949,92 @@ export const mockApiTransport: ApiTransport = {
         })
     }
   },
+}
+
+function callMockApi<TResponse, TBody = unknown>(options: ApiRequestOptions<TBody>) {
+  return mockApiTransport.request<TResponse, TBody>(options)
+}
+
+export function loginMockApi(request: LoginRequestDto) {
+  return callMockApi<AuthResponseDto, LoginRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_LOGIN,
+    data: request,
+  })
+}
+
+export function logoutMockApi(request: LogoutRequestDto, accessToken?: string | null) {
+  return callMockApi<{ success: boolean }, LogoutRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_LOGOUT,
+    data: request,
+    accessToken,
+  })
+}
+
+export function signUpGuardianMockApi(request: GuardianSignupRequestDto) {
+  return callMockApi<AuthResponseDto, GuardianSignupRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_SIGNUP_GUARDIAN,
+    data: request,
+  })
+}
+
+export function refreshMockApi(request: RefreshRequestDto) {
+  return callMockApi<AuthResponseDto, RefreshRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_REFRESH,
+    data: request,
+  })
+}
+
+export function requestPasswordResetMockApi(request: PasswordResetRequestDto) {
+  return callMockApi<PasswordResetResponseDto, PasswordResetRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_RESET_PASSWORD,
+    data: request,
+  })
+}
+
+export function withdrawMockApi(request: WithdrawRequestDto, accessToken?: string | null) {
+  return callMockApi<{ success: boolean }, WithdrawRequestDto>({
+    method: 'DELETE',
+    url: API_ENDPOINTS.AUTH_WITHDRAW,
+    data: request,
+    accessToken,
+  })
+}
+
+export function registerPatientInfoMockApi(
+  request: RegisterPatientInfoRequestDto,
+  accessToken?: string | null,
+) {
+  return callMockApi<RegisterPatientInfoResponseDto, RegisterPatientInfoRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.PATIENTS,
+    data: request,
+    accessToken,
+  })
+}
+
+export function createRoutineMockApi(
+  request: RoutineCreateRequestDto,
+  accessToken?: string | null,
+) {
+  return callMockApi<null, RoutineCreateRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.ROUTINES,
+    data: request,
+    accessToken,
+  })
+}
+
+export function signUpPatientMockApi(request: PatientSignupRequestDto) {
+  return callMockApi<PatientSignupResponseDto, PatientSignupRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_SIGNUP_PATIENT,
+    data: request,
+  })
 }
 
 export const MOCK_AUTH_DEMO_CREDENTIALS = {

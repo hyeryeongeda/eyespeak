@@ -54,7 +54,7 @@ export default function PatientSignupPage() {
             1단계. 팀코드 확인
           </p>
           <p style={{ margin: '0 0 14px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-            보호자 가입 완료 화면에서 받은 팀코드를 입력해주세요.
+            보호자 가입 완료 화면에서 받은 팀코드를 입력해 주세요.
           </p>
 
           <div style={formStack}>
@@ -85,7 +85,9 @@ export default function PatientSignupPage() {
                     {verifiedTeamCode.teamCode}
                   </p>
                   <p style={{ margin: 0, color: '#6d7f8f', fontSize: '12px' }}>
-                    연결 대상 환자: {verifiedTeamCode.patientName}
+                    {verifiedTeamCode.verificationMode === 'lookup' && verifiedTeamCode.patientName
+                      ? `연결 대상 환자: ${verifiedTeamCode.patientName}`
+                      : '실제 연결 여부는 회원가입 요청 시 백엔드에서 최종 확인됩니다.'}
                   </p>
                 </div>
                 <button type="button" style={secondaryButton} onClick={handleResetTeamCode}>
@@ -103,7 +105,7 @@ export default function PatientSignupPage() {
                 2단계. 환자 계정 생성
               </p>
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                팀코드 검증이 완료되면 이메일 형식의 환자 로그인 계정을 만들 수 있습니다.
+                팀코드 확인이 끝나면 이메일 형식의 환자 로그인 계정을 생성할 수 있습니다.
               </p>
             </div>
 
@@ -166,7 +168,7 @@ export default function PatientSignupPage() {
             환자 로그인
           </a>
           <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`)} style={textLink}>
-            역할 다시 선택
+            뒤로 가기
           </a>
         </div>
       </div>

@@ -64,5 +64,6 @@ export interface PatientSignupResponseDto extends AuthResponseDto {
 
 export interface VerifiedTeamCode {
   teamCode: string
-  patientName: string
+  patientName: string | null
+  verificationMode: 'lookup' | 'provisional'
 }

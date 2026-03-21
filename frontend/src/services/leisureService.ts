@@ -1,4 +1,5 @@
 import { getLeisureContentsApi } from './leisureApi'
+import { getActiveApiMode } from './apiClient'
 import type {
   LeisureCategory,
   LeisureCategoryId,
@@ -51,6 +52,51 @@ const leisureCategories: LeisureCategory[] = [
 const categoryMap = new Map<LeisureCategoryId, LeisureCategory>(
   leisureCategories.map(category => [category.id, category]),
 )
+
+const MOCK_LEISURE_CONTENTS: LeisureContentResponseDto[] = [
+  {
+    id: 1,
+    name: 'Classic Piano Playlist',
+    url: 'https://www.youtube.com/watch?v=3fumBcKC6RE',
+    category: 'music',
+    categoryName: 'Music',
+  },
+  {
+    id: 2,
+    name: 'World News Highlights',
+    url: 'https://www.youtube.com/watch?v=aqz-KE-bpKQ',
+    category: 'news',
+    categoryName: 'News',
+  },
+  {
+    id: 3,
+    name: 'Gentle Stretching Routine',
+    url: 'https://www.youtube.com/watch?v=L_jWHffIx5E',
+    category: 'sports',
+    categoryName: 'Sports',
+  },
+  {
+    id: 4,
+    name: 'Easy Listening Radio Mix',
+    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    category: 'radio',
+    categoryName: 'Radio',
+  },
+  {
+    id: 5,
+    name: 'Short Audio Story',
+    url: 'https://www.youtube.com/watch?v=9bZkp7q19f0',
+    category: 'audiobook',
+    categoryName: 'Audiobook',
+  },
+  {
+    id: 6,
+    name: 'Morning Walk Motivation',
+    url: 'https://www.youtube.com/watch?v=jNQXAC9IVRw',
+    category: 'sports',
+    categoryName: 'Sports',
+  },
+]
 
 function buildThumbnailUrl(videoId: string) {
   return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
@@ -183,7 +229,10 @@ export function mapApiItemToLeisureContent(item: LeisureContentResponseDto): Lei
 }
 
 async function getPlayableContents() {
-  const response = await getLeisureContentsApi()
+  const response =
+    getActiveApiMode() === 'real'
+      ? await getLeisureContentsApi()
+      : MOCK_LEISURE_CONTENTS
 
   return response
     .map(mapApiItemToLeisureContent)
