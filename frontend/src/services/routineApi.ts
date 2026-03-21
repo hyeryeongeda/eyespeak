@@ -31,3 +31,4 @@ export function updateRoutinesApi(routines: RoutineRequestItem[]) {
     { accessToken: getAccessToken() },
   )
 }
+
