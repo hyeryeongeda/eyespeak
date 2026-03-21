@@ -45,16 +45,29 @@ export interface ActivityTag {
   orderIndex: number
 }
 
-export interface RoutineSlotTag {
-  id: number
-  matchingId: number
+// 백엔드 GET /routines 응답 항목
+export interface RoutineResponseItem {
+  timeSlotId: number
+  timeSlotName: string
+  startTime: string
+  endTime: string
+  activityTagId: number
+  activityTagName: string
+}
+
+// 백엔드 PUT/POST /routines 요청 항목
+export interface RoutineRequestItem {
   timeSlotId: number
   activityTagId: number
 }
 
-export interface RoutineSlotWithTags {
-  timeSlot: TimeSlot
-  selectedTagIds: number[]
+// 프론트엔드 UI 상태 (시간대별 선택된 태그 1개)
+export interface RoutineSlotState {
+  timeSlotId: number
+  timeSlotName: string
+  startTime: string
+  endTime: string
+  activityTagId: number | null
 }
 
 

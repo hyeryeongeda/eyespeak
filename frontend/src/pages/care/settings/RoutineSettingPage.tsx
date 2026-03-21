@@ -1,37 +1,31 @@
 import { useState, useEffect } from 'react'
 import CareSettingLayout from './CareSettingLayout'
-import {
-  getTimeSlots,
-  getActivityTags,
-  getRoutines,
-  updateRoutines,
-} from '../../../services/careSettingService'
-import type { TimeSlot, ActivityTag, RoutineSlotWithTags } from '../../../types/care'
+import { getRoutines, getActivityTags, saveRoutines } from '../../../services/careSettingService'
+import type { RoutineSlotState, RoutineRequestItem } from '../../../types/care'
+
+interface ActivityTagOption {
+  id: number
+  label: string
+}
 
 export default function RoutineSettingPage() {
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
-  const [tags, setTags] = useState<ActivityTag[]>([])
-  const [routines, setRoutines] = useState<RoutineSlotWithTags[]>([])
-  const [savedRoutines, setSavedRoutines] = useState<RoutineSlotWithTags[]>([])
+  const [routines, setRoutines] = useState<RoutineSlotState[]>([])
+  const [savedRoutines, setSavedRoutines] = useState<RoutineSlotState[]>([])
   const [openSlotId, setOpenSlotId] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
+  const tags: ActivityTagOption[] = getActivityTags()
+
   useEffect(() => {
-    const fetchAll = async () => {
+    const fetchRoutines = async () => {
       try {
-        const [slotsRes, tagsRes, routinesRes] = await Promise.all([
-          getTimeSlots(),
-          getActivityTags(),
-          getRoutines(),
-        ])
-        if (slotsRes.success) setTimeSlots(slotsRes.data)
-        if (tagsRes.success) setTags(tagsRes.data.sort((a, b) => a.orderIndex - b.orderIndex))
-        if (routinesRes.success) {
-          setRoutines(routinesRes.data)
-          setSavedRoutines(routinesRes.data.map((r) => ({ ...r, selectedTagIds: [...r.selectedTagIds] })))
+        const res = await getRoutines()
+        if (res.success) {
+          setRoutines(res.data)
+          setSavedRoutines(res.data.map((r) => ({ ...r })))
         }
       } catch {
         setError('루틴 정보를 불러오지 못했습니다.')
@@ -39,42 +33,50 @@ export default function RoutineSettingPage() {
         setIsLoading(false)
       }
     }
-    fetchAll()
+    fetchRoutines()
   }, [])
 
-  const toggleTag = (slotId: number, tagId: number) => {
+  const selectTag = (slotId: number, tagId: number) => {
     setRoutines((prev) =>
       prev.map((r) => {
-        if (r.timeSlot.id !== slotId) return r
-        const exists = r.selectedTagIds.includes(tagId)
+        if (r.timeSlotId !== slotId) return r
         return {
           ...r,
-          selectedTagIds: exists
-            ? r.selectedTagIds.filter((id) => id !== tagId)
-            : [...r.selectedTagIds, tagId],
+          activityTagId: r.activityTagId === tagId ? null : tagId,
         }
-      })
+      }),
     )
   }
 
   const hasChanges = routines.some((r) => {
-    const saved = savedRoutines.find((s) => s.timeSlot.id === r.timeSlot.id)
+    const saved = savedRoutines.find((s) => s.timeSlotId === r.timeSlotId)
     if (!saved) return true
-    const current = [...r.selectedTagIds].sort()
-    const original = [...saved.selectedTagIds].sort()
-    return current.length !== original.length || current.some((id, i) => id !== original[i])
+    return r.activityTagId !== saved.activityTagId
   })
+
+  const allSlotsFilled = routines.every((r) => r.activityTagId !== null)
 
   const handleSave = async () => {
     if (!hasChanges) return
+
+    if (!allSlotsFilled) {
+      setError('모든 시간대에 활동을 선택해주세요.')
+      return
+    }
+
     setIsSaving(true)
     setError(null)
     setSuccessMsg(null)
 
     try {
-      const res = await updateRoutines(routines)
+      const requestData: RoutineRequestItem[] = routines.map((r) => ({
+        timeSlotId: r.timeSlotId,
+        activityTagId: r.activityTagId!,
+      }))
+
+      const res = await saveRoutines(requestData)
       if (res.success) {
-        setSavedRoutines(routines.map((r) => ({ ...r, selectedTagIds: [...r.selectedTagIds] })))
+        setSavedRoutines(routines.map((r) => ({ ...r })))
         setSuccessMsg('저장되었습니다.')
         setTimeout(() => setSuccessMsg(null), 2000)
       }
@@ -83,10 +85,6 @@ export default function RoutineSettingPage() {
     } finally {
       setIsSaving(false)
     }
-  }
-
-  const getSelectedCount = (slotId: number) => {
-    return routines.find((r) => r.timeSlot.id === slotId)?.selectedTagIds.length ?? 0
   }
 
   if (isLoading) {
@@ -103,57 +101,58 @@ export default function RoutineSettingPage() {
     <CareSettingLayout title="루틴 관리">
       <div className="flex flex-col gap-4 mt-6">
         <p className="text-[13px] text-[#718096]">
-          시간대별로 환자의 주요 활동을 선택해주세요.
+          시간대별로 환자의 대표 활동을 선택해주세요.
         </p>
 
         {/* 시간대 아코디언 */}
         <div className="flex flex-col gap-2">
-          {timeSlots.map((slot) => {
-            const isOpen = openSlotId === slot.id
-            const count = getSelectedCount(slot.id)
-            const routine = routines.find((r) => r.timeSlot.id === slot.id)
+          {routines.map((routine) => {
+            const isOpen = openSlotId === routine.timeSlotId
+            const selectedTag = tags.find((t) => t.id === routine.activityTagId)
 
             return (
-              <div key={slot.id} className="rounded-xl border border-[#E2E8F0] overflow-hidden">
+              <div key={routine.timeSlotId} className="rounded-xl border border-[#E2E8F0] overflow-hidden">
                 {/* 슬롯 헤더 */}
                 <button
                   type="button"
-                  onClick={() => setOpenSlotId(isOpen ? null : slot.id)}
+                  onClick={() => setOpenSlotId(isOpen ? null : routine.timeSlotId)}
                   className="w-full min-h-[52px] px-4 flex items-center justify-between bg-[#F0F4F8] active:bg-[#E2E8F0]"
                 >
                   <div className="flex flex-col items-start">
-                    <span className="text-[15px] font-medium text-[#3D405B]">{slot.name}</span>
+                    <span className="text-[15px] font-medium text-[#3D405B]">
+                      {routine.timeSlotName}
+                    </span>
                     <span className="text-[12px] text-[#718096]">
-                      {slot.startTime} ~ {slot.endTime}
+                      {routine.startTime} ~ {routine.endTime}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {count > 0 && (
+                    {selectedTag && (
                       <span className="text-[12px] text-white bg-[#3D405B] rounded-full px-2 py-0.5">
-                        {count}
+                        {selectedTag.label}
                       </span>
                     )}
                     <span className="text-[16px] text-[#718096]">{isOpen ? '▲' : '▼'}</span>
                   </div>
                 </button>
 
-                {/* 태그 목록 */}
-                {isOpen && routine && (
+                {/* 태그 목록 — 단일 선택 */}
+                {isOpen && (
                   <div className="px-4 py-3 flex flex-wrap gap-2 bg-white">
                     {tags.map((tag) => {
-                      const selected = routine.selectedTagIds.includes(tag.id)
+                      const selected = routine.activityTagId === tag.id
                       return (
                         <button
                           key={tag.id}
                           type="button"
-                          onClick={() => toggleTag(slot.id, tag.id)}
+                          onClick={() => selectTag(routine.timeSlotId, tag.id)}
                           className={`min-h-[36px] px-3 rounded-lg text-[13px] font-medium transition-colors ${
                             selected
                               ? 'bg-[#3D405B] text-white'
                               : 'bg-[#F0F4F8] text-[#718096] border border-[#E2E8F0]'
                           }`}
                         >
-                          {tag.name}
+                          {tag.label}
                         </button>
                       )
                     })}

@@ -5,9 +5,6 @@
 
 import type {
   PatientInfo,
-  TimeSlot,
-  ActivityTag,
-  RoutineSlotWithTags,
   Category,
   Phrase,
   FavoritePhrase,
@@ -33,44 +30,6 @@ export const MOCK_PATIENT_INFO: PatientInfo = {
   birthYear: 1965,
   gender: 'M',
 }
-
-// ========================
-// 루틴 — 시드 데이터
-// ========================
-
-export const MOCK_TIME_SLOTS: TimeSlot[] = [
-  { id: 1, name: '기상/아침', startTime: '06:00', endTime: '09:00' },
-  { id: 2, name: '오전', startTime: '09:00', endTime: '12:00' },
-  { id: 3, name: '점심/낮', startTime: '12:00', endTime: '15:00' },
-  { id: 4, name: '오후', startTime: '15:00', endTime: '18:00' },
-  { id: 5, name: '저녁', startTime: '18:00', endTime: '21:00' },
-  { id: 6, name: '취침 준비', startTime: '21:00', endTime: '00:00' },
-  { id: 7, name: '야간', startTime: '00:00', endTime: '06:00' },
-]
-
-export const MOCK_ACTIVITY_TAGS: ActivityTag[] = [
-  { id: 1, name: '경관식/수분 섭취', orderIndex: 0 },
-  { id: 2, name: '약물 투여', orderIndex: 1 },
-  { id: 3, name: '구강 케어', orderIndex: 2 },
-  { id: 4, name: '체위 변경', orderIndex: 3 },
-  { id: 5, name: '흡인/호흡 케어', orderIndex: 4 },
-  { id: 6, name: '배변/배뇨 케어', orderIndex: 5 },
-  { id: 7, name: '재활/ROM 운동', orderIndex: 6 },
-  { id: 8, name: '세면/위생', orderIndex: 7 },
-  { id: 9, name: '영상 시청', orderIndex: 8 },
-  { id: 10, name: '외부인 방문', orderIndex: 9 },
-  { id: 11, name: '휴식/수면', orderIndex: 10 },
-]
-
-export const MOCK_ROUTINES: RoutineSlotWithTags[] = [
-  { timeSlot: MOCK_TIME_SLOTS[0], selectedTagIds: [1, 2, 3, 5, 8] },
-  { timeSlot: MOCK_TIME_SLOTS[1], selectedTagIds: [4, 7] },
-  { timeSlot: MOCK_TIME_SLOTS[2], selectedTagIds: [1, 4, 6] },
-  { timeSlot: MOCK_TIME_SLOTS[3], selectedTagIds: [9, 10] },
-  { timeSlot: MOCK_TIME_SLOTS[4], selectedTagIds: [1, 2, 8, 11] },
-  { timeSlot: MOCK_TIME_SLOTS[5], selectedTagIds: [5, 11] },
-  { timeSlot: MOCK_TIME_SLOTS[6], selectedTagIds: [] },
-]
 
 // ========================
 // 즐겨찾기 — 시드 데이터
