@@ -23,6 +23,12 @@ interface UsePatientGazeClickOptions {
 }
 
 const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
+const GAZE_TARGET_SWITCH_GRACE_MS = 140
+
+interface GazeTarget {
+  element: HTMLElement
+  key: string
+}
 
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
   return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
@@ -37,8 +43,11 @@ export function usePatientGazeClick({
     useState(ACTIVATION_DELAY_OPTIONS.medium.value)
   const activeElementRef = useRef<HTMLElement | null>(null)
   const lastDoubleBlinkAtRef = useRef(0)
+  const targetSwitchTimerRef = useRef<number | null>(null)
+  const highlightedElementRef = useRef<HTMLElement | null>(null)
+  const [stableGazeTarget, setStableGazeTarget] = useState<GazeTarget | null>(null)
 
-  const gazeTarget = useMemo(() => {
+  const rawGazeTarget = useMemo(() => {
     if (!enabled || !gazePoint) {
       return null
     }
@@ -56,8 +65,73 @@ export function usePatientGazeClick({
   }, [enabled, gazePoint])
 
   useEffect(() => {
-    activeElementRef.current = gazeTarget?.element ?? null
-  }, [gazeTarget])
+    const clearTargetSwitchTimer = () => {
+      if (targetSwitchTimerRef.current !== null) {
+        window.clearTimeout(targetSwitchTimerRef.current)
+        targetSwitchTimerRef.current = null
+      }
+    }
+
+    if (!enabled) {
+      clearTargetSwitchTimer()
+      setStableGazeTarget(null)
+      return
+    }
+
+    const currentTargetKey = stableGazeTarget?.key ?? null
+    const nextTargetKey = rawGazeTarget?.key ?? null
+
+    if (currentTargetKey === nextTargetKey) {
+      clearTargetSwitchTimer()
+
+      if (
+        stableGazeTarget &&
+        rawGazeTarget &&
+        stableGazeTarget.element !== rawGazeTarget.element
+      ) {
+        setStableGazeTarget(rawGazeTarget)
+      }
+
+      return
+    }
+
+    clearTargetSwitchTimer()
+
+    if (!stableGazeTarget && rawGazeTarget) {
+      setStableGazeTarget(rawGazeTarget)
+      return
+    }
+
+    targetSwitchTimerRef.current = window.setTimeout(() => {
+      targetSwitchTimerRef.current = null
+      setStableGazeTarget(rawGazeTarget)
+    }, GAZE_TARGET_SWITCH_GRACE_MS)
+
+    return clearTargetSwitchTimer
+  }, [enabled, rawGazeTarget, stableGazeTarget])
+
+  useEffect(() => {
+    const nextHighlightedElement = stableGazeTarget?.element ?? null
+    const previousHighlightedElement = highlightedElementRef.current
+
+    if (previousHighlightedElement && previousHighlightedElement !== nextHighlightedElement) {
+      previousHighlightedElement.removeAttribute('data-gaze-active')
+    }
+
+    if (nextHighlightedElement) {
+      nextHighlightedElement.setAttribute('data-gaze-active', 'true')
+    }
+
+    highlightedElementRef.current = nextHighlightedElement
+    activeElementRef.current = nextHighlightedElement
+
+    return () => {
+      if (highlightedElementRef.current) {
+        highlightedElementRef.current.removeAttribute('data-gaze-active')
+        highlightedElementRef.current = null
+      }
+    }
+  }, [stableGazeTarget])
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
@@ -133,17 +207,17 @@ export function usePatientGazeClick({
   }, [enabled])
 
   useDwell<string>({
-    hoveredTargetId: gazeTarget?.key ?? null,
+    hoveredTargetId: stableGazeTarget?.key ?? null,
     dwellDurationMs,
     activationDelayMs,
-    disabled: !enabled || !gazeTarget,
+    disabled: !enabled || !stableGazeTarget,
     onCommit: () => {
       const now = Date.now()
 
       if (now - lastDoubleBlinkAtRef.current <= DOUBLE_BLINK_COMMIT_GUARD_MS) {
         if (import.meta.env.DEV) {
           console.info('[patient-input] skipped dwell commit because a double blink just fired', {
-            targetKey: gazeTarget?.key ?? null,
+            targetKey: stableGazeTarget?.key ?? null,
           })
         }
 
@@ -153,7 +227,7 @@ export function usePatientGazeClick({
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
         if (import.meta.env.DEV) {
           console.info('[patient-input] skipped dwell commit because the global menu is open', {
-            targetKey: gazeTarget?.key ?? null,
+            targetKey: stableGazeTarget?.key ?? null,
           })
         }
 
@@ -165,7 +239,7 @@ export function usePatientGazeClick({
       if (!targetElement || !targetElement.isConnected) {
         if (import.meta.env.DEV) {
           console.info('[patient-input] skipped dwell commit because the active target is unavailable', {
-            targetKey: gazeTarget?.key ?? null,
+            targetKey: stableGazeTarget?.key ?? null,
           })
         }
 
@@ -174,7 +248,7 @@ export function usePatientGazeClick({
 
       if (import.meta.env.DEV) {
         console.info('[patient-input] dwell commit', {
-          targetKey: gazeTarget?.key ?? null,
+          targetKey: stableGazeTarget?.key ?? null,
           dwellDurationMs,
           activationDelayMs,
           tagName: targetElement.tagName,

@@ -110,6 +110,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
       const calibrationWarmupResult = await warmUpStoredCalibration(eyeTrackingProfileId, signal)
 
       if (!calibrationWarmupResult.success) {
+        useGazeInputStore.getState().clearPoint()
         onTrackingStatusChange('tracking-unstable')
 
         if (import.meta.env.DEV) {
@@ -119,6 +120,8 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
             message: calibrationWarmupResult.message,
           })
         }
+
+        return
       }
 
       let lastDoubleBlinkAt = 0
