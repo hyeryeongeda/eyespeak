@@ -1,6 +1,10 @@
+import type {
+  LeisureContentCreateRequestDto,
+  LeisureContentResponseDto,
+  LeisureContentUpdateRequestDto,
+} from '../types/leisure'
 import { apiClient } from './apiClient'
 import { API_ENDPOINTS } from './apiEndpoints'
-import type { LeisureContentItem, LeisureContentRequest } from '../types/care'
 import { getActiveAuthSession } from './authSessionRegistry'
 
 function getAccessToken() {
@@ -8,32 +12,40 @@ function getAccessToken() {
 }
 
 export function getLeisureContentsApi() {
-  return apiClient.get<LeisureContentItem[]>(
+  return apiClient.get<LeisureContentResponseDto[]>(API_ENDPOINTS.LEISURE_CONTENTS, {
+    accessToken: getAccessToken(),
+  })
+}
+
+export function createLeisureContentApi(payload: LeisureContentCreateRequestDto) {
+  return apiClient.post<void, LeisureContentCreateRequestDto>(
     API_ENDPOINTS.LEISURE_CONTENTS,
-    { accessToken: getAccessToken() },
+    payload,
+    {
+      accessToken: getAccessToken(),
+    },
   )
 }
 
-export function createLeisureContentApi(data: LeisureContentRequest) {
-  return apiClient.post<unknown, LeisureContentRequest>(
-    API_ENDPOINTS.LEISURE_CONTENTS,
-    data,
-    { accessToken: getAccessToken() },
-  )
-}
-
-export function updateLeisureContentApi(contentId: number, data: LeisureContentRequest) {
-  return apiClient.put<unknown, LeisureContentRequest>(
+export function updateLeisureContentApi(
+  contentId: number,
+  payload: LeisureContentUpdateRequestDto,
+) {
+  return apiClient.put<void, LeisureContentUpdateRequestDto>(
     `${API_ENDPOINTS.LEISURE_CONTENTS}/${contentId}`,
-    data,
-    { accessToken: getAccessToken() },
+    payload,
+    {
+      accessToken: getAccessToken(),
+    },
   )
 }
 
 export function deleteLeisureContentApi(contentId: number) {
-  return apiClient.delete<unknown>(
+  return apiClient.delete<void>(
     `${API_ENDPOINTS.LEISURE_CONTENTS}/${contentId}`,
     undefined,
-    { accessToken: getAccessToken() },
+    {
+      accessToken: getAccessToken(),
+    },
   )
 }

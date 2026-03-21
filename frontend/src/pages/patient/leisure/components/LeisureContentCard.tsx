@@ -1,30 +1,56 @@
 import type { CSSProperties } from 'react'
 import type { LeisureCardTone, LeisureContent } from '../../../../types/leisure'
-import { leisureCardBaseStyle, leisureToneMap } from './leisureTheme'
+import { leisureCardBaseStyle, leisureToneMap, lineClampTwoStyle } from './leisureTheme'
 
 type LeisureContentCardEmphasis = 'standard' | 'hero'
 
 const thumbnailStyleByEmphasis: Record<LeisureContentCardEmphasis, CSSProperties> = {
   standard: {
     width: '100%',
-    flex: 1,
+    height: '100%',
     minHeight: 0,
     objectFit: 'cover',
-    borderRadius: '20px',
-    border: '1px solid rgba(215, 223, 235, 0.8)',
-    backgroundColor: '#eef2f6',
     display: 'block',
   },
   hero: {
     width: '100%',
-    flex: 1,
+    height: '100%',
     minHeight: 0,
     objectFit: 'cover',
-    borderRadius: '22px',
-    border: '1px solid rgba(215, 223, 235, 0.82)',
-    backgroundColor: '#eef2f6',
     display: 'block',
   },
+}
+
+const imageWrapStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  borderRadius: '20px',
+  overflow: 'hidden',
+  border: '1px solid rgba(215, 223, 235, 0.8)',
+  backgroundColor: '#eef2f6',
+}
+
+const metaWrapStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px',
+  padding: '16px 16px 18px',
+}
+
+const titleStyle: CSSProperties = {
+  margin: 0,
+  color: '#203042',
+  fontSize: '15px',
+  fontWeight: 900,
+  lineHeight: 1.35,
+}
+
+const subtitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#6a8095',
+  fontSize: '13px',
+  fontWeight: 700,
+  lineHeight: 1.4,
 }
 
 interface LeisureContentCardProps {
@@ -62,10 +88,19 @@ export default function LeisureContentCard({
         cursor: 'pointer',
         appearance: 'none',
         overflow: 'hidden',
+        textAlign: 'left',
       }}
       aria-label={`${content.title} 재생`}
     >
-      <img src={content.thumbnailUrl} alt="" style={thumbnailStyleByEmphasis[emphasis]} />
+      <div style={imageWrapStyle}>
+        <img src={content.thumbnailUrl} alt="" style={thumbnailStyleByEmphasis[emphasis]} />
+      </div>
+      <div style={metaWrapStyle}>
+        <h3 style={{ ...titleStyle, ...lineClampTwoStyle }}>{content.title}</h3>
+        <p style={{ ...subtitleStyle, ...lineClampTwoStyle }}>
+          {content.categoryLabel ?? content.channelName}
+        </p>
+      </div>
     </button>
   )
 }

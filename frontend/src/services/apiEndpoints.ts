@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
   AUTH_REFRESH: '/auth/refresh',
   AUTH_WITHDRAW: '/auth/withdraw',
   FAVORITES: '/favorites',
+  LEISURE_CONTENTS: '/leisure-contents',
   RECOMMENDATION_CATEGORIES: '/recommendations/categories',
   RECOMMENDATION_SENTENCES: '/recommendations/sentences',
   RECOMMENDATION_COMPOSE: '/recommendations/compose',
@@ -27,5 +28,4 @@ export const API_ENDPOINTS = {
   EYE_TRACKING_CALIBRATE_LOAD: '/api/calibrate/load',
   EYE_TRACKING_SELECTION: '/api/selection',
   EYE_TRACKING_HEALTH: '/api/health',
-  LEISURE_CONTENTS: '/leisure-contents',
 } as const
