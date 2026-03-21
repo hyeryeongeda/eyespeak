@@ -1,4 +1,5 @@
 import { type FormEvent, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { requestPatientRecalibration } from '../../features/patient/input/services/calibration/patientCalibrationService'
@@ -19,6 +20,7 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientLoginPage() {
+  const navigate = useNavigate()
   const { login, isPending } = useAuth()
   const [form, setForm] = useState({
     identifier: '',
@@ -47,7 +49,7 @@ export default function PatientLoginPage() {
     }
 
     requestPatientRecalibration(result.data)
-    window.location.replace(resolveAppPath(ROUTE_PATHS.PATIENT_CALIBRATION))
+    navigate(ROUTE_PATHS.PATIENT_CALIBRATION, { replace: true })
   }
 
   return (

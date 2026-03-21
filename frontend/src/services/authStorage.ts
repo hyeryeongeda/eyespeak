@@ -180,7 +180,7 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
 }
 
 function shouldPersistAuthSession(role: UserRole) {
-  return role === 'patient'
+  return role === 'guardian' || role === 'patient'
 }
 
 function getSessionStorageValue() {
