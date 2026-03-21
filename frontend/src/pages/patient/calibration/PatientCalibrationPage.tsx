@@ -2,11 +2,15 @@ import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
-import { completePatientCalibration } from '../../../services/calibration/patientCalibrationService'
 import {
+  completePatientCalibration,
+  getPatientEyeTrackingProfileId,
+} from '../../../services/calibration/patientCalibrationService'
+import {
+  getEyeTrackingConfigSnapshot,
   getEyeTrackingUiUrl,
-  isEyeTrackingApiEnabled,
 } from '../../../services/eyeTrackingServiceConfig'
+import { useGazeInputStore } from '../../../stores/gazeInputStore'
 
 type CalibrationPageState = 'loading' | 'saving' | 'ready' | 'error'
 
@@ -23,11 +27,26 @@ function isLoopbackHost(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1'
 }
 
+function normalizeMessageUserId(value: string | number | undefined) {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? String(value) : null
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+  return normalizedValue ? normalizedValue : null
+}
+
 export default function PatientCalibrationPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [pageState, setPageState] = useState<CalibrationPageState>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+  const eyeTrackingProfileId = useMemo(() => getPatientEyeTrackingProfileId(user), [user])
+  const eyeTrackingConfig = useMemo(() => getEyeTrackingConfigSnapshot(), [])
 
   const iframeUrl = useMemo(() => {
     const baseUrl = getEyeTrackingUiUrl().trim().replace(/\/+$/, '')
@@ -41,12 +60,13 @@ export default function PatientCalibrationPage() {
       autostart: '1',
     })
 
-    if (user?.userId != null) {
-      query.set('userId', String(user.userId))
+    if (eyeTrackingProfileId) {
+      query.set('userId', eyeTrackingProfileId)
+      query.set('profileId', eyeTrackingProfileId)
     }
 
     return `${baseUrl}/?${query.toString()}`
-  }, [user?.userId])
+  }, [eyeTrackingProfileId])
 
   const allowedOrigin = useMemo(() => {
     if (!iframeUrl || typeof window === 'undefined') {
@@ -76,8 +96,12 @@ export default function PatientCalibrationPage() {
   }, [iframeUrl])
 
   const blockingErrorMessage = useMemo(() => {
-    if (!isEyeTrackingApiEnabled()) {
-      return 'Eye tracking is disabled. Set VITE_EYE_TRACKING_API_MODE=real and restart the frontend dev server.'
+    if (eyeTrackingConfig.resolvedApiMode !== 'real') {
+      return `Eye tracking is not running in real mode for this frontend bundle (resolved mode: ${eyeTrackingConfig.resolvedApiMode}). If your env file already says real, restart the frontend build/dev server and verify the active bundle is not stale.`
+    }
+
+    if (!eyeTrackingProfileId) {
+      return 'Eye tracking profile id is missing for this patient session, so calibration and runtime tracking cannot be aligned.'
     }
 
     if (isLocalEyeTrackingUiOnRemoteHost) {
@@ -89,16 +113,55 @@ export default function PatientCalibrationPage() {
     }
 
     return ''
-  }, [allowedOrigin, iframeUrl, isLocalEyeTrackingUiOnRemoteHost])
+  }, [allowedOrigin, eyeTrackingConfig.resolvedApiMode, eyeTrackingProfileId, iframeUrl, isLocalEyeTrackingUiOnRemoteHost])
+
+  const debugItems = useMemo(
+    () => {
+      const items: Array<[string, string]> = [
+        ['Resolved mode', eyeTrackingConfig.resolvedApiMode],
+        ['Eye tracking UI URL', eyeTrackingConfig.uiUrl || '(unset)'],
+        ['Eye tracking profile id', eyeTrackingProfileId || '(missing)'],
+        ['Iframe origin', allowedOrigin || '(invalid)'],
+        ['App origin', typeof window === 'undefined' ? '(unknown)' : window.location.origin],
+      ]
+
+      if (eyeTrackingConfig.diagnosticsEnabled) {
+        items.splice(
+          1,
+          0,
+          ['Raw mode', eyeTrackingConfig.rawApiMode || '(unset)'],
+          ['Normalized mode', eyeTrackingConfig.normalizedApiMode || '(unset)'],
+          ['Eye tracking API base URL', eyeTrackingConfig.apiBaseUrl || '(unset)'],
+        )
+      }
+
+      return items
+    },
+    [allowedOrigin, eyeTrackingConfig, eyeTrackingProfileId],
+  )
 
   const overlayMessage =
     pageState === 'saving'
-      ? 'Calibration completed. Saving your session...'
+      ? 'Calibration completed. Verifying runtime readiness...'
       : pageState === 'loading'
         ? 'Preparing the camera and calibration screen...'
         : pageState === 'error'
           ? errorMessage
           : ''
+
+  useEffect(() => {
+    if (!blockingErrorMessage || !import.meta.env.DEV) {
+      return
+    }
+
+    console.warn('[eye-tracking] calibration page blocked', {
+      reason: blockingErrorMessage,
+      config: eyeTrackingConfig,
+      eyeTrackingProfileId,
+      iframeUrl,
+      allowedOrigin,
+    })
+  }, [allowedOrigin, blockingErrorMessage, eyeTrackingConfig, eyeTrackingProfileId, iframeUrl])
 
   useEffect(() => {
     if (blockingErrorMessage) {
@@ -132,6 +195,7 @@ export default function PatientCalibrationPage() {
         return
       }
 
+      useGazeInputStore.getState().clearPoint()
       navigate(ROUTE_PATHS.PATIENT_MAIN, { replace: true })
     }
 
@@ -143,6 +207,20 @@ export default function PatientCalibrationPage() {
       const payload = event.data
 
       if (!payload || payload.source !== EYE_TRACKING_MESSAGE_SOURCE) {
+        return
+      }
+
+      const messageUserId = normalizeMessageUserId(payload.userId)
+
+      if (!eyeTrackingProfileId || messageUserId !== eyeTrackingProfileId) {
+        if (import.meta.env.DEV) {
+          console.warn('[eye-tracking] ignored calibration message with mismatched user id', {
+            expectedEyeTrackingProfileId: eyeTrackingProfileId,
+            receivedUserId: messageUserId,
+            type: payload.type,
+          })
+        }
+
         return
       }
 
@@ -169,7 +247,7 @@ export default function PatientCalibrationPage() {
       isMounted = false
       window.removeEventListener('message', handleMessage)
     }
-  }, [allowedOrigin, blockingErrorMessage, navigate, user])
+  }, [allowedOrigin, blockingErrorMessage, eyeTrackingProfileId, navigate, user])
 
   return (
     <main style={pageStyle}>
@@ -178,6 +256,14 @@ export default function PatientCalibrationPage() {
           <p style={errorEyebrowStyle}>Patient Calibration</p>
           <h1 style={errorTitleStyle}>Calibration screen unavailable</h1>
           <p style={errorDescriptionStyle}>{blockingErrorMessage}</p>
+          <dl style={debugListStyle}>
+            {debugItems.map(([label, value]) => (
+              <div key={label} style={debugRowStyle}>
+                <dt style={debugLabelStyle}>{label}</dt>
+                <dd style={debugValueStyle}>{value}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       ) : (
         <>
@@ -310,4 +396,38 @@ const errorDescriptionStyle: CSSProperties = {
   fontSize: '16px',
   lineHeight: 1.7,
   color: 'rgba(226, 232, 240, 0.92)',
+}
+
+const debugListStyle: CSSProperties = {
+  margin: '10px 0 0',
+  width: 'min(840px, 100%)',
+  padding: '18px 20px',
+  borderRadius: '18px',
+  backgroundColor: 'rgba(15, 23, 42, 0.45)',
+  border: '1px solid rgba(148, 163, 184, 0.18)',
+  boxSizing: 'border-box',
+}
+
+const debugRowStyle: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '220px minmax(0, 1fr)',
+  gap: '12px',
+  alignItems: 'start',
+  padding: '6px 0',
+}
+
+const debugLabelStyle: CSSProperties = {
+  margin: 0,
+  color: 'rgba(148, 163, 184, 0.9)',
+  fontSize: '13px',
+  fontWeight: 800,
+}
+
+const debugValueStyle: CSSProperties = {
+  margin: 0,
+  color: '#f8fafc',
+  fontSize: '13px',
+  fontWeight: 600,
+  lineHeight: 1.6,
+  wordBreak: 'break-all',
 }

@@ -3,7 +3,7 @@ import { isEyeTrackingApiEnabled } from './eyeTrackingServiceConfig'
 import { createRealPatientRuntimeTrackingService } from './realPatientRuntimeTrackingService'
 
 export interface PatientRuntimeTrackingStartOptions {
-  patientId: string
+  eyeTrackingProfileId: string
   signal?: AbortSignal
   onTrackingStatusChange: (status: CalibrationTrackingStatus) => void
   onDoubleBlink: () => void
