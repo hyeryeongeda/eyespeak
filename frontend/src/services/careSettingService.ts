@@ -2,11 +2,12 @@ import type {
   ActivationDelayPreset,
   ApiResponse,
   Category,
-  DailySummary,
+  DailyRecordResponse,
   DwellTimePreset,
   Expression,
   FavoritePhrase,
   LeisureContentItem,
+  MonthlyRecordDay,
   PatientInfo,
   Phrase,
   RoutineRequestItem,
@@ -28,7 +29,6 @@ import type {
 } from '../types/leisure'
 import {
   MOCK_CATEGORIES,
-  MOCK_DAILY_SUMMARIES,
   MOCK_EXPRESSIONS,
   MOCK_FAVORITE_PHRASES,
   MOCK_PATIENT_INFO,
@@ -43,6 +43,7 @@ import {
   getLeisureContentsApi,
   updateLeisureContentApi,
 } from './leisureApi'
+import { getMonthlyRecordsApi, getDailyRecordApi } from './communicationRecordApi'
 import { getRoutinesApi, updateRoutinesApi } from './routineApi'
 import {
   getDwellTimeApi,
@@ -316,17 +317,15 @@ export async function getExpressions(): Promise<ApiResponse<Expression[]>> {
   return { success: true, data: [...MOCK_EXPRESSIONS], message: 'Fetched expressions.' }
 }
 
-export async function getDailySummaries(yearMonth: string): Promise<ApiResponse<DailySummary[]>> {
-  await delay()
-  void yearMonth
-  return { success: true, data: [...MOCK_DAILY_SUMMARIES], message: 'Fetched daily summaries.' }
+export async function getMonthlyRecords(
+  year: number,
+  month: number,
+): Promise<ApiResponse<MonthlyRecordDay[]>> {
+  const res = await getMonthlyRecordsApi(year, month)
+  return { success: true, data: res.days, message: 'Fetched monthly records.' }
 }
 
-export async function getDailySummary(date: string): Promise<ApiResponse<DailySummary | null>> {
-  await delay()
-  return {
-    success: true,
-    data: MOCK_DAILY_SUMMARIES.find(summary => summary.date === date) ?? null,
-    message: 'Fetched daily summary.',
-  }
+export async function getDailyRecord(date: string): Promise<ApiResponse<DailyRecordResponse>> {
+  const res = await getDailyRecordApi(date)
+  return { success: true, data: res, message: 'Fetched daily record.' }
 }

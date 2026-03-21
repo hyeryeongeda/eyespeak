@@ -199,24 +199,32 @@ export interface Call {
 }
 
 
-// 소통 기록 캘린더 
-export interface DailyMood {
-  id: number
-  matchingId: number
-  moodDate: string
-  moodType: MoodType
-  moodLevel: number
-  createdAt: string
+// 소통 기록 캘린더 — 월간 (GET /communication-records/monthly)
+export interface MonthlyRecordDay {
+  date: string
+  totalCount: number
+  hasSos: boolean
 }
 
-export interface DailySummary {
+export interface MonthlyRecordResponse {
+  year: number
+  month: number
+  days: MonthlyRecordDay[]
+}
+
+// 소통 기록 캘린더 — 날짜별 상세 (GET /communication-records/daily)
+export interface DailyRecordTopExpression {
+  rank: number
+  content: string
+  count: number
+}
+
+export interface DailyRecordResponse {
   date: string
-  totalExpressions: number
-  hasSos: boolean
-  topPhrases: { content: string; count: number }[]
+  totalExpressionCount: number
+  topExpressions: DailyRecordTopExpression[]
   normalCallCount: number
   sosCallCount: number
-  mood: { type: MoodType; level: number } | null
 }
 
 
