@@ -69,16 +69,19 @@ export default function CustomTalkComposePage() {
   const selectComposeWord = useCustomTalkStore(state => state.selectComposeWord)
   const skipComposeStep = useCustomTalkStore(state => state.skipComposeStep)
   const goBackComposeStep = useCustomTalkStore(state => state.goBackComposeStep)
-
-  if (!draft.categoryKey) {
-    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
-  }
+  const hasCategoryKey = Boolean(draft.categoryKey)
 
   useEffect(() => {
-    if (composeOptions[composeStep].length === 0) {
-      void refreshComposeStep(composeStep)
+    if (!hasCategoryKey || composeOptions[composeStep].length > 0) {
+      return
     }
-  }, [composeOptions, composeStep, refreshComposeStep])
+
+    void refreshComposeStep(composeStep)
+  }, [composeOptions, composeStep, hasCategoryKey, refreshComposeStep])
+
+  if (!hasCategoryKey) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
+  }
 
   const visibleOptions = getVisibleComposeOptions(composeOptions[composeStep])
 

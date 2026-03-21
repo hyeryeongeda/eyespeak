@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { usePatientGlobalActionTargetStore } from '../stores/patientGlobalActionTargetStore'
 
 interface UsePatientGlobalMenuActionTargetOptions {
@@ -21,15 +21,9 @@ export function usePatientGlobalMenuActionTarget({
   onPositiveAction,
   onNegativeAction,
 }: UsePatientGlobalMenuActionTargetOptions) {
-  const targetIdRef = useRef<string>('')
-
-  if (!targetIdRef.current) {
-    targetIdRef.current = createPatientGlobalActionTargetId()
-  }
+  const [targetId] = useState(createPatientGlobalActionTargetId)
 
   useEffect(() => {
-    const targetId = targetIdRef.current
-
     if (!enabled || (!onPositiveAction && !onNegativeAction)) {
       usePatientGlobalActionTargetStore.getState().removeTarget(targetId)
       return
@@ -45,7 +39,7 @@ export function usePatientGlobalMenuActionTarget({
     return () => {
       usePatientGlobalActionTargetStore.getState().removeTarget(targetId)
     }
-  }, [enabled, onNegativeAction, onPositiveAction, priority])
+  }, [enabled, onNegativeAction, onPositiveAction, priority, targetId])
 }
 
 export default usePatientGlobalMenuActionTarget
