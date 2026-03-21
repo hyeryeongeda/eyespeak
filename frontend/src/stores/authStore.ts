@@ -86,8 +86,23 @@ function getNextPatientPostAuthState(
   return state.patientPostAuth
 }
 
-const initialSession = getStoredAuthSession()
-syncActiveAuthSession(initialSession)
+function bootstrapAuthStoreSession() {
+  const restoredSession = getStoredAuthSession()
+  syncActiveAuthSession(restoredSession)
+  return restoredSession
+}
+
+function persistSessionLayers(session: AuthSession) {
+  persistAuthSession(session)
+  syncActiveAuthSession(session)
+}
+
+function clearSessionLayers() {
+  clearStoredAuthSession()
+  syncActiveAuthSession(null)
+}
+
+const initialSession = bootstrapAuthStoreSession()
 
 export const useAuthStore = create<AuthStoreState>((set, get) => ({
   isAuthenticated: initialSession !== null,
@@ -124,14 +139,12 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     const result = await loginService(payload)
 
     if (!result.success) {
-      clearStoredAuthSession()
-      syncActiveAuthSession(null)
+      clearSessionLayers()
       applySession(null, false, null)
       return result
     }
 
-    persistAuthSession(result.data)
-    syncActiveAuthSession(result.data)
+    persistSessionLayers(result.data)
     applySession(result.data, false, null)
     return result
   },
@@ -147,8 +160,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
 
     set({ isPending: true })
     await logoutService(currentSession)
-    clearStoredAuthSession()
-    syncActiveAuthSession(null)
+    clearSessionLayers()
 
     applySession(null, false)
   },
@@ -173,29 +185,25 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
     const result = await refreshSessionService(currentSession)
 
     if (!result.success) {
-      clearStoredAuthSession()
-      syncActiveAuthSession(null)
+      clearSessionLayers()
       applySession(null, false, null)
       return result
     }
 
-    persistAuthSession(result.data)
-    syncActiveAuthSession(result.data)
+    persistSessionLayers(result.data)
     applySession(result.data, false)
 
     return result
   },
   setSession: session => {
-    persistAuthSession(session)
-    syncActiveAuthSession(session)
+    persistSessionLayers(session)
     set(state => ({
       ...getNextAuthStoreState(state, session, false),
       patientPostAuth: getNextPatientPostAuthState(state, session, null),
     }))
   },
   clearSession: () => {
-    clearStoredAuthSession()
-    syncActiveAuthSession(null)
+    clearSessionLayers()
     set(state => ({
       ...getNextAuthStoreState(state, null, false),
       patientPostAuth: null,
@@ -231,7 +239,7 @@ export const useAuthStore = create<AuthStoreState>((set, get) => ({
 
 registerAuthSessionUpdater(session => {
   if (session) {
-    persistAuthSession(session)
+    persistSessionLayers(session)
     useAuthStore.setState(state => ({
       ...getNextAuthStoreState(state, session, false),
       patientPostAuth: session.role === 'patient' ? state.patientPostAuth : null,
@@ -239,7 +247,7 @@ registerAuthSessionUpdater(session => {
     return
   }
 
-  clearStoredAuthSession()
+  clearSessionLayers()
   useAuthStore.setState(state => ({
     ...getNextAuthStoreState(state, null, false),
     patientPostAuth: null,

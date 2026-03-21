@@ -51,6 +51,8 @@ export default function PatientCalibrationPage() {
   const [issueKind, setIssueKind] = useState<PatientCalibrationIssueKind>('none')
   const routeState = (location.state as PatientCalibrationLocationState | null) ?? null
   const postAuthNotice = routeState?.postAuthNotice ?? getPatientPostAuthNotice(patientPostAuth)
+  const postCalibrationRedirectPath =
+    routeState?.redirectPath ?? patientPostAuth?.redirectPath ?? ROUTE_PATHS.PATIENT_MAIN
   const eyeTrackingProfileId = useMemo(() => getPatientEyeTrackingProfileId(user), [user])
   const eyeTrackingConfig = useMemo(() => getEyeTrackingConfigSnapshot(), [])
   const authSuccessMessage = postAuthNotice?.authSuccessMessage ?? ''
@@ -259,7 +261,7 @@ export default function PatientCalibrationPage() {
 
       clearPatientPostAuth()
       useGazeInputStore.getState().clearPoint()
-      navigate(ROUTE_PATHS.PATIENT_MAIN, { replace: true })
+      navigate(postCalibrationRedirectPath, { replace: true })
     }
 
     const handleMessage = (event: MessageEvent<EyeTrackingCalibrationMessage>) => {
@@ -327,6 +329,7 @@ export default function PatientCalibrationPage() {
     clearPatientPostAuth,
     eyeTrackingProfileId,
     navigate,
+    postCalibrationRedirectPath,
     user,
   ])
 

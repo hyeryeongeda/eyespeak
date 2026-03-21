@@ -22,6 +22,7 @@ const EYE_TRACKING_CALIBRATION_SYNC_DELAY_MS = 400
 
 interface ResolvePatientPostAuthDestinationOptions {
   entryPoint: PatientAuthEntryPoint
+  redirectPath?: string
 }
 
 interface ResolvedPatientPostAuthDestination {
@@ -174,6 +175,10 @@ function getAuthSuccessMessage(entryPoint: PatientAuthEntryPoint) {
     : 'Login is complete and the patient session is now active.'
 }
 
+function resolvePatientRedirectPath(value: string | null | undefined) {
+  return typeof value === 'string' && value.trim() ? value : ROUTE_PATHS.PATIENT_MAIN
+}
+
 function buildPostAuthNotice(
   options: ResolvePatientPostAuthDestinationOptions,
   calibrationMessage?: string,
@@ -193,6 +198,7 @@ function buildPatientPostAuthState(
     status,
     entryPoint: options.entryPoint,
     notice: buildPostAuthNotice(options, calibrationMessage),
+    redirectPath: resolvePatientRedirectPath(options.redirectPath),
   }
 }
 
@@ -204,10 +210,20 @@ export function getPatientPostAuthNotice(
 
 export function buildPatientCalibrationLocationState(
   postAuthState: PatientPostAuthState | null | undefined,
+  fallbackRedirectPath?: string | null,
 ): PatientCalibrationLocationState | undefined {
   const notice = getPatientPostAuthNotice(postAuthState)
+  const redirectPath =
+    postAuthState?.redirectPath ?? resolvePatientRedirectPath(fallbackRedirectPath)
 
-  return notice ? { postAuthNotice: notice } : undefined
+  if (!notice && !redirectPath) {
+    return undefined
+  }
+
+  return {
+    postAuthNotice: notice ?? undefined,
+    redirectPath,
+  }
 }
 
 export async function ensurePatientEyeTrackingRuntimeReady(
@@ -382,7 +398,7 @@ export async function resolvePatientPostAuthFlow(
 
   return {
     destination: {
-      path: ROUTE_PATHS.PATIENT_MAIN,
+      path: resolvePatientRedirectPath(options.redirectPath),
     },
     postAuthState: buildPatientPostAuthState(options, 'authenticated'),
   }

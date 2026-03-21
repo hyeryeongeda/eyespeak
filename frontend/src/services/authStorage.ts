@@ -6,6 +6,7 @@ import type {
   GuardianSessionExitReason,
   UserRole,
 } from '../types/auth'
+import { normalizeAuthRole } from './authRole'
 
 export const SELECTED_ROLE_STORAGE_KEY = 'selectedRole'
 export const AUTH_ENTRY_MODE_STORAGE_KEY = 'authEntryMode'
@@ -23,11 +24,7 @@ export function normalizeTeamCode(value: string) {
 }
 
 export function normalizeUserRole(role: string | null | undefined): UserRole | null {
-  const normalizedRole = role?.trim().toLowerCase()
-
-  return normalizedRole === 'guardian' || normalizedRole === 'patient'
-    ? normalizedRole
-    : null
+  return normalizeAuthRole(role)
 }
 
 function normalizeGuardianSessionExitReason(
@@ -194,6 +191,10 @@ function getSessionStorageValue() {
   )
 }
 
+function isStoredSessionCompatibleWithActiveMode(session: Pick<AuthSession, 'authMode'>) {
+  return session.authMode === getActiveApiMode()
+}
+
 export function getStoredAuthSession(): AuthSession | null {
   const savedSession = getSessionStorageValue()
 
@@ -205,11 +206,12 @@ export function getStoredAuthSession(): AuthSession | null {
     const parsed = JSON.parse(savedSession) as Partial<AuthSession>
 
     if (isValidStoredSession(parsed)) {
-      if (
-        !shouldPersistAuthSession(parsed.role) ||
-        parsed.authMode !== getActiveApiMode()
-      ) {
+      if (!shouldPersistAuthSession(parsed.role)) {
         clearStoredAuthSession()
+        return null
+      }
+
+      if (!isStoredSessionCompatibleWithActiveMode(parsed)) {
         return null
       }
 

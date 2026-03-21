@@ -132,8 +132,12 @@ export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
   return role === 'guardian' ? ROUTE_PATHS.AUTH_SIGNUP_CARE : ROUTE_PATHS.AUTH_SIGNUP_PATIENT
 }
 
-export function getHomePathByRole(role: UserRole) {
+export function getDefaultRouteByRole(role: UserRole) {
   return role === 'guardian' ? ROUTE_PATHS.CARE_HOME : ROUTE_PATHS.PATIENT_MAIN
+}
+
+export function getHomePathByRole(role: UserRole) {
+  return getDefaultRouteByRole(role)
 }
 
 export function getPatientBodyMindCategoryDetailPath(categoryKey: BodyMindCategoryKey) {

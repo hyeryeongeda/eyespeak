@@ -1,5 +1,6 @@
 import type { ApiMode } from '../types/api'
 import type { AuthResponseDto, AuthSession } from '../types/auth'
+import { requireAuthRole } from './authRole'
 
 function normalizeSessionId(rawId: string | number): string {
   const normalizedId = String(rawId).trim()
@@ -9,20 +10,6 @@ function normalizeSessionId(rawId: string | number): string {
   }
 
   return normalizedId
-}
-
-function normalizeUserRole(rawRole: string): AuthSession['role'] {
-  const normalizedRole = rawRole.trim().toLowerCase()
-
-  if (normalizedRole === 'patient') {
-    return 'patient'
-  }
-
-  if (normalizedRole === 'guardian' || normalizedRole === 'caregiver' || normalizedRole === 'care') {
-    return 'guardian'
-  }
-
-  throw new Error(`Unsupported user role: ${rawRole}`)
 }
 
 function normalizeNumericId(rawId: string | number | null | undefined): number | null {
@@ -59,7 +46,7 @@ export function mapAuthResponseToSession(
     id: normalizeSessionId(response.user.id),
     userId: normalizedUserId,
     matchingId: normalizedMatchingId,
-    role: normalizeUserRole(String(response.user.role ?? '')),
+    role: requireAuthRole(String(response.user.role ?? '')),
     authMode,
     name: response.user.name,
     email: response.user.email,
