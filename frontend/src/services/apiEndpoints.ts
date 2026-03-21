@@ -28,4 +28,6 @@ export const API_ENDPOINTS = {
   EYE_TRACKING_CALIBRATE_LOAD: '/api/calibrate/load',
   EYE_TRACKING_SELECTION: '/api/selection',
   EYE_TRACKING_HEALTH: '/api/health',
+  PATIENT_SETTINGS_DWELL_TIME: '/patient-settings/dwell-time',
+  PATIENT_SETTINGS_ACTIVATION_DELAY: '/patient-settings/activation-delay',
 } as const
