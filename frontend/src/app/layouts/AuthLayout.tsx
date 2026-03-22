@@ -1,12 +1,5 @@
-import { Fragment } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 
 export default function AuthLayout() {
-  const location = useLocation()
-
-  return (
-    <Fragment key={`${location.pathname}${location.search}`}>
-      <Outlet />
-    </Fragment>
-  )
+  return <Outlet />
 }
