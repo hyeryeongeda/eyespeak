@@ -922,6 +922,225 @@ def record_expression_use():
     return jsonify({"ok": True, "message": "expression recorded"})
 
 
+@app.route("/recommend/hints", methods=["POST"])
+def recommend_hints():
+    """카테고리 카드에 표시할 hint 데이터 조회"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+
+    mood_hint = None
+    schedule_hint = None
+    frequent_hint = None
+    recent_hint = None
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # 1. mood hint — 오늘의 기분
+            cur.execute("""
+                SELECT mood_type FROM daily_mood
+                WHERE matching_id = %s AND mood_date = CURDATE()
+            """, (matching_id,))
+            mood_row = cur.fetchone()
+            if mood_row:
+                mood_map = {
+                    "HAPPY": "기분 좋음", "SAD": "슬픔", "CALM": "평온",
+                    "JOYFUL": "즐거움", "ANXIOUS": "불안", "ANGRY": "화남", "TIRED": "피곤"
+                }
+                mood_hint = mood_map.get(mood_row["mood_type"], mood_row["mood_type"])
+
+            # 2. schedule hint — 현재 시간대 활동
+            hour = datetime.now().hour
+            if hour < 9:
+                slot_id = 1
+            elif hour < 12:
+                slot_id = 2
+            elif hour < 15:
+                slot_id = 3
+            elif hour < 18:
+                slot_id = 4
+            elif hour < 21:
+                slot_id = 5
+            elif hour < 24:
+                slot_id = 6
+            else:
+                slot_id = 7
+
+            cur.execute("""
+                SELECT at.name AS activity
+                FROM routine_slot_tag rst
+                JOIN activity_tag at ON at.id = rst.activity_tag_id
+                WHERE rst.matching_id = %s AND rst.time_slot_id = %s
+                LIMIT 1
+            """, (matching_id, slot_id))
+            schedule_row = cur.fetchone()
+            if schedule_row:
+                schedule_hint = schedule_row["activity"]
+
+            # 3. frequent hint — 가장 많이 쓴 표현
+            cur.execute("""
+                SELECT e.content AS text, COUNT(*) AS cnt
+                FROM usage_log ul
+                JOIN expressions e ON e.id = ul.expr_id
+                WHERE ul.matching_id = %s
+                GROUP BY ul.expr_id
+                ORDER BY cnt DESC LIMIT 1
+            """, (matching_id,))
+            freq_row = cur.fetchone()
+            if freq_row:
+                frequent_hint = freq_row["text"]
+
+            # 4. recent hint — 가장 최근 사용한 표현
+            cur.execute("""
+                SELECT e.content AS text
+                FROM usage_log ul
+                JOIN expressions e ON e.id = ul.expr_id
+                WHERE ul.matching_id = %s
+                ORDER BY ul.used_at DESC LIMIT 1
+            """, (matching_id,))
+            recent_row = cur.fetchone()
+            if recent_row:
+                recent_hint = recent_row["text"]
+    finally:
+        conn.close()
+
+    return jsonify({
+        "mood_hint": mood_hint,
+        "schedule_hint": schedule_hint,
+        "frequent_hint": frequent_hint,
+        "recent_hint": recent_hint,
+    })
+
+
+@app.route("/recommend/category", methods=["POST"])
+def recommend_by_category():
+    """카테고리 기반 추천 문장 3개 생성 (환자 선발화)"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+    recommend_type_raw = data.get("recommend_type", "")
+    guardian_message = data.get("guardian_message")
+    recent_messages = data.get("recent_messages")
+
+    # 대소문자 모두 처리
+    type_map = {
+        "mood": "mood", "MOOD": "mood",
+        "schedule": "schedule", "SCHEDULE": "schedule",
+        "frequent": "frequent", "FREQUENT": "frequent",
+        "recent": "recent", "RECENT": "recent",
+    }
+    recommend_type = type_map.get(recommend_type_raw)
+    if not recommend_type:
+        return jsonify({"error": f"잘못된 recommend_type: {recommend_type_raw}"}), 400
+
+    user_data = _load_user_data_from_db(matching_id)
+    if not user_data:
+        return jsonify({"error": "matching not found"}), 404
+
+    today_data = user_data["today_data"]
+    user_db = user_data["user_db"]
+
+    # 카테고리별 분기: 컨텍스트 질문 생성
+    if recommend_type == "mood":
+        mood = today_data.get("mood", "")
+        mood_kr = {
+            "HAPPY": "기분 좋음", "SAD": "슬픔", "CALM": "평온",
+            "JOYFUL": "즐거움", "ANXIOUS": "불안", "ANGRY": "화남", "TIRED": "피곤"
+        }.get(mood, "보통")
+        context_question = f"환자의 오늘 기분은 '{mood_kr}'입니다. 이 기분에 맞는 표현을 추천해주세요."
+
+    elif recommend_type == "schedule":
+        schedule = today_data.get("schedule", [])
+        hour = datetime.now().hour
+        if hour < 9:
+            slot_name = "기상/아침"
+        elif hour < 12:
+            slot_name = "오전"
+        elif hour < 15:
+            slot_name = "점심/낮"
+        elif hour < 18:
+            slot_name = "오후"
+        elif hour < 21:
+            slot_name = "저녁"
+        else:
+            slot_name = "취침준비"
+
+        current_activities = [s["event"] for s in schedule if s.get("time") == slot_name] if schedule else []
+        activity_str = ", ".join(current_activities) if current_activities else "등록된 일정 없음"
+        context_question = f"현재 시간대({slot_name})의 활동은 '{activity_str}'입니다. 이 상황에 맞는 표현을 추천해주세요."
+
+    elif recommend_type == "frequent":
+        most_used = today_data.get("mostUsedToday", {})
+        expr = most_used.get("expression", "")
+        if expr:
+            context_question = f"환자가 자주 사용하는 표현은 '{expr}'입니다. 비슷하거나 관련된 표현을 추천해주세요."
+        else:
+            context_question = "환자가 자주 사용하는 표현을 기반으로 추천해주세요."
+
+    elif recommend_type == "recent":
+        last_used = today_data.get("lastUsedFeature", {})
+        expr = last_used.get("expression", "")
+        if expr:
+            context_question = f"환자가 최근에 사용한 표현은 '{expr}'입니다. 이어서 사용할 만한 표현을 추천해주세요."
+        else:
+            context_question = "환자의 최근 사용 맥락을 기반으로 추천해주세요."
+
+    # guardianMessage가 있으면 컨텍스트에 추가
+    if guardian_message:
+        context_question += f" 보호자가 '{guardian_message}'라고 말했습니다."
+
+    # 기존 추천 로직 재활용: context_question을 question으로 사용
+    candidates = _search_sentences_mixed(context_question, user_db, sentiment_filter=None, intent_filter=None, k_total=6)
+    sentences = _refine_recommend(context_question, candidates, sentiment_context=None)
+
+    _recommend_stats["recommend_calls"] += 1
+    _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
+
+    return jsonify({"sentences": sentences})
+
+
+@app.route("/recommend/replies", methods=["POST"])
+def recommend_replies():
+    """보호자 메시지 기반 추천 응답 생성"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+    question = data.get("question", "").strip()
+    history = data.get("history")
+
+    if not question:
+        return jsonify({"error": "메시지 내용이 필요합니다"}), 400
+
+    user_data = _load_user_data_from_db(matching_id)
+    if not user_data:
+        return jsonify({"error": "matching not found"}), 404
+
+    # 대화 이력이 있으면 컨텍스트에 추가
+    context = question
+    if history:
+        history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
+        context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
+
+    # 기존 추천 로직 재활용
+    candidates = _search_sentences_mixed(context, user_data["user_db"], sentiment_filter=None, intent_filter=None, k_total=6)
+    sentences = _refine_recommend(context, candidates, sentiment_context=None)
+
+    # 각 문장에 intent 분류 + 메타정보 추가
+    replies = []
+    for rank, sentence in enumerate(sentences, start=1):
+        sentiment, intent = _classify_sentence_keywords(sentence)
+        replies.append({
+            "id": f"reply-{rank}",
+            "label": sentence,
+            "intentKey": intent,
+            "source": "context",
+            "rank": rank,
+        })
+
+    _recommend_stats["recommend_calls"] += 1
+    _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
+
+    return jsonify({"replies": replies})
+
+
 @app.route("/debug/recommend-stats", methods=["GET"])
 def debug_recommend_stats():
     s = _recommend_stats
