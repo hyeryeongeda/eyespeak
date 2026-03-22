@@ -131,6 +131,9 @@ save/
 *.m4a
 *.flac
 
+# 프론트엔드 알림 사운드는 예외
+!frontend/src/assets/sounds/*.mp3
+
 # Python 캐시
 __pycache__/
 *.py[cod]
