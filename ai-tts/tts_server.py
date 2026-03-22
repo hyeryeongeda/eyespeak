@@ -20,20 +20,23 @@ TTS API 서버 (FastAPI) - 다중 환자 모델 지원 + 응답 캐싱 + 비동�
 """
 import dataclasses
 import io
+import json
 import base64
 import os
+import shutil
 import subprocess
 import threading
 from collections import OrderedDict
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import torch
 import compat_patches  # noqa: F401  torch.load 패치 + isin_mps_friendly 패치
 import torchaudio
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 
@@ -50,7 +53,29 @@ OUTPUT_SAMPLE_RATE = 24000
 MAX_LOADED_MODELS = int(os.environ.get("TTS_MAX_LOADED_MODELS", "3"))
 CACHE_MAX_SIZE    = int(os.environ.get("TTS_CACHE_MAX_SIZE", "200"))
 
+# 화자 음성 등록 검증 기준
+MIN_AUDIO_DURATION = 3.0   # 초
+MAX_AUDIO_DURATION = 30.0  # 초
+MAX_REFS_PER_SPEAKER = 5   # 환자당 최대 레퍼런스 수
+
+# Phase 4: 추론 파라미터 최적화 (새 모델 기준)
+INFERENCE_PARAMS = {
+    "gpt_cond_len": 12,
+    "temperature": 0.72,
+    "length_penalty": 1.0,
+    "repetition_penalty": 2.5,
+    "top_k": 50,
+    "top_p": 0.88,
+    "speed": 1.2,
+}
+
 app = FastAPI(title="TTS API", description="XTTS v2 파인튜닝 모델 음성 합성 (다중 환자 지원)")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # ---------------------------------------------------------------------------
 # 모델 레지스트리 — { patient_id: {model, config, speaker_wav} }, LRU
@@ -174,14 +199,28 @@ def _deploy_trained_model(patient_id: str):
 # 체크포인트 탐색
 # ---------------------------------------------------------------------------
 
+def _get_speaker_refs(patient_dir: Path):
+    """환자 디렉토리에서 레퍼런스 WAV 파일을 찾아 반환 (다중 지원)."""
+    # ref1.wav, ref2.wav ... 형태 우선
+    refs = sorted(patient_dir.glob("ref*.wav"))
+    if refs:
+        return [str(r) for r in refs]
+    # speaker_ref.wav 폴백
+    spk = patient_dir / "speaker_ref.wav"
+    if spk.exists():
+        return [str(spk)]
+    return []
+
+
 def _get_patient_checkpoint(patient_id: str):
     patient_dir = CHECKPOINTS_DIR / patient_id
     if patient_dir.is_dir():
         pth = patient_dir / "best_model.pth"
         cfg = patient_dir / "config.json"
-        spk = patient_dir / "speaker_ref.wav"
-        if pth.exists() and cfg.exists() and spk.exists():
-            return str(patient_dir), str(pth), str(cfg), str(spk)
+        refs = _get_speaker_refs(patient_dir)
+        if pth.exists() and cfg.exists() and refs:
+            speaker_wav = refs if len(refs) > 1 else refs[0]
+            return str(patient_dir), str(pth), str(cfg), speaker_wav
 
     if patient_id == "default":
         if (CHECKPOINTS_DIR / "best_model.pth").exists() and (CHECKPOINTS_DIR / "config.json").exists():
@@ -213,7 +252,7 @@ def _list_available_patients():
                 d.is_dir()
                 and (d / "best_model.pth").exists()
                 and (d / "config.json").exists()
-                and (d / "speaker_ref.wav").exists()
+                and _get_speaker_refs(d)
             ):
                 patients.append(d.name)
     if "default" not in patients:
@@ -301,12 +340,7 @@ def _synthesize_wav_bytes(text: str, patient_id: str) -> tuple[bytes, bool]:
             text, config,
             speaker_wav=speaker_wav,
             language="ko",
-            gpt_cond_len=6,
-            temperature=0.6,
-            length_penalty=1.0,
-            repetition_penalty=5.0,
-            top_k=50,
-            top_p=0.85,
+            **INFERENCE_PARAMS,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"합성 실패: {str(e)}")
@@ -365,25 +399,188 @@ def root():
     return {
         "message": "TTS API", "docs": "/docs",
         "endpoints": {
-            "tts":          "POST /tts",
-            "patients":     "GET /patients",
-            "cache_stats":  "GET /cache/stats",
-            "cache_clear":  "DELETE /cache",
-            "train_start":  "POST /train/{patient_id}",
-            "train_status": "GET /train/{patient_id}/status",
-            "train_cancel": "DELETE /train/{patient_id}",
+            "tts":              "POST /tts",
+            "patients":         "GET /patients",
+            "register_voice":   "POST /patients/{patient_id}/voice",
+            "get_patient":      "GET /patients/{patient_id}",
+            "delete_patient":   "DELETE /patients/{patient_id}",
+            "add_refs":         "POST /patients/{patient_id}/refs",
+            "cache_stats":      "GET /cache/stats",
+            "cache_clear":      "DELETE /cache",
+            "train_start":      "POST /train/{patient_id}",
+            "train_status":     "GET /train/{patient_id}/status",
+            "train_cancel":     "DELETE /train/{patient_id}",
         },
     }
 
 
-# --- 추론 ---
+# ---------------------------------------------------------------------------
+# 화자 음성 등록 API
+# ---------------------------------------------------------------------------
+
+def _validate_audio(file_bytes: bytes) -> float:
+    """업로드된 오디오의 길이(초)를 검증하고 반환."""
+    buf = io.BytesIO(file_bytes)
+    try:
+        info = torchaudio.info(buf)
+    except Exception:
+        raise HTTPException(status_code=400, detail="유효한 WAV 파일이 아닙니다.")
+    duration = info.num_frames / info.sample_rate
+    if duration < MIN_AUDIO_DURATION:
+        raise HTTPException(status_code=400, detail=f"음성이 너무 짧습니다 ({duration:.1f}초). 최소 {MIN_AUDIO_DURATION}초 이상이어야 합니다.")
+    if duration > MAX_AUDIO_DURATION:
+        raise HTTPException(status_code=400, detail=f"음성이 너무 깁니다 ({duration:.1f}초). 최대 {MAX_AUDIO_DURATION}초 이하여야 합니다.")
+    return duration
+
+
+def _load_patient_profile(patient_id: str) -> dict:
+    profile_path = CHECKPOINTS_DIR / patient_id / "profile.json"
+    if profile_path.exists():
+        return json.loads(profile_path.read_text(encoding="utf-8"))
+    return {}
+
+
+def _save_patient_profile(patient_id: str, profile: dict):
+    profile_path = CHECKPOINTS_DIR / patient_id / "profile.json"
+    profile_path.write_text(json.dumps(profile, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+@app.post("/patients/{patient_id}/voice")
+async def register_voice(
+    patient_id: str,
+    name: str = Form("", description="환자 이름 (선택)"),
+    files: List[UploadFile] = File(..., description="레퍼런스 음성 WAV 파일 (1~5개, 각 3~30초)"),
+):
+    """
+    환자 음성을 등록합니다. 기존 체크포인트가 있으면 레퍼런스만 교체합니다.
+    - patient_id: 환자 고유 ID
+    - files: WAV 음성 파일 1~5개 (각 3~30초, 잡음 적은 깨끗한 음성 권장)
+    """
+    if len(files) > MAX_REFS_PER_SPEAKER:
+        raise HTTPException(status_code=400, detail=f"레퍼런스는 최대 {MAX_REFS_PER_SPEAKER}개까지 가능합니다.")
+
+    patient_dir = CHECKPOINTS_DIR / patient_id
+    patient_dir.mkdir(parents=True, exist_ok=True)
+
+    # 기존 ref 파일 제거
+    for old_ref in patient_dir.glob("ref*.wav"):
+        old_ref.unlink()
+
+    saved_refs = []
+    for i, f in enumerate(files, 1):
+        content = await f.read()
+        duration = _validate_audio(content)
+        ref_path = patient_dir / f"ref{i}.wav"
+        ref_path.write_bytes(content)
+        saved_refs.append({"file": f"ref{i}.wav", "duration": round(duration, 1)})
+
+    profile = {
+        "patient_id": patient_id,
+        "name": name,
+        "registered_at": datetime.now().isoformat(),
+        "refs": saved_refs,
+        "has_model": (patient_dir / "best_model.pth").exists(),
+    }
+    _save_patient_profile(patient_id, profile)
+
+    # 모델이 이미 로드되어 있으면 speaker_wav 갱신
+    with _registry_lock:
+        if patient_id in _model_registry:
+            refs = _get_speaker_refs(patient_dir)
+            _model_registry[patient_id]["speaker_wav"] = refs if len(refs) > 1 else refs[0]
+    _cache_clear_patient(patient_id)
+
+    return {"message": f"환자 '{patient_id}' 음성 등록 완료", "profile": profile}
+
 
 @app.get("/patients")
 def list_patients():
     available = _list_available_patients()
     with _registry_lock:
         loaded = list(_model_registry.keys())
-    return {"available": available, "loaded": loaded, "max_loaded": MAX_LOADED_MODELS}
+    patients_info = []
+    for pid in available:
+        profile = _load_patient_profile(pid)
+        patients_info.append({
+            "patient_id": pid,
+            "name": profile.get("name", ""),
+            "ref_count": len(_get_speaker_refs(CHECKPOINTS_DIR / pid)),
+            "has_model": (CHECKPOINTS_DIR / pid / "best_model.pth").exists(),
+            "loaded": pid in loaded,
+        })
+    return {"patients": patients_info, "total": len(available), "max_loaded": MAX_LOADED_MODELS}
+
+
+@app.get("/patients/{patient_id}")
+def get_patient(patient_id: str):
+    """환자 상세 정보를 반환합니다."""
+    patient_dir = CHECKPOINTS_DIR / patient_id
+    if not patient_dir.exists():
+        raise HTTPException(status_code=404, detail=f"등록되지 않은 환자입니다: {patient_id}")
+    profile = _load_patient_profile(patient_id)
+    profile["refs"] = [r.name for r in sorted(patient_dir.glob("ref*.wav"))]
+    profile["has_model"] = (patient_dir / "best_model.pth").exists()
+    with _registry_lock:
+        profile["loaded"] = patient_id in _model_registry
+    return profile
+
+
+@app.delete("/patients/{patient_id}")
+def delete_patient(patient_id: str):
+    """환자 데이터(레퍼런스 + 모델)를 삭제합니다."""
+    patient_dir = CHECKPOINTS_DIR / patient_id
+    if not patient_dir.exists():
+        raise HTTPException(status_code=404, detail=f"등록되지 않은 환자입니다: {patient_id}")
+    # 모델 언로드
+    with _registry_lock:
+        if patient_id in _model_registry:
+            del _model_registry[patient_id]["model"]
+            del _model_registry[patient_id]
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+    _cache_clear_patient(patient_id)
+    shutil.rmtree(patient_dir)
+    return {"message": f"환자 '{patient_id}' 삭제 완료"}
+
+
+@app.post("/patients/{patient_id}/refs")
+async def add_patient_refs(
+    patient_id: str,
+    files: List[UploadFile] = File(..., description="추가할 레퍼런스 음성 WAV 파일"),
+):
+    """기존 환자에 레퍼런스 음성을 추가합니다."""
+    patient_dir = CHECKPOINTS_DIR / patient_id
+    if not patient_dir.exists():
+        raise HTTPException(status_code=404, detail=f"등록되지 않은 환자입니다: {patient_id}")
+
+    existing_refs = list(patient_dir.glob("ref*.wav"))
+    if len(existing_refs) + len(files) > MAX_REFS_PER_SPEAKER:
+        raise HTTPException(
+            status_code=400,
+            detail=f"레퍼런스 최대 {MAX_REFS_PER_SPEAKER}개. 현재 {len(existing_refs)}개, {MAX_REFS_PER_SPEAKER - len(existing_refs)}개 추가 가능.",
+        )
+
+    new_refs = []
+    for i, f in enumerate(files, len(existing_refs) + 1):
+        content = await f.read()
+        duration = _validate_audio(content)
+        ref_path = patient_dir / f"ref{i}.wav"
+        ref_path.write_bytes(content)
+        new_refs.append({"file": f"ref{i}.wav", "duration": round(duration, 1)})
+
+    # 프로필 업데이트
+    profile = _load_patient_profile(patient_id)
+    profile.setdefault("refs", []).extend(new_refs)
+    _save_patient_profile(patient_id, profile)
+
+    # 로드된 모델의 speaker_wav 갱신
+    with _registry_lock:
+        if patient_id in _model_registry:
+            refs = _get_speaker_refs(patient_dir)
+            _model_registry[patient_id]["speaker_wav"] = refs if len(refs) > 1 else refs[0]
+    _cache_clear_patient(patient_id)
+
+    return {"message": f"{len(new_refs)}개 레퍼런스 추가 완료", "total_refs": len(existing_refs) + len(new_refs)}
 
 
 @app.post("/tts")
