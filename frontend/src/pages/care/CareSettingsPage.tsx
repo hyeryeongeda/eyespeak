@@ -49,12 +49,6 @@ const PATIENT_SETTINGS = [
 
 const MY_PROFILE_SETTINGS = [
   {
-    icon: '👤',
-    label: '계정 정보',
-    sub: '이름 · 연락처',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 계정 정보 라우트 연결
-  },
-  {
     icon: '🔔',
     label: '알림 설정',
     sub: '호출 · SOS · 채팅 알림',

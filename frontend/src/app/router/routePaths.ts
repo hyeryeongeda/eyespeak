@@ -52,7 +52,6 @@ export const ROUTE_SEGMENTS = {
     SETTINGS_DEVICE: 'settings/device',
     SETTINGS_TTS: 'settings/tts',
     SETTINGS_EXPRESSIONS: 'settings/expressions',
-    VOICE: 'voice',
   },
 } as const
 
