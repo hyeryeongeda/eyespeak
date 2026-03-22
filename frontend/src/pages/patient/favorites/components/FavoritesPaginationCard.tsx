@@ -1,4 +1,9 @@
 import type { CSSProperties } from 'react'
+import DwellFeedbackBadge from '../../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  type DwellFeedbackViewModel,
+} from '../../../../features/patient/input/hooks/useDwellFeedback'
 
 const cardWrapStyle: CSSProperties = {
   width: '100%',
@@ -29,6 +34,7 @@ const fullCardButtonStyle: CSSProperties = {
   cursor: 'pointer',
   transition: 'transform 0.18s ease, box-shadow 0.18s ease',
   appearance: 'none',
+  position: 'relative',
 }
 
 const primaryStyle: CSSProperties = {
@@ -70,6 +76,7 @@ const halfButtonStyle: CSSProperties = {
   color: '#203042',
   fontSize: 'clamp(1.1rem, 1.8vw, 1.4rem)',
   fontWeight: 800,
+  position: 'relative',
 }
 
 const singlePagePlaceholderStyle: CSSProperties = {
@@ -92,6 +99,9 @@ export interface FavoritesPaginationCardProps {
   totalPages: number
   onPrev: () => void
   onNext: () => void
+  prevTrackingId?: string
+  nextTrackingId?: string
+  dwellFeedback?: DwellFeedbackViewModel<string>
 }
 
 export default function FavoritesPaginationCard({
@@ -99,9 +109,20 @@ export default function FavoritesPaginationCard({
   totalPages,
   onPrev,
   onNext,
+  prevTrackingId,
+  nextTrackingId,
+  dwellFeedback,
 }: FavoritesPaginationCardProps) {
   const hasPrev = totalPages > 1 && pageIndex > 0
   const hasNext = totalPages > 1 && pageIndex < totalPages - 1
+  const isPrevDwellActive = isDwellFeedbackTargetActive(
+    dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+    prevTrackingId,
+  )
+  const isNextDwellActive = isDwellFeedbackTargetActive(
+    dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+    nextTrackingId,
+  )
 
   if (totalPages <= 1) {
     return (
@@ -124,7 +145,15 @@ export default function FavoritesPaginationCard({
           style={halfButtonStyle}
           onClick={onPrev}
           aria-label="이전 페이지"
+          data-tracking-id={prevTrackingId}
         >
+          {isPrevDwellActive && dwellFeedback ? (
+            <DwellFeedbackBadge
+              phase={dwellFeedback.phase}
+              progress={dwellFeedback.progress}
+              remainingMs={dwellFeedback.remainingMs}
+            />
+          ) : null}
           <span style={primaryStyle}>이전</span>
           <span style={descriptionStyle}>이전/다음 페이지로 넘어가기</span>
         </button>
@@ -134,7 +163,15 @@ export default function FavoritesPaginationCard({
           style={halfButtonStyle}
           onClick={onNext}
           aria-label="다음 페이지"
+          data-tracking-id={nextTrackingId}
         >
+          {isNextDwellActive && dwellFeedback ? (
+            <DwellFeedbackBadge
+              phase={dwellFeedback.phase}
+              progress={dwellFeedback.progress}
+              remainingMs={dwellFeedback.remainingMs}
+            />
+          ) : null}
           <span style={primaryStyle}>다음</span>
           <span style={descriptionStyle}>이전/다음 페이지로 넘어가기</span>
         </button>
@@ -152,7 +189,15 @@ export default function FavoritesPaginationCard({
           style={fullCardButtonStyle}
           onClick={onNext}
           aria-label="다음 페이지. 이전/다음 페이지로 넘어가기"
+          data-tracking-id={nextTrackingId}
         >
+          {isNextDwellActive && dwellFeedback ? (
+            <DwellFeedbackBadge
+              phase={dwellFeedback.phase}
+              progress={dwellFeedback.progress}
+              remainingMs={dwellFeedback.remainingMs}
+            />
+          ) : null}
           <span style={primaryStyle}>다음</span>
           <span style={descriptionStyle}>이전/다음 페이지로 넘어가기</span>
         </button>
@@ -169,7 +214,15 @@ export default function FavoritesPaginationCard({
         style={fullCardButtonStyle}
         onClick={onPrev}
         aria-label="이전 페이지. 이전/다음 페이지로 넘어가기"
+        data-tracking-id={prevTrackingId}
       >
+        {isPrevDwellActive && dwellFeedback ? (
+          <DwellFeedbackBadge
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
+        ) : null}
         <span style={primaryStyle}>이전</span>
         <span style={descriptionStyle}>이전/다음 페이지로 넘어가기</span>
       </button>

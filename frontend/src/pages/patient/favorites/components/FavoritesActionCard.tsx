@@ -1,4 +1,9 @@
 import type { CSSProperties, ReactNode } from 'react'
+import DwellFeedbackBadge from '../../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  type DwellFeedbackViewModel,
+} from '../../../../features/patient/input/hooks/useDwellFeedback'
 
 const cardStyle: CSSProperties = {
   width: '100%',
@@ -19,6 +24,7 @@ const cardStyle: CSSProperties = {
   cursor: 'pointer',
   transition: 'transform 0.18s ease, box-shadow 0.18s ease',
   appearance: 'none',
+  position: 'relative',
 }
 
 const primaryStyle: CSSProperties = {
@@ -52,6 +58,8 @@ export interface FavoritesActionCardProps {
   disabled?: boolean
   onClick: () => void
   children?: ReactNode
+  trackingId?: string
+  dwellFeedback?: DwellFeedbackViewModel<string>
 }
 
 export default function FavoritesActionCard({
@@ -60,7 +68,14 @@ export default function FavoritesActionCard({
   disabled = false,
   onClick,
   children,
+  trackingId,
+  dwellFeedback,
 }: FavoritesActionCardProps) {
+  const shouldShowDwellFeedback = isDwellFeedbackTargetActive(
+    dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+    trackingId,
+  )
+
   return (
     <>
       <style>{interactiveCss}</style>
@@ -76,7 +91,15 @@ export default function FavoritesActionCard({
         onClick={onClick}
         onKeyDown={e => e.key === 'Enter' && !disabled && onClick()}
         aria-label={`${primaryText}. ${description}`}
+        data-tracking-id={disabled ? undefined : trackingId}
       >
+        {shouldShowDwellFeedback && dwellFeedback ? (
+          <DwellFeedbackBadge
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
+        ) : null}
         {children ?? <span style={primaryStyle}>{primaryText}</span>}
         <span style={descriptionStyle}>{description}</span>
       </button>

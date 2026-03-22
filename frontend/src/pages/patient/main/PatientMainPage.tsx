@@ -2,6 +2,12 @@ import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  useDwellFeedback,
+  type DwellFeedbackViewModel,
+} from '../../../features/patient/input/hooks/useDwellFeedback'
 import { requestPatientRecalibration } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   getPatientCallCooldownSeconds,
@@ -22,6 +28,8 @@ type FeatureCardProps = {
   onSelect?: () => void
   disabled?: boolean
   centered?: boolean
+  trackingId?: PatientMainTargetId
+  dwellFeedback?: DwellFeedbackViewModel<PatientMainTargetId>
 }
 
 function FeatureCard({
@@ -33,9 +41,17 @@ function FeatureCard({
   onSelect,
   disabled = false,
   centered = false,
+  trackingId,
+  dwellFeedback,
 }: FeatureCardProps) {
   const isInteractive = typeof onSelect === 'function'
   const cardClassName = isInteractive ? `${className} patient-main-interactive` : className
+  const shouldShowDwellFeedback =
+    isInteractive &&
+    isDwellFeedbackTargetActive(
+      dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+      trackingId,
+    )
   const content = (
     <>
       <span style={{ ...badgeStyle, alignSelf: centered ? 'center' : 'flex-start' }}>{badge}</span>
@@ -93,6 +109,7 @@ function FeatureCard({
     <button
       type="button"
       className={cardClassName}
+      data-tracking-id={trackingId && !disabled ? trackingId : undefined}
       onClick={onSelect}
       disabled={disabled}
       aria-label={`${title} 카드`}
@@ -106,11 +123,19 @@ function FeatureCard({
         textDecoration: 'none',
         cursor: !disabled ? 'pointer' : 'default',
         opacity: disabled ? 0.7 : 1,
+        position: 'relative',
         alignItems: centered ? 'center' : 'flex-start',
         justifyContent: centered ? 'center' : 'flex-start',
         textAlign: centered ? 'center' : 'left',
       }}
     >
+      {shouldShowDwellFeedback && dwellFeedback ? (
+        <DwellFeedbackBadge
+          phase={dwellFeedback.phase}
+          progress={dwellFeedback.progress}
+          remainingMs={dwellFeedback.remainingMs}
+        />
+      ) : null}
       {content}
     </button>
   )
@@ -249,6 +274,9 @@ const responsiveStyle = `
 export default function PatientMainPage() {
   const navigate = useNavigate()
   const { logout, user, clearPatientPostAuth } = useAuth()
+  const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
+    enabled: true,
+  })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
 
@@ -384,7 +412,13 @@ export default function PatientMainPage() {
             </div>
           </div>
 
-          <div className="patient-main-grid" style={featureGridStyle}>
+          <div
+            className="patient-main-grid"
+            style={featureGridStyle}
+            ref={element => {
+              dwellFeedback.containerRef.current = element
+            }}
+          >
             <FeatureCard
               className="patient-main-card patient-main-full"
               badge="대화"
@@ -393,6 +427,8 @@ export default function PatientMainPage() {
               background="linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)"
               centered
               onSelect={() => handleSelectTarget('talk')}
+              trackingId="talk"
+              dwellFeedback={dwellFeedback}
             />
 
             <FeatureCard
@@ -404,6 +440,8 @@ export default function PatientMainPage() {
               onSelect={() => handleSelectTarget('call')}
               disabled={callStatus === 'requesting'}
               centered
+              trackingId="call"
+              dwellFeedback={dwellFeedback}
             />
 
             <FeatureCard
@@ -414,6 +452,8 @@ export default function PatientMainPage() {
               background="linear-gradient(135deg, #eff7f0 0%, #ebf8f6 100%)"
               centered
               onSelect={() => handleSelectTarget('leisure')}
+              trackingId="leisure"
+              dwellFeedback={dwellFeedback}
             />
           </div>
         </div>
