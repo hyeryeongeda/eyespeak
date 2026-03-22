@@ -143,6 +143,8 @@ prod-app-down:
 	cd frontend && docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 
 dev-app-up:
+	@echo "Cleaning up old Docker resources..."
+	docker system prune -f
 	@echo "Deploying Dev App (WAS + Frontend)..."
 	cd backend && docker compose -f docker-compose.dev.yml $(ENV_DEV) up -d --build
 	cd frontend && docker compose -f docker-compose.dev.yml up -d --build
