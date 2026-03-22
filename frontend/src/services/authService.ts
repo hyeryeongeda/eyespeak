@@ -7,7 +7,7 @@ import type {
   PasswordResetRequestDto,
   PasswordResetResponseDto,
 } from '../types/auth'
-import { createServiceFailure } from '../utils/errorMapper'
+import { createServiceFailure, logServiceFailure } from '../utils/errorMapper'
 import { loginApi, logoutApi, refreshApi, requestPasswordResetApi, withdrawApi } from './authApi'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import {
@@ -45,7 +45,9 @@ export async function login(values: LoginFormValues): Promise<ServiceResult<Auth
       data: mapAuthResponseToSession(response, authMode),
     }
   } catch (error) {
-    return createServiceFailure(error, '로그인에 실패했습니다.')
+    const failure = createServiceFailure(error, '로그인에 실패했습니다.')
+    logServiceFailure('auth.login', error, failure, { role: values.role })
+    return failure
   }
 }
 
@@ -77,7 +79,9 @@ export async function logout(session: AuthSession | null): Promise<ServiceResult
       data: null,
     }
   } catch (error) {
-    return createServiceFailure(error, '로그아웃에 실패했습니다.')
+    const failure = createServiceFailure(error, '로그아웃에 실패했습니다.')
+    logServiceFailure('auth.logout', error, failure, { role: session.role })
+    return failure
   }
 }
 
@@ -108,7 +112,9 @@ export async function refreshSession(
       data: mapAuthResponseToSession(response, authMode),
     }
   } catch (error) {
-    return createServiceFailure(error, '세션 갱신에 실패했습니다.')
+    const failure = createServiceFailure(error, '세션 갱신에 실패했습니다.')
+    logServiceFailure('auth.refresh', error, failure, { role: session.role })
+    return failure
   }
 }
 
@@ -133,7 +139,9 @@ export async function requestPasswordReset(
       data: response,
     }
   } catch (error) {
-    return createServiceFailure(error, '비밀번호 재설정 요청에 실패했습니다.')
+    const failure = createServiceFailure(error, '비밀번호 재설정 요청에 실패했습니다.')
+    logServiceFailure('auth.reset-password', error, failure, { role: values.role ?? null })
+    return failure
   }
 }
 
@@ -167,6 +175,8 @@ export async function withdraw(
       data: null,
     }
   } catch (error) {
-    return createServiceFailure(error, '회원 탈퇴에 실패했습니다.')
+    const failure = createServiceFailure(error, '회원 탈퇴에 실패했습니다.')
+    logServiceFailure('auth.withdraw', error, failure, { role: session.role })
+    return failure
   }
 }

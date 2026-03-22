@@ -1,10 +1,19 @@
-import { ROUTE_PATHS, resolveAppPath } from '../app/router/routePaths'
+import { useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../app/router/routePaths'
 import { setStoredEntryMode } from '../services/authStorage'
 
 export default function HomePage() {
+  const navigate = useNavigate()
+
   const moveToRoleSelect = (mode: 'login' | 'signup') => {
     setStoredEntryMode(mode)
-    window.location.assign(resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=${mode}`))
+    navigate(
+      {
+        pathname: ROUTE_PATHS.AUTH_ROLE,
+        search: `?mode=${mode}`,
+      },
+      { replace: false },
+    )
   }
 
   return (

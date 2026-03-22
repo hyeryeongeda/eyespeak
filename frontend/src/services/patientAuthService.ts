@@ -6,7 +6,7 @@ import type {
   PatientSignupRequestDto,
   VerifiedTeamCode,
 } from '../types/patient'
-import { createServiceFailure } from '../utils/errorMapper'
+import { createServiceFailure, logServiceFailure } from '../utils/errorMapper'
 import { normalizeTeamCode } from './authStorage'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import { findMockTeamCode, signUpPatientMockApi } from './mockAuthApi'
@@ -29,15 +29,6 @@ function mapPatientSignupInputToRequest(input: PatientSignupInput): PatientSignu
     name: input.account.name.trim(),
     loginId: input.account.loginId.trim().toLowerCase(),
     password: input.account.password,
-  }
-}
-
-function prefixFailureMessage(prefix: string, error: unknown, fallbackMessage: string) {
-  const failure = createServiceFailure(error, fallbackMessage)
-
-  return {
-    ...failure,
-    message: `${prefix} ${failure.message}`,
   }
 }
 
@@ -77,11 +68,11 @@ export async function verifyTeamCode(
       },
     }
   } catch (error) {
-    return prefixFailureMessage(
-      'Team code verification failed.',
-      error,
-      '팀 코드 확인에 실패했습니다.',
-    )
+    const failure = createServiceFailure(error, '팀코드 확인에 실패했습니다.')
+    logServiceFailure('patient-auth.verify-team-code', error, failure, {
+      teamCode: normalizedTeamCode,
+    })
+    return failure
   }
 }
 
@@ -108,10 +99,10 @@ export async function signUpPatient(
       },
     }
   } catch (error) {
-    return prefixFailureMessage(
-      'Patient signup failed.',
-      error,
-      '환자 회원가입에 실패했습니다.',
-    )
+    const failure = createServiceFailure(error, '환자 회원가입에 실패했습니다.')
+    logServiceFailure('patient-auth.signup', error, failure, {
+      teamCode: normalizeTeamCode(input.teamCode),
+    })
+    return failure
   }
 }

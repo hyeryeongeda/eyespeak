@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
-import { resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
 import AuthBrand from './AuthBrand'
@@ -23,6 +23,7 @@ export default function PatientLoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { login, isPending, setPatientPostAuth } = useAuth()
+  const patientSignupRoute = resolveAuthEntryRoute('signup', 'patient', location.state)
   const [form, setForm] = useState({
     identifier: '',
     password: '',
@@ -46,7 +47,7 @@ export default function PatientLoginPage() {
 
     if (!result.success) {
       setPatientPostAuth(null)
-      setError(`Login failed. ${result.message}`)
+      setError(result.message)
       return
     }
 
@@ -110,15 +111,33 @@ export default function PatientLoginPage() {
         </p>
 
         <div style={linkRow}>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=patient`)} style={textLink}>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_RESET_PASSWORD,
+              search: '?role=patient',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             비밀번호 재설정
-          </a>
-          <a href={resolveAppPath(ROUTE_PATHS.AUTH_SIGNUP_PATIENT)} style={textLink}>
+          </Link>
+          <Link
+            to={patientSignupRoute.path}
+            state={patientSignupRoute.state}
+            style={textLink}
+          >
             환자 회원가입
-          </a>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=login`)} style={textLink}>
+          </Link>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=login',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             역할 다시 선택
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>

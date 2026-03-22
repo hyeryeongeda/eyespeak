@@ -86,6 +86,7 @@ export interface WithdrawRequestDto {
 
 export interface GuardianAccountFormValues {
   email: string
+  emailConfirm: string
   name: string
   password: string
   passwordConfirm: string

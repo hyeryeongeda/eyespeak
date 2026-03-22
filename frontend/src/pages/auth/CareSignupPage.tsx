@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
-import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { Link, useLocation } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
 import { GUARDIAN_SIGNUP_ROUTINE_SLOTS } from '../../features/auth/guardianRoutineSurvey'
 import { useGuardianSignupFlow } from '../../features/auth/hooks/useGuardianSignupFlow'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
@@ -83,10 +85,14 @@ function getNextSubmissionStage(lastCompletedStage: GuardianSignupStage | null) 
 }
 
 export default function CareSignupPage() {
+  const location = useLocation()
   const {
     currentStep,
     currentSignupStage,
     guardianAccount,
+    normalizedGuardianEmail,
+    isEmailConfirmed,
+    emailMismatchMessage,
     patientProfile,
     patientRoutines,
     errorMessage: stepErrorMessage,
@@ -98,6 +104,7 @@ export default function CareSignupPage() {
     canGoToPreviousStep,
     submitButtonLabel,
     isSubmitting,
+    setIsEmailConfirmTouched,
     setGuardianAccount,
     setPatientProfile,
     goToNextStep,
@@ -123,10 +130,23 @@ export default function CareSignupPage() {
       : currentStep === 'submitting'
         ? 2
         : currentStep === 'patient-routines'
-          ? 2
-          : currentStep === 'patient-profile'
-            ? 1
-            : 0
+        ? 2
+        : currentStep === 'patient-profile'
+          ? 1
+          : 0
+  const loginEntryRoute = resolveAuthEntryRoute('login', 'guardian', location.state)
+  const completedLoginState =
+    currentStep === 'completed' && signupResult
+      ? {
+          ...(loginEntryRoute.state && typeof loginEntryRoute.state === 'object'
+            ? (loginEntryRoute.state as Record<string, unknown>)
+            : {}),
+          signupCompleted: true,
+          guardianEmail: normalizedGuardianEmail,
+          patientName: signupResult.patientName,
+          teamCode: signupResult.teamCode,
+        }
+      : loginEntryRoute.state
 
   return (
     <AuthPageFrame>
@@ -321,6 +341,21 @@ export default function CareSignupPage() {
                 }
               />
               <input
+                type="email"
+                placeholder="이메일 확인"
+                style={input}
+                value={guardianAccount.emailConfirm}
+                onChange={event =>
+                  setGuardianAccount(prev => ({ ...prev, emailConfirm: event.target.value }))
+                }
+                onBlur={() => setIsEmailConfirmTouched(true)}
+              />
+              {emailMismatchMessage ? (
+                <p style={errorMessageStyle}>{emailMismatchMessage}</p>
+              ) : isEmailConfirmed ? (
+                <p style={successMessage}>이메일 확인이 완료되었습니다.</p>
+              ) : null}
+              <input
                 type="text"
                 placeholder="보호자 이름"
                 style={input}
@@ -480,7 +515,7 @@ export default function CareSignupPage() {
                   입력 요약
                 </p>
                 <p style={{ margin: '0 0 4px', color: '#6d7f8f', fontSize: '13px' }}>
-                  보호자: {guardianAccount.name} ({guardianAccount.email})
+                  보호자: {guardianAccount.name} ({normalizedGuardianEmail || guardianAccount.email})
                 </p>
                 <p style={{ margin: '0 0 4px', color: '#6d7f8f', fontSize: '13px' }}>
                   환자: {patientProfile.name} / {patientProfile.birthYear}년생 /{' '}
@@ -516,15 +551,15 @@ export default function CareSignupPage() {
         ) : null}
 
         {currentStep === 'submitting' ? (
-            <div style={infoBox}>
-              <p style={{ margin: '0 0 8px', color: '#203042', fontSize: '16px', fontWeight: 700 }}>
-                회원가입 완료 처리 중
-              </p>
-              <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.6 }}>
-                보호자 계정 생성, 환자 기본 정보 저장, 루틴 설문 저장을 순차 처리하고 있습니다. 중복 제출을 막기 위해 버튼은 잠시 비활성화됩니다.
-              </p>
-            </div>
-          ) : null}
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 8px', color: '#203042', fontSize: '16px', fontWeight: 700 }}>
+              회원가입 완료 처리 중
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.6 }}>
+              보호자 계정 생성, 환자 기본 정보 저장, 루틴 설문 저장을 순차 처리하고 있습니다. 중복 제출을 막기 위해 버튼은 잠시 비활성화됩니다.
+            </p>
+          </div>
+        ) : null}
 
         {currentStep === 'completed' && signupResult ? (
           <>
@@ -579,12 +614,23 @@ export default function CareSignupPage() {
         ) : null}
 
         <div style={linkRow}>
-          <a href={resolveAppPath(ROUTE_PATHS.AUTH_LOGIN_CARE)} style={textLink}>
+          <Link
+            to={loginEntryRoute.path}
+            state={completedLoginState}
+            style={textLink}
+          >
             보호자 로그인
-          </a>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`)} style={textLink}>
+          </Link>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=signup',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             역할 다시 선택
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>

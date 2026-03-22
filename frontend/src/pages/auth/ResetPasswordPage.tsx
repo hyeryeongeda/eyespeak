@@ -1,6 +1,7 @@
 import { type FormEvent, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
 import { requestPasswordReset } from '../../services/authService'
 import { getStoredRole } from '../../services/authStorage'
 import { normalizeAuthRole } from '../../services/authRole'
@@ -23,6 +24,7 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function ResetPasswordPage() {
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const [identifier, setIdentifier] = useState('')
   const [error, setError] = useState('')
@@ -32,17 +34,20 @@ export default function ResetPasswordPage() {
   const roleParam = searchParams.get('role')
   const resolvedRole: UserRole | null = normalizeAuthRole(roleParam) ?? normalizeAuthRole(storedRole)
 
-  const loginPath = useMemo(() => {
+  const loginRoute = useMemo(() => {
     if (resolvedRole === 'guardian') {
-      return ROUTE_PATHS.AUTH_LOGIN_CARE
+      return resolveAuthEntryRoute('login', 'guardian', location.state)
     }
 
     if (resolvedRole === 'patient') {
-      return ROUTE_PATHS.AUTH_LOGIN_PATIENT
+      return resolveAuthEntryRoute('login', 'patient', location.state)
     }
 
-    return ROUTE_PATHS.AUTH_LOGIN
-  }, [resolvedRole])
+    return {
+      path: ROUTE_PATHS.AUTH_LOGIN,
+      state: location.state,
+    }
+  }, [location.state, resolvedRole])
 
   const roleLabel =
     resolvedRole === 'guardian' ? '보호자' : resolvedRole === 'patient' ? '환자' : '역할 미지정'
@@ -148,9 +153,9 @@ export default function ResetPasswordPage() {
         ) : null}
 
         <div style={{ marginTop: '18px', textAlign: 'center' }}>
-          <a href={resolveAppPath(loginPath)} style={textLink}>
+          <Link to={loginRoute.path} state={loginRoute.state} style={textLink}>
             로그인으로 돌아가기
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>

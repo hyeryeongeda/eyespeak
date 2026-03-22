@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
-import { resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
   consumeGuardianSessionExitReason,
@@ -39,6 +39,7 @@ export default function CareLoginPage() {
   const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
     consumeGuardianSessionExitReason(),
   )
+  const guardianSignupRoute = resolveAuthEntryRoute('signup', 'guardian', location.state)
   const [form, setForm] = useState({
     identifier: locationState?.guardianEmail ?? '',
     password: '',
@@ -61,7 +62,7 @@ export default function CareLoginPage() {
     })
 
     if (!result.success) {
-      setError(`Login failed. ${result.message}`)
+      setError(result.message)
       return
     }
 
@@ -151,15 +152,33 @@ export default function CareLoginPage() {
         <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=guardian`)} style={textLink}>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_RESET_PASSWORD,
+              search: '?role=guardian',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             비밀번호 재설정
-          </a>
-          <a href={resolveAppPath(ROUTE_PATHS.AUTH_SIGNUP_CARE)} style={textLink}>
+          </Link>
+          <Link
+            to={guardianSignupRoute.path}
+            state={guardianSignupRoute.state}
+            style={textLink}
+          >
             보호자 회원가입
-          </a>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=login`)} style={textLink}>
+          </Link>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=login',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             역할 다시 선택
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>
