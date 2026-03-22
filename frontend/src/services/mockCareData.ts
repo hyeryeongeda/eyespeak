@@ -4,27 +4,14 @@
  */
 
 import type {
-  PatientInfo,
   Category,
   Phrase,
   FavoritePhrase,
   DwellTimePreset,
   ActivationDelayPreset,
   Call,
-  UserWords,
   Expression,
 } from '../types/care'
-
-// ========================
-// 환자 기본 정보
-// ========================
-
-export const MOCK_PATIENT_INFO: PatientInfo = {
-  id: 1,
-  name: '이환자',
-  birthYear: 1965,
-  gender: 'M',
-}
 
 // ========================
 // 즐겨찾기 — 시드 데이터
@@ -164,16 +151,6 @@ export const MOCK_CALLS: Call[] = [
 ]
 
 // ========================
-// 커스텀 단어
-// ========================
-
-export const MOCK_USER_WORDS: UserWords = {
-  matchingId: 1,
-  subjects: ['나', '우리', '아들'],
-  objects: ['물', '밥', '약', '음악', '텔레비전'],
-  verbs: ['먹다', '마시다', '듣다', '보다', '가다', '자다'],
-}
-
 // ========================
 // 맞춤 표현
 // ========================

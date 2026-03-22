@@ -26,7 +26,14 @@ export type SentimentType = 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL'
 
 // 환자 기본 정보 (GENERAL-001)
 export interface PatientInfo {
-  id: number
+  patientId: number
+  name: string
+  birthYear: number
+  age: number
+  gender: Gender
+}
+
+export interface PatientInfoUpdateRequest {
   name: string
   birthYear: number
   gender: Gender
@@ -225,14 +232,6 @@ export interface DailyRecordResponse {
   sosCallCount: number
 }
 
-
-// 커스텀 단어
-export interface UserWords {
-  matchingId: number
-  subjects: string[]
-  objects: string[]
-  verbs: string[]
-}
 
 
 // 맞춤 표현
