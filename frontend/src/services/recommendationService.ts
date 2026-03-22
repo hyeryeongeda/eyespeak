@@ -24,7 +24,6 @@ import type {
   RecommendationSendSource,
 } from '../types/recommendation'
 import { createServiceFailure } from '../utils/errorMapper'
-import { playAudioSource } from '../utils/audio'
 import { getActiveAuthSession } from './authSessionRegistry'
 import { getActiveAiApiMode } from './aiServiceConfig'
 import {
@@ -35,7 +34,7 @@ import {
   getRecommendationWordsApi,
   sendRecommendationApi,
 } from './recommendationApi'
-import { synthesizeTts } from './ttsService'
+import { playSynthesizeTts } from './ttsService'
 import { mockSendPatientReply, type MockSendPatientReplyInput, type MockSendPatientReplyResult } from './mockPatientChatService'
 import { buildMockSuggestedResponses } from './mockSuggestionService'
 
@@ -119,6 +118,16 @@ function mapReplyTypeToSendSource(
 
 function normalizeUtteranceText(text: string) {
   return text.trim()
+}
+
+function toCustomTalkSubmitSource(
+  source: RecommendationSendSource,
+): 'recommended' | 'generated' | 'manual' {
+  if (source === 'recommended' || source === 'generated') {
+    return source
+  }
+
+  return 'manual'
 }
 
 export async function fetchVisibleCustomCategories(input: {
@@ -214,10 +223,10 @@ export async function fetchGeneratedCustomSentences(input: {
   return response.sentences
 }
 
-export async function submitCustomTalkUtterance(input: {
+export async function submitPatientUtterance(input: {
   text: string
   shouldFail?: boolean
-  source: 'recommended' | 'generated' | 'manual'
+  source: RecommendationSendSource
 }) {
   const normalizedText = normalizeUtteranceText(input.text)
 
@@ -229,6 +238,7 @@ export async function submitCustomTalkUtterance(input: {
     return submitCustomTalkUtteranceMock({
       ...input,
       text: normalizedText,
+      source: toCustomTalkSubmitSource(input.source),
     })
   }
 
@@ -247,7 +257,15 @@ export async function submitCustomTalkUtterance(input: {
   }
 }
 
-export async function playCustomTalkUtteranceTts(input: {
+export async function submitCustomTalkUtterance(input: {
+  text: string
+  shouldFail?: boolean
+  source: 'recommended' | 'generated' | 'manual'
+}) {
+  return submitPatientUtterance(input)
+}
+
+export async function playPatientUtteranceTts(input: {
   text: string
 }): Promise<AudioPlaybackHandle | null> {
   const normalizedText = normalizeUtteranceText(input.text)
@@ -256,15 +274,15 @@ export async function playCustomTalkUtteranceTts(input: {
     throw new Error('재생할 문장이 비어 있습니다.')
   }
 
-  if (getActiveAiApiMode() !== 'real') {
-    return null
-  }
-
-  const audioSource = await synthesizeTts({
+  return playSynthesizeTts({
     text: normalizedText,
   })
+}
 
-  return playAudioSource(audioSource)
+export async function playCustomTalkUtteranceTts(input: {
+  text: string
+}): Promise<AudioPlaybackHandle | null> {
+  return playPatientUtteranceTts(input)
 }
 
 export async function fetchSuggestedReplies(input: {
