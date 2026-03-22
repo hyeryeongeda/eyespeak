@@ -3,6 +3,7 @@ import {
   PATIENT_DOUBLE_BLINK_EVENT,
   PATIENT_TRACKING_STATUS_EVENT,
   isCalibrationTrackingStatus,
+  type PatientDoubleBlinkDetail,
   type PatientTrackingStatusChangeDetail,
 } from '../services/patientModeBridge'
 import { usePatientModeStore } from '../stores/patientModeStore'
@@ -21,16 +22,31 @@ export function usePatientTrackingBridge({
 
     usePatientModeStore.getState().setTrackingStatus('idle')
 
-    const handleDoubleBlink = () => {
-      if (import.meta.env.DEV) {
-        const isGlobalMenuOpen = usePatientModeStore.getState().isGlobalMenuOpen
+    const handleDoubleBlink = (event: Event) => {
+      const detail = (event as CustomEvent<PatientDoubleBlinkDetail>).detail
+      window.queueMicrotask(() => {
+        if (event.defaultPrevented) {
+          if (import.meta.env.DEV) {
+            console.info('[patient-input] double blink bridge event consumed before menu toggle', {
+              source: detail?.source ?? 'unknown',
+              globalMenuOpen: usePatientModeStore.getState().isGlobalMenuOpen,
+            })
+          }
 
-        console.info('[patient-input] double blink bridge event', {
-          globalMenuBeforeToggle: isGlobalMenuOpen,
-        })
-      }
+          return
+        }
 
-      usePatientModeStore.getState().handleDoubleBlink()
+        if (import.meta.env.DEV) {
+          const isGlobalMenuOpen = usePatientModeStore.getState().isGlobalMenuOpen
+
+          console.info('[patient-input] double blink bridge event', {
+            source: detail?.source ?? 'unknown',
+            globalMenuBeforeToggle: isGlobalMenuOpen,
+          })
+        }
+
+        usePatientModeStore.getState().handleDoubleBlink()
+      })
     }
 
     const handleTrackingStatusChange = (event: Event) => {

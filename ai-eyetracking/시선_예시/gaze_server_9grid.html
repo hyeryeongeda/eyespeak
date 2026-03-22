@@ -380,9 +380,30 @@
   const EMBED_MODE = searchParams.get('embed') === '1';
   const AUTO_START = searchParams.get('autostart') === '1';
   const EMBED_USER_ID = (searchParams.get('userId') || '').trim();
+  const EMBED_PROFILE_ID = (searchParams.get('profileId') || EMBED_USER_ID).trim();
   const MESSAGE_SOURCE = 'eyespeak-eye-tracking';
+  const EMBED_MESSAGE_TYPES = Object.freeze({
+    EMBED_LOADED: 'EMBED_LOADED',
+    CALIBRATION_READY: 'CALIBRATION_READY',
+    CALIBRATION_COMPLETE: 'CALIBRATION_COMPLETE',
+    CALIBRATION_ERROR: 'CALIBRATION_ERROR'
+  });
+  const EMBED_LOG_PREFIX = '[eye-tracking-embed]';
   const DEFAULT_DWELL_TIME_SEC = 1.5;
   const SELECTION_COOLDOWN_MS = 500;
+  const EMBED_API_BASE_URL = new URL('./', window.location.href);
+  const PARENT_TARGET_ORIGIN = (() => {
+    if (!document.referrer) {
+      return '*';
+    }
+
+    try {
+      return new URL(document.referrer).origin;
+    } catch (error) {
+      console.warn('Failed to resolve parent origin from referrer.', error);
+      return '*';
+    }
+  })();
 
   // ===== 설정 =====
   const CALIB_N        = 12;      // 12포인트 캘리브레이션
@@ -404,15 +425,36 @@
     showToast._t = setTimeout(() => toastEl.classList.remove('show'), 2000);
   }
 
+  function buildApiUrl(path) {
+    return new URL(path.replace(/^\/+/, ''), EMBED_API_BASE_URL).toString();
+  }
+
   function notifyParent(type, detail = {}) {
     if (window.parent === window) {
       return;
     }
-    window.parent.postMessage({ source: MESSAGE_SOURCE, type, ...detail }, '*');
+    console.info(EMBED_LOG_PREFIX, 'child message sent', {
+      type,
+      targetOrigin: PARENT_TARGET_ORIGIN,
+      userId: EMBED_USER_ID || null,
+      profileId: EMBED_PROFILE_ID || null,
+      detail
+    });
+    window.parent.postMessage({
+      source: MESSAGE_SOURCE,
+      type,
+      userId: EMBED_USER_ID || undefined,
+      profileId: EMBED_PROFILE_ID || undefined,
+      ...detail
+    }, PARENT_TARGET_ORIGIN);
   }
 
   if (EMBED_MODE && topbarEl) {
     topbarEl.style.display = 'none';
+  }
+
+  if (EMBED_MODE) {
+    notifyParent(EMBED_MESSAGE_TYPES.EMBED_LOADED);
   }
 
   // ===== 얼굴 메시 와이어프레임 =====
@@ -668,7 +710,7 @@
     if (source !== 'dwell') {
       return;
     }
-    fetch('/api/selection', {
+    fetch(buildApiUrl('api/selection'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cell: idx })
@@ -693,7 +735,7 @@
   }
   async function loadRuntimeConfig() {
     try {
-      const response = await fetch('/api/runtime-config');
+      const response = await fetch(buildApiUrl('api/runtime-config'));
       const result = await response.json().catch(() => ({}));
       const nextDwellTimeSec = Number(result && result.dwell_time_sec);
       if (response.ok && Number.isFinite(nextDwellTimeSec) && nextDwellTimeSec > 0) {
@@ -748,7 +790,7 @@
     try {
       statusEl.textContent = EMBED_USER_ID ? 'Saving calibration...' : 'Syncing calibration...';
 
-      const calibrateResponse = await fetch('/api/calibrate', {
+      const calibrateResponse = await fetch(buildApiUrl('api/calibrate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ calibration: calibrationPayload })
@@ -760,7 +802,7 @@
       }
 
       if (EMBED_USER_ID) {
-        const saveResponse = await fetch('/api/calibrate/save', {
+        const saveResponse = await fetch(buildApiUrl('api/calibrate/save'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: EMBED_USER_ID })
@@ -771,7 +813,7 @@
           throw new Error(saveResult.error || 'Calibration save failed.');
         }
 
-        await fetch('/api/calibrate/load', {
+        await fetch(buildApiUrl('api/calibrate/load'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: EMBED_USER_ID })
@@ -779,14 +821,14 @@
       }
 
       statusEl.textContent = 'Calibration complete.';
-      notifyParent('calibration-complete', { userId: EMBED_USER_ID || undefined });
+      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_COMPLETE);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Calibration sync failed.';
       console.warn(message, error);
       statusEl.textContent = message;
       showToast(message);
-      notifyParent('calibration-error', { message });
+      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, { message });
     }
   }
 
@@ -1023,7 +1065,7 @@
   document.getElementById('btnSave').addEventListener('click', () => {
     const userId = prompt('저장할 사용자 ID를 입력하세요:');
     if (!userId) return;
-    fetch('/api/calibrate/save', {
+    fetch(buildApiUrl('api/calibrate/save'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId })
@@ -1036,7 +1078,7 @@
   document.getElementById('btnLoad').addEventListener('click', () => {
     const userId = prompt('불러올 사용자 ID를 입력하세요:');
     if (!userId) return;
-    fetch('/api/calibrate/load', {
+    fetch(buildApiUrl('api/calibrate/load'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: userId })
@@ -1092,6 +1134,11 @@
   let faceMesh = null;
 
   async function initMediaPipe() {
+    console.info(EMBED_LOG_PREFIX, 'camera init start', {
+      autostart: AUTO_START,
+      embedMode: EMBED_MODE
+    });
+    console.info(EMBED_LOG_PREFIX, 'detector init start');
     debugEl.textContent = 'MediaPipe 로딩 중… (처음엔 수 초 걸림)';
     statusEl.textContent = '초기화 중…';
     try {
@@ -1113,7 +1160,9 @@
         height: 480
       });
       await cam.start();
-      notifyParent('calibration-ready');
+      console.info(EMBED_LOG_PREFIX, 'camera init success');
+      console.info(EMBED_LOG_PREFIX, 'detector init success');
+      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_READY);
       if (AUTO_START && !autoStartRequested) {
         autoStartRequested = true;
         startCalibration();
@@ -1121,9 +1170,12 @@
       debugEl.textContent = coef ? '이전 캘리 불러옴 — 바로 사용 가능' : '카메라 준비됨 — 캘리브레이션 버튼을 눌러주세요';
       statusEl.textContent = '';
     } catch(e) {
+      console.error(EMBED_LOG_PREFIX, 'camera or detector init failed', e);
       debugEl.textContent = '초기화 오류: ' + e.message;
       statusEl.textContent = '오류 발생 — 페이지를 새로고침하세요';
-      notifyParent('calibration-error', { message: e && e.message ? e.message : 'MediaPipe init failed.' });
+      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, {
+        message: e && e.message ? e.message : 'MediaPipe init failed.'
+      });
       console.error('MediaPipe init error:', e);
     }
   }
@@ -1142,6 +1194,13 @@
       }
     });
   }
+  window.addEventListener('load', () => {
+    if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
+      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, {
+        message: 'MediaPipe CDN scripts failed to load.'
+      });
+    }
+  });
 })();
 </script>
 </body>

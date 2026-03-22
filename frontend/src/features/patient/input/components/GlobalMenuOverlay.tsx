@@ -6,7 +6,9 @@ import { useDwell } from '../hooks/useDwell'
 import { useTracking } from '../hooks/useTracking'
 import {
   emitPatientGlobalMenuAction,
+  PATIENT_DOUBLE_BLINK_EVENT,
   type PatientGlobalMenuActionId,
+  type PatientDoubleBlinkDetail,
 } from '../services/patientModeBridge'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
@@ -276,16 +278,108 @@ export default function GlobalMenuOverlay() {
     setPendingTargetId(null)
   }, [isOpen])
 
-  function queueAction(targetId: GlobalMenuTargetId, source: 'pointer' | 'gaze' = 'pointer') {
+  useEffect(() => {
+    if (!isOpen || typeof window === 'undefined') {
+      return
+    }
+
+    const handleDoubleBlink = (event: Event) => {
+      const doubleBlinkEvent = event as CustomEvent<PatientDoubleBlinkDetail>
+      const targetId = inputSource === 'gaze' ? hoveredTargetId : null
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] global menu double blink received', {
+          targetId,
+          inputSource,
+          pendingTargetId,
+          isTrackingReady,
+          isSosDisabled,
+        })
+      }
+
+      if (!isTrackingReady) {
+        return
+      }
+
+      if (!targetId) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu double blink skipped because no active target is resolved')
+        }
+
+        return
+      }
+
+      if (pendingTargetId !== null) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu double blink skipped because an action is already pending', {
+            targetId,
+            pendingTargetId,
+          })
+        }
+
+        return
+      }
+
+      if (targetId === 'sos' && isSosDisabled) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu double blink skipped because SOS is cooling down', {
+            targetId,
+            sosRemainingMs,
+          })
+        }
+
+        return
+      }
+
+      doubleBlinkEvent.preventDefault()
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] global menu double blink confirmed', {
+          targetId,
+        })
+      }
+
+      queueAction(targetId, 'gaze-blink')
+    }
+
+    window.addEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink as EventListener)
+
+    return () => {
+      window.removeEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink as EventListener)
+    }
+  }, [hoveredTargetId, inputSource, isOpen, isSosDisabled, isTrackingReady, pendingTargetId, sosRemainingMs])
+
+  function queueAction(
+    targetId: GlobalMenuTargetId,
+    source: 'pointer' | 'gaze' | 'gaze-blink' = 'pointer',
+  ) {
     if (!isOpen || !isTrackingReady || pendingTargetId !== null) {
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] global menu action blocked', {
+          targetId,
+          source,
+          reason: !isOpen ? 'menu-closed' : !isTrackingReady ? 'tracking-not-ready' : 'pending-action',
+          pendingTargetId,
+        })
+      }
+
       return
     }
 
     if (targetId === 'sos' && isSosDisabled) {
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] global menu action blocked', {
+          targetId,
+          source,
+          reason: 'sos-cooldown',
+          sosRemainingMs,
+        })
+      }
+
       return
     }
 
-    if (source === 'gaze') {
+    if (source === 'gaze' || source === 'gaze-blink') {
       submitActiveEyeTrackingSelectionFeedback()
     }
 
