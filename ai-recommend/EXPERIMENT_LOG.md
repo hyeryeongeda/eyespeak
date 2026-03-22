@@ -201,6 +201,47 @@ FastAPI 전환 후 현재 상태(baseline)의 성능 수치를 기록한다.
 
 ---
 
+## 실험 #3: LLM 모델 교체 + 프롬프트 축소 (2026-03-22)
+
+### 목적
+LLM 모델을 gpt-4o-mini → gpt-4.1-nano로 교체하고, 프롬프트 토큰을 축소하여 1차 호출(캐시 미스) 시간을 단축한다.
+
+### 변경 내용
+1. **모델 교체:** `gpt-4o-mini` (2 credit) → `gpt-4.1-nano` (1 credit) — 5곳 모두 교체
+2. **프롬프트 축소:** 4개 함수의 프롬프트 ~60% 축소 (불필요한 설명 제거, 핵심만)
+3. **max_tokens 축소:** _refine_recommend 100→60, _generate_from_words 120→60, _generate_categories 200→150
+4. **retry 제거:** _generate_categories retry 3회→1회 (실패 시 fallback 바로 반환)
+
+### 결과
+
+#### _refine_recommend 시간 비교 (3회 호출)
+
+| 호출 | gpt-4o-mini (before) | gpt-4.1-nano (after) |
+|---|---|---|
+| 1차 | 2036ms | 1782ms |
+| 2차 | - | 1458ms |
+| 3차 | - | **738ms** |
+| **평균** | **2036ms** | **1326ms (35% 단축)** |
+| **최소** | 2036ms | **738ms (64% 단축)** |
+
+#### 전체 함수별 시간 (gpt-4.1-nano, 3회 평균)
+
+| 함수 | 평균 | 최소 | 최대 |
+|---|---|---|---|
+| _refine_recommend | **1325.84ms** | 737.63ms | 1782.09ms |
+| _search_sentences_mixed | 45.83ms | 39.75ms | 54.95ms |
+| _search_sentences | 29.73ms | 26.11ms | 33.68ms |
+| _load_user_data_from_db | 18.66ms | 9.95ms | 24.32ms |
+
+### 분석
+- 모델 교체로 평균 35% 시간 단축, credit 비용도 2→1로 절반
+- 3차 호출에서 738ms까지 떨어짐 — GMS 네트워크 워밍업 영향
+- 프롬프트 축소 + max_tokens 축소로 입출력 토큰 총량 감소
+- 추천 문장 품질은 유지됨 ("나 좋아", "별로야 좀 피곤해", "그냥 그래, 힘들어" 등 자연스러운 반말)
+- **다음 단계:** LLM 호출 자체를 제거하는 규칙 기반 추천 방식 검토
+
+---
+
 ## 실험 계획
 
 ### 실험 #2: MMR 적용 (예정)

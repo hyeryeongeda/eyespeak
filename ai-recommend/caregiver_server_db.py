@@ -422,16 +422,12 @@ def _llm_filter_words(question: str, candidates: list, category: str) -> list:
         "objects": "목적어로 쓸 수 있는 명사(사물, 음식, 장소, 행위 대상 등)만",
         "verbs": "서술어로 쓸 수 있는 동사·형용사만 (원형, '다'로 끝나는 형태)",
     }.get(category, "적절한 단어만")
-    prompt = f"""보호자 질문: "{question}"
-후보 단어: {json.dumps(candidates, ensure_ascii=False)}
-
-위 후보 중에서 {category_desc} 골라주세요.
-- 부사(많이, 아직도, 오늘 등), 어미, 조사, 감탄사는 제외
-- 해당하는 단어가 없으면 빈 배열 []
-- JSON 배열만 출력, 다른 텍스트 없이"""
+    prompt = f"""질문:"{question}"
+후보:{json.dumps(candidates, ensure_ascii=False)}
+{category_desc} 골라서 JSON배열만 출력.부사/어미/조사제외."""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[
                 {"role": "system", "content": "JSON 배열만 출력하세요."},
                 {"role": "user", "content": prompt},
@@ -520,23 +516,17 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
         if sentiment_context
         else "긍정 1개, 부정/중립 2개로 다양하게"
     )
-    prompt = f"""보호자 질문: "{question}"
-환자가 과거에 자주 쓴 표현:
-{chr(10).join(f"- {t}" for t in texts)}
-
-위 표현들을 참고해서 질문에 어울리는 자연스러운 환자 답변을 정확히 3개 만드세요.
-- 보호자 질문 시제/맥락에 맞게 (과거 질문→과거형, 현재→현재형)
-- 반말 구어체, 15자 이내
-- {diversity_rule}
-- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
+    prompt = f"""질문:"{question}"
+참고표현:{','.join(texts)}
+반말구어체,15자이내,3개,줄바꿈구분,{diversity_rule}"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
+                {"role": "system", "content": "ALS환자답변생성.시제맞춤.번호없이줄바꿈만."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=100, temperature=0.7,
+            max_tokens=60, temperature=0.7,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -553,23 +543,18 @@ def _generate_from_words(words: list, question: str) -> list:
     punct_set = {".", "!", "?"}
     punct = "".join(w for w in words if w in punct_set)
     content_words = [w for w in words if w not in punct_set and w != "없음"]
-    prompt = f"""보호자 질문: "{question}"
-선택된 단어: {', '.join(content_words)}
-문장 끝 부호: {punct if punct else '없음'}
-
-위 단어들로 환자가 답할 법한 자연스러운 한국어 문장을 정확히 3개 만드세요.
-- 보호자 질문 시제에 맞게 (과거형/현재형)
-- 반말 구어체, 15자 이내
-- 지정된 문장 부호로 끝내기
-- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
+    prompt = f"""질문:"{question}"
+단어:{','.join(content_words)}
+부호:{punct if punct else '없음'}
+반말구어체,15자이내,3개,줄바꿈구분,부호로끝내기"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
+                {"role": "system", "content": "ALS환자답변생성.시제맞춤.번호없이줄바꿈만."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=120, temperature=0.8,
+            max_tokens=60, temperature=0.8,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -630,7 +615,7 @@ def _classify_sentence_llm(text: str) -> tuple[str, str]:
 JSON만 출력: {{"sentiment": "부정", "intent": "감정"}}"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[{"role": "system", "content": "JSON만 출력하세요."}, {"role": "user", "content": prompt}],
             max_tokens=50, temperature=0.1,
         )
@@ -699,35 +684,26 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
                         seen.add(kw)
                         all_keywords.append(kw)
         hint_texts = [s["text"] for s in similar[:6]]
-    prompt = f"""보호자 질문: "{question}"
-
-이 질문이 **닫힌 질문**(예/아니오, 좋아/싫어 등으로 답하는지)인지 **개방형 질문**(무엇/어디/어떤 등으로 구체적 답을 구하는지) 스스로 판단한 뒤, 적절한 답변 카테고리를 2~{max_categories}개 생성하세요.
-
-[환자 과거 데이터 참고]
-관련 키워드: {json.dumps(all_keywords[:20], ensure_ascii=False)}
-관련 표현: {json.dumps(hint_texts, ensure_ascii=False)}
-
-[카테고리 생성 규칙]
-- **닫힌 질문**: [예, 아니오], [좋아, 싫어, 그저그래] 등 질문에 맞는 고정 선택지
-- **개방형 질문**: 위 환자 키워드/표현을 참고해 구체적 선택지 제공. 마지막에 "잘 모르겠어" 또는 "다른 거" 1개 포함
-- 공통: 카테고리 라벨은 짧게(4글자 이내 권장). 각 카테고리에 sentiment(긍정/부정/중립)와 intent(의도) 지정
-
-반드시 이 JSON 형식만 출력:
-{{"categories": ["카테고리1", "카테고리2"], "sentimentMap": {{"카테고리1": "긍정"}}, "intentMap": {{"카테고리1": "통증"}}}}"""
+    prompt = f"""질문:"{question}"
+키워드:{json.dumps(all_keywords[:10], ensure_ascii=False)}
+표현:{json.dumps(hint_texts[:4], ensure_ascii=False)}
+닫힌질문→[예,아니오]등 고정선택지. 개방형→키워드참고 구체선택지+마지막"잘모르겠어".
+라벨4자이내,2~{max_categories}개,sentiment(긍정/부정/중립),intent지정.
+JSON만:{{"categories":[],"sentimentMap":{{}},"intentMap":{{}}}}"""
     fallback_result = {
         "categories": ["좋아", "싫어", "그저그래"],
         "sentimentMap": {"좋아": "긍정", "싫어": "부정", "그저그래": "중립"},
         "intentMap": {"좋아": "감정", "싫어": "감정", "그저그래": "감정"}
     }
-    for attempt in range(3):
+    for attempt in range(1):
         try:
             resp = llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4.1-nano",
                 messages=[
                     {"role": "system", "content": "JSON만 출력하세요. 다른 텍스트 없이."},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=200, temperature=0.3,
+                max_tokens=150, temperature=0.3,
             )
             raw = (resp.choices[0].message.content or "").strip()
             for prefix in ("```json", "```"):
@@ -749,9 +725,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
             category_cache[cache_key] = result
             return result
         except Exception as e:
-            print(f"[카테고리 생성 실패 attempt {attempt + 1}/3] {e}")
-            if attempt < 2:
-                time.sleep(0.5 * (attempt + 1))
+            print(f"[카테고리 생성 실패] {e}")
     return fallback_result
 
 
