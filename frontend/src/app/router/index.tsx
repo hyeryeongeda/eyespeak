@@ -11,7 +11,6 @@ import FavoritesSettingPage from '../../pages/care/settings/FavoritesSettingPage
 import LeisureSettingPage from '../../pages/care/settings/LeisureSettingPage'
 import DeviceSettingPage from '../../pages/care/settings/DeviceSettingPage'
 import TtsSettingPage from '../../pages/care/settings/TtsSettingPage'
-import WordsSettingPage from '../../pages/care/settings/WordsSettingPage'
 import ExpressionsPage from '../../pages/care/settings/ExpressionsPage'
 import CareLoginPage from '../../pages/auth/CareLoginPage'
 import CareSignupPage from '../../pages/auth/CareSignupPage'
@@ -238,10 +237,6 @@ const careRoutes = [
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_TTS,
     element: <TtsSettingPage />,
-  },
-  {
-    path: ROUTE_SEGMENTS.CARE.SETTINGS_WORDS,
-    element: <WordsSettingPage />,
   },
   {
     path: ROUTE_SEGMENTS.CARE.SETTINGS_EXPRESSIONS,

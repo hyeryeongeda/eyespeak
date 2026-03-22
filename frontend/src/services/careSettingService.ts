@@ -9,11 +9,11 @@ import type {
   LeisureContentItem,
   MonthlyRecordDay,
   PatientInfo,
+  PatientInfoUpdateRequest,
   Phrase,
   RoutineRequestItem,
   RoutineSlotState,
   TtsSettingsResponse,
-  UserWords,
 } from '../types/care'
 import {
   ACTIVATION_DELAY_OPTIONS,
@@ -30,9 +30,7 @@ import {
   MOCK_CATEGORIES,
   MOCK_EXPRESSIONS,
   MOCK_FAVORITE_PHRASES,
-  MOCK_PATIENT_INFO,
   MOCK_PHRASES,
-  MOCK_USER_WORDS,
 } from './mockCareData'
 import {
   getTtsSettingsApi,
@@ -48,6 +46,7 @@ import {
 } from './leisureApi'
 import { getMonthlyRecordsApi, getDailyRecordApi } from './communicationRecordApi'
 import { getRoutinesApi, updateRoutinesApi } from './routineApi'
+import { getPatientInfoApi, updatePatientInfoApi } from './patientInfoApi'
 import {
   getDwellTimeApi,
   updateDwellTimeApi,
@@ -75,14 +74,14 @@ function isBrowser() {
 }
 
 export async function getPatientInfo(): Promise<ApiResponse<PatientInfo>> {
-  await delay()
-  return { success: true, data: { ...MOCK_PATIENT_INFO }, message: 'Fetched patient info.' }
+  const data = await getPatientInfoApi()
+  return { success: true, data, message: 'Fetched patient info.' }
 }
 
-export async function updatePatientInfo(info: Partial<PatientInfo>): Promise<ApiResponse<PatientInfo>> {
-  await delay()
-  const updated = { ...MOCK_PATIENT_INFO, ...info }
-  return { success: true, data: updated, message: 'Updated patient info.' }
+export async function updatePatientInfo(info: PatientInfoUpdateRequest): Promise<ApiResponse<PatientInfo>> {
+  await updatePatientInfoApi(info)
+  const data = await getPatientInfoApi()
+  return { success: true, data, message: 'Updated patient info.' }
 }
 
 export function getActivityTags() {
@@ -282,16 +281,6 @@ export async function uploadTtsVoiceFiles(files: File[]): Promise<ApiResponse<Tt
 export async function deleteTtsVoice(voiceFileId: number): Promise<ApiResponse<TtsSettingsResponse>> {
   const data = await deleteTtsVoiceApi(voiceFileId)
   return { success: true, data, message: 'Deleted TTS voice file.' }
-}
-
-export async function getUserWords(): Promise<ApiResponse<UserWords>> {
-  await delay()
-  return { success: true, data: { ...MOCK_USER_WORDS }, message: 'Fetched custom words.' }
-}
-
-export async function updateUserWords(words: UserWords): Promise<ApiResponse<UserWords>> {
-  await delay()
-  return { success: true, data: words, message: 'Updated custom words.' }
 }
 
 export async function getExpressions(): Promise<ApiResponse<Expression[]>> {

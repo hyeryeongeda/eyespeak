@@ -22,12 +22,6 @@ const PATIENT_SETTINGS = [
     path: ROUTE_PATHS.CARE_SETTINGS_FAVORITES,
   },
   {
-    icon: '💬',
-    label: '커스텀 단어',
-    sub: '주어 · 목적어 · 동사',
-    path: ROUTE_PATHS.CARE_SETTINGS_WORDS,
-  },
-  {
     icon: '📋',
     label: '맞춤 표현 조회',
     sub: '환자 개인화 표현',
