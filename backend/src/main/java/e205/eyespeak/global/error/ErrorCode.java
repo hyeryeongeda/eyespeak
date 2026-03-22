@@ -223,7 +223,17 @@ public enum ErrorCode {
             "환자 설정을 찾을 수 없습니다"),
 
     INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
-            "허용되지 않는 설정값입니다");
+            "허용되지 않는 설정값입니다"),
+
+    // ====== AI INTERNAL (AI 서버 내부 API) ======
+
+    AI_CLASSIFY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI-703",
+            "AI 문장 분류에 실패하였습니다"),
+    // → AI 서버의 /expressions/classify 호출 실패 시
+
+    AI_INTERNAL_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AI-704",
+            "내부 API 인증에 실패하였습니다");
+    // → /ai/** 경로에 X-AI-API-Key 헤더가 없거나 불일치 시
 
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐
