@@ -1,4 +1,4 @@
-export type EyeTrackingApiMode = 'real' | 'mock' | 'disabled'
+export type EyeTrackingApiMode = 'real' | 'browser' | 'mock' | 'disabled'
 
 function normalizeTextValue(value: string | undefined) {
   return value?.trim() ?? ''
@@ -22,6 +22,10 @@ function resolveEyeTrackingApiMode(value: string | undefined): EyeTrackingApiMod
 
   if (normalizedValue === 'real') {
     return 'real'
+  }
+
+  if (normalizedValue === 'browser') {
+    return 'browser'
   }
 
   if (
@@ -118,6 +122,10 @@ export function getEyeTrackingConfigSnapshot() {
 
 export function isEyeTrackingApiEnabled() {
   return EYE_TRACKING_API_MODE === 'real'
+}
+
+export function isBrowserEyeTrackingEnabled() {
+  return EYE_TRACKING_API_MODE === 'browser'
 }
 
 export function getEyeTrackingApiBaseUrl() {

@@ -1,7 +1,11 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
-import { getEyeTrackingConfigSnapshot, getEyeTrackingUiUrl } from '../../../../services/eyeTrackingServiceConfig'
+import {
+  getEyeTrackingConfigSnapshot,
+  getEyeTrackingUiUrl,
+  isBrowserEyeTrackingEnabled,
+} from '../../../../services/eyeTrackingServiceConfig'
 import type {
   PatientCalibrationIssueKind,
   PatientCalibrationLocationState,
@@ -13,6 +17,7 @@ import {
   getPatientEyeTrackingProfileId,
   getPatientPostAuthNotice,
 } from '../services/calibration/patientCalibrationService'
+import BrowserPatientCalibrationPage from './BrowserPatientCalibrationPage'
 
 type CalibrationPageState = 'loading' | 'saving' | 'ready' | 'error'
 
@@ -93,6 +98,10 @@ function normalizeMessageUserId(value: string | number | undefined) {
 }
 
 export default function PatientCalibrationPage() {
+  if (isBrowserEyeTrackingEnabled()) {
+    return <BrowserPatientCalibrationPage />
+  }
+
   const navigate = useNavigate()
   const location = useLocation()
   const { user, patientPostAuth, clearPatientPostAuth } = useAuth()
