@@ -132,6 +132,8 @@ infra-down:
 # =============================================================================
 
 prod-app-up:
+	@echo "Cleaning up old Docker resources..."
+	docker system prune -f
 	@echo "Deploying Prod App (WAS Blue/Green + Frontend)..."
 	cd backend && docker compose -f docker-compose.yml -f docker-compose.prod.yml $(ENV_PROD) up -d --build
 	cd frontend && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
