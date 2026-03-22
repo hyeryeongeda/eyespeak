@@ -65,4 +65,24 @@ public interface UsageLogRepository extends JpaRepository<UsageLog, Long> {
             "ORDER BY u.usedAt DESC")
     List<String> findMostRecentExpressionContent(@Param("matchingId") Long matchingId,
                                                   Pageable pageable);
+
+    /** 오늘 가장 많이 사용한 표현 (content + category + count) — todayData.mostUsedToday용 */
+    @Query("SELECT u.expression.content, u.expression.category, COUNT(u) AS cnt " +
+            "FROM UsageLog u " +
+            "WHERE u.matching.id = :matchingId AND u.expression IS NOT NULL " +
+            "AND u.usedAt >= :start AND u.usedAt < :end " +
+            "GROUP BY u.expression.id " +
+            "ORDER BY cnt DESC")
+    List<Object[]> findTodayMostUsedExpression(@Param("matchingId") Long matchingId,
+                                               @Param("start") LocalDateTime start,
+                                               @Param("end") LocalDateTime end,
+                                               Pageable pageable);
+
+    /** 가장 최근 사용한 표현 상세 (content + category + usedAt) — todayData.lastUsedFeature용 */
+    @Query("SELECT u.expression.content, u.expression.category, u.usedAt " +
+            "FROM UsageLog u " +
+            "WHERE u.matching.id = :matchingId AND u.expression IS NOT NULL " +
+            "ORDER BY u.usedAt DESC")
+    List<Object[]> findLastUsedExpressionDetail(@Param("matchingId") Long matchingId,
+                                                 Pageable pageable);
 }
