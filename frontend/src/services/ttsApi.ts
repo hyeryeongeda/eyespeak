@@ -36,7 +36,7 @@ export function uploadTtsVoicesApi(files: File[]) {
 }
 
 export function deleteTtsVoiceApi(voiceFileId: number) {
-  return apiClient.delete<unknown>(`${API_ENDPOINTS.TTS_VOICES}/${voiceFileId}`, undefined, {
+  return apiClient.delete<TtsSettingsResponse>(`${API_ENDPOINTS.TTS_VOICES}/${voiceFileId}`, undefined, {
     accessToken: getAccessToken(),
   })
 }
