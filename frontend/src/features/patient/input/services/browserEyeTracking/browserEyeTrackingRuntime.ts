@@ -1,5 +1,6 @@
 import type { CalibrationTrackingStatus } from '../../../../../types/calibration'
 import type { EyeTrackingFrame } from '../../../../../types/eyeTracking'
+import { DEFAULT_CALIBRATION_TARGETS } from '../../../../../services/calibration/calibrationConstants'
 import {
   getBrowserFaceLandmarker,
   type BrowserFaceLandmarkerResult,
@@ -22,8 +23,6 @@ const BLINK_SELECT_MAX_SEC = 1.0
 const DOUBLE_BLINK_WINDOW_SEC = 2.0
 const LONG_CLOSE_SEC = 3.0
 const TRIPLE_BLINK_WINDOW_SEC = 3.0
-const CALIB_TARGET_RX = [0.03, 0.2, 0.4, 0.6, 0.8, 0.97, 0.03, 0.2, 0.4, 0.6, 0.8, 0.97]
-const CALIB_TARGET_RY = [0.03, 0.03, 0.03, 0.03, 0.03, 0.03, 0.97, 0.97, 0.97, 0.97, 0.97, 0.97]
 const CELL_CENTER_RX = [1 / 6, 0.5, 5 / 6, 1 / 6, 0.5, 5 / 6]
 const CELL_CENTER_RY = [0.25, 0.25, 0.25, 0.75, 0.75, 0.75]
 
@@ -1039,14 +1038,21 @@ export class BrowserEyeTrackingSession {
       this.earSamples = []
     }
 
-    const pointCount = Math.min(CALIB_TARGET_RX.length, points.length)
+    const pointCount = Math.min(DEFAULT_CALIBRATION_TARGETS.length, points.length)
+    const calibrationTargets = DEFAULT_CALIBRATION_TARGETS.slice(0, pointCount)
     const features = Array.from({ length: pointCount }, (_, index) => {
       const point = points[index]
       return [1, point.rx, point.ry, point.rx * point.ry, point.rx * point.rx, point.ry * point.ry]
     })
 
-    const nextPolyCoeffX = fitLeastSquares(features, CALIB_TARGET_RX.slice(0, pointCount))
-    const nextPolyCoeffY = fitLeastSquares(features, CALIB_TARGET_RY.slice(0, pointCount))
+    const nextPolyCoeffX = fitLeastSquares(
+      features,
+      calibrationTargets.map(target => target.rx),
+    )
+    const nextPolyCoeffY = fitLeastSquares(
+      features,
+      calibrationTargets.map(target => target.ry),
+    )
 
     if (!nextPolyCoeffX || !nextPolyCoeffY) {
       throw new Error('Calibration polynomial fitting failed.')
@@ -1057,11 +1063,13 @@ export class BrowserEyeTrackingSession {
     this.calibrationRefiner.clear()
 
     for (let index = 0; index < pointCount; index += 1) {
+      const targetPoint = calibrationTargets[index]
+
       this.calibrationRefiner.addSample(
         points[index].rx,
         points[index].ry,
-        CALIB_TARGET_RX[index],
-        CALIB_TARGET_RY[index],
+        targetPoint.rx,
+        targetPoint.ry,
       )
     }
 
