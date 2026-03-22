@@ -31,3 +31,21 @@ export type KnownFavoriteErrorCode =
   | 'MATCHING-803'
 
 export type FavoriteErrorCode = KnownFavoriteErrorCode | string
+
+export interface PhraseResponseDto {
+  phraseId: number
+  content: string
+  categoryId: number
+  categoryName: string
+}
+
+export interface PhraseCategory {
+  categoryId: number
+  categoryName: string
+  phrases: PhraseItem[]
+}
+
+export interface PhraseItem {
+  phraseId: number
+  content: string
+}

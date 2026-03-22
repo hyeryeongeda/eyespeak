@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
   AUTH_REFRESH: '/auth/refresh',
   AUTH_WITHDRAW: '/auth/withdraw',
   FAVORITES: '/favorites',
+  PHRASES: '/phrases',
   LEISURE_CONTENTS: '/leisure-contents',
   RECOMMENDATION_CATEGORIES: '/recommendations/categories',
   RECOMMENDATION_SENTENCES: '/recommendations/sentences',

@@ -2,6 +2,7 @@ import type {
   FavoriteCreateRequestDto,
   FavoriteResponseDto,
   FavoriteUpdateRequestDto,
+  PhraseResponseDto,
 } from '../types/favorite'
 import { apiClient } from './apiClient'
 import { API_ENDPOINTS } from './apiEndpoints'
@@ -47,4 +48,10 @@ export function deleteFavoriteApi(favoriteId: number, accessToken?: string | nul
       accessToken,
     },
   )
+}
+
+export function getPhrasesApi(accessToken?: string | null) {
+  return apiClient.get<PhraseResponseDto[]>(API_ENDPOINTS.PHRASES, {
+    accessToken,
+  })
 }
