@@ -1,16 +1,18 @@
 // ! EyeSpeak — 보호자(Care) 채팅 어댑터 훅
 // ? - 보호자 채팅 화면(ChatPage) 에서만 사용한다.
-// - mount 시 STOMP 연결 → /user/queue/chat 구독
+// - mount 시 STOMP 연결 → /user/queue/chat 구독 + REST 히스토리 로드
 // - unmount 시 구독 해제 + 연결 해제
 // - STOMP raw 메시지를 care 전용 ChatMessage 타입으로 변환하며,
 //   CALL_CONFIRMED 는 notificationStore 로 위임한다.
 // - 보호자는 contentType='TEXT' 만 발행하므로 phraseId/exprId 를 보내지 않는다.
 // - userId(number) 와 matchingId(number|null) 는 AuthSession(authStore) 에서 읽는다.
+// - mock 모드에서는 STOMP 없이도 메시지 전송/수신을 로컬로 처리한다.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStompClient } from '../../../../hooks/useStompClient'
 import { useAuthStore } from '../../../../stores/authStore'
 import { useNotificationStore } from '../../../../shared/stores/notificationStore'
+import { getActiveApiMode } from '../../../../config/env'
 import {
   STOMP_DESTINATIONS,
   parseInboundMessage,
@@ -20,6 +22,7 @@ import {
 } from '../../../../services/websocket'
 import type { StompChatInbound } from '../../../../services/websocket'
 import type { ChatMessage } from '../../types/chat'
+import { useChatHistory } from './useChatHistory'
 
 // ----- STOMP → Care ChatMessage 변환 -----
 
@@ -29,36 +32,61 @@ function toCareMessage(payload: StompChatInbound): ChatMessage {
     senderId: String(payload.senderId),
     senderRole: payload.senderRole === 'PATIENT' ? 'patient' : 'care',
     content: payload.text,
+    contentType: payload.contentType,
     sentAt: payload.createdAt,
   }
 }
 
+let mockMessageIdCounter = 1000
+
 // ----- 훅 반환 타입 -----
 
 export interface UseCareChatReturn {
-  /** STOMP 연결 상태 */
   connected: boolean
-  /** 수신된 메시지 목록 (WS 실시간 메시지만. 히스토리는 REST 로 별도 로드) */
   messages: ChatMessage[]
-  /** 텍스트 메시지 전송 */
   sendMessage: (content: string) => void
+  isLoading: boolean
+  hasMore: boolean
+  loadMore: () => Promise<void>
 }
 
 // ----- 훅 -----
 
 export function useCareChat(): UseCareChatReturn {
-  const { client, status } = useStompClient(true)
+  const isMock = getActiveApiMode() === 'mock'
+  const { client, status } = useStompClient(!isMock)
   const user = useAuthStore(state => state.user)
   const showNotification = useNotificationStore(state => state.showNotification)
 
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [realtimeMessages, setRealtimeMessages] = useState<ChatMessage[]>([])
   const knownIdsRef = useRef<Set<string>>(new Set())
 
-  const connected = status === 'connected'
+  const connected = isMock || status === 'connected'
 
-  // 구독
+  // REST 히스토리
+  const {
+    messages: historyMessages,
+    isLoading,
+    hasMore,
+    loadInitial,
+    loadMore,
+  } = useChatHistory()
+
+  // 히스토리 초기 로드
   useEffect(() => {
-    if (!client || !connected) {
+    loadInitial()
+  }, [loadInitial])
+
+  // 히스토리 메시지 ID를 knownIds에 등록 (중복 방지)
+  useEffect(() => {
+    for (const msg of historyMessages) {
+      knownIdsRef.current.add(msg.id)
+    }
+  }, [historyMessages])
+
+  // 구독 (real 모드에서만)
+  useEffect(() => {
+    if (isMock || !client || !connected) {
       return
     }
 
@@ -74,13 +102,12 @@ export function useCareChat(): UseCareChatReturn {
         if (isStompChatInbound(parsed)) {
           const careMsg = toCareMessage(parsed)
 
-          // 중복 메시지 방지
           if (knownIdsRef.current.has(careMsg.id)) {
             return
           }
           knownIdsRef.current.add(careMsg.id)
 
-          setMessages(prev => [...prev, careMsg])
+          setRealtimeMessages(prev => [...prev, careMsg])
           return
         }
 
@@ -101,12 +128,32 @@ export function useCareChat(): UseCareChatReturn {
     return () => {
       unsubscribe()
     }
-  }, [client, connected, showNotification])
+  }, [isMock, client, connected, showNotification])
 
   // 메시지 발행
   const sendMessage = useCallback(
     (content: string) => {
-      if (!client || !connected || !user || user.userId == null || user.matchingId == null) {
+      if (!user || user.userId == null || user.matchingId == null) {
+        return
+      }
+
+      if (isMock) {
+        // Mock 모드: 로컬에 메시지 추가
+        const mockId = String(++mockMessageIdCounter)
+        const mockMsg: ChatMessage = {
+          id: mockId,
+          senderId: String(user.userId),
+          senderRole: 'care',
+          content,
+          contentType: 'TEXT',
+          sentAt: new Date().toISOString(),
+        }
+        setRealtimeMessages(prev => [...prev, mockMsg])
+        return
+      }
+
+      // Real 모드: STOMP 발행
+      if (!client || !connected) {
         return
       }
 
@@ -116,17 +163,22 @@ export function useCareChat(): UseCareChatReturn {
         senderRole: 'GUARDIAN',
         text: content,
         contentType: 'TEXT',
-        // 보호자는 phraseId/exprId 를 보내지 않는다 → usage_log 기록 없음
       })
 
       client.publish(STOMP_DESTINATIONS.PUBLISH_CHAT, payload as unknown as Record<string, unknown>)
     },
-    [client, connected, user],
+    [isMock, client, connected, user],
   )
+
+  // 히스토리 + 실시간 메시지 병합
+  const messages = [...historyMessages, ...realtimeMessages]
 
   return {
     connected,
     messages,
     sendMessage,
+    isLoading,
+    hasMore,
+    loadMore,
   }
 }

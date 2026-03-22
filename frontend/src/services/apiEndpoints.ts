@@ -36,4 +36,5 @@ export const API_ENDPOINTS = {
   PATIENT_SETTINGS_ACTIVATION_DELAY: '/patient-settings/activation-delay',
   COMMUNICATION_RECORDS_MONTHLY: '/communication-records/monthly',
   COMMUNICATION_RECORDS_DAILY: '/communication-records/daily',
+  CHAT_MESSAGES: '/chat',
 } as const

@@ -1,4 +1,4 @@
-import { type PropsWithChildren, useEffect, useReducer, useRef } from 'react'
+import { type PropsWithChildren, useCallback, useEffect, useReducer, useRef } from 'react'
 import {
   PATIENT_CHAT_MESSAGE_PRESETS,
   PATIENT_CHAT_RESPONSE_TIMEOUT_MS,
@@ -13,6 +13,8 @@ import {
   PatientIncomingChatContext,
   type PatientIncomingChatContextValue,
 } from './patientIncomingChatContext'
+import { usePatientStomp } from './usePatientStomp'
+import type { StompChatInbound } from '../services/websocket'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
@@ -520,6 +522,77 @@ export function PatientIncomingChatProvider({
   useEffect(() => {
     dispatch({ type: 'SET_ROUTE_CONTEXT', route: getRouteContext(pathname) })
   }, [pathname])
+
+  // ----- STOMP WebSocket 연결 -----
+
+  const handleStompChat = useCallback(
+    (payload: StompChatInbound) => {
+      const messageId = String(payload.messageId)
+
+      // 중복 메시지 방지
+      if (knownMessageIdsRef.current.has(messageId)) {
+        dispatch({ type: 'DUPLICATE_RECEIVED', messageId })
+        return
+      }
+
+      // 환자 자신이 보낸 메시지가 에코로 돌아온 경우 인터럽트 불필요
+      const isFromGuardian = payload.senderRole === 'GUARDIAN'
+
+      // StompChatInbound → PatientChatMessage 변환
+      const incomingMessage: PatientChatMessage = {
+        id: messageId,
+        sender: isFromGuardian ? 'guardian' : 'patient',
+        type: 'text',
+        content: payload.text,
+        createdAt: payload.createdAt,
+        status: 'received',
+      }
+
+      knownMessageIdsRef.current.add(messageId)
+
+      const currentState = stateRef.current
+
+      dispatch({ type: 'START_RECEIVING' })
+      dispatch({
+        type: 'RECORD_RECEIVED_MESSAGE',
+        message: incomingMessage,
+        previousRoute: currentState.currentRoute,
+      })
+
+      // 환자 자신의 메시지는 기록만 하고 인터럽트 하지 않음
+      if (!isFromGuardian) {
+        return
+      }
+
+      dispatch({ type: 'MARK_MESSAGE_UNREAD', messageId })
+
+      const route = currentState.currentRoute ?? getRouteContext(pathname)
+      const alreadyHandling =
+        currentState.interruptState === 'incoming_interrupt' ||
+        currentState.interruptState === 'reply_mode'
+
+      if (route.responseSurface === 'inline' && route.canEnterReplyMode && !alreadyHandling) {
+        armTimeout(messageId)
+        void enterReplyModeInternal(messageId, incomingMessage)
+        return
+      }
+
+      if (!alreadyHandling) {
+        dispatch({
+          type: 'OPEN_INTERRUPT',
+          messageId,
+          pauseMedia: route.shouldPauseMediaOnInterrupt,
+          focusMessageId: messageId,
+        })
+        armTimeout(messageId)
+      }
+    },
+    [pathname],
+  )
+
+  usePatientStomp({ onChatMessage: handleStompChat })
+
+  // ----- 타이머 관련 effects -----
 
   useEffect(() => {
     if (!state.responseTimeoutAt || !state.responseTimeoutMessageId) {
