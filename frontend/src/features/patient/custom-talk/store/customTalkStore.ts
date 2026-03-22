@@ -20,8 +20,10 @@ import {
   fetchGeneratedCustomSentences,
   fetchRecommendedCustomSentences,
   fetchVisibleCustomCategories,
+  playCustomTalkUtteranceTts,
   submitCustomTalkUtterance,
 } from '../../../../services/recommendationService'
+import type { AudioPlaybackHandle } from '../../../../types/tts'
 import {
   getKeyboardCharPage,
   getKeyboardGroupPage,
@@ -70,9 +72,19 @@ const composeRefreshCounts: Record<ComposeStep, number> = {
 }
 
 let refreshCategoryCount = 0
+let activeCustomTalkAudioPlayback: AudioPlaybackHandle | null = null
 const timestampFormatter = new Intl.DateTimeFormat('sv-SE', {
   timeStyle: 'medium',
 })
+
+function stopActiveCustomTalkAudioPlayback() {
+  activeCustomTalkAudioPlayback?.cleanup()
+  activeCustomTalkAudioPlayback = null
+}
+
+function toErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback
+}
 
 function buildConversationLog(context: CustomTalkContextSummary) {
   const logs: CustomTalkConversationLogItem[] = []
@@ -337,30 +349,60 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectRecommendedSentence: async text => {
     const state = get()
+    const normalizedText = text.trim()
+
+    if (state.status === 'submitting' || state.status === 'loading') {
+      return false
+    }
+
+    if (!normalizedText) {
+      set({
+        status: 'error',
+        errorMessage: '전송할 문장이 비어 있습니다.',
+      })
+      return false
+    }
+
     set({
       status: 'submitting',
       errorMessage: null,
     })
 
     try {
+      stopActiveCustomTalkAudioPlayback()
+
       await submitCustomTalkUtterance({
-        text,
+        text: normalizedText,
         source: 'recommended',
         shouldFail: state.mockFlags.failSubmitOnce,
       })
 
+      let ttsErrorMessage: string | null = null
+
+      try {
+        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
+          text: normalizedText,
+        })
+      } catch (error) {
+        ttsErrorMessage = toErrorMessage(
+          error,
+          '문장 전송은 완료됐지만 음성 재생에 실패했습니다.',
+        )
+      }
+
       set(currentState => ({
         draft: {
           ...currentState.draft,
-          selectedRecommendedSentence: text,
+          selectedRecommendedSentence: normalizedText,
         },
         conversationLog: appendConversationLog(
           currentState.conversationLog,
           'patient',
-          text,
+          normalizedText,
           'utterance',
         ),
         status: 'completed',
+        errorMessage: ttsErrorMessage,
         completionMessage: `추천 문장 발화를 반영했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
@@ -594,30 +636,60 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectGeneratedSentence: async text => {
     const state = get()
+    const normalizedText = text.trim()
+
+    if (state.status === 'submitting' || state.status === 'loading') {
+      return false
+    }
+
+    if (!normalizedText) {
+      set({
+        status: 'error',
+        errorMessage: '전송할 문장이 비어 있습니다.',
+      })
+      return false
+    }
+
     set({
       status: 'submitting',
       errorMessage: null,
     })
 
     try {
+      stopActiveCustomTalkAudioPlayback()
+
       await submitCustomTalkUtterance({
-        text,
+        text: normalizedText,
         source: 'generated',
         shouldFail: state.mockFlags.failSubmitOnce,
       })
 
+      let ttsErrorMessage: string | null = null
+
+      try {
+        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
+          text: normalizedText,
+        })
+      } catch (error) {
+        ttsErrorMessage = toErrorMessage(
+          error,
+          '문장 전송은 완료됐지만 음성 재생에 실패했습니다.',
+        )
+      }
+
       set(currentState => ({
         draft: {
           ...currentState.draft,
-          selectedGeneratedSentence: text,
+          selectedGeneratedSentence: normalizedText,
         },
         conversationLog: appendConversationLog(
           currentState.conversationLog,
           'patient',
-          text,
+          normalizedText,
           'utterance',
         ),
         status: 'completed',
+        errorMessage: ttsErrorMessage,
         completionMessage: `생성 문장 발화를 반영했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
@@ -888,8 +960,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   submitManualInput: async () => {
-    const { draft, mockFlags } = get()
+    const { draft, mockFlags, keyboardStatus } = get()
     const text = draft.manualInput.trim()
+
+    if (keyboardStatus === 'loading' || keyboardStatus === 'submitting') {
+      return false
+    }
 
     if (!text) {
       set({
@@ -929,11 +1005,26 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     })
 
     try {
+      stopActiveCustomTalkAudioPlayback()
+
       await submitCustomTalkUtterance({
         text,
         source: 'manual',
         shouldFail: mockFlags.failSubmitOnce,
       })
+
+      let ttsErrorMessage: string | null = null
+
+      try {
+        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
+          text,
+        })
+      } catch (error) {
+        ttsErrorMessage = toErrorMessage(
+          error,
+          '문장 전송은 완료됐지만 음성 재생에 실패했습니다.',
+        )
+      }
 
       set(currentState => ({
         conversationLog: appendConversationLog(
@@ -943,6 +1034,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           'utterance',
         ),
         keyboardStatus: 'completed',
+        keyboardErrorMessage: ttsErrorMessage,
         completionMessage: `직접 입력 발화를 반영했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
@@ -950,8 +1042,6 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         },
       }))
 
-      // TODO: call patient utterance API
-      // TODO: trigger TTS playback
       // TODO: persist history / favorites candidate
       return true
     } catch (error) {
@@ -988,6 +1078,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     composeRefreshCounts.object = 0
     composeRefreshCounts.predicate = 0
     composeRefreshCounts.punctuation = 0
+    stopActiveCustomTalkAudioPlayback()
 
     set({
       isInitialized: false,

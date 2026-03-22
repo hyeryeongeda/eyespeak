@@ -74,6 +74,8 @@ export default function CustomTalkRecommendPage() {
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const startCompose = useCustomTalkStore(state => state.startCompose)
   const hasCategoryKey = Boolean(draft.categoryKey)
+  const isActionLocked =
+    status === 'loading' || status === 'refreshing' || status === 'submitting'
 
   useEffect(() => {
     if (!hasCategoryKey || recommendedSentences.length > 0) {
@@ -106,7 +108,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[0])
           }
         },
-        disabled: !visibleSentences[0],
+        disabled: !visibleSentences[0] || isActionLocked,
       }}
       leftBottom={{
         title: visibleSentences[1] ?? '추천 문장 준비 중',
@@ -117,7 +119,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[1])
           }
         },
-        disabled: !visibleSentences[1],
+        disabled: !visibleSentences[1] || isActionLocked,
       }}
       rightTop={{
         title: '단어로 표현하기',
@@ -127,6 +129,7 @@ export default function CustomTalkRecommendPage() {
           await startCompose()
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
         },
+        disabled: isActionLocked,
       }}
       rightBottom={{
         title: '뒤로가기',
