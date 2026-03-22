@@ -12,7 +12,28 @@ After:  AI 서버 → requests → BE(Spring Boot) → JPA → DB
 
 ---
 
-## BE가 만들어야 할 API 4개
+## 전체 API 역할 분담
+
+| 담당 | 엔드포인트 | 호출 방향 | 상태 |
+|---|---|---|---|
+| BE (팀원) | `GET /api/v1/ai/user-context/{matchingId}` | AI → BE | 새로 만들기 |
+| BE (팀원) | `GET /api/v1/ai/general-corpus` | AI → BE | 새로 만들기 |
+| AI (예린) | `POST /expressions/classify` | BE → AI | `/expressions/use`에서 DB 저장 빼고 분류만 반환하도록 수정 |
+| AI (기존) | `POST /recommend/category` | BE → AI | 기존 유지 |
+| AI (기존) | `POST /recommend/replies` | BE → AI | 기존 유지 |
+| AI (기존) | `POST /words` | BE → AI | 기존 유지 |
+| AI (기존) | `POST /generate` | BE → AI | 기존 유지 |
+
+---
+
+## BE가 만들어야 할 것: API 3개 + 기존 코드 수정 1건
+
+| # | 내용 | 방식 |
+|---|---|---|
+| API 1 | 추천에 필요한 데이터 조회 | BE가 새 API 만들기 |
+| API 2 | 일반 말뭉치 데이터 전체 조회 | BE가 새 API 만들기 |
+| API 3 | 사용자 표현 → AI가 분류 → BE가 DB에 저장 | AI `/expressions/classify` + BE ChatService에서 저장 |
+| 수정 1 | 카테고리별 힌트 조회 | 별도 API 없이 BE가 RecommendationController에서 직접 DB 조회 |
 
 ---
 
@@ -23,6 +44,20 @@ AI 서버가 추천할 때 **매번** 호출하는 핵심 API. 이게 없으면 
 - **URL:** `GET /api/v1/ai/user-context/{matchingId}`
 - **용도:** AI 서버의 `_load_user_data_from_db()` 대체 (caregiver_server_db.py 99줄)
 - **조회 테이블:** expressions, usage_log, expression_keywords, user_words, daily_mood, routine_slot_tag, time_slot, activity_tag
+
+#### 흐름
+
+```
+1. 환자가 추천을 요청함 ( 맞춤 대화, 채팅 답변, 단어 조합 등)
+2. FE → BE RecommendationController 호출
+3. BE → AI 서버에 추천 요청
+4. AI가 추천하려면 환자 데이터가 필요함
+5. AI → BE GET /ai/user-context/{matchingId} 호출 (새로 만드는 API)
+6. BE가 DB에서 6가지 데이터 조회해서 한 번에 반환
+7. AI가 그 데이터로 임베딩 검색 + LLM 호출 → 추천 문장 3개 생성
+8. AI → BE에 추천 결과 반환
+9. BE → FE에 반환
+```
 
 #### 현재 AI 서버가 하는 SQL 쿼리 6개
 
@@ -52,7 +87,7 @@ JOIN time_slot ts ON ts.id = rst.time_slot_id
 JOIN activity_tag at ON at.id = rst.activity_tag_id
 WHERE rst.matching_id = ?;
 
--- 쿼리 5: 오늘 가장 많이 쓴 표현 (GROUP BY + COUNT + ORDER BY)
+-- 쿼리 5: 오늘 가장 많이 쓴 표현 (GROUP BY + COUNT + ORDER BY → 커스텀 쿼리 필요)
 SELECT e.content AS text, e.category, COUNT(*) AS cnt
 FROM usage_log ul
 JOIN expressions e ON e.id = ul.expr_id
@@ -60,7 +95,7 @@ WHERE ul.matching_id = ? AND DATE(ul.used_at) = CURDATE()
 GROUP BY ul.expr_id
 ORDER BY cnt DESC LIMIT 1;
 
--- 쿼리 6: 마지막 사용 표현 (ORDER BY + LIMIT)
+-- 쿼리 6: 마지막 사용 표현 (ORDER BY + LIMIT → 커스텀 쿼리 필요)
 SELECT e.content AS text, e.category, ul.used_at
 FROM usage_log ul
 JOIN expressions e ON e.id = ul.expr_id
@@ -70,52 +105,45 @@ ORDER BY ul.used_at DESC LIMIT 1;
 
 #### BE가 만들어야 할 JPA 코드
 
+**쿼리 1~4:** 단순 조회라 JPA가 메서드 이름으로 자동 생성 가능
+
 ```java
-@GetMapping("/ai/user-context/{matchingId}")
-public ApiResponse<UserContextResponse> getUserContext(@PathVariable Long matchingId) {
+// 쿼리 1: expressions 조회 → JPA 자동 생성
+expressionRepository.findByMatchingId(matchingId);
+// + 각 expression마다:
+usageLogRepository.countByExpressionId(expr.getId());
+expressionKeywordRepository.findByExprId(expr.getId());
 
-    // 쿼리 1 대체: expressions + usageCount + keywords
-    // → expressionRepository.findByMatchingId(matchingId)
-    // → 각 expression마다 usageLogRepository.countByExpressionId(expr.getId())
-    // → expressionKeywordRepository.findByExprId(expr.getId())
+// 쿼리 2: user_words → JPA 자동 생성
+userWordsRepository.findByMatchingId(matchingId);
 
-    // 쿼리 2 대체: user_words
-    // → userWordsRepository.findByMatchingId(matchingId)
-    // → 단순 조회, JPA 자동 생성
+// 쿼리 3: daily_mood → JPA 자동 생성
+dailyMoodRepository.findByMatchingIdAndMoodDate(matchingId, LocalDate.now());
 
-    // 쿼리 3 대체: daily_mood
-    // → dailyMoodRepository.findByMatchingIdAndMoodDate(matchingId, LocalDate.now())
-    // → 단순 조회, JPA 자동 생성
-
-    // 쿼리 4 대체: routine_slot_tag + time_slot + activity_tag
-    // → routineSlotTagRepository.findByMatchingId(matchingId)
-    // → JPA @ManyToOne으로 timeSlot, activityTag 자동 JOIN
-
-    // 쿼리 5 대체: 오늘 가장 많이 쓴 표현 (커스텀 쿼리 필요)
-    // → @Query 사용:
-    @Query("SELECT e.content AS text, e.category AS category, COUNT(ul) AS cnt " +
-           "FROM UsageLog ul JOIN ul.expression e " +
-           "WHERE ul.matching.id = :matchingId AND FUNCTION('DATE', ul.usedAt) = CURRENT_DATE " +
-           "GROUP BY ul.expression " +
-           "ORDER BY cnt DESC")
-    List<Object[]> findMostUsedToday(@Param("matchingId") Long matchingId, Pageable pageable);
-    // → Pageable.ofSize(1)로 호출하면 1위만 가져옴
-
-    // 쿼리 6 대체: 마지막 사용 표현 (커스텀 쿼리 필요)
-    // → @Query 사용:
-    @Query("SELECT e.content AS text, e.category AS category, ul.usedAt AS usedAt " +
-           "FROM UsageLog ul JOIN ul.expression e " +
-           "WHERE ul.matching.id = :matchingId " +
-           "ORDER BY ul.usedAt DESC")
-    List<Object[]> findLatestByMatchingId(@Param("matchingId") Long matchingId, Pageable pageable);
-    // → Pageable.ofSize(1)로 호출하면 최신 1개만
-
-    return ApiResponse.success(new UserContextResponse(...));
-}
+// 쿼리 4: routine_slot_tag → JPA @ManyToOne으로 자동 JOIN
+routineSlotTagRepository.findByMatchingId(matchingId);
 ```
 
-**쿼리 1~4:** 단순 조회라 JPA가 메서드 이름으로 자동 생성 가능
 **쿼리 5~6:** GROUP BY + COUNT + ORDER BY가 필요해서 `@Query`로 직접 작성 필요
+
+```java
+// 쿼리 5: 오늘 가장 많이 쓴 표현 (UsageLogRepository에 추가)
+@Query("SELECT e.content AS text, e.category AS category, COUNT(ul) AS cnt " +
+       "FROM UsageLog ul JOIN ul.expression e " +
+       "WHERE ul.matching.id = :matchingId AND FUNCTION('DATE', ul.usedAt) = CURRENT_DATE " +
+       "GROUP BY ul.expression " +
+       "ORDER BY cnt DESC")
+List<Object[]> findMostUsedToday(@Param("matchingId") Long matchingId, Pageable pageable);
+// 사용: findMostUsedToday(matchingId, Pageable.ofSize(1)) → 1위만 가져옴
+
+// 쿼리 6: 마지막 사용 표현 (UsageLogRepository에 추가)
+@Query("SELECT e.content AS text, e.category AS category, ul.usedAt AS usedAt " +
+       "FROM UsageLog ul JOIN ul.expression e " +
+       "WHERE ul.matching.id = :matchingId " +
+       "ORDER BY ul.usedAt DESC")
+List<Object[]> findLatestByMatchingId(@Param("matchingId") Long matchingId, Pageable pageable);
+// 사용: findLatestByMatchingId(matchingId, Pageable.ofSize(1)) → 최신 1개만
+```
 
 #### Response 형식
 
@@ -188,6 +216,17 @@ AI 서버 기동 시 **1회만** 호출. 이후 메모리에 캐시해서 재호
 - **용도:** AI 서버의 `_load_general_db_from_db()` 대체 (caregiver_server_db.py 232줄)
 - **조회 테이블:** general_corpus
 
+#### 흐름
+
+```
+1. AI 서버가 처음 기동됨 (Docker 컨테이너 시작)
+2. AI → BE GET /ai/general-corpus 호출 (새로 만드는 API)
+3. BE가 general_corpus 테이블 전체 조회 (약 1200건)
+4. BE → AI에 반환
+5. AI가 메모리에 캐시 (서버 꺼질 때까지 유지)
+6. 이후 추천할 때 캐시된 데이터 사용 (재호출 없음)
+```
+
 #### 현재 AI 서버가 하는 SQL 쿼리
 
 ```sql
@@ -225,115 +264,51 @@ public ApiResponse<List<GeneralCorpusResponse>> getGeneralCorpus() {
 
 ---
 
-### API 3. 표현 사용 기록 저장
+### API 3. 사용자 표현 → AI가 분류 → BE가 DB에 저장
 
-환자가 채팅에서 문장을 선택/입력했을 때 호출.
+기존 `/expressions/use`(AI)가 분류 + DB 저장 둘 다 했던 걸, **분류는 AI(`/expressions/classify`), 저장은 BE**로 분리.
 
-- **URL:** `POST /api/v1/ai/expressions/use`
-- **용도:** AI 서버의 `/expressions/use` 내 DB INSERT 로직 대체 (caregiver_server_db.py 877줄)
-- **쓰기 테이블:** expressions, expression_keywords, usage_log
+#### 흐름
 
-#### 현재 AI 서버가 하는 SQL
-
-```sql
--- 1. 기존 표현 확인
-SELECT id FROM expressions WHERE matching_id = ? AND content = ?;
-
--- 2-A. 있으면: last_used만 업데이트
-UPDATE expressions SET last_used = NOW() WHERE id = ?;
-
--- 2-B. 없으면: 새 표현 INSERT
-INSERT INTO expressions (matching_id, content, sentiment, category, last_used, created_at)
-VALUES (?, ?, ?, ?, NOW(), NOW());
-
--- 2-B 추가: 키워드 INSERT (여러 건)
-INSERT INTO expression_keywords (expr_id, keyword) VALUES (?, ?);
-
--- 3. usage_log INSERT (항상)
-INSERT INTO usage_log (matching_id, expr_id, time_slot_id, used_at)
-VALUES (?, ?, ?, NOW());
+```
+1. 환자가 메시지를 보냄 (추천 문장 선택 / 단어 조합 / 키보드 직접 입력 / 답변 추천 등 모든 경우)
+2. FE → BE 웹소켓으로 메시지 전송 → message 테이블 저장
+3. BE ChatService → AI POST /expressions/classify 호출 (text만 넘김)
+4. AI가 감정/의도 분류 + 키워드 추출 (AI 내부에서 처리)
+5. AI → BE에 분류 결과 반환 { sentiment, category, keywords }
+6. BE가 직접 expressions + expression_keywords + usage_log에 저장
 ```
 
-#### BE가 만들어야 할 JPA 코드
+**환자가 보내는 모든 메시지**가 대상 (추천 문장뿐 아니라 키보드 입력, 단어 조합 등 전부 포함)
+
+#### AI `/expressions/classify` (예린이 수정)
+
+기존 `/expressions/use`에서 DB 저장 로직 빼고, 분류 결과만 반환.
+
+```
+Request:  { "text": "물 좀 줘" }
+Response: { "sentiment": "NEUTRAL", "category": "영양/수분", "keywords": ["물", "주다"] }
+```
+
+#### BE ChatService (팀원이 수정)
+
+AI한테 분류 결과 받아서 BE가 직접 DB 저장.
 
 ```java
-@PostMapping("/ai/expressions/use")
-public ApiResponse<ExpressionUseResponse> recordExpressionUse(@RequestBody ExpressionUseRequest request) {
+// ChatService.sendMessage() 안에 추가:
+if (senderRole == Role.PATIENT) {
+    // 1. AI에 분류 요청
+    Map classifyResult = restTemplate.postForObject(
+        aiServerUrl + "/expressions/classify",
+        Map.of("text", messageText), Map.class);
 
-    // 1. 기존 표현 확인
-    // → expressionRepository.findByMatchingIdAndContent(request.getMatchingId(), request.getText())
+    String sentiment = (String) classifyResult.get("sentiment");
+    String category = (String) classifyResult.get("category");
+    List<String> keywords = (List<String>) classifyResult.get("keywords");
 
-    Expression expression;
-    boolean isNew;
-
-    Optional<Expression> existing = expressionRepository
-        .findByMatchingIdAndContent(request.getMatchingId(), request.getText());
-
-    if (existing.isPresent()) {
-        // 2-A. 있으면: last_used 업데이트
-        expression = existing.get();
-        expression.updateLastUsed(LocalDateTime.now());
-        isNew = false;
-    } else {
-        // 2-B. 없으면: 새 표현 + 키워드 INSERT
-        expression = Expression.builder()
-            .matchingId(request.getMatchingId())
-            .content(request.getText())
-            .sentiment(request.getSentiment())     // AI가 분류해서 보내준 값
-            .category(request.getCategory())       // AI가 분류해서 보내준 값
-            .lastUsed(LocalDateTime.now())
-            .build();
-        expressionRepository.save(expression);
-
-        // 키워드 저장 (AI가 추출해서 보내준 값)
-        for (String keyword : request.getKeywords()) {
-            expressionKeywordRepository.save(
-                ExpressionKeyword.builder()
-                    .exprId(expression.getId())
-                    .keyword(keyword)
-                    .build()
-            );
-        }
-        isNew = true;
-    }
-
-    // 3. usage_log INSERT
-    // → 시간대(time_slot_id)는 현재 시각 기준 자동 계산
-    TimeSlot timeSlot = timeSlotRepository.findByTime(LocalTime.now()).orElseThrow();
-    usageLogRepository.save(UsageLog.builder()
-        .matching(matching)
-        .expression(expression)
-        .timeSlot(timeSlot)
-        .usedAt(LocalDateTime.now())
-        .build());
-
-    return ApiResponse.success(new ExpressionUseResponse(expression.getId(), isNew));
-}
-```
-
-**중요: sentiment, category, keywords는 AI 서버가 분류/추출해서 보내줌. BE는 받은 그대로 저장만 하면 됨.**
-
-#### Request 형식
-
-```json
-{
-  "matchingId": 1,
-  "text": "물 좀 줘",
-  "sentiment": "NEUTRAL",
-  "category": "영양/수분",
-  "keywords": ["물", "주다"]
-}
-```
-
-#### Response 형식
-
-```json
-{
-  "code": "CREATED",
-  "data": {
-    "exprId": 1,
-    "isNew": false
-  }
+    // 2. expressions 저장 (있으면 last_used 업데이트, 없으면 INSERT)
+    // 3. expression_keywords 저장 (새 표현일 때)
+    // 4. usage_log 저장 (time_slot_id는 현재 시각 기준 자동 계산)
 }
 ```
 
@@ -351,128 +326,102 @@ public ApiResponse<ExpressionUseResponse> recordExpressionUse(@RequestBody Expre
 
 ---
 
-### API 4. 카테고리 힌트 조회
+### 수정 1. 카테고리 힌트 — 별도 API 없이 BE가 직접 DB 조회
 
-카테고리 카드에 표시할 힌트 데이터.
+별도 API 만들지 않고, 기존 `RecommendationController.getCategories()` (75줄)에서 **AI에 힌트 요청하는 부분을 BE가 직접 DB 조회하는 것으로** 변경.
 
-- **URL:** `GET /api/v1/ai/hints/{matchingId}`
-- **용도:** AI 서버의 `/recommend/hints` 내 DB 조회 로직 대체 (caregiver_server_db.py 955줄)
-- **조회 테이블:** daily_mood, routine_slot_tag, time_slot, activity_tag, usage_log, expressions
-
-#### 현재 AI 서버가 하는 SQL 쿼리 4개
-
-```sql
--- 1. moodHint: 오늘의 기분
-SELECT mood_type FROM daily_mood
-WHERE matching_id = ? AND mood_date = CURDATE();
-
--- 2. scheduleHint: 현재 시간대 활동
-SELECT at.name AS activity
-FROM routine_slot_tag rst
-JOIN activity_tag at ON at.id = rst.activity_tag_id
-WHERE rst.matching_id = ? AND rst.time_slot_id = ?
-LIMIT 1;
-
--- 3. frequentHint: 가장 많이 쓴 표현 (GROUP BY + COUNT, 커스텀 쿼리 필요)
-SELECT e.content AS text, COUNT(*) AS cnt
-FROM usage_log ul
-JOIN expressions e ON e.id = ul.expr_id
-WHERE ul.matching_id = ?
-GROUP BY ul.expr_id
-ORDER BY cnt DESC LIMIT 1;
-
--- 4. recentHint: 가장 최근 사용한 표현 (ORDER BY + LIMIT, 커스텀 쿼리 필요)
-SELECT e.content AS text
-FROM usage_log ul
-JOIN expressions e ON e.id = ul.expr_id
-WHERE ul.matching_id = ?
-ORDER BY ul.used_at DESC LIMIT 1;
-```
-
-#### BE가 만들어야 할 JPA 코드
+#### 현재 코드 (91~98줄)
 
 ```java
-@GetMapping("/ai/hints/{matchingId}")
-public ApiResponse<HintsResponse> getHints(@PathVariable Long matchingId) {
+// 현재: AI 서버에 힌트 요청
+Map result = restTemplate.postForObject(
+    aiServerUrl + "/recommend/hints", buildRequest(body), Map.class);
+moodHint = (String) result.get("mood_hint");
+scheduleHint = (String) result.get("schedule_hint");
+frequentHint = (String) result.get("frequent_hint");
+recentHint = (String) result.get("recent_hint");
+```
 
-    // 1. moodHint: 단순 조회, JPA 자동 생성
-    // → dailyMoodRepository.findByMatchingIdAndMoodDate(matchingId, LocalDate.now())
-    // → mood_type을 한글로 매핑
+#### 변경할 코드
 
-    // 2. scheduleHint: 현재 시간 → time_slot_id 계산 → 단순 조회
-    // → routineSlotTagRepository.findByMatchingIdAndTimeSlotId(matchingId, slotId)
+```java
+// 변경: BE가 직접 DB 조회
+// 1. moodHint → JPA 자동 생성
+DailyMood mood = dailyMoodRepository
+    .findByMatchingIdAndMoodDate(matchingId, LocalDate.now()).orElse(null);
+String moodHint = mood != null ? moodTypeToKorean(mood.getMoodType()) : null;
 
-    // 3. frequentHint: 커스텀 쿼리 필요 (API 1의 쿼리 5와 유사)
-    @Query("SELECT e.content FROM UsageLog ul JOIN ul.expression e " +
-           "WHERE ul.matching.id = :matchingId " +
-           "GROUP BY ul.expression ORDER BY COUNT(ul) DESC")
-    List<String> findMostFrequentExpression(@Param("matchingId") Long matchingId, Pageable pageable);
-    // → Pageable.ofSize(1)
+// 2. scheduleHint → JPA 자동 생성
+int slotId = calculateTimeSlotId(LocalTime.now());
+RoutineSlotTag routine = routineSlotTagRepository
+    .findByMatchingIdAndTimeSlotId(matchingId, slotId).orElse(null);
+String scheduleHint = routine != null ? routine.getActivityTag().getName() : null;
 
-    // 4. recentHint: 커스텀 쿼리 필요 (API 1의 쿼리 6과 유사)
-    @Query("SELECT e.content FROM UsageLog ul JOIN ul.expression e " +
-           "WHERE ul.matching.id = :matchingId " +
-           "ORDER BY ul.usedAt DESC")
-    List<String> findMostRecentExpression(@Param("matchingId") Long matchingId, Pageable pageable);
-    // → Pageable.ofSize(1)
+// 3. frequentHint → 커스텀 쿼리 (@Query 필요)
+// UsageLogRepository에 추가:
+@Query("SELECT e.content FROM UsageLog ul JOIN ul.expression e " +
+       "WHERE ul.matching.id = :matchingId " +
+       "GROUP BY ul.expression ORDER BY COUNT(ul) DESC")
+List<String> findMostFrequentExpression(@Param("matchingId") Long matchingId, Pageable pageable);
+// 사용: findMostFrequentExpression(matchingId, Pageable.ofSize(1))
 
-    return ApiResponse.success(new HintsResponse(moodHint, scheduleHint, frequentHint, recentHint));
+// 4. recentHint → 커스텀 쿼리 (@Query 필요)
+// UsageLogRepository에 추가:
+@Query("SELECT e.content FROM UsageLog ul JOIN ul.expression e " +
+       "WHERE ul.matching.id = :matchingId " +
+       "ORDER BY ul.usedAt DESC")
+List<String> findMostRecentExpression(@Param("matchingId") Long matchingId, Pageable pageable);
+// 사용: findMostRecentExpression(matchingId, Pageable.ofSize(1))
+```
+
+#### moodType 한글 매핑 (BE에서 변환)
+
+```java
+private String moodTypeToKorean(MoodType type) {
+    return switch (type) {
+        case HAPPY -> "기분 좋음";
+        case SAD -> "슬픔";
+        case CALM -> "평온";
+        case JOYFUL -> "즐거움";
+        case ANXIOUS -> "불안";
+        case ANGRY -> "화남";
+        case TIRED -> "피곤";
+    };
 }
 ```
 
-**쿼리 1~2:** 단순 조회, JPA 자동 생성
-**쿼리 3~4:** GROUP BY / ORDER BY 필요, `@Query` 직접 작성
+#### 시간대 → time_slot_id 계산
 
-**참고:** 쿼리 3, 4는 API 1의 쿼리 5, 6과 거의 같음. 같은 Repository 메서드 재활용 가능.
-
-#### Response 형식
-
-```json
-{
-  "code": "SUCCESS",
-  "data": {
-    "moodHint": "기분 좋음",
-    "scheduleHint": "경관식/수분 섭취",
-    "frequentHint": "물 좀 줘",
-    "recentHint": "고마워"
-  }
+```java
+private int calculateTimeSlotId(LocalTime now) {
+    int hour = now.getHour();
+    if (hour < 6) return 7;       // 야간
+    if (hour < 9) return 1;       // 기상/아침
+    if (hour < 12) return 2;      // 오전
+    if (hour < 15) return 3;      // 점심/낮
+    if (hour < 18) return 4;      // 오후
+    if (hour < 21) return 5;      // 저녁
+    return 6;                     // 취침 준비
 }
 ```
 
-**모든 필드 null 가능** (데이터 없을 때). AI 서버가 null이면 기본값 처리함.
-
-#### moodHint 매핑 (BE에서 변환)
-
-```
-HAPPY → "기분 좋음", SAD → "슬픔", CALM → "평온",
-JOYFUL → "즐거움", ANXIOUS → "불안", ANGRY → "화남", TIRED → "피곤"
-```
+**참고:** 커스텀 쿼리 3, 4는 API 1의 쿼리 5, 6과 거의 같음. 같은 Repository 메서드 재활용 가능.
 
 ---
 
 ## AI 서버(예린)가 바꿀 부분
 
-BE API가 나오면, AI 서버 `caregiver_server_db.py`에서 pymysql → requests로 4곳 수정.
+BE API가 나오면, AI 서버 `caregiver_server_db.py`에서 3곳 수정 + 1곳 삭제.
 
-### 변경 1. `_load_user_data_from_db()` (99줄, 약 130줄 → 15줄)
+### 변경 1. `_load_user_data_from_db()` → BE API 호출 (99줄, 130줄 → 15줄)
 
 ```python
-# Before: pymysql로 DB 직접 조회 (SQL 쿼리 6개, 130줄)
+# Before: pymysql로 DB 직접 조회 (SQL 쿼리 6개)
 def _load_user_data_from_db(matching_id):
     conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT ... FROM expressions e LEFT JOIN usage_log ...")
-            cur.execute("SELECT subjects, objects, verbs FROM user_words ...")
-            cur.execute("SELECT mood_type FROM daily_mood ...")
-            cur.execute("SELECT ts.name, at.name FROM routine_slot_tag ...")
-            cur.execute("SELECT e.content, COUNT(*) FROM usage_log ... GROUP BY ...")
-            cur.execute("SELECT e.content, ul.used_at FROM usage_log ... ORDER BY ...")
-        return { "today_data": ..., "user_db": ..., "word_lists": ..., "word_usage_freq": ... }
-    finally:
-        conn.close()
+    # ... 130줄의 SQL 쿼리 ...
 
-# After: BE API 호출 1번 (15줄)
+# After: BE API 호출 1번
 def _load_user_data_from_db(matching_id):
     resp = requests.get(f"{BE_API_URL}/ai/user-context/{matching_id}")
     if resp.status_code != 200:
@@ -497,19 +446,13 @@ def _load_user_data_from_db(matching_id):
     }
 ```
 
-### 변경 2. `_load_general_db_from_db()` (232줄, 약 18줄 → 12줄)
+### 변경 2. `_load_general_db_from_db()` → BE API 호출 (232줄, 18줄 → 12줄)
 
 ```python
 # Before: pymysql로 DB 직접 조회
 def _load_general_db_from_db():
     conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT content, sentiment, weight FROM general_corpus")
-            rows = cur.fetchall()
-        return [{"text": row["content"], ...} for row in rows]
-    finally:
-        conn.close()
+    # ...
 
 # After: BE API 호출 1번
 def _load_general_db_from_db():
@@ -526,85 +469,57 @@ def _load_general_db_from_db():
     ]
 ```
 
-### 변경 3. `/expressions/use` 엔드포인트 (877줄)
+### 변경 3. `/expressions/use` → `/expressions/classify`로 변경 (877줄)
 
-AI가 하는 일 중 **분류/추출은 AI에 남고**, **DB 저장만 BE로** 넘김.
+DB 저장 로직 제거, **분류 결과만 반환**하도록 수정.
 
 ```python
 # Before: AI가 분류 + DB 직접 INSERT
 @app.route("/expressions/use", methods=["POST"])
 def record_expression_use():
-    # AI가 감정/의도 분류
     sentiment_kr, intent = _classify_sentence_for_storage(text)
-    # AI가 키워드 추출
     new_keywords = _auto_generate_keywords(text)
-    # pymysql로 직접 INSERT (expressions, expression_keywords, usage_log)
     conn = get_db()
-    cur.execute("INSERT INTO expressions ...")
-    cur.execute("INSERT INTO expression_keywords ...")
-    cur.execute("INSERT INTO usage_log ...")
+    cur.execute("INSERT INTO expressions ...")    # DB 저장
+    cur.execute("INSERT INTO expression_keywords ...")  # DB 저장
+    cur.execute("INSERT INTO usage_log ...")       # DB 저장
     conn.commit()
 
-# After: AI가 분류 + BE API에 저장 요청
-@app.route("/expressions/use", methods=["POST"])
-def record_expression_use():
+# After: 분류만 하고 결과 반환 (DB 저장 안 함)
+@app.route("/expressions/classify", methods=["POST"])
+def classify_expression():
     data = request.json or {}
-    matching_id = data.get("matching_id", 1)
     text = (data.get("text") or "").strip()
+    if not text:
+        return jsonify({"error": "text 필수"}), 400
 
-    # AI가 감정/의도 분류 (이 부분은 AI에 남음 — LLM/키워드 기반 분류)
+    # AI가 감정/의도 분류 (기존 로직 그대로)
     sentiment_kr, intent = _classify_sentence_for_storage(text)
     sentiment_db = SENTIMENT_MAP.get(sentiment_kr, "NEUTRAL")
 
-    # AI가 키워드 추출 (이 부분도 AI에 남음 — 형태소 분석)
+    # AI가 키워드 추출 (기존 로직 그대로)
     keywords = _auto_generate_keywords(text)
 
-    # BE API에 저장 요청 (DB INSERT는 BE가 함)
-    resp = requests.post(f"{BE_API_URL}/ai/expressions/use", json={
-        "matchingId": matching_id,
-        "text": text,
+    # DB 저장 없이 분류 결과만 반환 → BE가 저장함
+    return jsonify({
         "sentiment": sentiment_db,
         "category": intent,
         "keywords": keywords,
     })
-    result = resp.json()["data"]
-
-    # 추천 지표 업데이트 (이 부분은 AI에 남음)
-    _recommend_stats["expression_use_total"] += 1
-    # ... 기존 지표 로직 ...
-
-    return jsonify({"ok": True, "exprId": result["exprId"]})
 ```
 
-### 변경 4. `/recommend/hints` 엔드포인트 (955줄, 약 80줄 → 10줄)
+### 변경 4. `/recommend/hints` 엔드포인트 삭제 (955줄)
+
+BE가 `RecommendationController.getCategories()`에서 직접 힌트를 조회하므로 삭제.
 
 ```python
-# Before: pymysql로 DB 직접 조회 (SQL 쿼리 4개, 80줄)
+# Before: 80줄의 SQL 쿼리 4개
 @app.route("/recommend/hints", methods=["POST"])
 def recommend_hints():
     conn = get_db()
-    cur.execute("SELECT mood_type FROM daily_mood ...")
-    cur.execute("SELECT at.name FROM routine_slot_tag rst JOIN ...")
-    cur.execute("SELECT e.content, COUNT(*) FROM usage_log ul JOIN ...")
-    cur.execute("SELECT e.content FROM usage_log ul JOIN ...")
-    conn.close()
-    return jsonify({...})
+    # ...
 
-# After: BE API 호출 1번 (10줄)
-@app.route("/recommend/hints", methods=["POST"])
-def recommend_hints():
-    data = request.json or {}
-    matching_id = data.get("matching_id", 1)
-
-    resp = requests.get(f"{BE_API_URL}/ai/hints/{matching_id}")
-    hints = resp.json()["data"]
-
-    return jsonify({
-        "mood_hint": hints.get("moodHint"),
-        "schedule_hint": hints.get("scheduleHint"),
-        "frequent_hint": hints.get("frequentHint"),
-        "recent_hint": hints.get("recentHint"),
-    })
+# After: 삭제
 ```
 
 ### 공통 변경
@@ -624,20 +539,20 @@ BE_API_URL = os.getenv("BE_API_URL", "http://eyespeak-backend:8080/api/v1")
 
 ## 체크리스트
 
-### BE 담당자
+### BE 담당자 (팀원)
 - [ ] `GET /api/v1/ai/user-context/{matchingId}` 구현 (쿼리 6개, 커스텀 쿼리 2개)
 - [ ] `GET /api/v1/ai/general-corpus` 구현 (findAll 1개)
-- [ ] `POST /api/v1/ai/expressions/use` 구현 (INSERT/UPDATE 로직)
-- [ ] `GET /api/v1/ai/hints/{matchingId}` 구현 (쿼리 4개, 커스텀 쿼리 2개)
-- [ ] 각 API Swagger 문서 확인
-- [ ] API 1, 4의 커스텀 쿼리(@Query)는 같은 Repository 메서드 재활용 가능
+- [ ] `RecommendationController.getCategories()` 91~98줄 수정 (AI 힌트 요청 → BE 직접 DB 조회)
+- [ ] ChatService에 AI `/expressions/classify` 호출 + 분류 결과로 DB 저장 로직 추가
+- [ ] SecurityConfig에 `/api/v1/ai/**` permitAll 추가 (AI 서버 접근 허용)
+- [ ] UsageLogRepository에 커스텀 쿼리 2개 추가 (API 1, 힌트 모두에서 재활용)
 
 ### AI 담당자 (예린)
 - [ ] BE API 나오면 response 형식 확인
 - [ ] `_load_user_data_from_db()` → BE API 호출로 변경 (130줄 → 15줄)
 - [ ] `_load_general_db_from_db()` → BE API 호출로 변경 (18줄 → 12줄)
-- [ ] `/expressions/use` → 분류는 AI에서, 저장은 BE API로 변경
-- [ ] `/recommend/hints` → BE API 호출로 변경 (80줄 → 10줄)
+- [ ] `/expressions/use` → `/expressions/classify`로 변경 (DB 저장 제거, 분류만 반환)
+- [ ] `/recommend/hints` 엔드포인트 삭제 (BE가 직접 처리)
 - [ ] pymysql, DB_CONFIG, get_db() 삭제
 - [ ] `import requests` + `BE_API_URL` 환경변수 추가
 - [ ] AI 서버 재시작 후 전체 테스트
@@ -646,3 +561,6 @@ BE_API_URL = os.getenv("BE_API_URL", "http://eyespeak-backend:8080/api/v1")
 - [ ] Docker 환경변수에 `BE_API_URL` 추가 (.env.ai)
 - [ ] dev 서버에서 전체 흐름 테스트
 - [ ] AI 서버 Dockerfile에서 pymysql 의존성 제거 가능 (requests는 이미 있음)
+
+**API 6번(추천 문장 발화) + FE/BE/AI 연동 가이드는 별도 문서 참고:**
+→ `backend/docs/api-6-fe-be-ai-integration.md`
