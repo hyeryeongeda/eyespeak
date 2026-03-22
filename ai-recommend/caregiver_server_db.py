@@ -507,9 +507,14 @@ def _search_words(question: str, category: str, word_lists: dict, word_usage_fre
 
 
 # ====== LLM 후처리 (caregiver_server.py와 동일) ======
+_refine_cache: dict = {}
+
 @measure_time
 def _refine_recommend(question: str, candidates: list, sentiment_context: str | None = None) -> list:
     texts = [c["text"] for c in candidates]
+    cache_key = (question.strip(), tuple(texts), sentiment_context)
+    if cache_key in _refine_cache:
+        return _refine_cache[cache_key]
     diversity_rule = (
         "이번 답변은 모두 같은 방향(긍정 또는 부정/중립)으로 통일하세요."
         if sentiment_context
@@ -539,6 +544,7 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
     fallback = [c["text"] for c in candidates]
     while len(lines) < 3:
         lines.append(fallback[len(lines) % len(fallback)] if fallback else "응")
+    _refine_cache[cache_key] = lines
     return lines
 
 
