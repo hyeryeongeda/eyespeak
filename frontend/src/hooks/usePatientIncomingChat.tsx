@@ -8,7 +8,11 @@ import {
   MAX_SUGGESTION_RETRIES,
   buildManualWordBank,
 } from '../services/mockSuggestionService'
-import { fetchSuggestedReplies, sendPatientReply } from '../services/recommendationService'
+import {
+  fetchSuggestedReplies,
+  playPatientUtteranceTts,
+  sendPatientReply,
+} from '../services/recommendationService'
 import {
   PatientIncomingChatContext,
   type PatientIncomingChatContextValue,
@@ -898,6 +902,11 @@ export function PatientIncomingChatProvider({
       type: 'SEND_SUCCEEDED',
       replyMessage: result.message,
     })
+    void playPatientUtteranceTts({
+      text: suggestion.label,
+    }).catch(error => {
+      console.warn('Suggested reply TTS playback failed.', error)
+    })
   }
 
   async function sendManualReply() {
@@ -938,6 +947,11 @@ export function PatientIncomingChatProvider({
     dispatch({
       type: 'SEND_SUCCEEDED',
       replyMessage: result.message,
+    })
+    void playPatientUtteranceTts({
+      text: draft,
+    }).catch(error => {
+      console.warn('Manual reply TTS playback failed.', error)
     })
   }
 

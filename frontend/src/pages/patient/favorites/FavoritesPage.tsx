@@ -13,6 +13,10 @@ import {
   submitFavoriteSelection,
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
 } from '../../../services/favoritesService'
+import {
+  playPatientUtteranceTts,
+  submitPatientUtterance,
+} from '../../../services/recommendationService'
 import type {
   FavoriteItem,
   FavoritesErrorKind,
@@ -234,6 +238,17 @@ export default function FavoritesPage() {
       try {
         const result = await submitFavoriteSelection(patientId, item.id, item.text)
         if (result.success) {
+          await submitPatientUtterance({
+            text: item.text,
+            source: 'manual',
+          })
+          try {
+            await playPatientUtteranceTts({
+              text: item.text,
+            })
+          } catch (error) {
+            console.warn('Favorite utterance TTS playback failed.', error)
+          }
           handleAfterSelection(item, true)
         } else {
           setErrorKind('submit')

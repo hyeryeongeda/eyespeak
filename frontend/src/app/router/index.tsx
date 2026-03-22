@@ -1,20 +1,21 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import HomePage from '../../pages/HomePage'
-import CareLoginPage from '../../pages/auth/CareLoginPage'
-import CareSignupPage from '../../pages/auth/CareSignupPage'
-import LoginPage from '../../pages/auth/LoginPage'
-import PatientLoginPage from '../../pages/auth/PatientLoginPage'
-import PatientSignupPage from '../../pages/auth/PatientSignupPage'
-import ResetPasswordPage from '../../pages/auth/ResetPasswordPage'
-import RoleSelectPage from '../../pages/auth/RoleSelectPage'
-import SignupPage from '../../pages/auth/SignupPage'
 import AppLayout from '../layouts/AppLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import CareLayout from '../layouts/CareLayout'
-import PatientLayout from '../layouts/PatientLayout'
 import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
+
+const RoleSelectPage = lazy(() => import('../../pages/auth/RoleSelectPage'))
+const CareLoginPage = lazy(() => import('../../pages/auth/CareLoginPage'))
+const PatientLoginPage = lazy(() => import('../../pages/auth/PatientLoginPage'))
+const LoginPage = lazy(() => import('../../pages/auth/LoginPage'))
+const CareSignupPage = lazy(() => import('../../pages/auth/CareSignupPage'))
+const PatientSignupPage = lazy(() => import('../../pages/auth/PatientSignupPage'))
+const SignupPage = lazy(() => import('../../pages/auth/SignupPage'))
+const ResetPasswordPage = lazy(() => import('../../pages/auth/ResetPasswordPage'))
+const PatientLayout = lazy(() => import('../layouts/PatientLayout'))
 
 const CareHomePage = lazy(() => import('../../pages/care/CareHomePage'))
 const CareSettingsPage = lazy(() => import('../../pages/care/CareSettingsPage'))
@@ -58,35 +59,67 @@ const authRoutes = [
   },
   {
     path: ROUTE_SEGMENTS.AUTH.ROLE,
-    element: <RoleSelectPage />,
+    element: (
+      <Suspense fallback={null}>
+        <RoleSelectPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.LOGIN_CARE,
-    element: <CareLoginPage />,
+    element: (
+      <Suspense fallback={null}>
+        <CareLoginPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.LOGIN_PATIENT,
-    element: <PatientLoginPage />,
+    element: (
+      <Suspense fallback={null}>
+        <PatientLoginPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.LOGIN,
-    element: <LoginPage />,
+    element: (
+      <Suspense fallback={null}>
+        <LoginPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP_CARE,
-    element: <CareSignupPage />,
+    element: (
+      <Suspense fallback={null}>
+        <CareSignupPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP_PATIENT,
-    element: <PatientSignupPage />,
+    element: (
+      <Suspense fallback={null}>
+        <PatientSignupPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.SIGNUP,
-    element: <SignupPage />,
+    element: (
+      <Suspense fallback={null}>
+        <SignupPage />
+      </Suspense>
+    ),
   },
   {
     path: ROUTE_SEGMENTS.AUTH.RESET_PASSWORD,
-    element: <ResetPasswordPage />,
+    element: (
+      <Suspense fallback={null}>
+        <ResetPasswordPage />
+      </Suspense>
+    ),
   },
 ]
 
@@ -395,7 +428,9 @@ const router = createBrowserRouter(
           element: (
             <ProtectedRoute allowedRole="patient">
               <PatientCalibrationRoute>
-                <PatientLayout />
+                <Suspense fallback={null}>
+                  <PatientLayout />
+                </Suspense>
               </PatientCalibrationRoute>
             </ProtectedRoute>
           ),
