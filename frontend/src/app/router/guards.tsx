@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { buildAuthRedirectState } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
   buildPatientCalibrationLocationState,
@@ -30,7 +31,7 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
       <Navigate
         to={getAuthPathByRole('login', allowedRole)}
         replace
-        state={{ from: location }}
+        state={buildAuthRedirectState(location)}
       />
     )
   }
@@ -79,7 +80,10 @@ export function PatientCalibrationRoute({ children }: PatientCalibrationRoutePro
       <Navigate
         to={ROUTE_PATHS.PATIENT_CALIBRATION}
         replace
-        state={buildPatientCalibrationLocationState(patientPostAuth)}
+        state={buildPatientCalibrationLocationState(
+          patientPostAuth,
+          `${location.pathname}${location.search}${location.hash}`,
+        )}
       />
     )
   }

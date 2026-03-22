@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { requestPasswordReset } from '../../services/authService'
 import { getStoredRole } from '../../services/authStorage'
+import { normalizeAuthRole } from '../../services/authRole'
 import type { PasswordResetResponseDto, UserRole } from '../../types/auth'
 import { isValidEmail } from '../../utils/validators'
 import AuthBrand from './AuthBrand'
@@ -29,12 +30,7 @@ export default function ResetPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const storedRole = getStoredRole()
   const roleParam = searchParams.get('role')
-  const resolvedRole: UserRole | null =
-    roleParam === 'guardian' || roleParam === 'patient'
-      ? roleParam
-      : storedRole === 'guardian' || storedRole === 'patient'
-        ? storedRole
-        : null
+  const resolvedRole: UserRole | null = normalizeAuthRole(roleParam) ?? normalizeAuthRole(storedRole)
 
   const loginPath = useMemo(() => {
     if (resolvedRole === 'guardian') {

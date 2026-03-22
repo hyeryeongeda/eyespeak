@@ -67,8 +67,10 @@ export interface PatientPostAuthState {
   status: PatientPostAuthStatus
   entryPoint: PatientAuthEntryPoint | null
   notice: PatientPostAuthNotice | null
+  redirectPath: string
 }
 
 export interface PatientCalibrationLocationState {
   postAuthNotice?: PatientPostAuthNotice
+  redirectPath?: string
 }

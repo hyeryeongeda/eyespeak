@@ -1,13 +1,14 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { getHomePathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
   consumeGuardianSessionExitReason,
   setStoredEntryMode,
   setStoredRole,
 } from '../../services/authStorage'
-import type { GuardianSessionExitReason } from '../../types/auth'
+import type { AuthRouteState, GuardianSessionExitReason } from '../../types/auth'
 import AuthBrand from './AuthBrand'
 import {
   card,
@@ -23,7 +24,7 @@ import {
 } from './authPageStyles'
 import AuthPageFrame from './AuthPageFrame'
 
-interface CareLoginLocationState {
+interface CareLoginLocationState extends AuthRouteState {
   signupCompleted?: boolean
   guardianEmail?: string
 }
@@ -62,7 +63,12 @@ export default function CareLoginPage() {
       return
     }
 
-    navigate(getHomePathByRole(result.data.role), { replace: true })
+    const resolvedNavigation = await resolveAuthSuccessNavigation(result.data, {
+      entryPoint: 'login',
+      locationState: location.state,
+    })
+
+    navigate(resolvedNavigation.path, { replace: true, state: resolvedNavigation.state })
   }
 
   return (

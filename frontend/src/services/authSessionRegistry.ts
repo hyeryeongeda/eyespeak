@@ -2,6 +2,7 @@ import type { AuthSession } from '../types/auth'
 
 type AuthSessionUpdater = (session: AuthSession | null) => void
 
+// Bridge for non-React layers such as the API client.
 let activeAuthSession: AuthSession | null = null
 let authSessionUpdater: AuthSessionUpdater | null = null
 

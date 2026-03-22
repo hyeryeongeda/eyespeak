@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { getAuthPathByRole } from '../../../app/router/routePaths'
 import {
   setStoredEntryMode,
   setStoredRole,
@@ -158,7 +158,7 @@ export default function GuardianSessionManager() {
     try {
       await logout()
     } finally {
-      navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, { replace: true })
+      navigate(getAuthPathByRole('login', 'guardian'), { replace: true })
       isLoggingOutRef.current = false
     }
   }
@@ -176,7 +176,7 @@ export default function GuardianSessionManager() {
     try {
       await logout()
     } finally {
-      navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, { replace: true })
+      navigate(getAuthPathByRole('login', 'guardian'), { replace: true })
       isLoggingOutRef.current = false
     }
   }

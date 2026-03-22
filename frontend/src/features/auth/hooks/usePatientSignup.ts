@@ -8,8 +8,8 @@ import {
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
 import { isValidEmail, validatePassword } from '../../../utils/validators'
+import { resolveAuthSuccessNavigation } from '../authRedirect'
 import { useAuth } from './useAuth'
-import { resolvePatientPostAuthFlow } from '../../patient/input/services/calibration/patientCalibrationService'
 
 const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   name: '',
@@ -115,14 +115,14 @@ export function usePatientSignup() {
 
     clearVerifiedTeamCode()
     setSession(result.data.session)
-    const resolvedPostAuthFlow = await resolvePatientPostAuthFlow(result.data.session, {
+    const resolvedNavigation = await resolveAuthSuccessNavigation(result.data.session, {
       entryPoint: 'signup',
     })
-    setPatientPostAuth(resolvedPostAuthFlow.postAuthState)
+    setPatientPostAuth(resolvedNavigation.patientPostAuthState)
 
-    navigate(resolvedPostAuthFlow.destination.path, {
+    navigate(resolvedNavigation.path, {
       replace: true,
-      state: resolvedPostAuthFlow.destination.state,
+      state: resolvedNavigation.state,
     })
   }
 
