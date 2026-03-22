@@ -10,7 +10,10 @@ import {
   getInteractiveElementFromPoint,
   getInteractiveElementSelectionKey,
 } from '../services/trackingService'
-import { PATIENT_DOUBLE_BLINK_EVENT } from '../services/patientModeBridge'
+import {
+  PATIENT_DOUBLE_BLINK_EVENT,
+  type PatientDoubleBlinkDetail,
+} from '../services/patientModeBridge'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import { usePatientModeStore } from '../stores/patientModeStore'
 import {
@@ -30,8 +33,36 @@ interface GazeTarget {
   key: string
 }
 
+type PatientSelectionCommitSource = 'dwell' | 'double-blink'
+
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
   return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
+}
+
+function getInteractiveElementBlockReason(element: HTMLElement | null) {
+  if (!element) {
+    return 'missing-target'
+  }
+
+  if (!element.isConnected) {
+    return 'disconnected'
+  }
+
+  if (element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') {
+    return 'disabled'
+  }
+
+  const computedStyle = window.getComputedStyle(element)
+
+  if (computedStyle.display === 'none') {
+    return 'display-none'
+  }
+
+  if (computedStyle.visibility === 'hidden') {
+    return 'visibility-hidden'
+  }
+
+  return null
 }
 
 export function usePatientGazeClick({
@@ -63,6 +94,116 @@ export function usePatientGazeClick({
       key: getInteractiveElementSelectionKey(element),
     }
   }, [enabled, gazePoint])
+
+  const resolveCurrentGazeTarget = () => {
+    if (stableGazeTarget?.element && stableGazeTarget.element.isConnected) {
+      return stableGazeTarget
+    }
+
+    if (rawGazeTarget?.element && rawGazeTarget.element.isConnected) {
+      return rawGazeTarget
+    }
+
+    const latestPoint = useGazeInputStore.getState().point
+
+    if (!latestPoint) {
+      return null
+    }
+
+    const element = getInteractiveElementFromPoint(latestPoint.clientX, latestPoint.clientY)
+
+    if (!element) {
+      return null
+    }
+
+    return {
+      element,
+      key: getInteractiveElementSelectionKey(element),
+    }
+  }
+
+  const commitSelection = (source: PatientSelectionCommitSource) => {
+    const isGlobalMenuOpen = usePatientModeStore.getState().isGlobalMenuOpen
+
+    if (import.meta.env.DEV) {
+      console.info('[patient-input] confirmSelection called', {
+        source,
+        stableTargetKey: stableGazeTarget?.key ?? null,
+        rawTargetKey: rawGazeTarget?.key ?? null,
+        globalMenuOpen: isGlobalMenuOpen,
+      })
+    }
+
+    if (isGlobalMenuOpen) {
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] click blocked reason', {
+          source,
+          reason: 'global-menu-open',
+        })
+      }
+
+      return false
+    }
+
+    const resolvedTarget = resolveCurrentGazeTarget()
+
+    if (!resolvedTarget) {
+      activeElementRef.current = null
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] click blocked reason', {
+          source,
+          reason: 'no-active-target',
+        })
+      }
+
+      return false
+    }
+
+    activeElementRef.current = resolvedTarget.element
+
+    const blockReason = getInteractiveElementBlockReason(resolvedTarget.element)
+
+    if (blockReason) {
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] click blocked reason', {
+          source,
+          reason: blockReason,
+          targetKey: resolvedTarget.key,
+        })
+      }
+
+      return false
+    }
+
+    const computedStyle = window.getComputedStyle(resolvedTarget.element)
+
+    if (import.meta.env.DEV) {
+      console.info('[patient-input] active target resolved', {
+        source,
+        targetKey: resolvedTarget.key,
+        tagName: resolvedTarget.element.tagName,
+        pointerEvents: computedStyle.pointerEvents,
+        visibility: computedStyle.visibility,
+      })
+    }
+
+    submitActiveEyeTrackingSelectionFeedback()
+    resolvedTarget.element.click()
+
+    if (import.meta.env.DEV) {
+      console.info('[patient-input] click dispatched', {
+        source,
+        targetKey: resolvedTarget.key,
+      })
+      console.info('[patient-input] state reset', {
+        source,
+        targetKey: resolvedTarget.key,
+      })
+    }
+
+    return true
+  }
 
   useEffect(() => {
     const clearTargetSwitchTimer = () => {
@@ -134,25 +275,48 @@ export function usePatientGazeClick({
   }, [stableGazeTarget])
 
   useEffect(() => {
+    if (!enabled || !import.meta.env.DEV) {
+      return
+    }
+
+    console.info('[patient-input] gaze target updated', {
+      rawTargetKey: rawGazeTarget?.key ?? null,
+      stableTargetKey: stableGazeTarget?.key ?? null,
+      updatedAt: gazePoint?.updatedAt ?? null,
+    })
+  }, [enabled, gazePoint?.updatedAt, rawGazeTarget?.key, stableGazeTarget?.key])
+
+  useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
       return
     }
 
-    const handleDoubleBlink = () => {
+    const handleDoubleBlink = (event: Event) => {
+      const doubleBlinkEvent = event as CustomEvent<PatientDoubleBlinkDetail>
       lastDoubleBlinkAtRef.current = Date.now()
-      activeElementRef.current = null
 
       if (import.meta.env.DEV) {
-        console.info('[patient-input] double blink detected while dwell is active')
+        console.info('[patient-input] double blink confirmed', {
+          source: doubleBlinkEvent.detail?.source ?? 'unknown',
+        })
+      }
+
+      if (commitSelection('double-blink')) {
+        doubleBlinkEvent.preventDefault()
+        return
+      }
+
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] double blink fell through because confirmSelection did not commit')
       }
     }
 
-    window.addEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink)
+    window.addEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink as EventListener)
 
     return () => {
-      window.removeEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink)
+      window.removeEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink as EventListener)
     }
-  }, [enabled])
+  }, [enabled, rawGazeTarget, stableGazeTarget])
 
   useEffect(() => {
     if (!enabled) {
@@ -234,29 +398,15 @@ export function usePatientGazeClick({
         return
       }
 
-      const targetElement = activeElementRef.current
-
-      if (!targetElement || !targetElement.isConnected) {
-        if (import.meta.env.DEV) {
-          console.info('[patient-input] skipped dwell commit because the active target is unavailable', {
-            targetKey: stableGazeTarget?.key ?? null,
-          })
-        }
-
-        return
-      }
-
       if (import.meta.env.DEV) {
         console.info('[patient-input] dwell commit', {
           targetKey: stableGazeTarget?.key ?? null,
           dwellDurationMs,
           activationDelayMs,
-          tagName: targetElement.tagName,
         })
       }
 
-      submitActiveEyeTrackingSelectionFeedback()
-      targetElement.click()
+      commitSelection('dwell')
     },
   })
 }

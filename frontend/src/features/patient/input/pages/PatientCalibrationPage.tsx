@@ -16,17 +16,67 @@ import {
 
 type CalibrationPageState = 'loading' | 'saving' | 'ready' | 'error'
 
+type EyeTrackingEmbedMessageType =
+  | 'EMBED_LOADED'
+  | 'CALIBRATION_READY'
+  | 'CALIBRATION_COMPLETE'
+  | 'CALIBRATION_ERROR'
+
+type EyeTrackingEmbedHandshakeStage =
+  | 'iframe-requested'
+  | 'iframe-loaded'
+  | 'embed-loaded'
+  | 'ready'
+  | 'error'
+
 interface EyeTrackingCalibrationMessage {
   source?: string
-  type?: 'calibration-ready' | 'calibration-complete' | 'calibration-error'
+  type?: string
   message?: string
   userId?: string | number
+  profileId?: string | number
 }
 
 const EYE_TRACKING_MESSAGE_SOURCE = 'eyespeak-eye-tracking'
+const EYE_TRACKING_EMBED_MESSAGE_TYPES = {
+  EMBED_LOADED: 'EMBED_LOADED',
+  CALIBRATION_READY: 'CALIBRATION_READY',
+  CALIBRATION_COMPLETE: 'CALIBRATION_COMPLETE',
+  CALIBRATION_ERROR: 'CALIBRATION_ERROR',
+} as const
+const LEGACY_EYE_TRACKING_EMBED_MESSAGE_TYPES: Record<string, EyeTrackingEmbedMessageType> = {
+  'calibration-ready': EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_READY,
+  'calibration-complete': EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_COMPLETE,
+  'calibration-error': EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_ERROR,
+}
+const MAX_DIAGNOSTIC_MESSAGES = 6
+const IFRAME_LOAD_TIMEOUT_MS = 10_000
+const EMBED_HANDSHAKE_TIMEOUT_MS = 10_000
+const CALIBRATION_READY_TIMEOUT_MS = 30_000
 
 function isLoopbackHost(hostname: string) {
   return hostname === 'localhost' || hostname === '127.0.0.1'
+}
+
+function normalizeEyeTrackingMessageType(value: string | undefined): EyeTrackingEmbedMessageType | null {
+  if (!value) {
+    return null
+  }
+
+  if (
+    value === EYE_TRACKING_EMBED_MESSAGE_TYPES.EMBED_LOADED ||
+    value === EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_READY ||
+    value === EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_COMPLETE ||
+    value === EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_ERROR
+  ) {
+    return value
+  }
+
+  return LEGACY_EYE_TRACKING_EMBED_MESSAGE_TYPES[value] ?? null
+}
+
+function isAllowedEyeTrackingMessageOrigin(eventOrigin: string, allowedOrigin: string | null) {
+  return Boolean(allowedOrigin) && eventOrigin === allowedOrigin
 }
 
 function normalizeMessageUserId(value: string | number | undefined) {
@@ -49,6 +99,10 @@ export default function PatientCalibrationPage() {
   const [pageState, setPageState] = useState<CalibrationPageState>('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const [issueKind, setIssueKind] = useState<PatientCalibrationIssueKind>('none')
+  const [iframeRenderKey, setIframeRenderKey] = useState(0)
+  const [handshakeStage, setHandshakeStage] =
+    useState<EyeTrackingEmbedHandshakeStage>('iframe-requested')
+  const [diagnosticMessages, setDiagnosticMessages] = useState<string[]>([])
   const routeState = (location.state as PatientCalibrationLocationState | null) ?? null
   const postAuthNotice = routeState?.postAuthNotice ?? getPatientPostAuthNotice(patientPostAuth)
   const postCalibrationRedirectPath =
@@ -138,6 +192,7 @@ export default function PatientCalibrationPage() {
       ['Eye tracking profile id', eyeTrackingProfileId || '(missing)'],
       ['Iframe origin', allowedOrigin || '(invalid)'],
       ['App origin', typeof window === 'undefined' ? '(unknown)' : window.location.origin],
+      ['Handshake stage', handshakeStage],
     ]
 
     if (eyeTrackingConfig.diagnosticsEnabled) {
@@ -151,7 +206,7 @@ export default function PatientCalibrationPage() {
     }
 
     return items
-  }, [allowedOrigin, eyeTrackingConfig, eyeTrackingProfileId])
+  }, [allowedOrigin, eyeTrackingConfig, eyeTrackingProfileId, handshakeStage])
 
   const statusTitle =
     blockingErrorMessage
@@ -159,7 +214,11 @@ export default function PatientCalibrationPage() {
       : pageState === 'saving'
         ? 'Verifying eye-tracking runtime'
         : pageState === 'loading'
-          ? 'Preparing calibration screen'
+          ? handshakeStage === 'embed-loaded'
+            ? 'Preparing camera and calibration screen'
+            : handshakeStage === 'iframe-loaded'
+              ? 'Waiting for calibration handshake'
+              : 'Preparing calibration screen'
           : issueKind === 'eye-tracking-preparation-failed'
             ? 'Eye-tracking preparation failed'
             : issueKind === 'calibration-failed'
@@ -172,7 +231,11 @@ export default function PatientCalibrationPage() {
       : pageState === 'saving'
         ? 'Calibration completed. Verifying runtime readiness before entering the patient workspace.'
         : pageState === 'loading'
-          ? 'Preparing the camera and calibration screen...'
+          ? handshakeStage === 'iframe-loaded'
+            ? 'Calibration iframe loaded. Waiting for EMBED_LOADED from the eye-tracking UI.'
+            : handshakeStage === 'embed-loaded'
+              ? 'Eye-tracking UI loaded. Preparing camera and calibration screen...'
+              : 'Preparing the camera and calibration screen...'
           : pageState === 'error'
             ? errorMessage
             : ''
@@ -200,6 +263,27 @@ export default function PatientCalibrationPage() {
   }, [allowedOrigin, blockingErrorMessage, eyeTrackingConfig, eyeTrackingProfileId, iframeUrl])
 
   useEffect(() => {
+    if (blockingErrorMessage) {
+      return
+    }
+
+    const openMessage = `Opening calibration iframe: ${iframeUrl}`
+    setPageState('loading')
+    setErrorMessage('')
+    setIssueKind('none')
+    setHandshakeStage('iframe-requested')
+    setDiagnosticMessages([openMessage])
+
+    if (import.meta.env.DEV) {
+      console.info('[calibration] opening eye-tracking iframe', {
+        iframeUrl,
+        allowedOrigin,
+        eyeTrackingProfileId,
+      })
+    }
+  }, [allowedOrigin, blockingErrorMessage, eyeTrackingProfileId, iframeRenderKey, iframeUrl])
+
+  useEffect(() => {
     if (
       !import.meta.env.DEV ||
       user?.authMode !== 'mock' ||
@@ -213,6 +297,49 @@ export default function PatientCalibrationPage() {
       eyeTrackingProfileId,
     })
   }, [eyeTrackingConfig.resolvedApiMode, eyeTrackingProfileId, user])
+
+  useEffect(() => {
+    if (blockingErrorMessage || pageState === 'ready' || pageState === 'saving' || pageState === 'error') {
+      return
+    }
+
+    const timeoutMessage =
+      handshakeStage === 'iframe-requested'
+        ? 'Calibration iframe did not finish loading in time.'
+        : handshakeStage === 'iframe-loaded'
+          ? 'Calibration iframe loaded, but EMBED_LOADED was not received.'
+          : 'Eye-tracking UI did not report CALIBRATION_READY in time.'
+    const timeoutMs =
+      handshakeStage === 'iframe-requested'
+        ? IFRAME_LOAD_TIMEOUT_MS
+        : handshakeStage === 'iframe-loaded'
+          ? EMBED_HANDSHAKE_TIMEOUT_MS
+          : CALIBRATION_READY_TIMEOUT_MS
+
+    const timeoutId = window.setTimeout(() => {
+      setPageState('error')
+      setIssueKind('calibration-failed')
+      setHandshakeStage('error')
+      setErrorMessage(timeoutMessage)
+      setDiagnosticMessages(currentMessages =>
+        [...currentMessages, timeoutMessage].slice(-MAX_DIAGNOSTIC_MESSAGES),
+      )
+
+      if (import.meta.env.DEV) {
+        console.warn('[calibration] iframe handshake timed out', {
+          handshakeStage,
+          timeoutMs,
+          allowedOrigin,
+          iframeUrl,
+          eyeTrackingProfileId,
+        })
+      }
+    }, timeoutMs)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [allowedOrigin, blockingErrorMessage, eyeTrackingProfileId, handshakeStage, iframeUrl, pageState])
 
   useEffect(() => {
     if (blockingErrorMessage) {
@@ -265,7 +392,7 @@ export default function PatientCalibrationPage() {
     }
 
     const handleMessage = (event: MessageEvent<EyeTrackingCalibrationMessage>) => {
-      if (event.origin !== allowedOrigin) {
+      if (!isAllowedEyeTrackingMessageOrigin(event.origin, allowedOrigin)) {
         return
       }
 
@@ -275,29 +402,61 @@ export default function PatientCalibrationPage() {
         return
       }
 
+      const messageType = normalizeEyeTrackingMessageType(payload.type)
+
+      if (!messageType) {
+        return
+      }
+
       const messageUserId = normalizeMessageUserId(payload.userId)
 
-      if (!eyeTrackingProfileId || messageUserId !== eyeTrackingProfileId) {
+      if (eyeTrackingProfileId && messageUserId && messageUserId !== eyeTrackingProfileId) {
         if (import.meta.env.DEV) {
           console.warn('[eye-tracking] ignored calibration message with mismatched user id', {
             expectedEyeTrackingProfileId: eyeTrackingProfileId,
             receivedUserId: messageUserId,
-            type: payload.type,
+            type: messageType,
           })
         }
 
         return
       }
 
-      if (payload.type === 'calibration-ready') {
+      setDiagnosticMessages(currentMessages =>
+        [
+          ...currentMessages,
+          `Received ${messageType}${messageUserId ? ` for profile ${messageUserId}` : ''}`,
+        ].slice(-MAX_DIAGNOSTIC_MESSAGES),
+      )
+
+      if (import.meta.env.DEV) {
+        console.info('[calibration] received eye-tracking iframe message', {
+          type: messageType,
+          eventOrigin: event.origin,
+          allowedOrigin,
+          userId: messageUserId,
+          profileId: normalizeMessageUserId(payload.profileId),
+        })
+      }
+
+      if (messageType === EYE_TRACKING_EMBED_MESSAGE_TYPES.EMBED_LOADED) {
+        setHandshakeStage(currentStage =>
+          currentStage === 'ready' || currentStage === 'error' ? currentStage : 'embed-loaded',
+        )
+        return
+      }
+
+      if (messageType === EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_READY) {
+        setHandshakeStage('ready')
         setPageState(currentState => (currentState === 'loading' ? 'ready' : currentState))
         setErrorMessage('')
         setIssueKind('none')
         return
       }
 
-      if (payload.type === 'calibration-error') {
+      if (messageType === EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_ERROR) {
         setPageState('error')
+        setHandshakeStage('error')
         setIssueKind('calibration-failed')
         setErrorMessage(payload.message || 'The calibration flow reported an error.')
 
@@ -312,7 +471,7 @@ export default function PatientCalibrationPage() {
         return
       }
 
-      if (payload.type === 'calibration-complete') {
+      if (messageType === EYE_TRACKING_EMBED_MESSAGE_TYPES.CALIBRATION_COMPLETE) {
         void persistCalibration()
       }
     }
@@ -332,6 +491,52 @@ export default function PatientCalibrationPage() {
     postCalibrationRedirectPath,
     user,
   ])
+
+  const handleIframeLoad = () => {
+    if (blockingErrorMessage) {
+      return
+    }
+
+    setHandshakeStage(currentStage =>
+      currentStage === 'ready' || currentStage === 'error' ? currentStage : 'iframe-loaded',
+    )
+    setDiagnosticMessages(currentMessages =>
+      [...currentMessages, 'Calibration iframe loaded. Waiting for EMBED_LOADED.'].slice(
+        -MAX_DIAGNOSTIC_MESSAGES,
+      ),
+    )
+
+    if (import.meta.env.DEV) {
+      console.info('[calibration] iframe onLoad fired', {
+        iframeUrl,
+        allowedOrigin,
+        eyeTrackingProfileId,
+      })
+    }
+  }
+
+  const handleIframeError = () => {
+    const nextErrorMessage = 'Calibration iframe failed to load. Check the DEV proxy and eye-tracking server.'
+    setPageState('error')
+    setHandshakeStage('error')
+    setIssueKind('calibration-failed')
+    setErrorMessage(nextErrorMessage)
+    setDiagnosticMessages(currentMessages =>
+      [...currentMessages, nextErrorMessage].slice(-MAX_DIAGNOSTIC_MESSAGES),
+    )
+
+    if (import.meta.env.DEV) {
+      console.error('[calibration] iframe onError fired', {
+        iframeUrl,
+        allowedOrigin,
+        eyeTrackingProfileId,
+      })
+    }
+  }
+
+  const handleRetry = () => {
+    setIframeRenderKey(currentKey => currentKey + 1)
+  }
 
   return (
     <main style={pageStyle}>
@@ -365,11 +570,13 @@ export default function PatientCalibrationPage() {
       ) : (
         <>
           <iframe
-            key={iframeUrl}
+            key={`${iframeRenderKey}:${iframeUrl}`}
             src={iframeUrl}
             title="Eye tracking calibration"
             style={iframeStyle}
             allow="camera; fullscreen"
+            onLoad={handleIframeLoad}
+            onError={handleIframeError}
           />
 
           <div style={overlayLayerStyle}>
@@ -402,6 +609,26 @@ export default function PatientCalibrationPage() {
               >
                 {statusTitle ? <p style={statusTitleStyle}>{statusTitle}</p> : null}
                 {statusDescription ? <p style={statusDescriptionStyle}>{statusDescription}</p> : null}
+                {pageState === 'error' ? (
+                  <div style={statusActionRowStyle}>
+                    <button type="button" style={statusButtonStyle} onClick={handleRetry}>
+                      Retry calibration
+                    </button>
+                    <a href={iframeUrl} target="_blank" rel="noreferrer" style={statusLinkStyle}>
+                      Open iframe directly
+                    </a>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {import.meta.env.DEV && diagnosticMessages.length > 0 ? (
+              <div style={diagnosticPanelStyle}>
+                {diagnosticMessages.map((message, index) => (
+                  <p key={`${index}:${message}`} style={diagnosticMessageStyle}>
+                    {message}
+                  </p>
+                ))}
               </div>
             ) : null}
           </div>
@@ -490,6 +717,38 @@ const statusDescriptionStyle: CSSProperties = {
   fontWeight: 600,
   lineHeight: 1.6,
   textAlign: 'center',
+}
+
+const statusActionRowStyle: CSSProperties = {
+  marginTop: '14px',
+  display: 'flex',
+  justifyContent: 'center',
+  gap: '10px',
+  pointerEvents: 'auto',
+}
+
+const statusButtonStyle: CSSProperties = {
+  border: 'none',
+  borderRadius: '999px',
+  padding: '10px 18px',
+  backgroundColor: '#f8fafc',
+  color: '#0f172a',
+  fontSize: '13px',
+  fontWeight: 800,
+  cursor: 'pointer',
+}
+
+const statusLinkStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: '999px',
+  padding: '10px 18px',
+  border: '1px solid rgba(248, 250, 252, 0.32)',
+  color: '#f8fafc',
+  fontSize: '13px',
+  fontWeight: 800,
+  textDecoration: 'none',
 }
 
 const errorPanelStyle: CSSProperties = {
@@ -601,6 +860,26 @@ const infoCardStyle: CSSProperties = {
   lineHeight: 1.6,
   textAlign: 'center',
   backdropFilter: 'blur(16px)',
+}
+
+const diagnosticPanelStyle: CSSProperties = {
+  alignSelf: 'flex-end',
+  marginTop: 'auto',
+  width: 'min(420px, calc(100vw - 40px))',
+  padding: '14px 16px',
+  borderRadius: '16px',
+  backgroundColor: 'rgba(2, 6, 23, 0.72)',
+  border: '1px solid rgba(148, 163, 184, 0.18)',
+  boxShadow: '0 14px 30px rgba(2, 6, 23, 0.24)',
+  backdropFilter: 'blur(16px)',
+}
+
+const diagnosticMessageStyle: CSSProperties = {
+  margin: 0,
+  color: 'rgba(226, 232, 240, 0.86)',
+  fontSize: '12px',
+  fontWeight: 600,
+  lineHeight: 1.5,
 }
 
 const debugListStyle: CSSProperties = {

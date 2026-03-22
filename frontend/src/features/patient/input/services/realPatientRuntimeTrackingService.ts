@@ -87,6 +87,12 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
     videoElement.playsInline = true
 
     try {
+      if (import.meta.env.DEV) {
+        console.info('[eye-tracking] runtime camera init start', {
+          eyeTrackingProfileId,
+        })
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: 'user',
@@ -103,9 +109,21 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
       this.mediaStream = stream
       this.hiddenVideoElement.srcObject = stream
 
+      if (import.meta.env.DEV) {
+        console.info('[eye-tracking] runtime camera init success', {
+          eyeTrackingProfileId,
+        })
+      }
+
       await this.hiddenVideoElement.play().catch(() => {
         // Muted autoplay can still be delayed on some browsers until camera metadata is ready.
       })
+
+      if (import.meta.env.DEV) {
+        console.info('[eye-tracking] runtime calibration warm-up start', {
+          eyeTrackingProfileId,
+        })
+      }
 
       const calibrationWarmupResult = await warmUpStoredCalibration(eyeTrackingProfileId, signal)
 
@@ -125,6 +143,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
       }
 
       let lastDoubleBlinkAt = 0
+      let lastBlinkDetected = false
 
       while (!signal?.aborted && !this.disposed) {
         try {
@@ -146,11 +165,38 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
             useGazeInputStore.getState().clearPoint()
           }
 
+          if (import.meta.env.DEV && frame.blinkDetected && !lastBlinkDetected) {
+            console.info('[eye-tracking] blink detected', {
+              eyeTrackingProfileId,
+              cell: frame.cell,
+              trigger: frame.trigger,
+            })
+          }
+
+          lastBlinkDetected = frame.blinkDetected
+
+          if (import.meta.env.DEV && frame.trigger !== 'none') {
+            console.info('[eye-tracking] trigger detected', {
+              eyeTrackingProfileId,
+              trigger: frame.trigger,
+              cell: frame.cell,
+              trackingStatus: status,
+            })
+          }
+
           if (frame.trigger === 'start') {
             const now = Date.now()
 
             if (now - lastDoubleBlinkAt >= 1000) {
               lastDoubleBlinkAt = now
+
+              if (import.meta.env.DEV) {
+                console.info('[eye-tracking] double blink confirmed', {
+                  eyeTrackingProfileId,
+                  cell: frame.cell,
+                })
+              }
+
               onDoubleBlink()
             }
           }
@@ -166,6 +212,13 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
         await waitForAbortableDelay(getEyeTrackingRuntimePollIntervalMs(), signal)
       }
     } catch (error) {
+      if (import.meta.env.DEV && !signal?.aborted && !this.disposed) {
+        console.warn('[eye-tracking] runtime camera init failed', {
+          eyeTrackingProfileId,
+          message: error instanceof Error ? error.message : 'Unknown camera init error.',
+        })
+      }
+
       if (!signal?.aborted && !this.disposed) {
         useGazeInputStore.getState().clearPoint()
         onTrackingStatusChange('tracking-unstable')

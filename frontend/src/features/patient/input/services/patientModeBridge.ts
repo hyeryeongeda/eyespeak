@@ -6,6 +6,10 @@ export const PATIENT_GLOBAL_MENU_ACTION_EVENT = 'patient-global-menu:action'
 
 export type PatientGlobalMenuActionId = 'yes' | 'no' | 'sos' | 'home'
 
+export interface PatientDoubleBlinkDetail {
+  source: 'runtime'
+}
+
 export interface PatientTrackingStatusChangeDetail {
   status: CalibrationTrackingStatus
 }
@@ -33,8 +37,14 @@ export function emitPatientDoubleBlink() {
     return
   }
 
-  // TODO: Replace this bridge with the real patient-mode blink detector event source.
-  window.dispatchEvent(new Event(PATIENT_DOUBLE_BLINK_EVENT))
+  window.dispatchEvent(
+    new CustomEvent<PatientDoubleBlinkDetail>(PATIENT_DOUBLE_BLINK_EVENT, {
+      cancelable: true,
+      detail: {
+        source: 'runtime',
+      },
+    }),
+  )
 }
 
 export function emitPatientTrackingStatus(status: CalibrationTrackingStatus) {
