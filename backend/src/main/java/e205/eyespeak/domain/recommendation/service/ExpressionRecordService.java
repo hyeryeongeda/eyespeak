@@ -130,8 +130,12 @@ public class ExpressionRecordService {
                 return ClassifyResult.fallback();
             }
 
-            SentimentType sentiment = SentimentType.valueOf(
-                    ((String) result.get("sentiment")).toUpperCase());
+            String sentimentStr = (String) result.get("sentiment");
+            if (sentimentStr == null) {
+                return ClassifyResult.fallback();
+            }
+
+            SentimentType sentiment = SentimentType.valueOf(sentimentStr.toUpperCase());
             String category = (String) result.get("category");
             List<String> keywords = (List<String>) result.get("keywords");
 
