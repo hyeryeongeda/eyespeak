@@ -7,11 +7,12 @@ torchaudio
 transformers
 numpy
 pydantic
+python-multipart
 
 # 데이터셋 빌드 (build_dataset.py)
 faster-whisper
 yt-dlp
 
-# 테스트 (test_tts_server.py)
+# 테스트
 pytest
 httpx

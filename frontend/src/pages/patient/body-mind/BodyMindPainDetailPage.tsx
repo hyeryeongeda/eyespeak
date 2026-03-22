@@ -6,6 +6,10 @@ import {
   getStoredPainAreaSelection,
   submitBodyMindExpression,
 } from '../../../services/bodyMindService'
+import {
+  playPatientUtteranceTts,
+  submitPatientUtterance,
+} from '../../../services/recommendationService'
 import type {
   BodyMindUiStatus,
   PainAreaKey,
@@ -54,6 +58,18 @@ export default function BodyMindPainDetailPage() {
       optionKey: key,
       areaKey: selectedAreaKey,
     })
+    const utteranceText = `${selectedArea.label} ${label}`.trim()
+    try {
+      await submitPatientUtterance({
+        text: utteranceText,
+        source: 'manual',
+      })
+      await playPatientUtteranceTts({
+        text: utteranceText,
+      })
+    } catch (error) {
+      console.warn('Body-mind pain-detail utterance TTS playback failed.', error)
+    }
 
     setSelectedKey(key)
     setStatus('completed')

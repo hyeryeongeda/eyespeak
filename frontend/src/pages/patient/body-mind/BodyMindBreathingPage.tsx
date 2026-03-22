@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
 import { submitBodyMindExpression } from '../../../services/bodyMindService'
+import {
+  playPatientUtteranceTts,
+  submitPatientUtterance,
+} from '../../../services/recommendationService'
 import type { BodyMindUiStatus, BreathingOptionKey } from '../../../features/patient/body-mind/types/bodyMind'
 import { breathingOptionPages } from './bodyMindMock'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
@@ -28,6 +32,17 @@ export default function BodyMindBreathingPage() {
       type: 'breathing',
       optionKey: key,
     })
+    try {
+      await submitPatientUtterance({
+        text: label,
+        source: 'manual',
+      })
+      await playPatientUtteranceTts({
+        text: label,
+      })
+    } catch (error) {
+      console.warn('Body-mind breathing utterance TTS playback failed.', error)
+    }
 
     setSelectedKey(key)
     setStatus('completed')

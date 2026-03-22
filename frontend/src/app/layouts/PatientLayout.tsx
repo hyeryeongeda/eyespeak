@@ -1,9 +1,5 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import GlobalMenuOverlay from '../../features/patient/input/components/GlobalMenuOverlay'
-import IncomingInterruptOverlay from '../../components/patient/chat/IncomingInterruptOverlay'
-import ReplyModePanel from '../../components/patient/chat/ReplyModePanel'
-import DevChatTriggerPanel from '../../components/patient/chat/DevChatTriggerPanel'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
@@ -19,8 +15,12 @@ import {
 } from '../../features/patient/input/stores/patientModeStore'
 import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
 import { usePatientIncomingChat } from '../../hooks/patientIncomingChatContext'
-import { PATIENT_CHAT_DEV_PANEL_ENABLED } from '../../services/mockPatientChatService'
 import { ROUTE_PATHS } from '../router/routePaths'
+
+const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
+const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
+const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
+const DevChatTriggerPanel = lazy(() => import('../../components/patient/chat/DevChatTriggerPanel'))
 
 function PatientLayoutShell() {
   const chat = usePatientIncomingChat()
@@ -32,6 +32,7 @@ function PatientLayoutShell() {
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
+  const [isDevPanelEnabled, setIsDevPanelEnabled] = useState(false)
 
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
@@ -65,66 +66,107 @@ function PatientLayoutShell() {
     closeGlobalMenu()
   }, [closeGlobalMenu, isTrackingBlocked])
 
+  useEffect(() => {
+    let isMounted = true
+
+    if (!import.meta.env.DEV || isCalibrationRoute) {
+      setIsDevPanelEnabled(false)
+      return () => {
+        isMounted = false
+      }
+    }
+
+    void import('../../services/mockPatientChatService')
+      .then(({ PATIENT_CHAT_DEV_PANEL_ENABLED }) => {
+        if (!isMounted) {
+          return
+        }
+
+        setIsDevPanelEnabled(PATIENT_CHAT_DEV_PANEL_ENABLED)
+      })
+      .catch(() => {
+        if (!isMounted) {
+          return
+        }
+
+        setIsDevPanelEnabled(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isCalibrationRoute])
+
   return (
     <>
       <Outlet />
 
-      {!isCalibrationRoute ? <GlobalMenuOverlay /> : null}
+      {!isCalibrationRoute && isGlobalMenuOpen ? (
+        <Suspense fallback={null}>
+          <GlobalMenuOverlay />
+        </Suspense>
+      ) : null}
       {!isCalibrationRoute ? <PatientTrackingGuardOverlay /> : null}
 
-      {!isCalibrationRoute ? (
-        <IncomingInterruptOverlay
-          visible={chat.shouldShowInterruptOverlay}
-          message={chat.activeMessage}
-          unreadCount={chat.unreadCount}
-          currentRoute={chat.state.currentRoute}
-          pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
-          onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
-          onLater={chat.deferActiveMessage}
-        />
+      {!isCalibrationRoute && chat.shouldShowInterruptOverlay ? (
+        <Suspense fallback={null}>
+          <IncomingInterruptOverlay
+            visible={chat.shouldShowInterruptOverlay}
+            message={chat.activeMessage}
+            unreadCount={chat.unreadCount}
+            currentRoute={chat.state.currentRoute}
+            pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
+            onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
+            onLater={chat.deferActiveMessage}
+          />
+        </Suspense>
       ) : null}
 
       {!isCalibrationRoute && chat.shouldShowReplyOverlay ? (
-        <ReplyModePanel
-          overlay
-          message={chat.activeReplyMessage}
-          status={chat.state.status}
-          suggestionState={chat.state.suggestionState}
-          fallbackState={chat.state.fallbackState}
-          suggestions={chat.state.suggestions}
-          selectedSuggestionId={chat.state.selectedSuggestionId}
-          suggestionError={chat.state.suggestionError}
-          sendError={chat.state.sendError}
-          manualInputMode={chat.state.manualInputMode}
-          manualDraft={chat.state.manualDraft}
-          manualWordBank={chat.manualWordBank}
-          unresolvedCount={chat.unresolvedCount}
-          timeoutMs={chat.timeoutMs}
-          onSelectSuggestion={chat.sendSuggestedReply}
-          onRetrySuggestions={chat.retrySuggestions}
-          onOpenManualInputSelect={chat.openManualInputSelect}
-          onSelectManualInputMode={chat.setManualInputMode}
-          onDraftChange={chat.updateManualDraft}
-          onAppendWord={chat.appendManualWord}
-          onClearDraft={chat.clearManualDraft}
-          onSendManualReply={chat.sendManualReply}
-          onDefer={chat.deferActiveMessage}
-          onClose={chat.closeReplyMode}
-          onOpenLatestPendingReply={chat.openLatestPendingReply}
-        />
+        <Suspense fallback={null}>
+          <ReplyModePanel
+            overlay
+            message={chat.activeReplyMessage}
+            status={chat.state.status}
+            suggestionState={chat.state.suggestionState}
+            fallbackState={chat.state.fallbackState}
+            suggestions={chat.state.suggestions}
+            selectedSuggestionId={chat.state.selectedSuggestionId}
+            suggestionError={chat.state.suggestionError}
+            sendError={chat.state.sendError}
+            manualInputMode={chat.state.manualInputMode}
+            manualDraft={chat.state.manualDraft}
+            manualWordBank={chat.manualWordBank}
+            unresolvedCount={chat.unresolvedCount}
+            timeoutMs={chat.timeoutMs}
+            onSelectSuggestion={chat.sendSuggestedReply}
+            onRetrySuggestions={chat.retrySuggestions}
+            onOpenManualInputSelect={chat.openManualInputSelect}
+            onSelectManualInputMode={chat.setManualInputMode}
+            onDraftChange={chat.updateManualDraft}
+            onAppendWord={chat.appendManualWord}
+            onClearDraft={chat.clearManualDraft}
+            onSendManualReply={chat.sendManualReply}
+            onDefer={chat.deferActiveMessage}
+            onClose={chat.closeReplyMode}
+            onOpenLatestPendingReply={chat.openLatestPendingReply}
+          />
+        </Suspense>
       ) : null}
 
-      {!isCalibrationRoute && PATIENT_CHAT_DEV_PANEL_ENABLED ? (
-        <DevChatTriggerPanel
-          availablePresets={chat.availablePresets}
-          nextSendOutcome={chat.state.nextSendOutcome}
-          timeoutMs={chat.timeoutMs}
-          unreadCount={chat.unreadCount}
-          lastEventLabel={chat.state.lastEventLabel}
-          onTriggerPreset={chat.triggerIncomingPreset}
-          onTriggerDuplicate={chat.triggerDuplicateMessage}
-          onSetNextSendOutcome={chat.setNextSendOutcome}
-        />
+      {!isCalibrationRoute && isDevPanelEnabled ? (
+        <Suspense fallback={null}>
+          <DevChatTriggerPanel
+            availablePresets={chat.availablePresets}
+            nextSendOutcome={chat.state.nextSendOutcome}
+            timeoutMs={chat.timeoutMs}
+            unreadCount={chat.unreadCount}
+            lastEventLabel={chat.state.lastEventLabel}
+            onTriggerPreset={chat.triggerIncomingPreset}
+            onTriggerDuplicate={chat.triggerDuplicateMessage}
+            onSetNextSendOutcome={chat.setNextSendOutcome}
+          />
+        </Suspense>
       ) : null}
     </>
   )

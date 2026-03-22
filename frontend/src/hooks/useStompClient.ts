@@ -23,14 +23,20 @@ const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL ?? ''
 const WS_ENDPOINT = import.meta.env.VITE_WS_ENDPOINT ?? '/ws'
 const WS_AUTH_MODE = (import.meta.env.VITE_WS_AUTH_MODE ?? 'both') as 'header' | 'query' | 'both'
 
+// Vite가 base 설정값을 import.meta.env.BASE_URL로 주입한다.
+// dev 빌드 시 VITE_BASE_URL=/dev → BASE_URL=/dev/ 이므로 /dev/ws로 연결된다.
+const BASE_PATH = (import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')
+
 function buildWsUrl(): string {
+  const endpoint = `${BASE_PATH}${WS_ENDPOINT}`
+
   if (WS_BASE_URL) {
-    return `${WS_BASE_URL}${WS_ENDPOINT}`
+    return `${WS_BASE_URL}${endpoint}`
   }
 
   // WS_BASE_URL 미설정 시 현재 호스트 기준으로 자동 생성
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}${WS_ENDPOINT}`
+  return `${protocol}//${window.location.host}${endpoint}`
 }
 
 // ----- 훅 반환 타입 -----

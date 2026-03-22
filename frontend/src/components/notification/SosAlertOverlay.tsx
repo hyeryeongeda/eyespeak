@@ -1,16 +1,34 @@
+import { useState } from 'react';
 import { useNotificationStore } from '../../shared/stores/notificationStore';
+import { apiClient } from '../../services/apiClient';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
+import { getActiveAuthSession } from '../../services/authSessionRegistry';
 
 export default function SosAlertOverlay() {
   const notification = useNotificationStore((s) => s.notification);
   const clearNotification = useNotificationStore((s) => s.clearNotification);
+  const [confirming, setConfirming] = useState(false);
 
   // SOS가 아니면 렌더링 안 함
   if (!notification || notification.type !== 'SOS') return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (confirming) return;
+
+    if (notification.callId) {
+      setConfirming(true);
+      const accessToken = getActiveAuthSession()?.accessToken ?? null;
+      if (accessToken) {
+        await apiClient.post(
+          `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/confirm`,
+          undefined,
+          { accessToken },
+        );
+      }
+      setConfirming(false);
+    }
+
     clearNotification();
-    // TODO: 환자 상태 화면으로 이동 (라우터 연동 후)
-    console.log('[SOS] 확인 → 환자 상태 화면 이동 예정');
   };
 
   return (

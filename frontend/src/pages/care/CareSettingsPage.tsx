@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
+import { removeTokenFromServer } from '../../services/fcmService'
 
 const PATIENT_SETTINGS = [
   {
@@ -86,7 +87,8 @@ export default function CareSettingsPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await removeTokenFromServer()
     logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
