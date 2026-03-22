@@ -2,6 +2,9 @@ package e205.eyespeak.domain.recommendation.controller;
 
 import e205.eyespeak.domain.matching.entity.Matching;
 import e205.eyespeak.domain.recommendation.dto.HintsDto;
+import e205.eyespeak.domain.recommendation.dto.request.ExpressionRecordRequest;
+import e205.eyespeak.domain.recommendation.dto.response.ExpressionRecordResponse;
+import e205.eyespeak.domain.recommendation.service.ExpressionRecordService;
 import e205.eyespeak.domain.recommendation.service.RecommendationService;
 import e205.eyespeak.global.common.ApiResponse;
 import e205.eyespeak.global.error.BusinessException;
@@ -48,6 +51,7 @@ public class RecommendationController {
 
     private final RestTemplate restTemplate;
     private final RecommendationService recommendationService;
+    private final ExpressionRecordService expressionRecordService;
 
     @Value("${ai.server.url}")
     private String aiServerUrl;
@@ -309,6 +313,40 @@ public class RecommendationController {
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
         }
+    }
+
+    // =========================================================================
+    // 6. POST /recommendations/record — 표현 사용 기록
+    // =========================================================================
+
+    @Operation(summary = "표현 사용 기록",
+            description = """
+                    환자가 추천 문장을 선택하거나 키보드로 직접 입력했을 때 호출합니다.
+                    신규 표현이면 AI 분류 후 저장, 기존 표현이면 lastUsed만 갱신합니다.
+                    usage_log는 항상 기록됩니다.
+                    반환된 expressionId로 채팅 메시지를 전송하세요.
+                    """)
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "기록 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "텍스트 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"COMMON-101\",\"message\":\"입력값이 올바르지 않습니다\",\"timestamp\":\"2026-03-23T00:00:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "매칭 정보 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-23T00:00:00\"}")))
+    })
+    @PostMapping("/record")
+    public ApiResponse<ExpressionRecordResponse> recordExpression(
+            @RequestBody ExpressionRecordRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        Matching matching = recommendationService.getMatchingByUserId(userId);
+
+        if (request.getText() == null || request.getText().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        ExpressionRecordResponse response = expressionRecordService
+                .recordExpression(matching.getId(), request.getText().trim());
+        return ApiResponse.ok(response);
     }
 
     // =========================================================================
