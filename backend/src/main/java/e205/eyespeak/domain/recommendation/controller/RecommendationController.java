@@ -1,13 +1,9 @@
 package e205.eyespeak.domain.recommendation.controller;
 
-import e205.eyespeak.domain.guardian.repository.GuardianRepository;
 import e205.eyespeak.domain.matching.entity.Matching;
-import e205.eyespeak.domain.matching.repository.MatchingRepository;
-import e205.eyespeak.domain.patient.repository.PatientRepository;
-import e205.eyespeak.domain.user.entity.User;
-import e205.eyespeak.domain.user.repository.UserRepository;
+import e205.eyespeak.domain.recommendation.dto.HintsDto;
+import e205.eyespeak.domain.recommendation.service.RecommendationService;
 import e205.eyespeak.global.common.ApiResponse;
-import e205.eyespeak.global.enums.Role;
 import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -51,10 +47,7 @@ import java.util.Map;
 public class RecommendationController {
 
     private final RestTemplate restTemplate;
-    private final UserRepository userRepository;
-    private final GuardianRepository guardianRepository;
-    private final PatientRepository patientRepository;
-    private final MatchingRepository matchingRepository;
+    private final RecommendationService recommendationService;
 
     @Value("${ai.server.url}")
     private String aiServerUrl;
@@ -75,36 +68,16 @@ public class RecommendationController {
     @GetMapping("/categories")
     public ApiResponse<CategoriesResponse> getCategories(Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
-        Matching matching = getMatchingByUserId(userId);
-        Long matchingId = matching.getId();
+        Matching matching = recommendationService.getMatchingByUserId(userId);
 
-        // AI 서버에서 hint 데이터 조회
-        Map<String, Object> body = new HashMap<>();
-        body.put("matching_id", matchingId);
-
-        String moodHint = null;
-        String scheduleHint = null;
-        String frequentHint = null;
-        String recentHint = null;
-
-        try {
-            Map result = restTemplate.postForObject(
-                    aiServerUrl + "/recommend/hints", buildRequest(body), Map.class);
-            if (result != null) {
-                moodHint = (String) result.get("mood_hint");
-                scheduleHint = (String) result.get("schedule_hint");
-                frequentHint = (String) result.get("frequent_hint");
-                recentHint = (String) result.get("recent_hint");
-            }
-        } catch (Exception e) {
-            // AI 서버 실패해도 카테고리 목록은 반환 (hint만 null)
-        }
+        // DB에서 직접 hint 계산 (AI 서버 호출 없음)
+        HintsDto hints = recommendationService.computeHints(matching.getId());
 
         List<CategoryDto> categories = List.of(
-                new CategoryDto("mood", "오늘의 기분", "기분 기반 추천", moodHint),
-                new CategoryDto("schedule", "오늘 일정", "일정 기반 추천", scheduleHint),
-                new CategoryDto("frequent", "자주 쓴 표현", "자주 사용한 표현 추천", frequentHint),
-                new CategoryDto("recent", "직전 사용", "최근 사용 표현 추천", recentHint)
+                new CategoryDto("mood", "오늘의 기분", "기분 기반 추천", hints.getMoodHint()),
+                new CategoryDto("schedule", "오늘 일정", "일정 기반 추천", hints.getScheduleHint()),
+                new CategoryDto("frequent", "자주 쓴 표현", "자주 사용한 표현 추천", hints.getFrequentHint()),
+                new CategoryDto("recent", "직전 사용", "최근 사용 표현 추천", hints.getRecentHint())
         );
 
         return ApiResponse.ok(new CategoriesResponse(categories));
@@ -130,15 +103,24 @@ public class RecommendationController {
             @RequestBody SentencesRequest request,
             Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
-        Matching matching = getMatchingByUserId(userId);
+        Matching matching = recommendationService.getMatchingByUserId(userId);
 
         if (request.getCategoryKey() == null || request.getCategoryKey().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
 
+        // hints 계산 → AI 서버에 함께 전달
+        HintsDto hints = recommendationService.computeHints(matching.getId());
+
         Map<String, Object> body = new HashMap<>();
         body.put("matching_id", matching.getId());
         body.put("recommend_type", request.getCategoryKey());
+        body.put("hints", Map.of(
+                "mood_hint", hints.getMoodHint() != null ? hints.getMoodHint() : "",
+                "schedule_hint", hints.getScheduleHint() != null ? hints.getScheduleHint() : "",
+                "frequent_hint", hints.getFrequentHint() != null ? hints.getFrequentHint() : "",
+                "recent_hint", hints.getRecentHint() != null ? hints.getRecentHint() : ""
+        ));
         if (request.getGuardianMessage() != null) {
             body.put("guardian_message", request.getGuardianMessage());
         }
@@ -176,7 +158,7 @@ public class RecommendationController {
             @RequestBody RepliesRequest request,
             Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
-        Matching matching = getMatchingByUserId(userId);
+        Matching matching = recommendationService.getMatchingByUserId(userId);
 
         if (request.getMessage() == null || request.getMessage().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
@@ -235,7 +217,7 @@ public class RecommendationController {
             @RequestBody WordsRequest request,
             Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
-        Matching matching = getMatchingByUserId(userId);
+        Matching matching = recommendationService.getMatchingByUserId(userId);
 
         if (request.getStep() == null || request.getStep().isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
@@ -294,7 +276,7 @@ public class RecommendationController {
             @RequestBody ComposeRequest request,
             Authentication authentication) {
         Long userId = (Long) authentication.getPrincipal();
-        getMatchingByUserId(userId); // 매칭 검증
+        recommendationService.getMatchingByUserId(userId); // 매칭 검증
 
         // 단어가 하나도 없으면 에러
         if (request.getSubject() == null && request.getObject() == null
@@ -337,21 +319,6 @@ public class RecommendationController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         return new HttpEntity<>(body, headers);
-    }
-
-    private Matching getMatchingByUserId(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-        if (user.getRole() == Role.GUARDIAN) {
-            return guardianRepository.findByUserId(userId)
-                    .flatMap(guardian -> matchingRepository.findByGuardianId(guardian.getId()))
-                    .orElseThrow(() -> new BusinessException(ErrorCode.MATCHING_NOT_FOUND));
-        } else {
-            return patientRepository.findByUserId(userId)
-                    .flatMap(patient -> matchingRepository.findByPatientId(patient.getId()))
-                    .orElseThrow(() -> new BusinessException(ErrorCode.MATCHING_NOT_FOUND));
-        }
     }
 
     // =========================================================================
