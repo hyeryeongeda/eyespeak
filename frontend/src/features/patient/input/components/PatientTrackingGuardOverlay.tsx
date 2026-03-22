@@ -109,7 +109,12 @@ export default function PatientTrackingGuardOverlay() {
         <p style={eyebrowStyle}>Tracking Unavailable</p>
         <h2 style={titleStyle}>{warningCopy.title}</h2>
         <p style={bodyStyle}>{warningCopy.description}</p>
-        <button type="button" onClick={handleRecalibration} style={buttonStyle}>
+        <button
+          type="button"
+          data-smoke-id="patient-tracking-guard-recalibrate"
+          onClick={handleRecalibration}
+          style={buttonStyle}
+        >
           재캘리브레이션 다시 하기
         </button>
       </section>

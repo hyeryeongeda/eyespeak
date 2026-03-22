@@ -2,7 +2,10 @@ import { ROUTE_PATHS } from '../../../../../app/router/routePaths'
 import { PATIENT_CALIBRATION_STORAGE_KEY } from '../../../../../services/calibration/calibrationConstants'
 import { isAbortError, waitForAbortableDelay } from '../../../../../services/eyeTrackingCore'
 import { loadEyeTrackingCalibrationApi } from '../../../../../services/eyeTrackingApi'
-import { isEyeTrackingApiEnabled } from '../../../../../services/eyeTrackingServiceConfig'
+import {
+  isBrowserEyeTrackingEnabled,
+  isEyeTrackingApiEnabled,
+} from '../../../../../services/eyeTrackingServiceConfig'
 import type { ServiceResult } from '../../../../../types/api'
 import type { AuthSession } from '../../../../../types/auth'
 import type {
@@ -13,6 +16,7 @@ import type {
   PatientPostAuthState,
   StoredPatientCalibrationRecord,
 } from '../../../../../types/calibration'
+import { hasBrowserEyeTrackingCalibration } from '../browserEyeTracking/browserEyeTrackingStorage'
 
 type StoredPatientCalibrationMap = Record<string, StoredPatientCalibrationRecord>
 
@@ -234,6 +238,22 @@ export async function ensurePatientEyeTrackingRuntimeReady(
     signal?: AbortSignal
   },
 ) {
+  if (isBrowserEyeTrackingEnabled()) {
+    if (hasBrowserEyeTrackingCalibration(profileId)) {
+      return {
+        success: true as const,
+        runtimeVerifiedAt: new Date().toISOString(),
+        attempts: 1,
+      }
+    }
+
+    return {
+      success: false as const,
+      message: 'Browser eye-tracking calibration data is missing.',
+      attempts: 1,
+    }
+  }
+
   const attempts = Math.max(1, options?.attempts ?? EYE_TRACKING_CALIBRATION_SYNC_ATTEMPTS)
   const delayMs = Math.max(0, options?.delayMs ?? EYE_TRACKING_CALIBRATION_SYNC_DELAY_MS)
   let lastMessage = 'Eye tracking calibration data is not ready yet.'
@@ -433,7 +453,7 @@ export async function completePatientCalibration(
     const eyeTrackingProfileId = getPatientEyeTrackingProfileId(session)
     let runtimeVerifiedAt: string | null = null
 
-    if (isEyeTrackingApiEnabled()) {
+    if (isEyeTrackingApiEnabled() || isBrowserEyeTrackingEnabled()) {
       if (!eyeTrackingProfileId) {
         return {
           success: false,
@@ -472,7 +492,7 @@ export async function completePatientCalibration(
 
     return {
       success: true,
-      source: isEyeTrackingApiEnabled() ? 'api' : 'mock',
+      source: isEyeTrackingApiEnabled() ? 'api' : isBrowserEyeTrackingEnabled() ? 'mock' : 'mock',
       data: {
         required: false,
         completedAt,
