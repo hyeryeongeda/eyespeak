@@ -3,31 +3,34 @@ import { Capacitor } from '@capacitor/core';
 import { useFcmStore } from '../stores/fcmStore';
 import { useNotificationStore } from '../shared/stores/notificationStore';
 import type { FcmType } from '../shared/stores/notificationStore';
+import { apiClient } from './apiClient';
+import { API_ENDPOINTS } from './apiEndpoints';
+import { getActiveAuthSession } from './authSessionRegistry';
+import { playNotificationSound } from '../utils/notificationSound';
+
+function getAccessToken(): string | null {
+  return getActiveAuthSession()?.accessToken ?? null;
+}
 
 /**
  * FCM 토큰을 서버에 등록합니다.
- * TODO: 백엔드 API 완성 후 실제 API 호출로 교체
  */
 const sendTokenToServer = async (token: string): Promise<void> => {
-  console.log('[FCM] 서버에 토큰 전송:', token);
+  const accessToken = getAccessToken();
+  if (!accessToken) return;
 
-  // TODO: 백엔드 API 연동 시 아래 주석 해제
-  // await apiClient.post('/api/fcm/token', {
-  //   token,
-  //   deviceType: 'ANDROID',
-  // });
+  await apiClient.post(API_ENDPOINTS.FCM_TOKEN, { token }, { accessToken });
 };
 
 /**
- * 서버에서 FCM 토큰을 삭제함 (로그아웃 시 호출)
- * TODO: 백엔드 API 완성 후 실제 API 호출로 교체
+ * 서버에서 FCM 토큰을 삭제합니다 (로그아웃 시 호출).
  */
 export const removeTokenFromServer = async (): Promise<void> => {
-  console.log('[FCM] 서버에서 토큰 삭제 요청');
+  const accessToken = getAccessToken();
+  if (accessToken) {
+    await apiClient.delete(API_ENDPOINTS.FCM_TOKEN, undefined, { accessToken });
+  }
   useFcmStore.getState().clearToken();
-
-  // TODO: 백엔드 API 연동 시 아래 주석 해제
-  // await apiClient.delete('/api/fcm/token');
 };
 
 /**
@@ -78,11 +81,11 @@ export const initFcm = async (): Promise<void> => {
 
     const type = data?.type as FcmType | undefined;
     if (type) {
+      playNotificationSound(type);
       useNotificationStore.getState().showNotification({
         type,
         title: data.title ?? '',
         body: data.body ?? '',
-        // FCM data-only 메시지는 모든 값이 string → number 변환 필요
         matchingId: data.matchingId ? Number(data.matchingId) : undefined,
         senderId: data.senderId,
         senderRole: data.senderRole,

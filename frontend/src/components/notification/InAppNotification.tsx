@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNotificationStore } from '../../shared/stores/notificationStore';
 import type { FcmType } from '../../shared/stores/notificationStore';
+import { apiClient } from '../../services/apiClient';
+import { API_ENDPOINTS } from '../../services/apiEndpoints';
+import { getActiveAuthSession } from '../../services/authSessionRegistry';
 
 /** VOICE_READY만 자동 사라짐 (확인 동작이 필요 없음) */
 const AUTO_DISMISS_MS = 4000;
@@ -25,6 +28,7 @@ const CONFIRMABLE_TYPES: FcmType[] = ['CALL', 'CHAT'];
 export default function InAppNotification() {
   const notification = useNotificationStore((s) => s.notification);
   const clearNotification = useNotificationStore((s) => s.clearNotification);
+  const [confirming, setConfirming] = useState(false);
 
   const needsConfirm = notification
     ? CONFIRMABLE_TYPES.includes(notification.type)
@@ -47,10 +51,22 @@ export default function InAppNotification() {
   const bgColor = bgColorMap[notification.type];
   const label = labelMap[notification.type];
 
-  const handleConfirm = () => {
-    // TODO: CALL일 때 POST /api/calls/{callId}/confirm 호출
-    // TODO: 서버가 환자에게 CALL_CONFIRMED 전달
-    console.log(`[알림 확인] ${notification.type} → 확인 처리 예정`);
+  const handleConfirm = async () => {
+    if (confirming) return;
+
+    if (notification.type === 'CALL' && notification.callId) {
+      setConfirming(true);
+      const accessToken = getActiveAuthSession()?.accessToken ?? null;
+      if (accessToken) {
+        await apiClient.post(
+          `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/confirm`,
+          undefined,
+          { accessToken },
+        );
+      }
+      setConfirming(false);
+    }
+
     clearNotification();
   };
 
