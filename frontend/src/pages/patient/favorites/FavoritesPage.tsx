@@ -3,6 +3,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  useDwellFeedback,
+} from '../../../features/patient/input/hooks/useDwellFeedback'
 import {
   fetchFavorites,
   submitFavoriteSelection,
@@ -89,6 +94,7 @@ const backBtnStyle: CSSProperties = {
   fontSize: '16px',
   fontWeight: 700,
   cursor: 'pointer',
+  position: 'relative',
 }
 
 const loadingMessageStyle: CSSProperties = {
@@ -104,6 +110,14 @@ const loadingMessageStyle: CSSProperties = {
 
 /** 정렬 기준: 정책 미확정 시 mock 고정. 추후 정렬 선택 UI 붙일 때 이 값만 바꾸면 됨 */
 const SORT_KEY: FavoritesSortKey = 'recentUsed'
+const TRACKING_BACK_BUTTON = 'favorites-back'
+const TRACKING_PAGINATION_PREV = 'favorites-pagination-prev'
+const TRACKING_PAGINATION_NEXT = 'favorites-pagination-next'
+const TRACKING_RETRY_FETCH = 'favorites-retry-fetch'
+
+function getFavoriteTrackingId(itemId: string) {
+  return `favorites-item-${itemId}`
+}
 
 function getStatusLabel(status: FavoritesStatus): string {
   switch (status) {
@@ -136,6 +150,9 @@ function paginate<T>(items: T[], pageIndex: number, pageSize: number): T[] {
 export default function FavoritesPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const dwellFeedback = useDwellFeedback<string>({
+    enabled: true,
+  })
   const patientId = user?.id ?? 'patient-guest'
 
   const [status, setStatus] = useState<FavoritesStatus>('loading')
@@ -149,6 +166,10 @@ export default function FavoritesPage() {
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
   const currentItems = paginate(list, pageIndex, PAGE_SIZE)
   const showPagination = list.length > PAGE_SIZE
+  const isBackButtonDwellActive = isDwellFeedbackTargetActive(
+    dwellFeedback,
+    TRACKING_BACK_BUTTON,
+  )
 
   const loadFavorites = useCallback(() => {
     setFeedbackText('')
@@ -244,11 +265,29 @@ export default function FavoritesPage() {
 
   if (status === 'loading' && list.length === 0) {
     return (
-      <main style={pageWrapStyle} aria-label="즐겨찾기">
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={element => {
+          dwellFeedback.containerRef.current = element
+        }}
+      >
         <div style={headerStyle}>{getStatusLabel('loading')}</div>
         <div style={loadingMessageStyle}>잠시만 기다려 주세요.</div>
         <div style={bottomBarStyle}>
-          <button type="button" style={backBtnStyle} onClick={handleBack}>
+          <button
+            type="button"
+            style={backBtnStyle}
+            onClick={handleBack}
+            data-tracking-id={TRACKING_BACK_BUTTON}
+          >
+            {isBackButtonDwellActive ? (
+              <DwellFeedbackBadge
+                phase={dwellFeedback.phase}
+                progress={dwellFeedback.progress}
+                remainingMs={dwellFeedback.remainingMs}
+              />
+            ) : null}
             대화하기로 돌아가기
           </button>
         </div>
@@ -258,11 +297,29 @@ export default function FavoritesPage() {
 
   if (status === 'empty') {
     return (
-      <main style={pageWrapStyle} aria-label="즐겨찾기">
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={element => {
+          dwellFeedback.containerRef.current = element
+        }}
+      >
         <div style={headerStyle}>{getStatusLabel('empty')}</div>
         <FavoritesEmptyState />
         <div style={bottomBarStyle}>
-          <button type="button" style={backBtnStyle} onClick={handleBack}>
+          <button
+            type="button"
+            style={backBtnStyle}
+            onClick={handleBack}
+            data-tracking-id={TRACKING_BACK_BUTTON}
+          >
+            {isBackButtonDwellActive ? (
+              <DwellFeedbackBadge
+                phase={dwellFeedback.phase}
+                progress={dwellFeedback.progress}
+                remainingMs={dwellFeedback.remainingMs}
+              />
+            ) : null}
             대화하기로 돌아가기
           </button>
         </div>
@@ -272,16 +329,36 @@ export default function FavoritesPage() {
 
   if (status === 'error' && errorKind === 'fetch') {
     return (
-      <main style={pageWrapStyle} aria-label="즐겨찾기">
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={element => {
+          dwellFeedback.containerRef.current = element
+        }}
+      >
         <div style={headerStyle}>{getStatusLabel('error')}</div>
         <FavoritesErrorState
           title="즐겨찾기를 불러올 수 없어요"
           description={errorMessage}
           onRetry={loadFavorites}
           retryLabel="다시 불러오기"
+          retryTrackingId={TRACKING_RETRY_FETCH}
+          dwellFeedback={dwellFeedback}
         />
         <div style={bottomBarStyle}>
-          <button type="button" style={backBtnStyle} onClick={handleBack}>
+          <button
+            type="button"
+            style={backBtnStyle}
+            onClick={handleBack}
+            data-tracking-id={TRACKING_BACK_BUTTON}
+          >
+            {isBackButtonDwellActive ? (
+              <DwellFeedbackBadge
+                phase={dwellFeedback.phase}
+                progress={dwellFeedback.progress}
+                remainingMs={dwellFeedback.remainingMs}
+              />
+            ) : null}
             대화하기로 돌아가기
           </button>
         </div>
@@ -290,7 +367,13 @@ export default function FavoritesPage() {
   }
 
   return (
-    <main style={pageWrapStyle} aria-label="즐겨찾기">
+    <main
+      style={pageWrapStyle}
+      aria-label="즐겨찾기"
+      ref={element => {
+        dwellFeedback.containerRef.current = element
+      }}
+    >
       <div style={headerStyle} aria-live="polite">
         {PAGE_CODE} · {getStatusLabel(status)}
         {feedbackText ? ` · ${feedbackText}` : ''}
@@ -304,9 +387,23 @@ export default function FavoritesPage() {
             description={errorMessage}
             onRetry={() => setStatus('visible')}
             retryLabel="다시 선택하기"
+            retryTrackingId="favorites-retry-submit"
+            dwellFeedback={dwellFeedback}
           />
           <div style={bottomBarStyle}>
-            <button type="button" style={backBtnStyle} onClick={handleBack}>
+            <button
+              type="button"
+              style={backBtnStyle}
+              onClick={handleBack}
+              data-tracking-id={TRACKING_BACK_BUTTON}
+            >
+              {isBackButtonDwellActive ? (
+                <DwellFeedbackBadge
+                  phase={dwellFeedback.phase}
+                  progress={dwellFeedback.progress}
+                  remainingMs={dwellFeedback.remainingMs}
+                />
+              ) : null}
               대화하기로 돌아가기
             </button>
           </div>
@@ -323,6 +420,8 @@ export default function FavoritesPage() {
                   category={currentItems[index].category}
                   disabled={status === 'selecting' || status === 'transitioning'}
                   onSelect={() => handleSelect(currentItems[index])}
+                  trackingId={getFavoriteTrackingId(currentItems[index].id)}
+                  dwellFeedback={dwellFeedback}
                 />
               ) : (
                 <div aria-hidden style={placeholderStyle} />
@@ -335,6 +434,9 @@ export default function FavoritesPage() {
               totalPages={totalPages}
               onPrev={handlePrevPage}
               onNext={handleNextPage}
+              prevTrackingId={TRACKING_PAGINATION_PREV}
+              nextTrackingId={TRACKING_PAGINATION_NEXT}
+              dwellFeedback={dwellFeedback}
             />
           </div>
           <div style={{ ...slotWrapStyle, gridArea: 'back' }}>
@@ -342,6 +444,8 @@ export default function FavoritesPage() {
               primaryText="뒤로가기"
               description="메인 화면으로"
               onClick={handleBack}
+              trackingId={TRACKING_BACK_BUTTON}
+              dwellFeedback={dwellFeedback}
             />
           </div>
         </section>

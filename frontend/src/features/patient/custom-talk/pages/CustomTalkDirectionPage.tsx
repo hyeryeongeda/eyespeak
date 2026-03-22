@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
+import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
@@ -27,6 +28,14 @@ const noticeStackStyle: CSSProperties = {
   flexDirection: 'column',
   gap: '10px',
 }
+
+type CustomTalkDirectionTrackingId =
+  | 'custom-talk-direction-today'
+  | 'custom-talk-direction-quick-reply-primary'
+  | 'custom-talk-direction-quick-reply-secondary'
+  | 'custom-talk-direction-keyboard'
+  | 'custom-talk-direction-refresh'
+  | 'custom-talk-direction-back'
 
 function pickCategory(
   visibleCategoryKeys: CustomCategoryKey[],
@@ -108,6 +117,9 @@ function buildTodayCardDescription(context: CustomTalkContextSummary | null) {
 export default function CustomTalkDirectionPage() {
   const navigate = useNavigate()
   const chat = usePatientIncomingChat()
+  const dwellFeedback = useDwellFeedback<CustomTalkDirectionTrackingId>({
+    enabled: true,
+  })
   const context = useCustomTalkStore(state => state.context)
   const conversationLog = useCustomTalkStore(state => state.conversationLog)
   const visibleCategoryKeys = useCustomTalkStore(state => state.visibleCategoryKeys)
@@ -157,6 +169,7 @@ export default function CustomTalkDirectionPage() {
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
         },
         disabled: isBusy,
+        trackingId: 'custom-talk-direction-today',
       }}
       topCenter={{
         title: primaryQuickReply,
@@ -167,6 +180,7 @@ export default function CustomTalkDirectionPage() {
           await selectRecommendedSentence(primaryQuickReply)
         },
         disabled: isBusy || !primaryQuickReply,
+        trackingId: 'custom-talk-direction-quick-reply-primary',
       }}
       topRight={{
         title: secondaryQuickReply,
@@ -177,6 +191,7 @@ export default function CustomTalkDirectionPage() {
           await selectRecommendedSentence(secondaryQuickReply)
         },
         disabled: isBusy || !secondaryQuickReply,
+        trackingId: 'custom-talk-direction-quick-reply-secondary',
       }}
       bottomLeft={{
         title: '키보드 직접 입력',
@@ -187,6 +202,7 @@ export default function CustomTalkDirectionPage() {
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
         disabled: status === 'submitting',
+        trackingId: 'custom-talk-direction-keyboard',
       }}
       bottomCenter={{
         title: '새로고침',
@@ -197,13 +213,16 @@ export default function CustomTalkDirectionPage() {
           await loadRecommendedSentences(todayCategory)
         },
         disabled: isBusy,
+        trackingId: 'custom-talk-direction-refresh',
       }}
       bottomRight={{
         title: '뒤로가기',
         description: '대화하기 메인으로 돌아갑니다.',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN),
+        trackingId: 'custom-talk-direction-back',
       }}
+      dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
           <CustomTalkContextPanel
