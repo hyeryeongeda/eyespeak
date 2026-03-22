@@ -19,6 +19,7 @@ from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import pymysql
+from metrics import measure_time, record_api_time, get_timing_summary, reset_timing, log_to_mlflow
 
 load_dotenv()
 
@@ -94,6 +95,7 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
 SENTIMENT_MAP_REVERSE = {"POSITIVE": "긍정", "NEGATIVE": "부정", "NEUTRAL": "중립"}
 
 
+@measure_time
 def _load_user_data_from_db(matching_id: int) -> dict | None:
     """matching_id 기준으로 DB에서 데이터 로드"""
     conn = get_db()
@@ -278,6 +280,7 @@ def _calculate_temporal_boost(item: dict, current_hour: int, current_weekday: in
     return 1.0
 
 
+@measure_time
 def _search_sentences(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k: int = 5) -> list:
     pool = user_db
     if sentiment_filter:
@@ -322,6 +325,7 @@ def _search_general(question: str, k: int = 3, sentiment_filter: str | None = No
     return deduped[:k]
 
 
+@measure_time
 def _search_sentences_mixed(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k_total: int = 6) -> list:
     if sentiment_filter is not None:
         general_has_sentiment = general_db and "sentiment" in general_db[0]
@@ -406,6 +410,7 @@ def _extract_words_by_pos(sentences: list, category: str) -> list:
 _word_filter_cache: dict = {}
 
 
+@measure_time
 def _llm_filter_words(question: str, candidates: list, category: str) -> list:
     if not candidates:
         return []
@@ -502,6 +507,7 @@ def _search_words(question: str, category: str, word_lists: dict, word_usage_fre
 
 
 # ====== LLM 후처리 (caregiver_server.py와 동일) ======
+@measure_time
 def _refine_recommend(question: str, candidates: list, sentiment_context: str | None = None) -> list:
     texts = [c["text"] for c in candidates]
     diversity_rule = (
@@ -536,6 +542,7 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
     return lines
 
 
+@measure_time
 def _generate_from_words(words: list, question: str) -> list:
     punct_set = {".", "!", "?"}
     punct = "".join(w for w in words if w in punct_set)
@@ -668,6 +675,7 @@ def _auto_generate_keywords(text: str) -> list:
     return [t for t in text.replace("?", " ").replace(".", " ").split() if len(t) >= 2]
 
 
+@measure_time
 def _generate_categories(question: str, user_db: list | None = None, max_categories: int = 4) -> dict:
     cache_key = hashlib.md5(question.strip().encode()).hexdigest()
     if cache_key in category_cache:
@@ -932,6 +940,24 @@ def debug_recommend_stats():
         "counts": s,
         "rates": {"hit_rate_percent": round(hit_rate, 1), "pick_rate_percent": round(pick_rate, 1)},
     })
+
+
+@app.route("/debug/timing", methods=["GET"])
+def debug_timing():
+    return jsonify(get_timing_summary())
+
+
+@app.route("/debug/reset-timing", methods=["POST"])
+def debug_reset_timing():
+    reset_timing()
+    return jsonify({"ok": True, "message": "timing data reset"})
+
+
+@app.route("/debug/mlflow-log", methods=["POST"])
+def debug_mlflow_log():
+    run_name = request.json.get("run_name", "auto") if request.is_json else "auto"
+    log_to_mlflow(_recommend_stats, run_name=run_name)
+    return jsonify({"ok": True, "message": f"logged to mlflow as '{run_name}'"})
 
 
 if __name__ == "__main__":
