@@ -36,7 +36,9 @@ function buildWsUrl(): string {
 
   // WS_BASE_URL 미설정 시 현재 호스트 기준으로 자동 생성
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${protocol}//${window.location.host}${endpoint}`
+  // Dev 환경(/dev/) 경로 자동 감지: /dev/ws 로 연결
+  const basePath = window.location.pathname.startsWith('/dev') ? '/dev' : ''
+  return `${protocol}//${window.location.host}${basePath}${WS_ENDPOINT}`
 }
 
 // ----- 훅 반환 타입 -----
