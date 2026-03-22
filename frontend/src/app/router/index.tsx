@@ -20,7 +20,6 @@ const CareHomePage = lazy(() => import('../../pages/care/CareHomePage'))
 const CareSettingsPage = lazy(() => import('../../pages/care/CareSettingsPage'))
 const ChatPage = lazy(() => import('../../pages/care/ChatPage'))
 const RecordsPage = lazy(() => import('../../pages/care/RecordsPage'))
-const VoicePage = lazy(() => import('../../pages/care/VoicePage'))
 const PatientInfoPage = lazy(() => import('../../pages/care/settings/PatientInfoPage'))
 const RoutineSettingPage = lazy(() => import('../../pages/care/settings/RoutineSettingPage'))
 const FavoritesSettingPage = lazy(() => import('../../pages/care/settings/FavoritesSettingPage'))
@@ -367,14 +366,6 @@ const careRoutes = [
     element: (
       <Suspense fallback={null}>
         <ExpressionsPage />
-      </Suspense>
-    ),
-  },
-  {
-    path: ROUTE_SEGMENTS.CARE.VOICE,
-    element: (
-      <Suspense fallback={null}>
-        <VoicePage />
       </Suspense>
     ),
   },
