@@ -15,7 +15,6 @@ export default function FavoritesSettingPage() {
   const [categories, setCategories] = useState<PhraseCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [addingPhraseId, setAddingPhraseId] = useState<number | null>(null)
   const [togglingPhraseId, setTogglingPhraseId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [justToggledPhraseId, setJustToggledPhraseId] = useState<number | null>(null)
@@ -74,26 +73,6 @@ export default function FavoritesSettingPage() {
     }
 
     setDeletingId(null)
-  }
-
-  const handleAddFavorite = async (phraseId: number) => {
-    if (addingPhraseId !== null || isFull) return
-    setAddingPhraseId(phraseId)
-    setError(null)
-
-    const result = await createFavorite(phraseId)
-
-    if (result.success) {
-      const refreshed = await getFavorites()
-      if (refreshed.success) {
-        setFavorites(refreshed.data)
-      }
-      flashToggled(phraseId)
-    } else {
-      showError(result.message)
-    }
-
-    setAddingPhraseId(null)
   }
 
   const handleToggleFavorite = async (phraseId: number) => {

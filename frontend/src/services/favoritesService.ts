@@ -6,7 +6,6 @@ import type {
   FavoriteResponseDto,
   KnownFavoriteErrorCode,
   PhraseCategory,
-  PhraseItem,
 } from '../types/favorite'
 import type { FavoriteItem as PatientFavoriteItem, FavoritesSortKey } from '../types/favorites'
 import {
