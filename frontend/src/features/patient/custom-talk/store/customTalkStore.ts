@@ -147,6 +147,41 @@ function appendConversationLog(
   ]
 }
 
+function buildSelectedWordsForStep(draft: CustomTalkDraft, step: ComposeStep) {
+  if (step === 'object') {
+    if (draft.subject === undefined) {
+      return undefined
+    }
+
+    return {
+      subject: draft.subject,
+    }
+  }
+
+  if (step === 'predicate') {
+    const selectedWords: {
+      subject?: string
+      object?: string
+    } = {}
+
+    if (draft.subject !== undefined) {
+      selectedWords.subject = draft.subject
+    }
+
+    if (draft.object !== undefined) {
+      selectedWords.object = draft.object
+    }
+
+    if (selectedWords.subject === undefined && selectedWords.object === undefined) {
+      return undefined
+    }
+
+    return selectedWords
+  }
+
+  return undefined
+}
+
 export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   isInitialized: false,
   context: null,
@@ -404,6 +439,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         categoryKey: state.draft.categoryKey,
         step,
         refreshCount: composeRefreshCounts[step],
+        selectedWords: buildSelectedWordsForStep(state.draft, step),
         shouldFail: state.mockFlags.failComposeLoadOnce,
       })
 
