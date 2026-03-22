@@ -46,16 +46,25 @@ function toApiError(error: unknown) {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string; code?: string }>
     const statusCode = axiosError.response?.status ?? 500
+    const isNetworkError = !axiosError.response
+    const responseCode = axiosError.response?.data?.code
+    const code = responseCode ?? (isNetworkError ? 'NETWORK_ERROR' : undefined)
 
     return new ApiError({
       statusCode,
       source: 'api',
       message:
         axiosError.response?.data?.message ??
+        (isNetworkError ? '네트워크 연결 상태를 확인한 뒤 다시 시도해주세요.' : undefined) ??
         axiosError.message ??
         'API request failed.',
-      code: axiosError.response?.data?.code,
-      details: axiosError.response?.data,
+      code,
+      details: isNetworkError
+        ? {
+            axiosCode: axiosError.code,
+            isNetworkError: true,
+          }
+        : axiosError.response?.data,
     })
   }
 

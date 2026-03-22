@@ -3,6 +3,7 @@ import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
 import { GUARDIAN_SIGNUP_ROUTINE_SLOTS } from '../../features/auth/guardianRoutineSurvey'
 import { useGuardianSignupFlow } from '../../features/auth/hooks/useGuardianSignupFlow'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
+import type { GuardianSignupStage } from '../../services/guardianSignupService'
 import { sanitizeBirthYearInput } from '../../utils/validators'
 import AuthBrand from './AuthBrand'
 import {
@@ -39,16 +40,63 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 const STEP_LABELS = ['계정', '환자 정보', '루틴', '완료']
+const SIGNUP_STAGES: Array<{ stage: GuardianSignupStage; label: string; helper: string }> = [
+  {
+    stage: 'guardian-account',
+    label: '1단계. 보호자 계정',
+    helper: '이메일, 이름, 비밀번호',
+  },
+  {
+    stage: 'patient-profile',
+    label: '2단계. 환자 기본 정보',
+    helper: '환자 이름, 출생연도, 성별',
+  },
+  {
+    stage: 'patient-routines',
+    label: '3단계. 루틴 설문',
+    helper: '시간대별 대표 활동 태그',
+  },
+]
+
+function getStageOrder(stage: GuardianSignupStage | null) {
+  switch (stage) {
+    case 'guardian-account':
+      return 0
+    case 'patient-profile':
+      return 1
+    case 'patient-routines':
+      return 2
+    default:
+      return -1
+  }
+}
+
+function getNextSubmissionStage(lastCompletedStage: GuardianSignupStage | null) {
+  switch (lastCompletedStage) {
+    case 'guardian-account':
+      return 'patient-profile'
+    case 'patient-profile':
+      return 'patient-routines'
+    default:
+      return 'guardian-account'
+  }
+}
 
 export default function CareSignupPage() {
   const {
     currentStep,
+    currentSignupStage,
     guardianAccount,
     patientProfile,
     patientRoutines,
     errorMessage: stepErrorMessage,
     copyMessage,
     signupResult,
+    lastCompletedStage,
+    recoverableFailure,
+    retryActionType,
+    canGoToPreviousStep,
+    submitButtonLabel,
     isSubmitting,
     setGuardianAccount,
     setPatientProfile,
@@ -115,6 +163,147 @@ export default function CareSignupPage() {
             )
           })}
         </div>
+
+        <div style={summaryBox}>
+          <p style={{ margin: '0 0 12px', color: '#203042', fontSize: '14px', fontWeight: 700 }}>
+            가입 단계 상태
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {SIGNUP_STAGES.map(item => {
+              const stageOrder = getStageOrder(item.stage)
+              const lastCompletedOrder = getStageOrder(lastCompletedStage)
+              const failedStage = recoverableFailure?.failedStage ?? null
+              const nextSubmissionStage = getNextSubmissionStage(lastCompletedStage)
+              const isCompleted =
+                signupResult != null || (lastCompletedOrder >= 0 && stageOrder <= lastCompletedOrder)
+              const isFailed = failedStage === item.stage
+              const isSubmittingStage = currentStep === 'submitting' && nextSubmissionStage === item.stage
+              const isActive =
+                !isCompleted &&
+                !isFailed &&
+                !isSubmittingStage &&
+                currentSignupStage === item.stage &&
+                currentStep !== 'completed'
+              const statusLabel = isCompleted
+                ? '완료'
+                : isFailed
+                  ? '실패'
+                  : isSubmittingStage
+                    ? '처리 중'
+                    : isActive
+                      ? '입력 중'
+                      : '대기'
+              const statusStyle = isCompleted
+                ? {
+                    backgroundColor: '#eff9f0',
+                    border: '1px solid #cfe5d1',
+                    color: '#36734a',
+                  }
+                : isFailed
+                  ? {
+                      backgroundColor: '#fff3f3',
+                      border: '1px solid #efc8c8',
+                      color: '#b14b4b',
+                    }
+                  : isSubmittingStage
+                    ? {
+                        backgroundColor: '#eef6fd',
+                        border: '1px solid #cfe0ee',
+                        color: '#2f5d84',
+                      }
+                    : {
+                        backgroundColor: '#f5f9fc',
+                        border: '1px solid #dce6ee',
+                        color: '#6d7f8f',
+                      }
+
+              return (
+                <div
+                  key={item.stage}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    borderRadius: '14px',
+                    border: '1px solid #dce6ee',
+                    backgroundColor: '#ffffff',
+                    padding: '12px 14px',
+                  }}
+                >
+                  <div>
+                    <p
+                      style={{
+                        margin: '0 0 4px',
+                        color: '#203042',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {item.label}
+                    </p>
+                    <p style={{ margin: 0, color: '#6d7f8f', fontSize: '12px' }}>{item.helper}</p>
+                  </div>
+
+                  <span
+                    style={{
+                      ...statusStyle,
+                      borderRadius: '999px',
+                      padding: '6px 10px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {recoverableFailure ? (
+          <div
+            style={{
+              ...infoBox,
+              backgroundColor: '#fff8f2',
+              border: '1px solid #f0d2b6',
+            }}
+          >
+            <p style={{ margin: '0 0 8px', color: '#8a4e1f', fontSize: '15px', fontWeight: 700 }}>
+              {recoverableFailure.title}
+            </p>
+            <p style={{ margin: '0 0 8px', color: '#805c39', fontSize: '13px', lineHeight: 1.6 }}>
+              {recoverableFailure.description}
+            </p>
+            <p style={{ margin: '0 0 8px', color: '#805c39', fontSize: '13px', lineHeight: 1.6 }}>
+              다음으로 해주세요: {recoverableFailure.nextAction}
+            </p>
+            {recoverableFailure.detail ? (
+              <p style={{ margin: '0 0 8px', color: '#805c39', fontSize: '13px', lineHeight: 1.6 }}>
+                {recoverableFailure.detail}
+              </p>
+            ) : null}
+            {recoverableFailure.partialCompletionNotice ? (
+              <p style={{ margin: 0, color: '#805c39', fontSize: '13px', lineHeight: 1.6 }}>
+                {recoverableFailure.partialCompletionNotice}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {retryActionType === 'go-to-login' ? (
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+              권장 동선
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              새로 가입을 반복하기보다 로그인 화면으로 이동해 같은 이메일로 로그인 가능한지 먼저 확인하는 편이 안전합니다.
+            </p>
+          </div>
+        ) : null}
 
         {currentStep === 'guardian-account' ? (
           <>
@@ -231,7 +420,12 @@ export default function CareSignupPage() {
               {stepErrorMessage ? <p style={errorMessageStyle}>{stepErrorMessage}</p> : null}
 
               <div style={buttonRow}>
-                <button type="button" style={secondaryButton} onClick={goToPreviousStep}>
+                <button
+                  type="button"
+                  style={canGoToPreviousStep ? secondaryButton : { ...secondaryButton, opacity: 0.5 }}
+                  onClick={goToPreviousStep}
+                  disabled={!canGoToPreviousStep}
+                >
                   이전
                 </button>
                 <button type="button" style={primaryButton} onClick={goToNextStep}>
@@ -300,7 +494,12 @@ export default function CareSignupPage() {
               {stepErrorMessage ? <p style={errorMessageStyle}>{stepErrorMessage}</p> : null}
 
               <div style={buttonRow}>
-                <button type="button" style={secondaryButton} onClick={goToPreviousStep}>
+                <button
+                  type="button"
+                  style={canGoToPreviousStep ? secondaryButton : { ...secondaryButton, opacity: 0.5 }}
+                  onClick={goToPreviousStep}
+                  disabled={!canGoToPreviousStep}
+                >
                   이전
                 </button>
                 <button
@@ -309,7 +508,7 @@ export default function CareSignupPage() {
                   onClick={() => void submitGuardianSignup()}
                   disabled={isSubmitting}
                 >
-                  회원가입 완료
+                  {submitButtonLabel}
                 </button>
               </div>
             </div>
@@ -322,7 +521,7 @@ export default function CareSignupPage() {
                 회원가입 완료 처리 중
               </p>
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.6 }}>
-                보호자 계정을 생성한 뒤 환자 기본 정보와 루틴을 순차 저장하고 있습니다.
+                보호자 계정 생성, 환자 기본 정보 저장, 루틴 설문 저장을 순차 처리하고 있습니다. 중복 제출을 막기 위해 버튼은 잠시 비활성화됩니다.
               </p>
             </div>
           ) : null}
@@ -331,8 +530,7 @@ export default function CareSignupPage() {
           <>
             <h2 style={sectionTitle}>4단계. 팀코드 생성 완료</h2>
             <p style={sectionDesc}>
-              보호자 계정 생성과 환자 초기 루틴 저장이 완료되었습니다. 아래 팀코드를 환자에게
-              전달해주세요.
+              보호자 계정, 환자 기본 정보, 초기 루틴 설문 저장이 모두 완료되었습니다. 아래 팀코드를 환자에게 전달해주세요.
             </p>
 
             <div style={teamCodeBox}>
@@ -345,17 +543,16 @@ export default function CareSignupPage() {
 
             <div style={infoBox}>
               <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
-                다음 안내
+                준비된 정보
               </p>
               <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                환자 측은 이 팀코드를 입력한 뒤 보호자와 연결됩니다.
+                환자 이름: {signupResult.patientName}
               </p>
               <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                회원가입이 끝나면 자동 로그인하지 않습니다. 아래 버튼으로 보호자 로그인 화면으로
-                이동해주세요.
+                팀코드: {signupResult.teamCode}
               </p>
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                TODO(PLAN): 팀코드 재발급, 유효기간, 중복 생성 제한 정책 확정 필요.
+                환자 측은 이 팀코드를 입력한 뒤 보호자와 연결됩니다.
               </p>
             </div>
 
@@ -364,7 +561,7 @@ export default function CareSignupPage() {
                 가입 상태
               </p>
               <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                보호자 회원가입은 완료되었고, 현재는 아직 로그인하지 않은 상태입니다. 아래 버튼으로 로그인 화면으로 이동해 주세요.
+                보호자 회원가입은 완료되었지만 자동 로그인은 하지 않습니다. 아래 버튼으로 로그인 화면으로 이동하면 이메일은 미리 채워집니다.
               </p>
             </div>
 
