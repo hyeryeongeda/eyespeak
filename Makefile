@@ -132,10 +132,8 @@ infra-down:
 # =============================================================================
 
 prod-app-up:
-	@echo "Cleaning up old Docker resources..."
-	docker system prune -f
 	@echo "Deploying Prod App (WAS Blue/Green + Frontend)..."
-	cd backend && docker compose -f docker-compose.yml -f docker-compose.prod.yml $(ENV_PROD) up -d --build
+	cd backend && DOCKER_BUILDKIT=1 docker compose -f docker-compose.yml -f docker-compose.prod.yml $(ENV_PROD) up -d --build
 	cd frontend && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 	@echo "Prod App deployed!"
 
@@ -145,10 +143,8 @@ prod-app-down:
 	cd frontend && docker compose -f docker-compose.yml -f docker-compose.prod.yml down
 
 dev-app-up:
-	@echo "Cleaning up old Docker resources..."
-	docker system prune -f
 	@echo "Deploying Dev App (WAS + Frontend)..."
-	cd backend && docker compose -f docker-compose.dev.yml $(ENV_DEV) up -d --build
+	cd backend && DOCKER_BUILDKIT=1 docker compose -f docker-compose.dev.yml $(ENV_DEV) up -d --build
 	cd frontend && docker compose -f docker-compose.dev.yml up -d --build
 	@echo "Dev App deployed!"
 
