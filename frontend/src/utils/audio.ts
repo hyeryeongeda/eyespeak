@@ -30,7 +30,7 @@ export function createSilentWavBlob(durationMs = 800, sampleRate = 16000) {
   return new Blob([buffer], { type: 'audio/wav' })
 }
 
-function toDataUrl(base64: string, mimeType = 'audio/mpeg') {
+function toDataUrl(base64: string, mimeType = 'audio/wav') {
   const normalizedBase64 = base64.includes(',') ? base64.split(',').pop() ?? '' : base64
   return `data:${mimeType};base64,${normalizedBase64}`
 }
@@ -68,7 +68,7 @@ export function normalizeAudioResponse(
 
   if (payload.audioBase64 || payload.base64) {
     return {
-      src: toDataUrl(payload.audioBase64 ?? payload.base64 ?? '', payload.mimeType ?? 'audio/mpeg'),
+      src: toDataUrl(payload.audioBase64 ?? payload.base64 ?? '', payload.mimeType ?? 'audio/wav'),
     }
   }
 

@@ -1,8 +1,13 @@
 import { getActiveAiApiMode } from './aiServiceConfig'
 import { getActiveAuthSession } from './authSessionRegistry'
 import { synthesizeTtsApi, testTtsApi } from './ttsApi'
-import type { AudioPlaybackSource, TtsPreviewRequestDto, TtsSynthesizeRequestDto } from '../types/tts'
-import { createSilentWavBlob, normalizeAudioResponse } from '../utils/audio'
+import type {
+  AudioPlaybackHandle,
+  AudioPlaybackSource,
+  TtsPreviewRequestDto,
+  TtsSynthesizeRequestDto,
+} from '../types/tts'
+import { createSilentWavBlob, normalizeAudioResponse, playAudioSource } from '../utils/audio'
 
 function getAccessToken() {
   return getActiveAuthSession()?.accessToken ?? null
@@ -30,4 +35,15 @@ export async function synthesizeTts(
 
   const response = await synthesizeTtsApi(request, getAccessToken())
   return normalizeAudioResponse(response)
+}
+
+export async function playSynthesizeTts(
+  request: TtsSynthesizeRequestDto,
+): Promise<AudioPlaybackHandle | null> {
+  if (getActiveAiApiMode() !== 'real') {
+    return null
+  }
+
+  const source = await synthesizeTts(request)
+  return playAudioSource(source)
 }
