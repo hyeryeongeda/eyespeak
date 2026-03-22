@@ -1,12 +1,15 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
-import type { PatientCalibrationLocationState } from '../../../../types/calibration'
 import { waitForAbortableDelay } from '../../../../services/eyeTrackingCore'
 import {
   CALIBRATION_POINT_CAPTURE_DELAY_MS,
   DEFAULT_CALIBRATION_POINTS,
 } from '../../../../services/calibration/calibrationConstants'
+import type {
+  CalibrationTrackingStatus,
+  PatientCalibrationLocationState,
+} from '../../../../types/calibration'
 import { useAuth } from '../../../auth/hooks/useAuth'
 import {
   completePatientCalibration,
@@ -22,6 +25,64 @@ type CalibrationStage = 'loading' | 'ready' | 'capturing' | 'saving' | 'error'
 
 const READY_TIMEOUT_MS = 5000
 
+function getTrackingLabel(status: CalibrationTrackingStatus | null | undefined) {
+  if (status === 'ready') {
+    return 'Face detected'
+  }
+
+  if (status === 'tracking-unstable') {
+    return 'Adjust face position'
+  }
+
+  if (status === 'face-not-detected') {
+    return 'Detecting face'
+  }
+
+  return 'Preparing camera'
+}
+
+function getStatusText({
+  stage,
+  frame,
+  completedPointCount,
+}: {
+  stage: CalibrationStage
+  frame: BrowserEyeTrackingFrame | null
+  completedPointCount: number
+}) {
+  if (stage === 'loading') {
+    return 'Preparing camera'
+  }
+
+  if (stage === 'capturing') {
+    return `Calibration ${Math.min(completedPointCount + 1, DEFAULT_CALIBRATION_POINTS.length)} / ${
+      DEFAULT_CALIBRATION_POINTS.length
+    }`
+  }
+
+  if (stage === 'saving') {
+    return 'Saving calibration'
+  }
+
+  if (stage === 'error') {
+    return 'Calibration error'
+  }
+
+  return getTrackingLabel(frame?.status)
+}
+
+function getBlockingWarning(stage: CalibrationStage, frame: BrowserEyeTrackingFrame | null) {
+  if (stage === 'loading' || stage === 'saving' || stage === 'error') {
+    return ''
+  }
+
+  if (frame?.status === 'ready') {
+    return ''
+  }
+
+  return 'A stable face detection is required before calibration can continue.'
+}
+
 export default function BrowserPatientCalibrationPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -31,6 +92,7 @@ export default function BrowserPatientCalibrationPage() {
   const { user, patientPostAuth, clearPatientPostAuth } = useAuth()
   const routeState = (location.state as PatientCalibrationLocationState | null) ?? null
   const postAuthNotice = routeState?.postAuthNotice ?? getPatientPostAuthNotice(patientPostAuth)
+  const postCalibrationRedirectPath = routeState?.redirectPath ?? ROUTE_PATHS.PATIENT_MAIN
   const eyeTrackingProfileId = useMemo(() => getPatientEyeTrackingProfileId(user), [user])
   const [stage, setStage] = useState<CalibrationStage>('loading')
   const [frame, setFrame] = useState<BrowserEyeTrackingFrame | null>(null)
@@ -103,6 +165,10 @@ export default function BrowserPatientCalibrationPage() {
     if (!eyeTrackingProfileId) {
       setStage('error')
       setErrorMessage('Eye tracking profile id is missing for this patient session.')
+      return
+    }
+
+    if (stage !== 'ready' || frame?.status !== 'ready') {
       return
     }
 
@@ -190,7 +256,7 @@ export default function BrowserPatientCalibrationPage() {
       }
 
       clearPatientPostAuth()
-      navigate(ROUTE_PATHS.PATIENT_MAIN, { replace: true })
+      navigate(postCalibrationRedirectPath, { replace: true })
     } catch (error) {
       setStage('error')
       setActivePointIndex(null)
@@ -200,25 +266,50 @@ export default function BrowserPatientCalibrationPage() {
     }
   }
 
-  const statusText =
-    stage === 'loading'
-      ? '브라우저에서 동일 모델을 로드하고 카메라를 준비하는 중입니다.'
-      : stage === 'capturing'
-        ? `캘리브레이션 ${completedPointCount}/${DEFAULT_CALIBRATION_POINTS.length}`
-        : stage === 'saving'
-          ? '캘리브레이션을 저장하고 patient runtime을 준비하는 중입니다.'
-          : stage === 'error'
-            ? errorMessage
-            : '카메라와 모델이 준비되었습니다. 시작하면 12점 캘리브레이션을 진행합니다.'
+  const statusText = getStatusText({
+    stage,
+    frame,
+    completedPointCount,
+  })
+  const blockingWarning = getBlockingWarning(stage, frame)
+  const canStartCalibration = stage === 'ready' && frame?.status === 'ready'
+  const hintText =
+    stage === 'capturing'
+      ? 'Keep looking at the highlighted point.'
+      : postAuthNotice?.calibrationMessage ??
+        postAuthNotice?.authSuccessMessage ??
+        'Look at each point in order, then start calibration.'
 
   return (
     <main style={pageStyle}>
-      <section style={panelStyle}>
-        <div style={videoShellStyle}>
-          <div ref={videoSlotRef} style={videoSlotStyle} />
+      <div ref={videoSlotRef} style={videoSlotStyle} />
+      <div style={cameraTintStyle} />
+      <div style={vignetteStyle} />
+
+      <div style={hudLayerStyle}>
+        <div style={topHudStyle}>
+          <div style={statusBadgeStyle}>{statusText}</div>
+          {stage === 'capturing' || stage === 'saving' ? (
+            <div style={progressBadgeStyle}>
+              {Math.min(completedPointCount, DEFAULT_CALIBRATION_POINTS.length)} /{' '}
+              {DEFAULT_CALIBRATION_POINTS.length}
+            </div>
+          ) : null}
+          {import.meta.env.DEV && frame ? (
+            <div style={debugBadgeStyle}>
+              {frame.status} | cell {frame.cell ?? '-'} | ({frame.screenX.toFixed(3)},{' '}
+              {frame.screenY.toFixed(3)})
+            </div>
+          ) : null}
+        </div>
+
+        {blockingWarning ? <div style={warningOverlayStyle}>{blockingWarning}</div> : null}
+
+        <div style={pointsLayerStyle}>
           {DEFAULT_CALIBRATION_POINTS.map((point, index) => {
             const isActive = activePointIndex === index
             const isCompleted = index < completedPointCount
+            const isDimmed = activePointIndex !== null && !isActive && !isCompleted
 
             return (
               <div
@@ -227,9 +318,19 @@ export default function BrowserPatientCalibrationPage() {
                   ...pointStyle,
                   left: `${point.xPercent}%`,
                   top: `${point.yPercent}%`,
-                  opacity: activePointIndex === null || isActive ? 1 : 0.25,
-                  background: isCompleted ? '#2dd4bf' : isActive ? '#f97316' : '#ffffff',
-                  boxShadow: isActive ? '0 0 28px rgba(249, 115, 22, 0.8)' : '0 0 0 transparent',
+                  opacity: isDimmed ? 0.2 : 1,
+                  transform: `translate(-50%, -50%) scale(${isActive ? 1.22 : isCompleted ? 0.92 : 1})`,
+                  background: isCompleted
+                    ? 'rgba(45, 212, 191, 0.94)'
+                    : isActive
+                      ? '#f97316'
+                      : 'rgba(255, 255, 255, 0.94)',
+                  color: isCompleted || isActive ? '#ffffff' : '#09121f',
+                  boxShadow: isActive
+                    ? '0 0 0 12px rgba(249, 115, 22, 0.2), 0 0 40px rgba(249, 115, 22, 0.7)'
+                    : isCompleted
+                      ? '0 0 20px rgba(45, 212, 191, 0.45)'
+                      : '0 10px 28px rgba(7, 14, 24, 0.28)',
                 }}
               >
                 {point.label}
@@ -238,155 +339,254 @@ export default function BrowserPatientCalibrationPage() {
           })}
         </div>
 
-        <div style={infoStyle}>
-          <p style={eyebrowStyle}>Patient Calibration</p>
-          <h1 style={titleStyle}>Browser Eye Tracking</h1>
-          {postAuthNotice?.authSuccessMessage ? (
-            <p style={noticeStyle}>{postAuthNotice.authSuccessMessage}</p>
-          ) : null}
-          {postAuthNotice?.calibrationMessage ? (
-            <p style={noticeStyle}>{postAuthNotice.calibrationMessage}</p>
-          ) : null}
-          <p style={statusStyle}>{statusText}</p>
-          <p style={metricStyle}>
-            상태: {frame?.status ?? 'idle'} | 셀: {frame?.cell ?? '-'} | 시선: (
-            {frame?.screenX?.toFixed(3) ?? '-'}, {frame?.screenY?.toFixed(3) ?? '-'})
-          </p>
-          <button
-            type="button"
-            data-smoke-id="patient-calibration-start"
-            style={buttonStyle}
-            onClick={() => {
-              void beginCalibration()
-            }}
-            disabled={stage !== 'ready'}
-          >
-            캘리브레이션 시작
-          </button>
-          {stage === 'error' ? (
-            <button
-              type="button"
-              data-smoke-id="patient-calibration-retry"
-              style={secondaryButtonStyle}
-              onClick={() => {
-                window.location.reload()
-              }}
-            >
-              Retry
-            </button>
-          ) : null}
+        <div style={bottomHudStyle}>
+          <div style={hintBadgeStyle}>{hintText}</div>
+
+          {stage === 'error' ? <div style={errorBadgeStyle}>{errorMessage}</div> : null}
+
+          <div style={actionRowStyle}>
+            {stage === 'ready' ? (
+              <>
+                <button
+                  type="button"
+                  data-smoke-id="patient-calibration-start"
+                  style={{
+                    ...primaryButtonStyle,
+                    opacity: canStartCalibration ? 1 : 0.48,
+                    cursor: canStartCalibration ? 'pointer' : 'not-allowed',
+                  }}
+                  onClick={() => {
+                    void beginCalibration()
+                  }}
+                  disabled={!canStartCalibration}
+                >
+                  Start calibration
+                </button>
+                <button
+                  type="button"
+                  data-smoke-id="patient-calibration-retry"
+                  style={secondaryButtonStyle}
+                  onClick={() => {
+                    window.location.reload()
+                  }}
+                >
+                  Retry
+                </button>
+              </>
+            ) : null}
+
+            {stage === 'error' ? (
+              <button
+                type="button"
+                data-smoke-id="patient-calibration-retry"
+                style={secondaryButtonStyle}
+                onClick={() => {
+                  window.location.reload()
+                }}
+              >
+                Retry
+              </button>
+            ) : null}
+
+            {stage === 'saving' ? <div style={savingBadgeStyle}>Saving</div> : null}
+          </div>
         </div>
-      </section>
+      </div>
     </main>
   )
 }
 
 const pageStyle: CSSProperties = {
-  minHeight: '100dvh',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px',
-  background: 'linear-gradient(160deg, #08111f 0%, #10253d 100%)',
-}
-
-const panelStyle: CSSProperties = {
-  width: 'min(1200px, 100%)',
-  display: 'grid',
-  gridTemplateColumns: '1.3fr 0.8fr',
-  gap: '24px',
-  padding: '24px',
-  borderRadius: '28px',
-  background: 'rgba(8, 18, 32, 0.82)',
-  boxShadow: '0 28px 60px rgba(0, 0, 0, 0.35)',
-}
-
-const videoShellStyle: CSSProperties = {
   position: 'relative',
-  minHeight: 'min(70dvh, 720px)',
-  borderRadius: '24px',
+  minHeight: '100dvh',
+  width: '100%',
   overflow: 'hidden',
-  background: '#050b14',
+  background:
+    'radial-gradient(circle at top, rgba(36, 78, 126, 0.28) 0%, rgba(9, 15, 24, 0.84) 35%, #04070d 100%)',
 }
 
 const videoSlotStyle: CSSProperties = {
   position: 'absolute',
   inset: 0,
+  background: '#02050a',
+}
+
+const cameraTintStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  background:
+    'linear-gradient(180deg, rgba(3, 10, 18, 0.48) 0%, rgba(3, 10, 18, 0.22) 28%, rgba(3, 10, 18, 0.5) 100%)',
+}
+
+const vignetteStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  background:
+    'radial-gradient(circle at center, rgba(255, 255, 255, 0) 42%, rgba(0, 0, 0, 0.28) 100%)',
+}
+
+const hudLayerStyle: CSSProperties = {
+  position: 'relative',
+  zIndex: 1,
+  minHeight: '100dvh',
+  width: '100%',
+}
+
+const topHudStyle: CSSProperties = {
+  position: 'absolute',
+  top: '20px',
+  left: '20px',
+  right: '20px',
+  display: 'flex',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '12px',
+  flexWrap: 'wrap',
+  pointerEvents: 'none',
+}
+
+const statusBadgeStyle: CSSProperties = {
+  padding: '10px 16px',
+  borderRadius: '999px',
+  background: 'rgba(8, 15, 25, 0.78)',
+  border: '1px solid rgba(148, 163, 184, 0.18)',
+  color: '#eff6ff',
+  fontSize: '14px',
+  fontWeight: 800,
+  backdropFilter: 'blur(10px)',
+}
+
+const progressBadgeStyle: CSSProperties = {
+  ...statusBadgeStyle,
+  color: '#f8fafc',
+}
+
+const debugBadgeStyle: CSSProperties = {
+  ...statusBadgeStyle,
+  color: '#93c5fd',
+  fontFamily: 'monospace',
+  fontSize: '12px',
+}
+
+const warningOverlayStyle: CSSProperties = {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  padding: '14px 18px',
+  borderRadius: '18px',
+  background: 'rgba(7, 12, 20, 0.88)',
+  border: '1px solid rgba(248, 113, 113, 0.32)',
+  color: '#fecaca',
+  fontSize: '15px',
+  fontWeight: 700,
+  lineHeight: 1.4,
+  textAlign: 'center',
+  backdropFilter: 'blur(12px)',
+  pointerEvents: 'none',
+}
+
+const pointsLayerStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  pointerEvents: 'none',
 }
 
 const pointStyle: CSSProperties = {
   position: 'absolute',
-  width: '42px',
-  height: '42px',
+  width: 'clamp(38px, 4.4vw, 66px)',
+  height: 'clamp(38px, 4.4vw, 66px)',
   borderRadius: '999px',
-  transform: 'translate(-50%, -50%)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: '#08111f',
-  fontSize: '12px',
-  fontWeight: 800,
+  fontSize: 'clamp(13px, 1.5vw, 20px)',
+  fontWeight: 900,
+  lineHeight: 1,
+  transition:
+    'transform 160ms ease, opacity 160ms ease, box-shadow 160ms ease, background 160ms ease',
 }
 
-const infoStyle: CSSProperties = {
+const bottomHudStyle: CSSProperties = {
+  position: 'absolute',
+  left: '50%',
+  bottom: '24px',
+  transform: 'translateX(-50%)',
+  width: 'min(100%, 760px)',
+  padding: '0 20px',
   display: 'flex',
   flexDirection: 'column',
-  justifyContent: 'center',
-  gap: '14px',
-  color: '#eff6ff',
+  alignItems: 'center',
+  gap: '12px',
 }
 
-const eyebrowStyle: CSSProperties = {
-  margin: 0,
-  fontSize: '12px',
-  fontWeight: 800,
-  letterSpacing: '0.14em',
-  textTransform: 'uppercase',
-  color: '#60a5fa',
+const hintBadgeStyle: CSSProperties = {
+  maxWidth: '100%',
+  padding: '10px 16px',
+  borderRadius: '999px',
+  background: 'rgba(8, 15, 25, 0.72)',
+  border: '1px solid rgba(148, 163, 184, 0.18)',
+  color: '#e2e8f0',
+  fontSize: '14px',
+  fontWeight: 600,
+  lineHeight: 1.4,
+  textAlign: 'center',
+  backdropFilter: 'blur(10px)',
 }
 
-const titleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 'clamp(2rem, 3vw, 3rem)',
-  fontWeight: 900,
-}
-
-const noticeStyle: CSSProperties = {
-  margin: 0,
-  color: '#cbd5e1',
-  lineHeight: 1.5,
-}
-
-const statusStyle: CSSProperties = {
-  margin: '12px 0 0',
-  padding: '16px',
+const errorBadgeStyle: CSSProperties = {
+  maxWidth: '100%',
+  padding: '12px 16px',
   borderRadius: '18px',
-  background: 'rgba(15, 23, 42, 0.72)',
-  lineHeight: 1.6,
+  background: 'rgba(127, 29, 29, 0.78)',
+  border: '1px solid rgba(248, 113, 113, 0.24)',
+  color: '#fee2e2',
+  fontSize: '14px',
+  fontWeight: 700,
+  lineHeight: 1.5,
+  textAlign: 'center',
+  backdropFilter: 'blur(10px)',
 }
 
-const metricStyle: CSSProperties = {
-  margin: 0,
-  color: '#93c5fd',
-  fontFamily: 'monospace',
+const actionRowStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '12px',
+  flexWrap: 'wrap',
+  pointerEvents: 'auto',
 }
 
-const buttonStyle: CSSProperties = {
-  marginTop: '8px',
+const primaryButtonStyle: CSSProperties = {
   appearance: 'none',
   border: 'none',
-  borderRadius: '18px',
-  height: '56px',
+  borderRadius: '999px',
+  minWidth: '220px',
+  height: '58px',
+  padding: '0 28px',
   background: 'linear-gradient(135deg, #f97316 0%, #fb7185 100%)',
-  color: '#fff',
+  color: '#ffffff',
   fontSize: '16px',
-  fontWeight: 800,
-  cursor: 'pointer',
+  fontWeight: 900,
+  letterSpacing: '-0.02em',
+  boxShadow: '0 18px 32px rgba(249, 115, 22, 0.28)',
 }
 
 const secondaryButtonStyle: CSSProperties = {
-  ...buttonStyle,
-  marginTop: 0,
-  background: 'rgba(255, 255, 255, 0.14)',
+  appearance: 'none',
+  borderRadius: '999px',
   border: '1px solid rgba(255, 255, 255, 0.18)',
+  minWidth: '152px',
+  height: '58px',
+  padding: '0 24px',
+  background: 'rgba(8, 15, 25, 0.72)',
+  color: '#f8fafc',
+  fontSize: '15px',
+  fontWeight: 800,
+  backdropFilter: 'blur(10px)',
+}
+
+const savingBadgeStyle: CSSProperties = {
+  ...statusBadgeStyle,
+  pointerEvents: 'auto',
 }
