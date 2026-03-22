@@ -16,11 +16,12 @@ import {
 } from '../utils/errorMapper'
 import { getActiveApiMode } from './apiClient'
 import { getActiveAuthSession } from './authSessionRegistry'
+import type { CategoryTreeResponseDto } from '../types/favorite'
 import {
   createFavoriteApi,
   deleteFavoriteApi,
+  getCategoryTreeApi,
   getFavoritesApi,
-  getPhrasesApi,
   updateFavoriteApi,
 } from './favoriteApi'
 import { MOCK_CATEGORIES, MOCK_FAVORITE_PHRASES, MOCK_PHRASES } from './mockCareData'
@@ -329,35 +330,37 @@ export async function submitFavoriteSelection(
   return { success: true, source: 'mock' }
 }
 
-function groupPhrasesIntoCategories(
-  phrases: { phraseId: number; content: string; categoryId: number; categoryName: string }[],
-): PhraseCategory[] {
-  const map = new Map<number, PhraseCategory>()
+function mapCategoryTreeToCategories(tree: CategoryTreeResponseDto[]): PhraseCategory[] {
+  const result: PhraseCategory[] = []
 
-  for (const p of phrases) {
-    let cat = map.get(p.categoryId)
-    if (!cat) {
-      cat = { categoryId: p.categoryId, categoryName: p.categoryName, phrases: [] }
-      map.set(p.categoryId, cat)
+  for (const node of tree) {
+    if (node.phrases.length > 0) {
+      result.push({
+        categoryId: node.categoryId,
+        categoryName: node.name,
+        phrases: node.phrases.map(p => ({
+          phraseId: p.phraseId,
+          content: p.content,
+        })),
+      })
     }
-    cat.phrases.push({ phraseId: p.phraseId, content: p.content })
+
+    if (node.children.length > 0) {
+      result.push(...mapCategoryTreeToCategories(node.children))
+    }
   }
 
-  return [...map.values()]
+  return result
 }
 
 function getMockPhraseCategories(): PhraseCategory[] {
-  const phrases = MOCK_PHRASES.map(p => {
-    const category = MOCK_CATEGORIES.find(c => c.id === p.categoryId)
-    return {
-      phraseId: p.id,
-      content: p.content,
-      categoryId: p.categoryId,
-      categoryName: category?.name ?? '',
-    }
-  })
-
-  return groupPhrasesIntoCategories(phrases)
+  return MOCK_CATEGORIES.map(cat => ({
+    categoryId: cat.id,
+    categoryName: cat.name,
+    phrases: MOCK_PHRASES
+      .filter(p => p.categoryId === cat.id)
+      .map(p => ({ phraseId: p.id, content: p.content })),
+  }))
 }
 
 export async function getPhrases(): Promise<ServiceResult<PhraseCategory[]>> {
@@ -366,9 +369,9 @@ export async function getPhrases(): Promise<ServiceResult<PhraseCategory[]>> {
   }
 
   try {
-    const response = await getPhrasesApi(getAccessToken())
+    const response = await getCategoryTreeApi(getAccessToken())
 
-    return buildSuccess(groupPhrasesIntoCategories(response))
+    return buildSuccess(mapCategoryTreeToCategories(response))
   } catch (error) {
     return createFavoriteFailure(error, '표현 목록을 불러오지 못했습니다.')
   }
