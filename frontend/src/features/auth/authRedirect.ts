@@ -1,6 +1,10 @@
 import type { Location } from 'react-router-dom'
 import { getAuthPathByRole, getDefaultRouteByRole, ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolvePatientPostAuthFlow } from '../patient/input/services/calibration/patientCalibrationService'
+import {
+  buildPatientCalibrationLocationState,
+  getPatientCalibrationStatusSnapshot,
+  resolvePatientPostAuthFlow,
+} from '../patient/input/services/calibration/patientCalibrationService'
 import type { PatientPostAuthState } from '../../types/calibration'
 import type {
   AuthEntryMode,
@@ -14,6 +18,11 @@ export interface ResolvedAuthNavigation {
   path: string
   state?: unknown
   patientPostAuthState: PatientPostAuthState | null
+}
+
+export interface ResolvedAuthenticatedSessionNavigation {
+  path: string
+  state?: unknown
 }
 
 function isNonEmptyText(value: unknown): value is string {
@@ -106,6 +115,35 @@ export function resolveAuthEntryRoute(mode: AuthEntryMode, role: UserRole, state
   return {
     path: getAuthPathByRole(mode, role),
     state: redirectTarget ? ({ from: redirectTarget } satisfies AuthRouteState) : undefined,
+  }
+}
+
+export function resolveAuthenticatedSessionNavigation(
+  session: AuthSession,
+  options?: {
+    locationState?: unknown
+    patientPostAuthState?: PatientPostAuthState | null
+  },
+): ResolvedAuthenticatedSessionNavigation {
+  const redirectPath = resolveRedirectPathByRole(session.role, options?.locationState)
+
+  if (session.role === 'patient') {
+    const calibrationStatus = getPatientCalibrationStatusSnapshot(session)
+    const calibrationRequired = calibrationStatus?.required ?? true
+
+    if (calibrationRequired) {
+      return {
+        path: ROUTE_PATHS.PATIENT_CALIBRATION,
+        state: buildPatientCalibrationLocationState(
+          options?.patientPostAuthState,
+          redirectPath,
+        ),
+      }
+    }
+  }
+
+  return {
+    path: redirectPath,
   }
 }
 

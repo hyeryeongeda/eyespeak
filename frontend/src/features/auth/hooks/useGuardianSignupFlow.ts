@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import {
   createInitialPatientRoutines,
@@ -19,7 +19,12 @@ import type {
   GuardianSignupRetryActionType,
   GuardianSignupStage,
 } from '../../../services/guardianSignupService'
-import { isValidEmail, validateBirthYear, validatePassword } from '../../../utils/validators'
+import {
+  isValidEmail,
+  normalizeEmailAddress,
+  validateBirthYear,
+  validatePassword,
+} from '../../../utils/validators'
 
 export type GuardianSignupStep =
   | 'guardian-account'
@@ -42,6 +47,7 @@ export interface GuardianSignupRecoverableFailure {
 
 const INITIAL_GUARDIAN_ACCOUNT: GuardianAccountFormValues = {
   email: '',
+  emailConfirm: '',
   name: '',
   password: '',
   passwordConfirm: '',
@@ -241,6 +247,7 @@ function mapFailureToRecoverableState(
 
 export function useGuardianSignupFlow() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [currentStep, setCurrentStep] = useState<GuardianSignupStep>('guardian-account')
   const [guardianAccount, setGuardianAccount] =
     useState<GuardianAccountFormValues>(INITIAL_GUARDIAN_ACCOUNT)
@@ -258,6 +265,7 @@ export function useGuardianSignupFlow() {
   const [retryActionType, setRetryActionType] = useState<GuardianSignupRetryActionType | null>(null)
   const [resumeContext, setResumeContext] = useState<GuardianSignupResumeContext | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isEmailConfirmTouched, setIsEmailConfirmTouched] = useState(false)
   const isMountedRef = useRef(true)
   const isSubmittingRef = useRef(false)
   const activeSubmissionIdRef = useRef(0)
@@ -288,6 +296,24 @@ export function useGuardianSignupFlow() {
     setCopyMessage('')
   }
 
+  const normalizedGuardianEmail = normalizeEmailAddress(guardianAccount.email)
+  const normalizedGuardianEmailConfirm = normalizeEmailAddress(guardianAccount.emailConfirm)
+  const hasValidGuardianEmail = isValidEmail(guardianAccount.email)
+  const hasValidGuardianEmailConfirm = isValidEmail(guardianAccount.emailConfirm)
+  const emailMismatchMessage =
+    normalizedGuardianEmail &&
+    normalizedGuardianEmailConfirm &&
+    normalizedGuardianEmail !== normalizedGuardianEmailConfirm
+      ? '이메일 확인이 일치하지 않습니다.'
+      : ''
+  const isEmailConfirmed =
+    hasValidGuardianEmail &&
+    hasValidGuardianEmailConfirm &&
+    !emailMismatchMessage
+  const shouldShowEmailMismatchMessage =
+    Boolean(emailMismatchMessage) &&
+    (isEmailConfirmTouched || guardianAccount.emailConfirm.trim().length > 0)
+
   const validateGuardianAccountStep = () => {
     if (!guardianAccount.email.trim() || !guardianAccount.name.trim()) {
       return '이메일과 보호자 이름을 입력해주세요.'
@@ -295,6 +321,14 @@ export function useGuardianSignupFlow() {
 
     if (!isValidEmail(guardianAccount.email)) {
       return '올바른 이메일 형식을 입력해주세요.'
+    }
+
+    if (!guardianAccount.emailConfirm.trim()) {
+      return '이메일 확인을 입력해주세요.'
+    }
+
+    if (emailMismatchMessage) {
+      return '이메일과 이메일 확인이 일치하지 않습니다.'
     }
 
     const passwordMessage = validatePassword(guardianAccount.password)
@@ -499,8 +533,11 @@ export function useGuardianSignupFlow() {
     navigate(ROUTE_PATHS.AUTH_LOGIN_CARE, {
       replace: true,
       state: {
+        ...(location.state && typeof location.state === 'object'
+          ? (location.state as Record<string, unknown>)
+          : {}),
         signupCompleted: true,
-        guardianEmail: guardianAccount.email.trim().toLowerCase(),
+        guardianEmail: normalizedGuardianEmail,
         patientName: signupResult.patientName,
         teamCode: signupResult.teamCode,
       },
@@ -551,6 +588,9 @@ export function useGuardianSignupFlow() {
     currentSignupStage,
     stepIndex,
     guardianAccount,
+    normalizedGuardianEmail,
+    isEmailConfirmed,
+    emailMismatchMessage: shouldShowEmailMismatchMessage ? emailMismatchMessage : '',
     patientProfile,
     patientRoutines,
     errorMessage,
@@ -562,6 +602,7 @@ export function useGuardianSignupFlow() {
     canGoToPreviousStep,
     submitButtonLabel,
     isSubmitting,
+    setIsEmailConfirmTouched,
     setGuardianAccount: setGuardianAccountValues,
     setPatientProfile: setPatientProfileValues,
     setPatientRoutines: setPatientRoutineValues,

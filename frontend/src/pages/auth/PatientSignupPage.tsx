@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
-import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { Link, useLocation } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
 import { usePatientSignup } from '../../features/auth/hooks/usePatientSignup'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
 import AuthBrand from './AuthBrand'
@@ -22,6 +24,8 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientSignupPage() {
+  const location = useLocation()
+  const patientLoginRoute = resolveAuthEntryRoute('login', 'patient', location.state)
   const {
     teamCode,
     verifiedTeamCode,
@@ -171,12 +175,23 @@ export default function PatientSignupPage() {
         {infoMessage ? <p style={successMessage}>{infoMessage}</p> : null}
 
         <div style={linkRow}>
-          <a href={resolveAppPath(ROUTE_PATHS.AUTH_LOGIN_PATIENT)} style={textLink}>
+          <Link
+            to={patientLoginRoute.path}
+            state={patientLoginRoute.state}
+            style={textLink}
+          >
             환자 로그인
-          </a>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=signup`)} style={textLink}>
+          </Link>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=signup',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             뒤로 가기
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   clearVerifiedTeamCode,
   getStoredVerifiedTeamCode,
@@ -20,6 +20,7 @@ const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
 
 export function usePatientSignup() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { setSession, setPatientPostAuth } = useAuth()
   const storedVerifiedTeamCode = getStoredVerifiedTeamCode()
   const [teamCode, setTeamCode] = useState(storedVerifiedTeamCode ?? '')
@@ -117,6 +118,7 @@ export function usePatientSignup() {
     setSession(result.data.session)
     const resolvedNavigation = await resolveAuthSuccessNavigation(result.data.session, {
       entryPoint: 'signup',
+      locationState: location.state,
     })
     setPatientPostAuth(resolvedNavigation.patientPostAuthState)
 

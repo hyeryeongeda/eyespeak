@@ -38,23 +38,33 @@ function unwrapApiEnvelope<TResponse>(value: unknown) {
   return value as TResponse
 }
 
+function readApiResponseTextField(value: unknown, fieldName: 'message' | 'code') {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+
+  const fieldValue = (value as Record<string, unknown>)[fieldName]
+  return typeof fieldValue === 'string' && fieldValue.trim() ? fieldValue : undefined
+}
+
 function toApiError(error: unknown) {
   if (error instanceof ApiError) {
     return error
   }
 
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ message?: string; code?: string }>
+    const axiosError = error as AxiosError<unknown>
     const statusCode = axiosError.response?.status ?? 500
     const isNetworkError = !axiosError.response
-    const responseCode = axiosError.response?.data?.code
+    const responseMessage = readApiResponseTextField(axiosError.response?.data, 'message')
+    const responseCode = readApiResponseTextField(axiosError.response?.data, 'code')
     const code = responseCode ?? (isNetworkError ? 'NETWORK_ERROR' : undefined)
 
     return new ApiError({
       statusCode,
       source: 'api',
       message:
-        axiosError.response?.data?.message ??
+        responseMessage ??
         (isNetworkError ? '네트워크 연결 상태를 확인한 뒤 다시 시도해주세요.' : undefined) ??
         axiosError.message ??
         'API request failed.',
