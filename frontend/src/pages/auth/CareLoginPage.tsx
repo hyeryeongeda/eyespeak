@@ -27,6 +27,8 @@ import AuthPageFrame from './AuthPageFrame'
 interface CareLoginLocationState extends AuthRouteState {
   signupCompleted?: boolean
   guardianEmail?: string
+  patientName?: string
+  teamCode?: string
 }
 
 export default function CareLoginPage() {
@@ -105,8 +107,16 @@ export default function CareLoginPage() {
             <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
               가입 완료 안내
             </p>
-            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
               보호자 회원가입은 이미 완료되었습니다. 자동 로그인은 되지 않으니, 방금 만든 보호자 계정으로 로그인해 주세요.
+            </p>
+            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              로그인 이메일은 미리 입력되어 있습니다.
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              {locationState.patientName && locationState.teamCode
+                ? `환자 정보와 팀코드(${locationState.teamCode})는 준비된 상태입니다.`
+                : '환자 정보와 팀코드는 회원가입 단계에서 이미 준비된 상태입니다.'}
             </p>
           </div>
         ) : null}
