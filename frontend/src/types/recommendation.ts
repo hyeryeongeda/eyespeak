@@ -39,6 +39,10 @@ export interface RecommendationWordsRequestDto {
   categoryKey?: RecommendationCategoryKey
   step: RecommendationComposeStep
   refreshCount?: number
+  selectedWords?: {
+    subject?: string
+    object?: string
+  }
 }
 
 export interface RecommendationWordsResponseDto {

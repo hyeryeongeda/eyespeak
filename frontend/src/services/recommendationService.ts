@@ -161,6 +161,10 @@ export async function fetchComposeWords(input: {
   categoryKey?: CustomCategoryKey
   step: ComposeStep
   refreshCount: number
+  selectedWords?: {
+    subject?: string
+    object?: string
+  }
   shouldFail?: boolean
 }) {
   if (getActiveAiApiMode() !== 'real') {
@@ -174,6 +178,7 @@ export async function fetchComposeWords(input: {
         : undefined,
       step: mapComposeStep(input.step),
       refreshCount: input.refreshCount,
+      selectedWords: input.selectedWords,
     },
     getAccessToken(),
   )
