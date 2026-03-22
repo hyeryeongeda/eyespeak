@@ -95,7 +95,7 @@ async function fetchRealChatHistory(
   cursor?: number | null,
   size = 20,
 ): Promise<ChatHistoryResponse> {
-  const params: Record<string, unknown> = { size }
+  const params: Record<string, string | number | boolean> = { size }
   if (cursor != null) {
     params.cursor = cursor
   }
