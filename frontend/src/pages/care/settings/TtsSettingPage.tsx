@@ -67,15 +67,10 @@ export default function TtsSettingPage() {
 
     try {
       const res = await deleteTtsVoice(id)
-      if (res.success) {
-        setSettings(prev => {
-          if (!prev) return prev
-          const remaining = prev.voiceFiles.filter(f => f.id !== id)
-          return { ...prev, voiceFiles: remaining }
-        })
+      if (res.success && res.data) {
+        setSettings(res.data)
 
-        const remaining = settings?.voiceFiles.filter(f => f.id !== id) ?? []
-        if (remaining.length === 0) {
+        if (res.data.voiceFiles.length === 0) {
           showMessage(setSuccessMsg, '모든 파일이 삭제되었습니다. TTS 사용 시 기본 음성이 적용됩니다.')
         } else {
           showMessage(setSuccessMsg, '파일이 삭제되었습니다.')

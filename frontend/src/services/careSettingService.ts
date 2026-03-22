@@ -279,9 +279,9 @@ export async function uploadTtsVoiceFiles(files: File[]): Promise<ApiResponse<Tt
   return { success: true, data, message: 'Uploaded TTS voice files.' }
 }
 
-export async function deleteTtsVoice(voiceFileId: number): Promise<ApiResponse<null>> {
-  await deleteTtsVoiceApi(voiceFileId)
-  return { success: true, data: null, message: 'Deleted TTS voice file.' }
+export async function deleteTtsVoice(voiceFileId: number): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await deleteTtsVoiceApi(voiceFileId)
+  return { success: true, data, message: 'Deleted TTS voice file.' }
 }
 
 export async function getUserWords(): Promise<ApiResponse<UserWords>> {
