@@ -5,6 +5,7 @@ import type {
   FavoriteItem,
   FavoriteResponseDto,
   KnownFavoriteErrorCode,
+  PhraseCategory,
 } from '../types/favorite'
 import type { FavoriteItem as PatientFavoriteItem, FavoritesSortKey } from '../types/favorites'
 import {
@@ -19,6 +20,7 @@ import {
   createFavoriteApi,
   deleteFavoriteApi,
   getFavoritesApi,
+  getPhrasesApi,
   updateFavoriteApi,
 } from './favoriteApi'
 import { MOCK_CATEGORIES, MOCK_FAVORITE_PHRASES, MOCK_PHRASES } from './mockCareData'
@@ -325,6 +327,51 @@ export async function submitFavoriteSelection(
   await new Promise<void>(resolve => setTimeout(resolve, 300))
 
   return { success: true, source: 'mock' }
+}
+
+function groupPhrasesIntoCategories(
+  phrases: { phraseId: number; content: string; categoryId: number; categoryName: string }[],
+): PhraseCategory[] {
+  const map = new Map<number, PhraseCategory>()
+
+  for (const p of phrases) {
+    let cat = map.get(p.categoryId)
+    if (!cat) {
+      cat = { categoryId: p.categoryId, categoryName: p.categoryName, phrases: [] }
+      map.set(p.categoryId, cat)
+    }
+    cat.phrases.push({ phraseId: p.phraseId, content: p.content })
+  }
+
+  return [...map.values()]
+}
+
+function getMockPhraseCategories(): PhraseCategory[] {
+  const phrases = MOCK_PHRASES.map(p => {
+    const category = MOCK_CATEGORIES.find(c => c.id === p.categoryId)
+    return {
+      phraseId: p.id,
+      content: p.content,
+      categoryId: p.categoryId,
+      categoryName: category?.name ?? '',
+    }
+  })
+
+  return groupPhrasesIntoCategories(phrases)
+}
+
+export async function getPhrases(): Promise<ServiceResult<PhraseCategory[]>> {
+  if (getActiveApiMode() !== 'real') {
+    return buildSuccess(getMockPhraseCategories())
+  }
+
+  try {
+    const response = await getPhrasesApi(getAccessToken())
+
+    return buildSuccess(groupPhrasesIntoCategories(response))
+  } catch (error) {
+    return createFavoriteFailure(error, '표현 목록을 불러오지 못했습니다.')
+  }
 }
 
 export const FAVORITES_PAGE_SIZE_EXPORT = FAVORITES_PAGE_SIZE
