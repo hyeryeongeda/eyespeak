@@ -4,6 +4,7 @@ import e205.eyespeak.domain.chat.dto.ChatMessageRequest;
 import e205.eyespeak.domain.chat.service.ChatService;
 import e205.eyespeak.global.websocket.StompPrincipal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
 
@@ -19,6 +20,7 @@ import java.security.Principal;
  *
  * 클라이언트가 /app/chat 으로 STOMP SEND → 이 컨트롤러가 받아서 서비스에 위임
  */
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class ChatController {
@@ -34,6 +36,8 @@ public class ChatController {
      */
     @MessageMapping("/chat")
     public void sendMessage(ChatMessageRequest request, Principal principal) {
+        log.info("[STOMP] 채팅 메시지 수신: principal={}, contentType={}, matchingId={}",
+                principal, request.getContentType(), request.getMatchingId());
         StompPrincipal stomp = (StompPrincipal) principal;
         chatService.sendMessage(stomp.getUserId(), stomp.getRole(), request);
     }
