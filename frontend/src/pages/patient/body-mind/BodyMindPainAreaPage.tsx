@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -7,9 +7,10 @@ import type {
   PainAreaGroupKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
 import { getPainAreaGroupByAreaKey, getPainAreaGroupByKey } from './bodyMindMock'
-import { getFullBodyModelUrl } from './bodyMindPainModels'
+import { getFullBodyModelUrl, getPainAreaGroupModelByKey } from './bodyMindPainModels'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
 import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
@@ -30,8 +31,43 @@ export default function BodyMindPainAreaPage() {
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedGroupKey, setSelectedGroupKey] = useState<PainAreaGroupKey | null>(initialGroupKey)
 
+  const [hoveredGroupKey, setHoveredGroupKey] = useState<PainAreaGroupKey | null>(null)
   const selectedGroup = getPainAreaGroupByKey(selectedGroupKey)
   const guideModelUrl = getFullBodyModelUrl()
+  const highlightGroupModel = getPainAreaGroupModelByKey(hoveredGroupKey)
+  const highlightModelUrl = highlightGroupModel?.modelUrl ?? null
+
+  const gazePoint = useGazeInputStore(state => state.point)
+
+  useEffect(() => {
+    if (!gazePoint) {
+      setHoveredGroupKey(null)
+      return
+    }
+
+    const elements = document.elementsFromPoint(gazePoint.clientX, gazePoint.clientY)
+
+    for (const el of elements) {
+      if (!(el instanceof HTMLElement)) continue
+      const tracked = el.closest<HTMLElement>('[data-tracking-id]')
+      if (!tracked) continue
+      const id = tracked.dataset.trackingId as PainAreaGroupKey | undefined
+      if (id === 'upper_body' || id === 'middle_body' || id === 'lower_body') {
+        setHoveredGroupKey(id)
+        return
+      }
+    }
+
+    setHoveredGroupKey(null)
+  }, [gazePoint])
+
+  const handleGazeEnter = useCallback((groupKey: PainAreaGroupKey) => {
+    setHoveredGroupKey(groupKey)
+  }, [])
+
+  const handleGazeLeave = useCallback(() => {
+    setHoveredGroupKey(null)
+  }, [])
 
   const clearPendingNavigation = () => {
     if (navigationTimeoutRef.current !== null) {
@@ -77,8 +113,11 @@ export default function BodyMindPainAreaPage() {
             description="머리 · 목 · 어깨 · 팔 · 손"
             tone="sky"
             badge="대분류"
+            trackingId="upper_body"
             selected={selectedGroupKey === 'upper_body'}
             onSelect={() => handleSelectGroup('upper_body')}
+            onGazeEnter={() => handleGazeEnter('upper_body')}
+            onGazeLeave={handleGazeLeave}
           />
         }
         middleCard={
@@ -87,14 +126,18 @@ export default function BodyMindPainAreaPage() {
             description="가슴 · 배 · 허리 · 엉덩이"
             tone="sky"
             badge="대분류"
+            trackingId="middle_body"
             selected={selectedGroupKey === 'middle_body'}
             onSelect={() => handleSelectGroup('middle_body')}
+            onGazeEnter={() => handleGazeEnter('middle_body')}
+            onGazeLeave={handleGazeLeave}
           />
         }
         guideCard={
           <BodyMindPainGuideCard
             badge="전신 가이드"
             modelUrl={guideModelUrl}
+            highlightModelUrl={highlightModelUrl}
             headerText={
               selectedGroup
                 ? `${selectedGroup.label} 선택 후 세부 부위를 이어서 고릅니다.`
@@ -108,8 +151,11 @@ export default function BodyMindPainAreaPage() {
             description="허벅지 · 무릎 · 종아리 · 발"
             tone="sky"
             badge="대분류"
+            trackingId="lower_body"
             selected={selectedGroupKey === 'lower_body'}
             onSelect={() => handleSelectGroup('lower_body')}
+            onGazeEnter={() => handleGazeEnter('lower_body')}
+            onGazeLeave={handleGazeLeave}
           />
         }
         backCard={

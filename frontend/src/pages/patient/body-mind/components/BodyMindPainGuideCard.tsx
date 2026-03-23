@@ -1,13 +1,15 @@
 import { Bounds, Center, Html, useGLTF } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import {
   Component,
   Suspense,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from 'react'
+import { Color, Group, MathUtils, Mesh, MeshStandardMaterial } from 'three'
 import { painAreaModelUrls } from '../bodyMindPainModels'
 
 const cardStyle: CSSProperties = {
@@ -94,6 +96,8 @@ interface BodyMindPainGuideCardProps {
   modelUrl: string
   fallbackModelUrl?: string
   headerText?: string
+  highlightModelUrl?: string | null
+  rotationY?: number
 }
 
 interface ModelErrorBoundaryProps {
@@ -135,17 +139,70 @@ function LoadingOverlay() {
   )
 }
 
+const BASE_BODY_MATERIAL = new MeshStandardMaterial({
+  color: '#F0F4F8',
+})
+
 function ModelScene({ modelUrl }: { modelUrl: string }) {
   const { scene } = useGLTF(modelUrl)
-  const clonedScene = useMemo(() => scene.clone(true), [scene])
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse(child => {
+      if (child instanceof Mesh) {
+        child.material = BASE_BODY_MATERIAL
+      }
+    })
+    return clone
+  }, [scene])
 
-  return (
-    <Bounds fit clip observe margin={1.15}>
-      <Center>
-        <primitive object={clonedScene} />
-      </Center>
-    </Bounds>
-  )
+  return <primitive object={clonedScene} />
+}
+
+const HIGHLIGHT_MATERIAL = new MeshStandardMaterial({
+  color: '#8FA8FF',
+  emissive: new Color('#4A6AFF'),
+  emissiveIntensity: 0.6,
+  transparent: true,
+  opacity: 0.55,
+  depthWrite: false,
+})
+
+function HighlightModelScene({ modelUrl }: { modelUrl: string }) {
+  const { scene } = useGLTF(modelUrl)
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse(child => {
+      if (child instanceof Mesh) {
+        child.material = HIGHLIGHT_MATERIAL
+      }
+    })
+    return clone
+  }, [scene])
+
+  return <primitive object={clonedScene} />
+}
+
+const ROTATION_LERP_SPEED = 5
+
+function SmoothRotationGroup({
+  targetRotationY,
+  children,
+}: {
+  targetRotationY: number
+  children: ReactNode
+}) {
+  const groupRef = useRef<Group>(null)
+
+  useFrame((_, delta) => {
+    if (!groupRef.current) return
+    groupRef.current.rotation.y = MathUtils.lerp(
+      groupRef.current.rotation.y,
+      targetRotationY,
+      1 - Math.exp(-ROTATION_LERP_SPEED * delta),
+    )
+  })
+
+  return <group ref={groupRef}>{children}</group>
 }
 
 function Placeholder() {
@@ -168,6 +225,8 @@ export default function BodyMindPainGuideCard({
   modelUrl,
   fallbackModelUrl,
   headerText,
+  highlightModelUrl,
+  rotationY = 0,
 }: BodyMindPainGuideCardProps) {
   const [modelState, setModelState] = useState(() => ({
     sourceModelUrl: modelUrl,
@@ -228,7 +287,14 @@ export default function BodyMindPainGuideCard({
               <directionalLight position={[4, 5, 4]} intensity={1.15} />
               <directionalLight position={[-3, 2, -3]} intensity={0.42} />
               <Suspense fallback={<LoadingOverlay />}>
-                <ModelScene modelUrl={resolvedModelUrl} />
+                <Bounds fit clip observe margin={1.15}>
+                  <Center>
+                    <SmoothRotationGroup targetRotationY={rotationY}>
+                      <ModelScene modelUrl={resolvedModelUrl} />
+                      {highlightModelUrl ? <HighlightModelScene modelUrl={highlightModelUrl} /> : null}
+                    </SmoothRotationGroup>
+                  </Center>
+                </Bounds>
               </Suspense>
             </Canvas>
           </ModelErrorBoundary>

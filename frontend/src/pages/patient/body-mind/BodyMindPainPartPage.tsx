@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -7,6 +7,7 @@ import type {
   PainAreaKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import {
   getStoredPainAreaSelection,
   storePainAreaSelection,
@@ -16,7 +17,7 @@ import {
   getPainAreaGroupByKey,
   getPainAreaOptionByKey,
 } from './bodyMindMock'
-import { getPainAreaModelByKey } from './bodyMindPainModels'
+import { getPainAreaGroupModelByKey, getPainAreaModelByKey } from './bodyMindPainModels'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
@@ -44,6 +45,39 @@ export default function BodyMindPainPartPage() {
   const navigationTimeoutRef = useRef<number | null>(null)
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedAreaKey, setSelectedAreaKey] = useState<PainAreaKey | null>(initialAreaKey)
+  const [hoveredAreaKey, setHoveredAreaKey] = useState<PainAreaKey | null>(null)
+
+  const gazePoint = useGazeInputStore(state => state.point)
+
+  useEffect(() => {
+    if (!gazePoint) {
+      setHoveredAreaKey(null)
+      return
+    }
+
+    const elements = document.elementsFromPoint(gazePoint.clientX, gazePoint.clientY)
+
+    for (const el of elements) {
+      if (!(el instanceof HTMLElement)) continue
+      const tracked = el.closest<HTMLElement>('[data-tracking-id]')
+      if (!tracked) continue
+      const id = tracked.dataset.trackingId as PainAreaKey | undefined
+      if (id && group?.options.some(opt => opt.key === id)) {
+        setHoveredAreaKey(id)
+        return
+      }
+    }
+
+    setHoveredAreaKey(null)
+  }, [gazePoint, group])
+
+  const handleGazeEnter = useCallback((areaKey: PainAreaKey) => {
+    setHoveredAreaKey(areaKey)
+  }, [])
+
+  const handleGazeLeave = useCallback(() => {
+    setHoveredAreaKey(null)
+  }, [])
 
   useEffect(
     () => () => {
@@ -60,7 +94,11 @@ export default function BodyMindPainPartPage() {
 
   const selectedArea =
     getPainAreaOptionByKey(selectedAreaKey) ?? getPainAreaOptionByKey(group.options[0]?.key ?? null)
-  const selectedModel = getPainAreaModelByKey(selectedArea?.key)
+  const groupModel = getPainAreaGroupModelByKey(group.key)
+  const hoveredModel = getPainAreaModelByKey(hoveredAreaKey)
+  const highlightModelUrl = hoveredModel?.modelUrl ?? null
+  const REAR_VIEW_PARTS: PainAreaKey[] = ['back', 'hip']
+  const guideRotationY = hoveredAreaKey && REAR_VIEW_PARTS.includes(hoveredAreaKey) ? Math.PI : 0
   const [primaryLeftTop, primaryTopRight, primaryLeftBottom, primaryBottomCenter] = group.options
 
   const handleSelectArea = (areaKey: PainAreaKey) => {
@@ -108,15 +146,20 @@ export default function BodyMindPainPartPage() {
             description={primaryLeftTop.description}
             tone={primaryLeftTop.tone}
             badge="세부 부위"
+            trackingId={primaryLeftTop.key}
             selected={selectedArea?.key === primaryLeftTop.key}
             onSelect={() => handleSelectArea(primaryLeftTop.key)}
+            onGazeEnter={() => handleGazeEnter(primaryLeftTop.key)}
+            onGazeLeave={handleGazeLeave}
           />,
-          selectedModel ? (
+          groupModel ? (
             <BodyMindPainGuideCard
-              key={selectedModel.key}
+              key={groupModel.key}
               badge="상세 가이드"
-              modelUrl={selectedModel.modelUrl}
-              fallbackModelUrl={selectedModel.fallbackModelUrl}
+              modelUrl={groupModel.modelUrl}
+              fallbackModelUrl={groupModel.fallbackModelUrl}
+              highlightModelUrl={highlightModelUrl}
+              rotationY={guideRotationY}
               headerText={`${selectedArea?.label ?? group.options[0]?.label} 부위를 중앙에서 확인할 수 있습니다.`}
             />
           ) : (
@@ -128,8 +171,11 @@ export default function BodyMindPainPartPage() {
             description={primaryLeftBottom.description}
             tone={primaryLeftBottom.tone}
             badge="세부 부위"
+            trackingId={primaryLeftBottom.key}
             selected={selectedArea?.key === primaryLeftBottom.key}
             onSelect={() => handleSelectArea(primaryLeftBottom.key)}
+            onGazeEnter={() => handleGazeEnter(primaryLeftBottom.key)}
+            onGazeLeave={handleGazeLeave}
           />,
           <BodyMindOptionCard
             key={primaryBottomCenter.key}
@@ -137,8 +183,11 @@ export default function BodyMindPainPartPage() {
             description={primaryBottomCenter.description}
             tone={primaryBottomCenter.tone}
             badge="세부 부위"
+            trackingId={primaryBottomCenter.key}
             selected={selectedArea?.key === primaryBottomCenter.key}
             onSelect={() => handleSelectArea(primaryBottomCenter.key)}
+            onGazeEnter={() => handleGazeEnter(primaryBottomCenter.key)}
+            onGazeLeave={handleGazeLeave}
           />,
         ]}
         topRightCard={
@@ -147,8 +196,11 @@ export default function BodyMindPainPartPage() {
             description={primaryTopRight.description}
             tone={primaryTopRight.tone}
             badge="세부 부위"
+            trackingId={primaryTopRight.key}
             selected={selectedArea?.key === primaryTopRight.key}
             onSelect={() => handleSelectArea(primaryTopRight.key)}
+            onGazeEnter={() => handleGazeEnter(primaryTopRight.key)}
+            onGazeLeave={handleGazeLeave}
           />
         }
         bottomRightCard={
