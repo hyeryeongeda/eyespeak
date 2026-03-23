@@ -1,9 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import {
-  buildAuthRedirectState,
-  resolveAuthenticatedSessionNavigation,
-} from '../../features/auth/authRedirect'
+import { buildAuthRedirectState } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
   buildPatientCalibrationLocationState,
@@ -47,22 +44,10 @@ export function ProtectedRoute({ allowedRole, children }: ProtectedRouteProps) {
 }
 
 export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
-  const { isAuthenticated, user, patientPostAuth } = useAuth()
-  const location = useLocation()
+  const { isAuthenticated, user } = useAuth()
 
   if (isAuthenticated && user) {
-    const resolvedNavigation = resolveAuthenticatedSessionNavigation(user, {
-      locationState: location.state,
-      patientPostAuthState: patientPostAuth,
-    })
-
-    return (
-      <Navigate
-        to={resolvedNavigation.path}
-        replace
-        state={resolvedNavigation.state}
-      />
-    )
+    return <Navigate to={getHomePathByRole(user.role)} replace />
   }
 
   return children ? <>{children}</> : <Outlet />

@@ -293,8 +293,8 @@ export default function PatientMainPage() {
     return '시선을 카드 위에 머무르면 선택되고, 더블 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
   }, [isOverlayVisible])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
 
@@ -406,7 +406,7 @@ export default function PatientMainPage() {
               <button type="button" onClick={handleRecalibration} style={recalibrationButtonStyle}>
                 재캘리브레이션
               </button>
-              <button type="button" onClick={handleLogout} style={logoutButtonStyle}>
+              <button type="button" onClick={() => void handleLogout()} style={logoutButtonStyle}>
                 로그아웃
               </button>
             </div>
