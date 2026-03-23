@@ -1,9 +1,11 @@
+import { getActiveApiMode } from '../config/env'
 import type {
   BodyMindExpressionDraft,
   BodyMindStoredState,
   PainAreaKey,
   SubmitBodyMindExpressionResult,
 } from '../features/patient/types/communication'
+import { createUsageLogSilently } from './usageLogService'
 
 const BODY_MIND_STORAGE_PREFIX = 'bodyMindState'
 
@@ -93,13 +95,13 @@ export async function submitBodyMindExpression(
     lastExpression: payload,
   })
 
-  // TODO: Replace this mock persistence with the real expression/log API once the backend
-  // contract is finalized. The intended integration point is a dedicated POST request here.
-  await Promise.resolve()
+  createUsageLogSilently({
+    content: `${draft.type}:${draft.optionKey}`,
+  })
 
   return {
     success: true,
-    source: 'mock',
+    source: getActiveApiMode() === 'real' ? 'real' : 'mock',
     payload,
   }
 }

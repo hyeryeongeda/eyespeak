@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   RECOMMENDATION_SENTENCES: '/recommendations/sentences',
   RECOMMENDATION_COMPOSE: '/recommendations/compose',
   RECOMMENDATION_SEND: '/recommendations/send',
+  RECOMMENDATION_RECORD: '/recommendations/record',
   RECOMMENDATION_WORDS: '/recommendations/words',
   RECOMMENDATION_REPLIES: '/recommendations/replies',
   TTS_STATUS: '/tts/status',
