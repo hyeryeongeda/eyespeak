@@ -13,7 +13,9 @@ tts_server.py의 POST /train/{patient_id} 에서 subprocess로 호출됩니다.
   run/training/{patient_id}/GPT_XTTS_*/best_model.pth
 """
 import argparse
+import glob
 import os
+import time
 import torch
 
 # ── 호환성 패치 (torch.load weights_only, isin_mps_friendly) ─────────────────
@@ -34,12 +36,20 @@ if not hasattr(_pt_utils, "isin_mps_friendly"):
     _pt_utils.isin_mps_friendly = _isin_mps_friendly
 # ─────────────────────────────────────────────────────────────────────────────
 
+import mlflow
+
 from trainer import Trainer, TrainerArgs
 from TTS.config.shared_configs import BaseDatasetConfig
 from TTS.tts.datasets import load_tts_samples
 from TTS.tts.layers.xtts.trainer.gpt_trainer import GPTArgs, GPTTrainer, GPTTrainerConfig
 from TTS.tts.models.xtts import XttsAudioConfig
 from TTS.utils.manage import ModelManager
+
+
+def _find_best_model(out_path: str) -> str | None:
+    """학습 완료 후 best_model.pth 경로를 탐색합니다."""
+    matches = sorted(glob.glob(os.path.join(out_path, "GPT_XTTS_*", "best_model.pth")))
+    return matches[-1] if matches else None
 
 
 def parse_args():
@@ -73,10 +83,10 @@ def main():
     os.makedirs(CHECKPOINTS_OUT_PATH, exist_ok=True)
 
     # ── 하이퍼파라미터 ───────────────────────────────────────────────────────
-    EPOCHS          = args.epochs
+    EPOCHS          = args.epochs          # 권장: 80 (--epochs 80)
     BATCH_SIZE      = args.batch_size
     GRAD_ACCUM_STEPS = max(1, 256 // BATCH_SIZE)  # BATCH * GRAD_ACCUM ≈ 256
-    LR              = 1e-6
+    LR              = 2e-6                 # 1e-6→2e-6: 화자 특성 학습 강화 (5e-6은 망각 유발)
 
     OPTIMIZER_WD_ONLY_ON_WEIGHTS = True
     START_WITH_EVAL = True
@@ -188,7 +198,39 @@ def main():
         train_samples=train_samples,
         eval_samples=eval_samples,
     )
-    trainer.fit()
+
+    # ── MLflow 실험 추적 ─────────────────────────────────────────────────────
+    mlflow.set_experiment("xtts-ko-training")
+    with mlflow.start_run(run_name=f"{PATIENT_ID}_ep{EPOCHS}_bs{BATCH_SIZE}"):
+        mlflow.log_params({
+            "patient_id":    PATIENT_ID,
+            "epochs":        EPOCHS,
+            "batch_size":    BATCH_SIZE,
+            "grad_accum":    GRAD_ACCUM_STEPS,
+            "learning_rate": LR,
+            "optimizer":     "AdamW",
+            "lr_scheduler":  "CosineAnnealingWarmRestarts",
+            "train_samples": len(train_samples),
+            "eval_samples":  len(eval_samples),
+        })
+        mlflow.set_tags({"model": "XTTS-v2", "language": "ko"})
+
+        t0 = time.time()
+        try:
+            trainer.fit()
+            elapsed = time.time() - t0
+            mlflow.log_metric("training_duration_s", round(elapsed, 1))
+            mlflow.log_metric("training_success", 1)
+
+            best = _find_best_model(OUT_PATH)
+            if best:
+                mlflow.log_artifact(best, artifact_path="model")
+                print(f" > MLflow: best_model.pth 아티팩트 저장 완료")
+        except Exception as e:
+            mlflow.log_metric("training_duration_s", round(time.time() - t0, 1))
+            mlflow.log_metric("training_success", 0)
+            mlflow.set_tag("error", str(e)[:250])
+            raise
 
 
 if __name__ == "__main__":
