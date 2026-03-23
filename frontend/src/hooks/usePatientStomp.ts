@@ -150,15 +150,13 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
 
       const payload = buildChatPayload({
         matchingId: user.matchingId,
-        senderId: user.userId,
-        senderRole: 'PATIENT',
         text: params.text,
         contentType: params.contentType,
         phraseId: params.phraseId,
         exprId: params.exprId,
       })
 
-      client.publish(STOMP_DESTINATIONS.PUBLISH_CHAT, payload as unknown as Record<string, unknown>)
+      client.publish(STOMP_DESTINATIONS.PUBLISH_CHAT, payload)
     },
     [client, connected, user],
   )
