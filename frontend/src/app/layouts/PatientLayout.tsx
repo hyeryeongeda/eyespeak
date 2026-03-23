@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
@@ -20,7 +20,6 @@ import { ROUTE_PATHS } from '../router/routePaths'
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
 const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
 const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
-const DevChatTriggerPanel = lazy(() => import('../../components/patient/chat/DevChatTriggerPanel'))
 
 const patientLogoutButtonStyle = {
   position: 'fixed',
@@ -50,8 +49,6 @@ function PatientLayoutShell() {
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
-  const [isDevPanelEnabled, setIsDevPanelEnabled] = useState(false)
-
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
@@ -83,37 +80,6 @@ function PatientLayoutShell() {
 
     closeGlobalMenu()
   }, [closeGlobalMenu, isTrackingBlocked])
-
-  useEffect(() => {
-    let isMounted = true
-
-    if (!import.meta.env.DEV || isCalibrationRoute) {
-      setIsDevPanelEnabled(false)
-      return () => {
-        isMounted = false
-      }
-    }
-
-    void import('../../services/mockPatientChatService')
-      .then(({ PATIENT_CHAT_DEV_PANEL_ENABLED }) => {
-        if (!isMounted) {
-          return
-        }
-
-        setIsDevPanelEnabled(PATIENT_CHAT_DEV_PANEL_ENABLED)
-      })
-      .catch(() => {
-        if (!isMounted) {
-          return
-        }
-
-        setIsDevPanelEnabled(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [isCalibrationRoute])
 
   const handleLogout = async () => {
     await logout()
@@ -187,20 +153,6 @@ function PatientLayoutShell() {
         </Suspense>
       ) : null}
 
-      {!isCalibrationRoute && isDevPanelEnabled ? (
-        <Suspense fallback={null}>
-          <DevChatTriggerPanel
-            availablePresets={chat.availablePresets}
-            nextSendOutcome={chat.state.nextSendOutcome}
-            timeoutMs={chat.timeoutMs}
-            unreadCount={chat.unreadCount}
-            lastEventLabel={chat.state.lastEventLabel}
-            onTriggerPreset={chat.triggerIncomingPreset}
-            onTriggerDuplicate={chat.triggerDuplicateMessage}
-            onSetNextSendOutcome={chat.setNextSendOutcome}
-          />
-        </Suspense>
-      ) : null}
     </>
   )
 }
