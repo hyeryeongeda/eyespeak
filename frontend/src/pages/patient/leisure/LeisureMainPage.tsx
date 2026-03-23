@@ -6,7 +6,7 @@ import {
   fetchLeisureMain,
   getLeisureCategories,
 } from '../../../services/leisureService'
-import type { LeisureCategoryId, LeisureMainStatus } from '../../../types/leisure'
+import type { LeisureCategoryId, LeisureContent, LeisureMainStatus } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureCategoryCard from './components/LeisureCategoryCard'
 import LeisureLayout from './components/LeisureLayout'
@@ -40,12 +40,14 @@ const noticeWrapStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
+  gap: '12px',
   padding: '6px 12px',
   flexShrink: 0,
 }
 
 const noticeStyle: CSSProperties = {
   margin: 0,
+  flex: 1,
   padding: '8px 16px',
   borderRadius: '999px',
   backgroundColor: 'rgba(255, 255, 255, 0.88)',
@@ -57,6 +59,22 @@ const noticeStyle: CSSProperties = {
   lineHeight: 1.4,
   textAlign: 'center',
   maxWidth: '100%',
+}
+
+const featuredActionStyle: CSSProperties = {
+  minWidth: '220px',
+  minHeight: '46px',
+  padding: '0 18px',
+  borderRadius: '999px',
+  border: '1px solid rgba(93, 146, 222, 0.24)',
+  background: 'linear-gradient(135deg, #5d92de 0%, #79a9eb 100%)',
+  boxShadow: '0 10px 24px rgba(93, 146, 222, 0.18)',
+  color: '#ffffff',
+  fontSize: '14px',
+  fontWeight: 800,
+  lineHeight: 1.3,
+  cursor: 'pointer',
+  appearance: 'none',
 }
 
 const mainGridShellStyle: CSSProperties = {
@@ -83,6 +101,7 @@ export default function LeisureMainPage() {
   const categoryCards = getLeisureCategories()
 
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
+  const [featuredContent, setFeaturedContent] = useState<LeisureContent | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -97,6 +116,7 @@ export default function LeisureMainPage() {
           return
         }
 
+        setFeaturedContent(data.featuredContent)
         setStatus(data.featuredContent || data.registeredContents.length > 0 ? 'visible' : 'empty')
       } catch (error) {
         console.error('Failed to load leisure main contents.', error)
@@ -105,6 +125,7 @@ export default function LeisureMainPage() {
           return
         }
 
+        setFeaturedContent(null)
         setStatus('error')
       }
     }
@@ -152,6 +173,27 @@ export default function LeisureMainPage() {
     }
   }
 
+  const handleOpenFeaturedContent = () => {
+    if (!featuredContent || status === 'selecting' || status === 'transitioning') {
+      return
+    }
+
+    setStatus('transitioning')
+    navigate(
+      {
+        pathname: getPatientLeisurePlayerPath(featuredContent.id),
+        search: location.search,
+      },
+      {
+        state: {
+          fromPath: location.pathname,
+          fromLabel: 'Leisure',
+          categoryId: featuredContent.categoryId ?? undefined,
+        },
+      },
+    )
+  }
+
   const noticeMessage =
     status === 'loading'
       ? '백엔드에서 여가 콘텐츠를 조회하고 있습니다.'
@@ -191,6 +233,25 @@ export default function LeisureMainPage() {
 
             <div style={{ gridColumn: '1 / -1', ...noticeWrapStyle }} aria-live="polite">
               <p style={noticeStyle}>{noticeMessage}</p>
+              {featuredContent ? (
+                <button
+                  type="button"
+                  className="leisure-interactive"
+                  style={{
+                    ...featuredActionStyle,
+                    opacity: status === 'selecting' || status === 'transitioning' ? 0.64 : 1,
+                    cursor:
+                      status === 'selecting' || status === 'transitioning' ? 'default' : 'pointer',
+                  }}
+                  disabled={status === 'selecting' || status === 'transitioning'}
+                  data-leisure-slot="main-featured-play"
+                  data-patient-target="main-featured-play"
+                  onClick={handleOpenFeaturedContent}
+                  aria-label={`${featuredContent.title} 재생`}
+                >
+                  {featuredContent.title}
+                </button>
+              ) : null}
             </div>
 
             {categoryCards.slice(3, 5).map(category => (
