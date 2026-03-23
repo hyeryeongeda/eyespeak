@@ -26,7 +26,7 @@ public class ChatMessageResponse {
     private Role senderRole;
     private ContentType contentType;
     private String text;
-    private LocalDateTime timestamp;
+    private LocalDateTime createdAt;
 
     /** Message 엔티티 → Response DTO 변환. senderId는 엔티티에 없으므로 파라미터로 받는다. */
     public static ChatMessageResponse from(Message message, Long senderId) {
@@ -37,7 +37,7 @@ public class ChatMessageResponse {
                 .senderRole(message.getSenderRole())
                 .contentType(message.getContentType())
                 .text(message.getContent())
-                .timestamp(message.getCreatedAt())
+                .createdAt(message.getCreatedAt())
                 .build();
     }
 }

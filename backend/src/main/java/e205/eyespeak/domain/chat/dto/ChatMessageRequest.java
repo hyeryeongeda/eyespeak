@@ -1,5 +1,6 @@
 package e205.eyespeak.domain.chat.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import e205.eyespeak.global.enums.ContentType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,5 +25,6 @@ public class ChatMessageRequest {
     private ContentType contentType;
     private String text;
     private Long phraseId;
+    @JsonProperty("exprId")
     private Long expressionId;
 }
