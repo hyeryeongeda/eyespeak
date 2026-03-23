@@ -17,7 +17,14 @@ import {
   PatientIncomingChatContext,
   type PatientIncomingChatContextValue,
 } from './patientIncomingChatContext'
+import { getActiveApiMode } from '../config/env'
 import { usePatientStomp } from './usePatientStomp'
+import { usePatientChatHistory } from './usePatientChatHistory'
+import {
+  registerPatientChatDispatcher,
+  type DispatchPatientChatInput,
+  type DispatchPatientChatResult,
+} from '../services/patientChatDispatch'
 import type { StompChatInbound } from '../services/websocket'
 import type {
   PatientChatManualInputMode,
@@ -30,6 +37,8 @@ import type {
 
 type PatientChatAction =
   | { type: 'SET_ROUTE_CONTEXT'; route: PatientChatRouteContext }
+  | { type: 'SET_ACTIVE_MESSAGE'; messageId: string | null }
+  | { type: 'MERGE_MESSAGES'; messages: PatientChatMessage[]; lastEventLabel?: string }
   | { type: 'START_RECEIVING' }
   | { type: 'RECORD_RECEIVED_MESSAGE'; message: PatientChatMessage; previousRoute: PatientChatRouteContext | null }
   | { type: 'MARK_MESSAGE_UNREAD'; messageId: string }
@@ -88,6 +97,183 @@ const initialState: PatientChatSessionState = {
   duplicateReceiveCount: 0,
 }
 
+const LOCAL_OUTGOING_MATCH_WINDOW_MS = 60_000
+
+function normalizeTimestampForCompare(value: string) {
+  return value.includes('T') ? value : value.replace(' ', 'T')
+}
+
+function getMessageTimestamp(message: PatientChatMessage) {
+  const timestamp = Date.parse(normalizeTimestampForCompare(message.createdAt))
+
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+function getMessageContentType(message: PatientChatMessage) {
+  return message.meta?.contentType ?? 'TEXT'
+}
+
+function resolveGuardianStatus(
+  previousStatus: PatientChatMessage['status'],
+  nextStatus: PatientChatMessage['status'],
+): PatientChatMessage['status'] {
+  if (previousStatus === 'pending_reply' || nextStatus === 'pending_reply') {
+    return 'pending_reply'
+  }
+
+  if (previousStatus === 'unread' || nextStatus === 'unread') {
+    return 'unread'
+  }
+
+  if (previousStatus === 'received' || nextStatus === 'received') {
+    return 'received'
+  }
+
+  return 'replied'
+}
+
+function mergeMessagePair(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+): PatientChatMessage {
+  const resolvedType =
+    currentMessage.sender === 'patient' && nextMessage.type === 'text'
+      ? currentMessage.type
+      : nextMessage.type
+
+  return {
+    ...currentMessage,
+    ...nextMessage,
+    type: resolvedType,
+    status:
+      currentMessage.sender === 'guardian'
+        ? resolveGuardianStatus(currentMessage.status, nextMessage.status)
+        : nextMessage.status,
+    replyToId: nextMessage.replyToId ?? currentMessage.replyToId,
+    meta: {
+      ...currentMessage.meta,
+      ...nextMessage.meta,
+      isOptimistic:
+        nextMessage.meta?.isOptimistic ??
+        (nextMessage.id === currentMessage.id
+          ? currentMessage.meta?.isOptimistic ?? false
+          : false),
+    },
+  }
+}
+
+function isSamePatientMessage(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  if (currentMessage.sender !== nextMessage.sender) {
+    return false
+  }
+
+  if (currentMessage.content !== nextMessage.content) {
+    return false
+  }
+
+  if ((currentMessage.replyToId ?? null) !== (nextMessage.replyToId ?? null)) {
+    return false
+  }
+
+  if (getMessageContentType(currentMessage) !== getMessageContentType(nextMessage)) {
+    return false
+  }
+
+  if ((currentMessage.meta?.phraseId ?? null) !== (nextMessage.meta?.phraseId ?? null)) {
+    return false
+  }
+
+  if ((currentMessage.meta?.exprId ?? null) !== (nextMessage.meta?.exprId ?? null)) {
+    return false
+  }
+
+  const currentTimestamp = getMessageTimestamp(currentMessage)
+  const nextTimestamp = getMessageTimestamp(nextMessage)
+
+  if (currentTimestamp === 0 || nextTimestamp === 0) {
+    return true
+  }
+
+  return Math.abs(currentTimestamp - nextTimestamp) <= LOCAL_OUTGOING_MATCH_WINDOW_MS
+}
+
+function shouldReconcileOptimisticMessage(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  if (!currentMessage.meta?.isOptimistic || nextMessage.meta?.isOptimistic) {
+    return false
+  }
+
+  return isSamePatientMessage(currentMessage, nextMessage)
+}
+
+function sortPatientMessages(messages: PatientChatMessage[]) {
+  return messages
+    .map((message, index) => ({ message, index }))
+    .sort((left, right) => {
+      const timestampDiff =
+        getMessageTimestamp(left.message) - getMessageTimestamp(right.message)
+
+      if (timestampDiff !== 0) {
+        return timestampDiff
+      }
+
+      return left.index - right.index
+    })
+    .map(entry => entry.message)
+}
+
+function mergePatientMessages(
+  currentMessages: PatientChatMessage[],
+  nextMessages: PatientChatMessage[],
+) {
+  const mergedMessages = [...currentMessages]
+
+  nextMessages.forEach(nextMessage => {
+    const existingIndex = mergedMessages.findIndex(message => message.id === nextMessage.id)
+
+    if (existingIndex >= 0) {
+      mergedMessages[existingIndex] = mergeMessagePair(
+        mergedMessages[existingIndex],
+        nextMessage,
+      )
+      return
+    }
+
+    const optimisticIndex = mergedMessages.findIndex(message =>
+      shouldReconcileOptimisticMessage(message, nextMessage),
+    )
+
+    if (optimisticIndex >= 0) {
+      mergedMessages[optimisticIndex] = mergeMessagePair(
+        mergedMessages[optimisticIndex],
+        nextMessage,
+      )
+      return
+    }
+
+    mergedMessages.push(nextMessage)
+  })
+
+  const repliedGuardianIds = new Set(
+    mergedMessages
+      .filter(message => message.sender === 'patient' && message.replyToId)
+      .map(message => message.replyToId as string),
+  )
+
+  const replyAwareMessages = mergedMessages.map(message =>
+    message.sender === 'guardian' && repliedGuardianIds.has(message.id)
+      ? { ...message, status: 'replied' as const }
+      : message,
+  )
+
+  return sortPatientMessages(replyAwareMessages)
+}
+
 function patientChatReducer(
   state: PatientChatSessionState,
   action: PatientChatAction,
@@ -105,6 +291,22 @@ function patientChatReducer(
               : state.status,
       }
 
+    case 'SET_ACTIVE_MESSAGE':
+      return {
+        ...state,
+        activeMessageId: action.messageId,
+        activeReplyMessageId: null,
+        interruptState:
+          state.currentRoute?.responseSurface === 'inline' ? 'none' : state.interruptState,
+      }
+
+    case 'MERGE_MESSAGES':
+      return {
+        ...state,
+        messages: mergePatientMessages(state.messages, action.messages),
+        lastEventLabel: action.lastEventLabel ?? state.lastEventLabel,
+      }
+
     case 'START_RECEIVING':
       return {
         ...state,
@@ -116,9 +318,10 @@ function patientChatReducer(
       return {
         ...state,
         status: 'received',
-        messages: [...state.messages, action.message],
+        messages: mergePatientMessages(state.messages, [action.message]),
         previousRoute: action.previousRoute,
-        activeMessageId: state.activeMessageId ?? action.message.id,
+        activeMessageId:
+          state.activeMessageId ?? (action.message.sender === 'guardian' ? action.message.id : null),
         lastEventLabel: '보호자 선발화를 수신했습니다.',
       }
 
@@ -268,7 +471,7 @@ function patientChatReducer(
       return {
         ...state,
         status: 'sent',
-        messages: [...nextMessages, action.replyMessage],
+        messages: mergePatientMessages(nextMessages, [action.replyMessage]),
         sendError: null,
         selectedSuggestionId: null,
         suggestionState: 'idle',
@@ -511,13 +714,72 @@ function getMessageById(messages: PatientChatMessage[], messageId: string | null
   return messages.find(message => message.id === messageId) ?? null
 }
 
+function getPreferredReplyTargetId(state: PatientChatSessionState) {
+  const activeReplyMessage = getMessageById(state.messages, state.activeReplyMessageId)
+
+  if (activeReplyMessage?.sender === 'guardian' && activeReplyMessage.status !== 'replied') {
+    return activeReplyMessage.id
+  }
+
+  const activeMessage = getMessageById(state.messages, state.activeMessageId)
+
+  if (activeMessage?.sender === 'guardian' && activeMessage.status !== 'replied') {
+    return activeMessage.id
+  }
+
+  return getLatestUnresolvedGuardianMessage(state.messages)?.id ?? null
+}
+
+function toPatientChatMessage(payload: StompChatInbound): PatientChatMessage {
+  const isFromGuardian = payload.senderRole === 'GUARDIAN'
+
+  return {
+    id: String(payload.messageId),
+    sender: isFromGuardian ? 'guardian' : 'patient',
+    type: 'text',
+    content: payload.text,
+    createdAt: payload.createdAt,
+    status: 'received',
+    meta: {
+      contentType: payload.contentType,
+      phraseId: payload.phraseId,
+      exprId: payload.exprId,
+      historySource: 'stomp',
+    },
+  }
+}
+
+function createOutgoingPatientMessage(
+  input: DispatchPatientChatInput,
+  sequence: number,
+): PatientChatMessage {
+  return {
+    id: `local-patient-${Date.now()}-${sequence}`,
+    sender: 'patient',
+    type: input.type ?? 'text',
+    content: input.text.trim(),
+    createdAt: new Date().toISOString(),
+    status: 'replied',
+    replyToId: input.replyToId,
+    meta: {
+      contentType: input.contentType ?? 'TEXT',
+      phraseId: input.phraseId ?? null,
+      exprId: input.exprId ?? null,
+      isOptimistic: true,
+      historySource: 'local',
+    },
+  }
+}
+
 export function PatientIncomingChatProvider({
   pathname,
   children,
 }: PropsWithChildren<{ pathname: string }>) {
   const [state, dispatch] = useReducer(patientChatReducer, initialState)
+  const { messages: historyMessages, loadAll: loadAllHistory } = usePatientChatHistory()
   const stateRef = useRef(state)
   const knownMessageIdsRef = useRef<Set<string>>(new Set())
+  const outgoingSequenceRef = useRef(0)
 
   useEffect(() => {
     stateRef.current = state
@@ -526,6 +788,27 @@ export function PatientIncomingChatProvider({
   useEffect(() => {
     dispatch({ type: 'SET_ROUTE_CONTEXT', route: getRouteContext(pathname) })
   }, [pathname])
+
+  useEffect(() => {
+    void loadAllHistory()
+  }, [loadAllHistory])
+
+  useEffect(() => {
+    if (historyMessages.length === 0) {
+      return
+    }
+
+    historyMessages.forEach(message => {
+      if (!message.id.startsWith('local-')) {
+        knownMessageIdsRef.current.add(message.id)
+      }
+    })
+
+    dispatch({
+      type: 'MERGE_MESSAGES',
+      messages: historyMessages,
+    })
+  }, [historyMessages])
 
   // ----- STOMP WebSocket 연결 -----
 
@@ -543,16 +826,17 @@ export function PatientIncomingChatProvider({
       const isFromGuardian = payload.senderRole === 'GUARDIAN'
 
       // StompChatInbound → PatientChatMessage 변환
-      const incomingMessage: PatientChatMessage = {
-        id: messageId,
-        sender: isFromGuardian ? 'guardian' : 'patient',
-        type: 'text',
-        content: payload.text,
-        createdAt: payload.createdAt,
-        status: 'received',
-      }
+      const incomingMessage = toPatientChatMessage(payload)
 
       knownMessageIdsRef.current.add(messageId)
+
+      if (!isFromGuardian) {
+        dispatch({
+          type: 'MERGE_MESSAGES',
+          messages: [incomingMessage],
+        })
+        return
+      }
 
       const currentState = stateRef.current
 
@@ -564,10 +848,6 @@ export function PatientIncomingChatProvider({
       })
 
       // 환자 자신의 메시지는 기록만 하고 인터럽트 하지 않음
-      if (!isFromGuardian) {
-        return
-      }
-
       dispatch({ type: 'MARK_MESSAGE_UNREAD', messageId })
 
       const route = currentState.currentRoute ?? getRouteContext(pathname)
@@ -575,9 +855,8 @@ export function PatientIncomingChatProvider({
         currentState.interruptState === 'incoming_interrupt' ||
         currentState.interruptState === 'reply_mode'
 
-      if (route.responseSurface === 'inline' && route.canEnterReplyMode && !alreadyHandling) {
-        armTimeout(messageId)
-        void enterReplyModeInternal(messageId, incomingMessage)
+      if (route.responseSurface === 'inline') {
+        dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId })
         return
       }
 
@@ -594,7 +873,77 @@ export function PatientIncomingChatProvider({
     [pathname],
   )
 
-  usePatientStomp({ onChatMessage: handleStompChat })
+  const { connected, sendChat } = usePatientStomp({ onChatMessage: handleStompChat })
+
+  const dispatchOutgoingPatientChat = useCallback(
+    async (input: DispatchPatientChatInput): Promise<DispatchPatientChatResult> => {
+      const text = input.text.trim()
+
+      if (!text) {
+        return {
+          success: false,
+          error: '메시지 내용이 비어 있습니다.',
+        }
+      }
+
+      const currentState = stateRef.current
+      const resolvedReplyToId = input.replyToId ?? getPreferredReplyTargetId(currentState)
+
+      const outgoingMessage = createOutgoingPatientMessage(
+        {
+          ...input,
+          text,
+          replyToId: resolvedReplyToId ?? undefined,
+        },
+        ++outgoingSequenceRef.current,
+      )
+
+      if (getActiveApiMode() === 'real') {
+        if (!connected) {
+          return {
+            success: false,
+            error: '실시간 채팅 연결이 아직 준비되지 않았습니다.',
+          }
+        }
+
+        try {
+          sendChat({
+            text,
+            contentType: input.contentType ?? 'TEXT',
+            phraseId: input.phraseId,
+            exprId: input.exprId,
+          })
+        } catch (error) {
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : '실시간 채팅 전송에 실패했습니다.',
+          }
+        }
+      }
+
+      dispatch({
+        type: 'MERGE_MESSAGES',
+        messages: [outgoingMessage],
+      })
+
+      if (resolvedReplyToId) {
+        dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId: resolvedReplyToId })
+      }
+
+      return {
+        success: true,
+        message: outgoingMessage,
+      }
+    },
+    [connected, sendChat],
+  )
+
+  useEffect(() => registerPatientChatDispatcher(dispatchOutgoingPatientChat), [
+    dispatchOutgoingPatientChat,
+  ])
 
   // ----- 타이머 관련 effects -----
 
@@ -733,9 +1082,8 @@ export function PatientIncomingChatProvider({
       currentState.interruptState === 'incoming_interrupt' ||
       currentState.interruptState === 'reply_mode'
 
-    if (route.responseSurface === 'inline' && route.canEnterReplyMode && !alreadyHandlingConversation) {
-      armTimeout(incomingMessage.id)
-      void enterReplyModeInternal(incomingMessage.id, incomingMessage)
+    if (route.responseSurface === 'inline') {
+      dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId: incomingMessage.id })
       return
     }
 
@@ -820,6 +1168,19 @@ export function PatientIncomingChatProvider({
     }
 
     void enterReplyModeInternal(targetMessageId)
+  }
+
+  function focusLatestPendingMessage() {
+    const targetMessageId =
+      getPreferredReplyTargetId(stateRef.current) ??
+      getLatestUnresolvedGuardianMessage(stateRef.current.messages)?.id
+
+    if (!targetMessageId) {
+      return
+    }
+
+    clearTimeoutState()
+    dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId: targetMessageId })
   }
 
   function openLatestPendingReply() {
@@ -985,6 +1346,7 @@ export function PatientIncomingChatProvider({
     setRoutePathname,
     triggerIncomingPreset,
     triggerDuplicateMessage,
+    focusLatestPendingMessage,
     openLatestPendingReply,
     enterReplyMode,
     retrySuggestions,

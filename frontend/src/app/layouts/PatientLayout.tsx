@@ -19,7 +19,6 @@ import { ROUTE_PATHS } from '../router/routePaths'
 
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
 const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
-const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
 
 const patientLogoutButtonStyle = {
   position: 'fixed',
@@ -115,40 +114,11 @@ function PatientLayoutShell() {
             unreadCount={chat.unreadCount}
             currentRoute={chat.state.currentRoute}
             pausedByInterrupt={chat.state.isMediaPausedByInterrupt}
-            onReplyNow={() => chat.enterReplyMode(chat.activeMessage?.id ?? undefined)}
+            onReplyNow={() => {
+              chat.focusLatestPendingMessage()
+              navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+            }}
             onLater={chat.deferActiveMessage}
-          />
-        </Suspense>
-      ) : null}
-
-      {!isCalibrationRoute && chat.shouldShowReplyOverlay ? (
-        <Suspense fallback={null}>
-          <ReplyModePanel
-            overlay
-            message={chat.activeReplyMessage}
-            status={chat.state.status}
-            suggestionState={chat.state.suggestionState}
-            fallbackState={chat.state.fallbackState}
-            suggestions={chat.state.suggestions}
-            selectedSuggestionId={chat.state.selectedSuggestionId}
-            suggestionError={chat.state.suggestionError}
-            sendError={chat.state.sendError}
-            manualInputMode={chat.state.manualInputMode}
-            manualDraft={chat.state.manualDraft}
-            manualWordBank={chat.manualWordBank}
-            unresolvedCount={chat.unresolvedCount}
-            timeoutMs={chat.timeoutMs}
-            onSelectSuggestion={chat.sendSuggestedReply}
-            onRetrySuggestions={chat.retrySuggestions}
-            onOpenManualInputSelect={chat.openManualInputSelect}
-            onSelectManualInputMode={chat.setManualInputMode}
-            onDraftChange={chat.updateManualDraft}
-            onAppendWord={chat.appendManualWord}
-            onClearDraft={chat.clearManualDraft}
-            onSendManualReply={chat.sendManualReply}
-            onDefer={chat.deferActiveMessage}
-            onClose={chat.closeReplyMode}
-            onOpenLatestPendingReply={chat.openLatestPendingReply}
           />
         </Suspense>
       ) : null}

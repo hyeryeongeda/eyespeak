@@ -54,7 +54,6 @@ const headerStyle: CSSProperties = {
   color: '#203042',
 }
 
-/** 3열 x 2행: 좌측 4칸 콘텐츠, 우측 상단 페이지네이션, 우측 하단 뒤로가기 */
 const gridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
@@ -112,7 +111,6 @@ const loadingMessageStyle: CSSProperties = {
   color: '#647587',
 }
 
-/** 정렬 기준: 정책 미확정 시 mock 고정. 추후 정렬 선택 UI 붙일 때 이 값만 바꾸면 됨 */
 const SORT_KEY: FavoritesSortKey = 'recentUsed'
 const TRACKING_BACK_BUTTON = 'favorites-back'
 const TRACKING_PAGINATION_PREV = 'favorites-pagination-prev'
@@ -126,23 +124,23 @@ function getFavoriteTrackingId(itemId: string) {
 function getStatusLabel(status: FavoritesStatus): string {
   switch (status) {
     case 'idle':
-      return '대기 중'
+      return '?湲?以?'
     case 'loading':
-      return '즐겨찾기를 불러오는 중입니다'
+      return '利먭꺼李얘린瑜?遺덈윭?ㅻ뒗 以묒엯?덈떎'
     case 'visible':
-      return '항목을 선택하세요'
+      return '??ぉ???좏깮?섏꽭??'
     case 'selecting':
-      return '선택 반영 중'
+      return '?좏깮 諛섏쁺 以?'
     case 'completed':
-      return '선택했어요'
+      return '?좏깮?덉뼱??'
     case 'empty':
-      return '등록된 즐겨찾기가 없어요'
+      return '?깅줉??利먭꺼李얘린媛 ?놁뼱??'
     case 'transitioning':
-      return '화면 이동 중'
+      return '?붾㈃ ?대룞 以?'
     case 'error':
-      return '오류가 발생했어요'
+      return '?ㅻ쪟媛 諛쒖깮?덉뼱??'
     default:
-      return '즐겨찾기'
+      return '利먭꺼李얘린'
   }
 }
 
@@ -189,9 +187,11 @@ export default function FavoritesPage() {
     async function loadInitialFavorites() {
       try {
         const data = await fetchFavorites(patientId, SORT_KEY)
+
         if (!isActive) {
           return
         }
+
         setList(data)
         setPageIndex(0)
         setStatus(data.length === 0 ? 'empty' : 'visible')
@@ -199,8 +199,9 @@ export default function FavoritesPage() {
         if (!isActive) {
           return
         }
+
         setErrorKind('fetch')
-        setErrorMessage('목록을 불러오지 못했어요. 다시 시도해 주세요.')
+        setErrorMessage('紐⑸줉??遺덈윭?ㅼ? 紐삵뻽?댁슂. ?ㅼ떆 ?쒕룄??二쇱꽭??')
         setStatus('error')
       }
     }
@@ -217,16 +218,10 @@ export default function FavoritesPage() {
     navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
   }, [navigate])
 
-  /**
-   * 선택 완료 후 동작.
-   * MVP: 현재 화면 유지. 정책 확정 후 "대화하기 메인으로 복귀" 등으로 변경 시 이 블록만 수정.
-   */
   const handleAfterSelection = useCallback((_item: FavoriteItem, success: boolean) => {
     if (success) {
-      setFeedbackText('선택했어요')
+      setFeedbackText('?좏깮?덉뼱??')
       setStatus('completed')
-      // MVP: stay on page. Uncomment below when policy is "return to talk main":
-      // navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
     }
   }, [])
 
@@ -235,29 +230,38 @@ export default function FavoritesPage() {
       setStatus('selecting')
       setErrorKind(null)
       setErrorMessage('')
+
       try {
-        const result = await submitFavoriteSelection(patientId, item.id, item.text)
-        if (result.success) {
-          await submitPatientUtterance({
-            text: item.text,
-            source: 'manual',
-          })
-          try {
-            await playPatientUtteranceTts({
-              text: item.text,
-            })
-          } catch (error) {
-            console.warn('Favorite utterance TTS playback failed.', error)
+        await submitPatientUtterance({
+          text: item.text,
+          source: 'manual',
+        })
+
+        try {
+          const result = await submitFavoriteSelection(patientId, item.id, item.text)
+
+          if (!result.success) {
+            console.warn(
+              'Favorite selection persistence failed after chat send.',
+              result.errorMessage,
+            )
           }
-          handleAfterSelection(item, true)
-        } else {
-          setErrorKind('submit')
-          setErrorMessage(result.errorMessage ?? '선택을 반영하지 못했어요. 다시 선택해 주세요.')
-          setStatus('error')
+        } catch (error) {
+          console.warn('Favorite selection persistence threw after chat send.', error)
         }
+
+        try {
+          await playPatientUtteranceTts({
+            text: item.text,
+          })
+        } catch (error) {
+          console.warn('Favorite utterance TTS playback failed.', error)
+        }
+
+        handleAfterSelection(item, true)
       } catch {
         setErrorKind('submit')
-        setErrorMessage('선택을 반영하지 못했어요. 다시 선택해 주세요.')
+        setErrorMessage('?좏깮??諛섏쁺?섏? 紐삵뻽?댁슂. ?ㅼ떆 ?좏깮??二쇱꽭??')
         setStatus('error')
       }
     },
@@ -265,16 +269,22 @@ export default function FavoritesPage() {
   )
 
   const handlePrevPage = useCallback(() => {
-    if (pageIndex <= 0) return
+    if (pageIndex <= 0) {
+      return
+    }
+
     setStatus('transitioning')
-    setPageIndex(p => p - 1)
+    setPageIndex(currentPage => currentPage - 1)
     setStatus('visible')
   }, [pageIndex])
 
   const handleNextPage = useCallback(() => {
-    if (pageIndex >= totalPages - 1) return
+    if (pageIndex >= totalPages - 1) {
+      return
+    }
+
     setStatus('transitioning')
-    setPageIndex(p => p + 1)
+    setPageIndex(currentPage => currentPage + 1)
     setStatus('visible')
   }, [pageIndex, totalPages])
 
@@ -282,13 +292,13 @@ export default function FavoritesPage() {
     return (
       <main
         style={pageWrapStyle}
-        aria-label="즐겨찾기"
+        aria-label="利먭꺼李얘린"
         ref={element => {
           dwellFeedback.containerRef.current = element
         }}
       >
         <div style={headerStyle}>{getStatusLabel('loading')}</div>
-        <div style={loadingMessageStyle}>잠시만 기다려 주세요.</div>
+        <div style={loadingMessageStyle}>?좎떆留?湲곕떎??二쇱꽭??</div>
         <div style={bottomBarStyle}>
           <button
             type="button"
@@ -303,7 +313,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            대화하기로 돌아가기
+            ??뷀븯湲곕줈 ?뚯븘媛湲?
           </button>
         </div>
       </main>
@@ -314,7 +324,7 @@ export default function FavoritesPage() {
     return (
       <main
         style={pageWrapStyle}
-        aria-label="즐겨찾기"
+        aria-label="利먭꺼李얘린"
         ref={element => {
           dwellFeedback.containerRef.current = element
         }}
@@ -335,7 +345,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            대화하기로 돌아가기
+            ??뷀븯湲곕줈 ?뚯븘媛湲?
           </button>
         </div>
       </main>
@@ -346,17 +356,17 @@ export default function FavoritesPage() {
     return (
       <main
         style={pageWrapStyle}
-        aria-label="즐겨찾기"
+        aria-label="利먭꺼李얘린"
         ref={element => {
           dwellFeedback.containerRef.current = element
         }}
       >
         <div style={headerStyle}>{getStatusLabel('error')}</div>
         <FavoritesErrorState
-          title="즐겨찾기를 불러올 수 없어요"
+          title="利먭꺼李얘린瑜?遺덈윭?????놁뼱??"
           description={errorMessage}
           onRetry={loadFavorites}
-          retryLabel="다시 불러오기"
+          retryLabel="?ㅼ떆 遺덈윭?ㅺ린"
           retryTrackingId={TRACKING_RETRY_FETCH}
           dwellFeedback={dwellFeedback}
         />
@@ -374,7 +384,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            대화하기로 돌아가기
+            ??뷀븯湲곕줈 ?뚯븘媛湲?
           </button>
         </div>
       </main>
@@ -384,24 +394,24 @@ export default function FavoritesPage() {
   return (
     <main
       style={pageWrapStyle}
-      aria-label="즐겨찾기"
+      aria-label="利먭꺼李얘린"
       ref={element => {
         dwellFeedback.containerRef.current = element
       }}
     >
       <div style={headerStyle} aria-live="polite">
-        {PAGE_CODE} · {getStatusLabel(status)}
-        {feedbackText ? ` · ${feedbackText}` : ''}
-        {showPagination ? ` · ${pageIndex + 1}/${totalPages}` : ''}
+        {PAGE_CODE} 쨌 {getStatusLabel(status)}
+        {feedbackText ? ` 쨌 ${feedbackText}` : ''}
+        {showPagination ? ` 쨌 ${pageIndex + 1}/${totalPages}` : ''}
       </div>
 
       {status === 'error' && errorKind === 'submit' ? (
         <>
           <FavoritesErrorState
-            title="선택을 반영하지 못했어요"
+            title="?좏깮??諛섏쁺?섏? 紐삵뻽?댁슂"
             description={errorMessage}
             onRetry={() => setStatus('visible')}
-            retryLabel="다시 선택하기"
+            retryLabel="?ㅼ떆 ?좏깮?섍린"
             retryTrackingId="favorites-retry-submit"
             dwellFeedback={dwellFeedback}
           />
@@ -419,12 +429,12 @@ export default function FavoritesPage() {
                   remainingMs={dwellFeedback.remainingMs}
                 />
               ) : null}
-              대화하기로 돌아가기
+              ??뷀븯湲곕줈 ?뚯븘媛湲?
             </button>
           </div>
         </>
       ) : (
-        <section style={gridStyle} aria-label="즐겨찾기 목록">
+        <section style={gridStyle} aria-label="利먭꺼李얘린 紐⑸줉">
           {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => (
             <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
               {currentItems[index] ? (
@@ -456,8 +466,8 @@ export default function FavoritesPage() {
           </div>
           <div style={{ ...slotWrapStyle, gridArea: 'back' }}>
             <FavoritesActionCard
-              primaryText="뒤로가기"
-              description="메인 화면으로"
+              primaryText="?ㅻ줈媛湲?"
+              description="硫붿씤 ?붾㈃?쇰줈"
               onClick={handleBack}
               trackingId={TRACKING_BACK_BUTTON}
               dwellFeedback={dwellFeedback}

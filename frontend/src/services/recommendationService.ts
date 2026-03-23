@@ -26,6 +26,7 @@ import type {
 import { createServiceFailure } from '../utils/errorMapper'
 import { getActiveAuthSession } from './authSessionRegistry'
 import { getActiveAiApiMode } from './aiServiceConfig'
+import { getActiveApiMode } from '../config/env'
 import {
   composeRecommendationApi,
   getRecommendationCategoriesApi,
@@ -35,13 +36,9 @@ import {
   recordRecommendationApi,
 } from './recommendationApi'
 import { playSynthesizeTts } from './ttsService'
+import { dispatchPatientChatMessage } from './patientChatDispatch'
 import { mockSendPatientReply, type MockSendPatientReplyInput, type MockSendPatientReplyResult } from './mockPatientChatService'
 import { buildMockSuggestedResponses } from './mockSuggestionService'
-
-const timestampFormatter = new Intl.DateTimeFormat('sv-SE', {
-  dateStyle: 'short',
-  timeStyle: 'medium',
-})
 
 const knownCategoryKeys = new Set(
   CUSTOM_TALK_CATEGORY_POOL.map(category => category.key),
@@ -106,10 +103,6 @@ function getSubmittedAt(value?: string) {
   return value ?? new Date().toISOString()
 }
 
-function getDisplayTimestamp(value?: string) {
-  return timestampFormatter.format(value ? new Date(value) : new Date())
-}
-
 function mapReplyTypeToSendSource(
   value: MockSendPatientReplyInput['type'],
 ): RecommendationSendSource {
@@ -128,6 +121,46 @@ function toCustomTalkSubmitSource(
   }
 
   return 'manual'
+}
+
+async function sendPatientChatNow(input: {
+  text: string
+  type?: 'text' | 'suggested_reply' | 'manual_text' | 'word_combination'
+  replyToId?: string
+}) {
+  const result = await dispatchPatientChatMessage({
+    text: input.text,
+    type: input.type,
+    replyToId: input.replyToId,
+    contentType: 'TEXT',
+  })
+
+  if (!result.success || !result.message) {
+    throw new Error(result.error ?? '실시간 채팅 전송에 실패했습니다.')
+  }
+
+  return result.message
+}
+
+function recordRecommendationInBackground(input: {
+  text: string
+  source: RecommendationSendSource
+  replyToId?: string
+}) {
+  if (getActiveAiApiMode() !== 'real') {
+    return
+  }
+
+  void recordRecommendationApi(
+    {
+      text: input.text,
+      source: input.source,
+      replyToId: input.replyToId,
+    },
+    getAccessToken(),
+  ).catch(error => {
+    console.warn('Recommendation record sync failed after patient chat send.', error)
+  })
 }
 
 export async function fetchVisibleCustomCategories(input: {
@@ -234,26 +267,39 @@ export async function submitPatientUtterance(input: {
     throw new Error('전송할 문장이 비어 있습니다.')
   }
 
-  if (getActiveAiApiMode() !== 'real') {
-    return submitCustomTalkUtteranceMock({
+  if (getActiveApiMode() !== 'real') {
+    const mockResponse = await submitCustomTalkUtteranceMock({
       ...input,
       text: normalizedText,
       source: toCustomTalkSubmitSource(input.source),
     })
+
+    const message = await sendPatientChatNow({
+      text: normalizedText,
+      type: 'text',
+    })
+
+    return {
+      success: true,
+      id: message.id ?? mockResponse.id,
+      submittedAt: getSubmittedAt(mockResponse.submittedAt),
+    }
   }
 
-  const response = await recordRecommendationApi(
-    {
-      text: normalizedText,
-      source: input.source,
-    },
-    getAccessToken(),
-  )
+  const message = await sendPatientChatNow({
+    text: normalizedText,
+    type: 'text',
+  })
+
+  recordRecommendationInBackground({
+    text: normalizedText,
+    source: input.source,
+  })
 
   return {
     success: true,
-    id: response.messageId ?? `recommendation-${input.source}-${Date.now()}`,
-    submittedAt: getSubmittedAt(response.submittedAt),
+    id: message.id ?? `recommendation-${input.source}-${Date.now()}`,
+    submittedAt: getSubmittedAt(message.createdAt),
   }
 }
 
@@ -305,29 +351,28 @@ export async function fetchSuggestedReplies(input: {
 export async function sendPatientReply(
   input: MockSendPatientReplyInput,
 ): Promise<MockSendPatientReplyResult> {
-  if (getActiveAiApiMode() !== 'real') {
+  if (getActiveApiMode() !== 'real') {
     return mockSendPatientReply(input)
   }
 
   try {
-    const response = await recordRecommendationApi(
-      {
-        text: input.content,
-        source: mapReplyTypeToSendSource(input.type),
-        replyToId: input.replyToId,
-      },
-      getAccessToken(),
-    )
+    const message = await sendPatientChatNow({
+      text: input.content,
+      type: input.type,
+      replyToId: input.replyToId,
+    })
+
+    recordRecommendationInBackground({
+      text: input.content,
+      source: mapReplyTypeToSendSource(input.type),
+      replyToId: input.replyToId,
+    })
 
     return {
       success: true,
       message: {
-        id: response.messageId ?? `patient-reply-${Date.now()}`,
-        sender: 'patient',
+        ...message,
         type: input.type,
-        content: input.content,
-        createdAt: getDisplayTimestamp(response.submittedAt),
-        status: 'replied',
         replyToId: input.replyToId,
       },
     }
