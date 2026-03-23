@@ -151,21 +151,33 @@ class HybridTracker:
         rx, ry, ear, is_blink = self.iris_normalizer(lm)
         trig = self.trigger.update(ear, time.time())
         self._ear_samples.append(ear)
-        if rx is None:
-            out.update(
-                {
-                    "face": True,
-                    "ear": round(ear, 3),
-                    "blink": is_blink,
-                    "trigger": trig,
-                }
-            )
-            return out
 
         hy, hp = head_pose_from_landmarks(lm, w, h)
+        yn: Optional[float] = None
+        pn: Optional[float] = None
         if hy is not None and hp is not None:
             yn = max(0.0, min(1.0, (hy + self._grid_yaw) / (2.0 * self._grid_yaw)))
             pn = max(0.0, min(1.0, (hp + self._grid_pitch) / (2.0 * self._grid_pitch)))
+
+        # 홍채 비율이 없을 때(깜빡임·검출 실패) 조기 반환하면 rx/ry가 null이라
+        # 웹 프론트가 tracking-unstable로 처리해 시선 포인트가 갱신되지 않는다.
+        # 얼굴·랜드마크가 있으면 헤드 포즈만으로 0~1 시선 대용 값을 채운다.
+        used_head_pose_fallback = False
+        if rx is None or ry is None:
+            if yn is None or pn is None:
+                out.update(
+                    {
+                        "face": True,
+                        "ear": round(ear, 3),
+                        "blink": is_blink,
+                        "trigger": trig,
+                    }
+                )
+                return out
+            fused_rx, fused_ry = yn, pn
+            used_head_pose_fallback = True
+            logger.debug("HybridTracker: iris unavailable; using head-pose fallback gaze")
+        elif yn is not None and pn is not None:
             fused_rx = self._w_iris * rx + self._w_head * yn
             fused_ry = self._w_iris * ry + self._w_head * pn
         else:
@@ -215,7 +227,7 @@ class HybridTracker:
             "raw_ry": round(float(raw_ry), 4),
             "ear": round(ear, 3),
             "face": True,
-            "blink": False,
+            "blink": bool(is_blink) if used_head_pose_fallback else False,
             "trigger": trig,
             "screen_x": round(screen_x, 4),
             "screen_y": round(screen_y, 4),

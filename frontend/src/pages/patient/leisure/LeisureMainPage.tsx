@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
 import {
@@ -10,6 +10,7 @@ import type { LeisureCategoryId, LeisureContent, LeisureMainStatus } from '../..
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureCategoryCard from './components/LeisureCategoryCard'
 import LeisureLayout from './components/LeisureLayout'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 function getMainStatusText(status: LeisureMainStatus) {
   switch (status) {
@@ -102,6 +103,17 @@ export default function LeisureMainPage() {
 
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
   const [featuredContent, setFeaturedContent] = useState<LeisureContent | null>(null)
+
+  const leisureMainCellMapping = useMemo(() => ({
+    0: `main-category-${categoryCards[0]?.id ?? 'sports'}`,
+    1: `main-category-${categoryCards[1]?.id ?? 'news'}`,
+    2: `main-category-${categoryCards[2]?.id ?? 'music'}`,
+    3: `main-category-${categoryCards[3]?.id ?? 'radio'}`,
+    4: `main-category-${categoryCards[4]?.id ?? 'audiobook'}`,
+    5: 'main-back',
+  } as Record<number, string | null>), [categoryCards])
+
+  useCellMapping(leisureMainCellMapping)
 
   useEffect(() => {
     let isMounted = true

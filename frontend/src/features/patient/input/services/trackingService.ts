@@ -148,6 +148,42 @@ export function getInteractiveElementSelectionKey(element: HTMLElement) {
   return path.join('>')
 }
 
+export function getInteractiveElementFromCell(
+  cell: number | null,
+  cellMapping: Record<number, string | null> | null,
+): HTMLElement | null {
+  if (cell === null || !cellMapping) {
+    return null
+  }
+
+  const trackingId = cellMapping[cell]
+  if (!trackingId) {
+    return null
+  }
+
+  const element = document.querySelector<HTMLElement>(
+    `[${TRACKING_TARGET_ATTRIBUTE}="${trackingId}"]`
+  )
+
+  if (!element || !element.isConnected || isInteractiveElementDisabled(element)) {
+    return null
+  }
+
+  return element
+}
+
+export function getTrackingTargetIdFromCell<TTarget extends string>(
+  cell: number | null,
+  cellMapping: Record<number, string | null> | null,
+): TTarget | null {
+  if (cell === null || !cellMapping) {
+    return null
+  }
+
+  const trackingId = cellMapping[cell]
+  return (trackingId ?? null) as TTarget | null
+}
+
 function isInteractiveElementDisabled(element: HTMLElement) {
   if (element.matches(':disabled')) {
     return true

@@ -15,6 +15,7 @@ import {
   type PatientDoubleBlinkDetail,
 } from '../services/patientModeBridge'
 import { useGazeInputStore } from '../stores/gazeInputStore'
+import { useCellMappingStore } from '../stores/cellMappingStore'
 import { usePatientModeStore } from '../stores/patientModeStore'
 import {
   ACTIVATION_DELAY_OPTIONS,
@@ -31,12 +32,206 @@ const GAZE_TARGET_SWITCH_GRACE_MS = 140
 interface GazeTarget {
   element: HTMLElement
   key: string
+  source: 'cell-mapping' | 'point-hit-test' | 'cell-dom-fallback'
+  cell: number | null
 }
 
 type PatientSelectionCommitSource = 'dwell' | 'double-blink'
 
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
   return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
+}
+
+function getElementByTrackingId(trackingId: string): HTMLElement | null {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const escapedTrackingId =
+    typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(trackingId)
+      : trackingId.replace(/["\\]/g, '\\$&')
+
+  return document.querySelector<HTMLElement>(`[data-tracking-id="${escapedTrackingId}"]`)
+}
+
+function isPatientMainTrackingId(value: string | null | undefined) {
+  return value === 'talk' || value === 'call' || value === 'leisure'
+}
+
+function getPatientMainPointTarget(gazePoint: { clientX: number; clientY: number } | null): GazeTarget | null {
+  if (!gazePoint) {
+    return null
+  }
+
+  const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
+
+  if (!element) {
+    return null
+  }
+
+  const trackingId = element.dataset.trackingId
+
+  if (!isPatientMainTrackingId(trackingId)) {
+    return null
+  }
+
+  return {
+    element,
+    key: getInteractiveElementSelectionKey(element),
+    source: 'point-hit-test',
+    cell: null,
+  }
+}
+
+function getFallbackPatientMainCellMapping(): Record<number, string | null> | null {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const hasPatientMainTargets =
+    document.querySelector('[data-tracking-id="talk"]') !== null &&
+    document.querySelector('[data-tracking-id="call"]') !== null &&
+    document.querySelector('[data-tracking-id="leisure"]') !== null
+
+  if (!hasPatientMainTargets) {
+    return null
+  }
+
+  return {
+    0: 'talk',
+    1: 'talk',
+    2: 'talk',
+    3: 'call',
+    4: 'call',
+    5: 'leisure',
+  }
+}
+
+function getMappedGazeTarget(
+  cell: number | null,
+  mapping: Record<number, string | null> | null,
+): GazeTarget | null {
+  const mappedTrackingId = typeof cell === 'number' && mapping ? (mapping[cell] ?? null) : null
+
+  if (!mappedTrackingId) {
+    return null
+  }
+
+  const mappedElement = getElementByTrackingId(mappedTrackingId)
+
+  if (!mappedElement) {
+    return null
+  }
+
+  return {
+    element: mappedElement,
+    key: getInteractiveElementSelectionKey(mappedElement),
+    source: 'cell-mapping',
+    cell,
+  }
+}
+
+function isElementVisuallyInteractive(element: HTMLElement) {
+  if (!element.isConnected) {
+    return false
+  }
+
+  if (element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') {
+    return false
+  }
+
+  const computedStyle = window.getComputedStyle(element)
+
+  if (
+    computedStyle.display === 'none' ||
+    computedStyle.visibility === 'hidden' ||
+    computedStyle.pointerEvents === 'none'
+  ) {
+    return false
+  }
+
+  const rect = element.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
+function getNearestInteractiveTargetFromPoint(
+  point: { clientX: number; clientY: number } | null,
+): GazeTarget | null {
+  if (typeof document === 'undefined' || !point) {
+    return null
+  }
+
+  const interactiveElements = Array.from(
+    document.querySelectorAll<HTMLElement>('button, a[href], input[type="button"], input[type="submit"], [role="button"]')
+  ).filter(isElementVisuallyInteractive)
+
+  if (interactiveElements.length === 0) {
+    return null
+  }
+
+  const nearest = interactiveElements.reduce<HTMLElement | null>((best, current) => {
+    if (!best) {
+      return current
+    }
+
+    const cr = current.getBoundingClientRect()
+    const br = best.getBoundingClientRect()
+
+    const ccx = cr.left + cr.width / 2
+    const ccy = cr.top + cr.height / 2
+    const bcx = br.left + br.width / 2
+    const bcy = br.top + br.height / 2
+
+    const currentDist = Math.hypot(point.clientX - ccx, point.clientY - ccy)
+    const bestDist = Math.hypot(point.clientX - bcx, point.clientY - bcy)
+
+    return currentDist < bestDist ? current : best
+  }, null)
+
+  if (!nearest) {
+    return null
+  }
+
+  return {
+    element: nearest,
+    key: getInteractiveElementSelectionKey(nearest),
+    source: 'point-hit-test',
+    cell: null,
+  }
+}
+
+function getFallbackInteractiveElementFromCell(cell: number | null): GazeTarget | null {
+  if (typeof document === 'undefined' || cell === null) {
+    return null
+  }
+
+  const interactiveElements = Array.from(
+    document.querySelectorAll<HTMLElement>('button, a[href], input[type="button"], input[type="submit"], [role="button"]')
+  ).filter(isElementVisuallyInteractive)
+
+  if (interactiveElements.length === 0) {
+    return null
+  }
+
+  const sorted = interactiveElements.sort((a, b) => {
+    const ar = a.getBoundingClientRect()
+    const br = b.getBoundingClientRect()
+    if (Math.abs(ar.top - br.top) > 12) {
+      return ar.top - br.top
+    }
+    return ar.left - br.left
+  })
+
+  const index = Math.max(0, Math.min(sorted.length - 1, cell))
+  const element = sorted[index]
+
+  return {
+    element,
+    key: getInteractiveElementSelectionKey(element),
+    source: 'cell-dom-fallback',
+    cell,
+  }
 }
 
 function getInteractiveElementBlockReason(element: HTMLElement | null) {
@@ -69,6 +264,8 @@ export function usePatientGazeClick({
   enabled = true,
 }: UsePatientGazeClickOptions = {}) {
   const gazePoint = useGazeInputStore(state => state.point)
+  const gazeCell = useGazeInputStore(state => state.cell)
+  const cellMapping = useCellMappingStore(state => state.cellMapping)
   const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const [activationDelayMs, setActivationDelayMs] =
     useState(ACTIVATION_DELAY_OPTIONS.medium.value)
@@ -79,21 +276,40 @@ export function usePatientGazeClick({
   const [stableGazeTarget, setStableGazeTarget] = useState<GazeTarget | null>(null)
 
   const rawGazeTarget = useMemo(() => {
-    if (!enabled || !gazePoint) {
+    if (!enabled) {
       return null
     }
 
-    const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
+    if (gazePoint) {
+      const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
+      if (patientMainPointTarget) {
+        return patientMainPointTarget
+      }
 
-    if (!element) {
-      return null
+      const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
+
+      if (element) {
+        return {
+          element,
+          key: getInteractiveElementSelectionKey(element),
+          source: 'point-hit-test' as const,
+          cell: gazeCell,
+        }
+      }
+
+      const nearest = getNearestInteractiveTargetFromPoint(gazePoint)
+      if (nearest) {
+        return nearest
+      }
     }
 
-    return {
-      element,
-      key: getInteractiveElementSelectionKey(element),
-    }
-  }, [enabled, gazePoint])
+    const mappedTarget = getMappedGazeTarget(
+      gazeCell,
+      cellMapping ?? getFallbackPatientMainCellMapping(),
+    )
+
+    return mappedTarget
+  }, [cellMapping, enabled, gazeCell, gazePoint])
 
   const resolveCurrentGazeTarget = () => {
     if (stableGazeTarget?.element && stableGazeTarget.element.isConnected) {
@@ -105,40 +321,61 @@ export function usePatientGazeClick({
     }
 
     const latestPoint = useGazeInputStore.getState().point
+    const latestCell = useGazeInputStore.getState().cell
 
-    if (!latestPoint) {
-      return null
+    if (latestPoint) {
+      const patientMainPointTarget = getPatientMainPointTarget(latestPoint)
+      if (patientMainPointTarget?.element.isConnected) {
+        return patientMainPointTarget
+      }
+
+      const element = getInteractiveElementFromPoint(latestPoint.clientX, latestPoint.clientY)
+
+      if (element) {
+        return {
+          element,
+          key: getInteractiveElementSelectionKey(element),
+          source: 'point-hit-test',
+          cell: useGazeInputStore.getState().cell,
+        }
+      }
+
+      const nearest = getNearestInteractiveTargetFromPoint(latestPoint)
+      if (nearest?.element.isConnected) {
+        return nearest
+      }
     }
 
-    const element = getInteractiveElementFromPoint(latestPoint.clientX, latestPoint.clientY)
-
-    if (!element) {
-      return null
+    const mappedTarget = getMappedGazeTarget(
+      latestCell,
+      useCellMappingStore.getState().cellMapping ?? getFallbackPatientMainCellMapping(),
+    )
+    if (mappedTarget?.element.isConnected) {
+      return mappedTarget
     }
 
-    return {
-      element,
-      key: getInteractiveElementSelectionKey(element),
-    }
+    return null
   }
 
   const commitSelection = (source: PatientSelectionCommitSource) => {
-    const isGlobalMenuOpen = usePatientModeStore.getState().isGlobalMenuOpen
+    const { isGlobalMenuOpen, trackingStatus } = usePatientModeStore.getState()
 
     if (import.meta.env.DEV) {
-      console.info('[patient-input] confirmSelection called', {
+      console.info('[patient-input] selection-commit-attempt', {
         source,
         stableTargetKey: stableGazeTarget?.key ?? null,
         rawTargetKey: rawGazeTarget?.key ?? null,
         globalMenuOpen: isGlobalMenuOpen,
+        trackingStatus,
       })
     }
 
     if (isGlobalMenuOpen) {
       if (import.meta.env.DEV) {
-        console.info('[patient-input] click blocked reason', {
+        console.info('[patient-input] selection-commit-blocked', {
           source,
           reason: 'global-menu-open',
+          trackingStatus,
         })
       }
 
@@ -151,9 +388,10 @@ export function usePatientGazeClick({
       activeElementRef.current = null
 
       if (import.meta.env.DEV) {
-        console.info('[patient-input] click blocked reason', {
+        console.info('[patient-input] selection-commit-blocked', {
           source,
           reason: 'no-active-target',
+          trackingStatus,
         })
       }
 
@@ -166,10 +404,13 @@ export function usePatientGazeClick({
 
     if (blockReason) {
       if (import.meta.env.DEV) {
-        console.info('[patient-input] click blocked reason', {
+        console.info('[patient-input] selection-commit-blocked', {
           source,
           reason: blockReason,
           targetKey: resolvedTarget.key,
+          targetSource: resolvedTarget.source,
+          targetCell: resolvedTarget.cell,
+          trackingStatus,
         })
       }
 
@@ -179,12 +420,16 @@ export function usePatientGazeClick({
     const computedStyle = window.getComputedStyle(resolvedTarget.element)
 
     if (import.meta.env.DEV) {
-      console.info('[patient-input] active target resolved', {
+      console.info('[patient-input] selection-commit-ready', {
         source,
         targetKey: resolvedTarget.key,
+        trackingId: resolvedTarget.element.dataset.trackingId ?? null,
         tagName: resolvedTarget.element.tagName,
         pointerEvents: computedStyle.pointerEvents,
         visibility: computedStyle.visibility,
+        targetSource: resolvedTarget.source,
+        targetCell: resolvedTarget.cell,
+        trackingStatus,
       })
     }
 
@@ -192,13 +437,13 @@ export function usePatientGazeClick({
     resolvedTarget.element.click()
 
     if (import.meta.env.DEV) {
-      console.info('[patient-input] click dispatched', {
+      console.info('[patient-input] selection-commit-success', {
         source,
         targetKey: resolvedTarget.key,
-      })
-      console.info('[patient-input] state reset', {
-        source,
-        targetKey: resolvedTarget.key,
+        trackingId: resolvedTarget.element.dataset.trackingId ?? null,
+        tagName: resolvedTarget.element.tagName,
+        pointerEvents: computedStyle.pointerEvents,
+        trackingStatus,
       })
     }
 
@@ -279,12 +524,36 @@ export function usePatientGazeClick({
       return
     }
 
-    console.info('[patient-input] gaze target updated', {
+    console.info('[patient-input] gaze-target-observed', {
+      gazePointPresent: gazePoint !== null,
+      hasCellMapping: cellMapping !== null,
+      hasFallbackPatientMainMapping: getFallbackPatientMainCellMapping() !== null,
+      hasGenericCellDomFallback: getFallbackInteractiveElementFromCell(gazeCell) !== null,
+      patientMainPointTargetFound: getPatientMainPointTarget(gazePoint) !== null,
+      hasNearestPointFallback: getNearestInteractiveTargetFromPoint(gazePoint) !== null,
       rawTargetKey: rawGazeTarget?.key ?? null,
+      rawTargetSource: rawGazeTarget?.source ?? null,
+      rawTargetCell: rawGazeTarget?.cell ?? null,
       stableTargetKey: stableGazeTarget?.key ?? null,
+      stableTargetSource: stableGazeTarget?.source ?? null,
+      stableTargetCell: stableGazeTarget?.cell ?? null,
+      mappedTrackingId:
+        typeof gazeCell === 'number' && cellMapping ? (cellMapping[gazeCell] ?? null) : null,
+      gazeCell,
       updatedAt: gazePoint?.updatedAt ?? null,
     })
-  }, [enabled, gazePoint?.updatedAt, rawGazeTarget?.key, stableGazeTarget?.key])
+  }, [
+    cellMapping,
+    enabled,
+    gazeCell,
+    gazePoint?.updatedAt,
+    rawGazeTarget?.cell,
+    rawGazeTarget?.key,
+    rawGazeTarget?.source,
+    stableGazeTarget?.cell,
+    stableGazeTarget?.key,
+    stableGazeTarget?.source,
+  ])
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
