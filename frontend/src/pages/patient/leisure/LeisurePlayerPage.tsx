@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
 import {
@@ -13,6 +13,7 @@ import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
+import { usePatientLeisureResumeStore } from '../../../stores/patientLeisureResumeStore'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {
@@ -122,12 +123,132 @@ const iframeWrapStyle: CSSProperties = {
   backgroundColor: '#dde8f8',
 }
 
+const YOUTUBE_PLAYER_STATE_PLAYING = 1
+const YOUTUBE_PLAYER_STATE_PAUSED = 2
+const YOUTUBE_PLAYER_STATE_BUFFERING = 3
+const YOUTUBE_IFRAME_API_SRC = 'https://www.youtube.com/iframe_api'
+
+interface YouTubePlayerInstance {
+  destroy: () => void
+  getCurrentTime: () => number
+  getPlayerState: () => number
+  pauseVideo: () => void
+  playVideo: () => void
+  seekTo: (seconds: number, allowSeekAhead?: boolean) => void
+}
+
+interface YouTubeNamespace {
+  Player: new (
+    element: HTMLIFrameElement,
+    config: {
+      events?: {
+        onReady?: () => void
+        onStateChange?: (event: { data: number }) => void
+      }
+    },
+  ) => YouTubePlayerInstance
+}
+
+type YouTubeWindow = Window & typeof globalThis & {
+  YT?: YouTubeNamespace
+  onYouTubeIframeAPIReady?: () => void
+}
+
+interface LeisurePlaybackSnapshot {
+  currentTime: number | null
+  wasPlaying: boolean
+}
+
+let youTubeIframeApiPromise: Promise<YouTubeNamespace> | null = null
+
+function loadYouTubeIframeApi(): Promise<YouTubeNamespace> {
+  if (typeof window === 'undefined') {
+    return Promise.reject(new Error('YouTube iframe API is unavailable on the server.'))
+  }
+
+  const youTubeWindow = window as YouTubeWindow
+
+  if (youTubeWindow.YT?.Player) {
+    return Promise.resolve(youTubeWindow.YT)
+  }
+
+  if (youTubeIframeApiPromise) {
+    return youTubeIframeApiPromise
+  }
+
+  youTubeIframeApiPromise = new Promise<YouTubeNamespace>((resolve, reject) => {
+    const existingScript = document.querySelector<HTMLScriptElement>(
+      `script[src="${YOUTUBE_IFRAME_API_SRC}"]`,
+    )
+
+    const handleReady = () => {
+      const namespace = (window as YouTubeWindow).YT
+
+      if (namespace?.Player) {
+        resolve(namespace)
+        return
+      }
+
+      reject(new Error('YouTube iframe API failed to initialize.'))
+    }
+
+    const previousCallback = youTubeWindow.onYouTubeIframeAPIReady
+    youTubeWindow.onYouTubeIframeAPIReady = () => {
+      previousCallback?.()
+      handleReady()
+    }
+
+    if (existingScript) {
+      existingScript.addEventListener('load', handleReady, { once: true })
+      existingScript.addEventListener(
+        'error',
+        () => reject(new Error('Failed to load YouTube iframe API script.')),
+        { once: true },
+      )
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = YOUTUBE_IFRAME_API_SRC
+    script.async = true
+    script.addEventListener('error', () => {
+      reject(new Error('Failed to load YouTube iframe API script.'))
+    })
+    document.head.appendChild(script)
+  })
+
+  return youTubeIframeApiPromise
+}
+
+function buildYouTubePlayerUrl(embedUrl: string) {
+  const url = new URL(embedUrl)
+  url.searchParams.set('rel', '0')
+  url.searchParams.set('modestbranding', '1')
+  url.searchParams.set('playsinline', '1')
+  url.searchParams.set('enablejsapi', '1')
+
+  if (typeof window !== 'undefined') {
+    url.searchParams.set('origin', window.location.origin)
+  }
+
+  return url.toString()
+}
+
 export default function LeisurePlayerPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const chat = usePatientIncomingChat()
   const params = useParams()
   const routeState = (location.state as LeisurePlayerRouteState | null) ?? null
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
+  const playerRef = useRef<YouTubePlayerInstance | null>(null)
+  const pausedSnapshotRef = useRef<LeisurePlaybackSnapshot | null>(null)
+  const handledInterruptMessageIdRef = useRef<string | null>(null)
+  const appliedResumeAtRef = useRef<number | null>(null)
+  const resumeContext = usePatientLeisureResumeStore(state => state.resumeContext)
+  const setResumeContext = usePatientLeisureResumeStore(state => state.setResumeContext)
+  const patchResumeContext = usePatientLeisureResumeStore(state => state.patchResumeContext)
+  const clearResumeContext = usePatientLeisureResumeStore(state => state.clearResumeContext)
 
   const [status, setStatus] = useState<LeisurePlayerStatus>('idle')
   const [content, setContent] = useState<LeisureContent | null>(null)
@@ -179,8 +300,246 @@ export default function LeisurePlayerPage() {
     content?.categoryId || routeState?.categoryId
       ? getPatientLeisureCategoryPath(content?.categoryId ?? routeState?.categoryId ?? '')
       : ROUTE_PATHS.PATIENT_LEISURE
+  const currentPlayerPath = `${location.pathname}${location.search}`
+  const playerSrc = useMemo(
+    () => (content ? buildYouTubePlayerUrl(content.embedUrl) : ''),
+    [content],
+  )
+
+  const capturePlaybackSnapshot = useCallback((): LeisurePlaybackSnapshot => {
+    const player = playerRef.current
+
+    if (!player) {
+      return {
+        currentTime: null,
+        wasPlaying: status === 'playing',
+      }
+    }
+
+    const playerState = player.getPlayerState()
+
+    return {
+      currentTime: Math.max(0, player.getCurrentTime()),
+      wasPlaying:
+        playerState === YOUTUBE_PLAYER_STATE_PLAYING ||
+        playerState === YOUTUBE_PLAYER_STATE_BUFFERING,
+    }
+  }, [status])
+
+  const applyPlaybackSnapshot = useCallback((snapshot: LeisurePlaybackSnapshot) => {
+    const player = playerRef.current
+
+    if (!player) {
+      return false
+    }
+
+    if (snapshot.currentTime != null && snapshot.currentTime > 0) {
+      player.seekTo(snapshot.currentTime, true)
+    }
+
+    if (snapshot.wasPlaying) {
+      player.playVideo()
+      setStatus('playing')
+    } else {
+      player.pauseVideo()
+      setStatus('paused')
+    }
+
+    return true
+  }, [])
+
+  useEffect(() => {
+    if (!content || !iframeRef.current) {
+      return
+    }
+
+    let isMounted = true
+    let nextPlayer: YouTubePlayerInstance | null = null
+
+    void loadYouTubeIframeApi()
+      .then(youTube => {
+        if (!isMounted || !iframeRef.current) {
+          return
+        }
+
+        nextPlayer = new youTube.Player(iframeRef.current, {
+          events: {
+            onReady: () => {
+              if (!isMounted) {
+                return
+              }
+
+              playerRef.current = nextPlayer
+              patchResumeContext(currentContext =>
+                currentContext.resumePath === currentPlayerPath &&
+                (currentContext.contentId == null || currentContext.contentId === content.id)
+                  ? {
+                      contentId: content.id,
+                      categoryId: content.categoryId,
+                      routeState,
+                      canResumePlayback: true,
+                    }
+                  : {},
+              )
+            },
+            onStateChange: event => {
+              if (!isMounted) {
+                return
+              }
+
+              if (event.data === YOUTUBE_PLAYER_STATE_PLAYING) {
+                setStatus('playing')
+                return
+              }
+
+              if (event.data === YOUTUBE_PLAYER_STATE_PAUSED) {
+                setStatus('paused')
+              }
+            },
+          },
+        })
+      })
+      .catch(error => {
+        console.warn('Failed to initialize leisure player controls.', error)
+      })
+
+    return () => {
+      isMounted = false
+
+      if (playerRef.current === nextPlayer) {
+        playerRef.current = null
+      }
+
+      nextPlayer?.destroy()
+    }
+  }, [content, currentPlayerPath, patchResumeContext, routeState])
+
+  useEffect(() => {
+    if (!content || !chat.state.isMediaPausedByInterrupt) {
+      return
+    }
+
+    const interruptMessageId =
+      chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? '__leisure_interrupt__'
+
+    if (handledInterruptMessageIdRef.current === interruptMessageId) {
+      return
+    }
+
+    const snapshot = capturePlaybackSnapshot()
+    pausedSnapshotRef.current = snapshot
+    handledInterruptMessageIdRef.current = interruptMessageId
+    playerRef.current?.pauseVideo()
+    setStatus('paused')
+    setResumeContext({
+      routeKind: 'player',
+      resumePath: currentPlayerPath,
+      fallbackPath: routeState?.fromPath ?? fallbackBackPath,
+      contentId: content.id,
+      categoryId: content.categoryId,
+      routeState,
+      playbackPositionSec: snapshot.currentTime,
+      wasPlaying: snapshot.wasPlaying,
+      canResumePlayback: Boolean(playerRef.current),
+      fromLeisure: false,
+      interruptedMessageId: interruptMessageId,
+      savedAt: Date.now(),
+    })
+  }, [
+    capturePlaybackSnapshot,
+    chat.activeMessage?.id,
+    chat.latestUnresolvedMessage?.id,
+    chat.state.isMediaPausedByInterrupt,
+    content,
+    currentPlayerPath,
+    fallbackBackPath,
+    routeState,
+    setResumeContext,
+  ])
+
+  useEffect(() => {
+    if (chat.state.isMediaPausedByInterrupt) {
+      return
+    }
+
+    const pausedSnapshot = pausedSnapshotRef.current
+    const shouldHoldForReplyResume =
+      resumeContext?.routeKind === 'player' &&
+      resumeContext.fromLeisure &&
+      resumeContext.resumePath === currentPlayerPath &&
+      chat.shouldShowInterruptOverlay
+
+    if (!pausedSnapshot || shouldHoldForReplyResume) {
+      return
+    }
+
+    if (applyPlaybackSnapshot(pausedSnapshot)) {
+      pausedSnapshotRef.current = null
+      handledInterruptMessageIdRef.current = null
+    }
+  }, [
+    applyPlaybackSnapshot,
+    chat.shouldShowInterruptOverlay,
+    chat.state.isMediaPausedByInterrupt,
+    currentPlayerPath,
+    resumeContext,
+  ])
+
+  useEffect(() => {
+    if (!resumeContext) {
+      return
+    }
+
+    if (
+      resumeContext.routeKind !== 'player' ||
+      !resumeContext.fromLeisure ||
+      resumeContext.resumePath !== currentPlayerPath
+    ) {
+      return
+    }
+
+    if (appliedResumeAtRef.current === resumeContext.savedAt) {
+      return
+    }
+
+    if (resumeContext.contentId != null && content && resumeContext.contentId !== content.id) {
+      return
+    }
+
+    const restored = applyPlaybackSnapshot({
+      currentTime: resumeContext.playbackPositionSec,
+      wasPlaying: resumeContext.wasPlaying,
+    })
+
+    if (!restored) {
+      return
+    }
+
+    appliedResumeAtRef.current = resumeContext.savedAt
+    pausedSnapshotRef.current = null
+    handledInterruptMessageIdRef.current = null
+    clearResumeContext()
+  }, [applyPlaybackSnapshot, clearResumeContext, content, currentPlayerPath, resumeContext])
+
+  useEffect(() => {
+    if (!resumeContext || !resumeContext.fromLeisure) {
+      return
+    }
+
+    if (resumeContext.resumePath !== currentPlayerPath) {
+      return
+    }
+
+    if (status !== 'empty' && status !== 'error') {
+      return
+    }
+
+    clearResumeContext()
+    navigate(resumeContext.fallbackPath || ROUTE_PATHS.PATIENT_MAIN, { replace: true })
+  }, [clearResumeContext, currentPlayerPath, navigate, resumeContext, status])
 
   const handleBack = () => {
+    clearResumeContext()
     setStatus('transitioning')
     navigate({
       pathname: routeState?.fromPath ?? fallbackBackPath,
@@ -189,6 +548,7 @@ export default function LeisurePlayerPage() {
   }
 
   const handleOpenRelatedContents = () => {
+    clearResumeContext()
     setStatus('transitioning')
     navigate({
       pathname: relatedContentsPath,
@@ -301,8 +661,9 @@ export default function LeisurePlayerPage() {
                 <div style={pausedBadgeStyle}>채팅 인터럽트로 일시정지</div>
               ) : null}
               <iframe
+                ref={iframeRef}
                 title={content.title}
-                src={content.embedUrl}
+                src={playerSrc}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
                 referrerPolicy="strict-origin-when-cross-origin"
