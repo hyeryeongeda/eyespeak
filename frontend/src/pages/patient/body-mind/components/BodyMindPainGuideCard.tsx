@@ -99,7 +99,7 @@ export interface BodyViewOffset {
 }
 
 interface BodyMindPainGuideCardProps {
-  badge: string
+  badge?: string
   modelUrl: string
   fallbackModelUrl?: string
   headerText?: string
@@ -295,8 +295,8 @@ export default function BodyMindPainGuideCard({
   }
 
   return (
-    <section style={cardStyle} aria-label={`${badge} 3D 가이드`}>
-      <span style={badgeStyle}>{badge}</span>
+    <section style={badge || headerText ? cardStyle : { ...cardStyle, padding: '8px', gap: '0px' }} aria-label={`${badge ?? '3D'} 가이드`}>
+      {badge ? <span style={badgeStyle}>{badge}</span> : null}
       {headerText ? <p style={headerTextStyle}>{headerText}</p> : null}
       {currentModelState.hasFatalError ? (
         <Placeholder />

@@ -135,14 +135,8 @@ export default function BodyMindPainAreaPage() {
         }
         guideCard={
           <BodyMindPainGuideCard
-            badge="전신 가이드"
             modelUrl={guideModelUrl}
             highlightModelUrl={highlightModelUrl}
-            headerText={
-              selectedGroup
-                ? `${selectedGroup.label} 선택 후 세부 부위를 이어서 고릅니다.`
-                : '가운데 가이드에서 전체 신체를 확인한 뒤 대분류를 선택하세요.'
-            }
           />
         }
         lowerCard={

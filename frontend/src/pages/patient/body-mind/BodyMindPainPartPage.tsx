@@ -27,9 +27,9 @@ import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
 const PREVIEW_DELAY_MS = 220
 
 const GROUP_VIEW_OFFSETS: Record<string, BodyViewOffset> = {
-  upper_body: { y: 1.0, z: 3.2 },
-  middle_body: { y: 0.0, z: 3.2 },
-  lower_body: { y: -1.0, z: 3.2 },
+  upper_body: { y: 1.2, z: 2.6 },
+  middle_body: { y: 0.45, z: 2.8 },
+  lower_body: { y: -0.9, z: 3.4 },
 }
 
 export default function BodyMindPainPartPage() {
@@ -162,12 +162,10 @@ export default function BodyMindPainPartPage() {
           />,
           <BodyMindPainGuideCard
             key={`guide-${group.key}`}
-            badge="상세 가이드"
             modelUrl={fullBodyUrl}
             highlightModelUrl={highlightModelUrl}
             rotationY={guideRotationY}
             viewOffset={viewOffset}
-            headerText={`${selectedArea?.label ?? group.options[0]?.label} 부위를 중앙에서 확인할 수 있습니다.`}
           />,
           <BodyMindOptionCard
             key={primaryLeftBottom.key}
