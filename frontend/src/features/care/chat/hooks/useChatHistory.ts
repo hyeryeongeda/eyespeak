@@ -3,6 +3,15 @@ import { useAuthStore } from '../../../../stores/authStore'
 import { fetchChatHistory } from '../services/chatService'
 import type { ChatMessage, ChatMessageDto } from '../../types/chat'
 
+function normalizeDateTime(value: unknown): string {
+  if (typeof value === 'string') return value
+  if (Array.isArray(value)) {
+    const [y, m, d, h = 0, min = 0, s = 0] = value as number[]
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+  return new Date().toISOString()
+}
+
 function dtoToChatMessage(dto: ChatMessageDto): ChatMessage {
   return {
     id: String(dto.messageId),
@@ -10,7 +19,7 @@ function dtoToChatMessage(dto: ChatMessageDto): ChatMessage {
     senderRole: dto.senderRole === 'PATIENT' ? 'patient' : 'care',
     content: dto.text,
     contentType: dto.contentType,
-    sentAt: dto.timestamp,
+    sentAt: normalizeDateTime(dto.createdAt ?? dto.timestamp),
   }
 }
 
