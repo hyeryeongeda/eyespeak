@@ -1,4 +1,3 @@
-# TTS 서버 (tts_server.py)
 TTS
 fastapi
 uvicorn[standard]
@@ -8,14 +7,8 @@ transformers
 numpy
 pydantic
 python-multipart
-
-# 데이터셋 빌드 (build_dataset.py)
 faster-whisper
 yt-dlp
-
-# 테스트
 pytest
 httpx
-
-# 실험 추적 (MLflow)
 mlflow
