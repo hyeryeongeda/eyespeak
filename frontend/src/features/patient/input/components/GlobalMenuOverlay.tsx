@@ -25,12 +25,13 @@ const SOS_COOLDOWN_SYNC_INTERVAL_MS = 250
 const responsiveStyle = `
   @media (max-width: 768px) {
     .patient-global-menu-shell {
-      padding: 20px;
+      padding: 12px;
     }
 
     .patient-global-menu-panel {
-      padding: 22px;
+      padding: 18px;
       gap: 18px;
+      border-radius: 24px;
     }
 
     .patient-global-menu-grid {
@@ -46,23 +47,24 @@ const overlayStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: 'clamp(24px, 4vw, 40px)',
+  padding: 'clamp(12px, 2vw, 24px)',
   backgroundColor: 'rgba(13, 22, 35, 0.52)',
   backdropFilter: 'blur(10px)',
 }
 
 const panelStyle: CSSProperties = {
-  width: 'min(960px, 100%)',
-  minHeight: 'min(76dvh, 720px)',
+  width: '100%',
+  height: '100%',
   display: 'flex',
   flexDirection: 'column',
   gap: '22px',
-  padding: 'clamp(24px, 3vw, 32px)',
-  borderRadius: '32px',
+  padding: 'clamp(24px, 3vw, 40px)',
+  borderRadius: 'clamp(24px, 3vw, 36px)',
   background:
     'linear-gradient(180deg, rgba(247, 250, 255, 0.96) 0%, rgba(239, 244, 253, 0.98) 100%)',
   boxShadow: '0 34px 70px rgba(9, 20, 35, 0.24)',
   boxSizing: 'border-box',
+  overflow: 'hidden',
 }
 
 const headerRowStyle: CSSProperties = {
