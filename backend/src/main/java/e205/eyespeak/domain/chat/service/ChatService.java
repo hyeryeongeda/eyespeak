@@ -68,6 +68,9 @@ public class ChatService {
 
     @Transactional
     public void sendMessage(Long userId, Role senderRole, ChatMessageRequest request) {
+        log.info("[Chat] sendMessage 시작: userId={}, role={}, contentType={}, matchingId={}",
+                userId, senderRole, request.getContentType(), request.getMatchingId());
+
         // 1. 매칭 조회 및 소유자 검증
         Matching matching = matchingRepository.findById(request.getMatchingId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.MATCHING_NOT_FOUND));
@@ -90,6 +93,7 @@ public class ChatService {
                 .build();
 
         messageRepository.save(message);
+        log.info("[Chat] 메시지 저장 완료: messageId={}", message.getId());
 
         // 4. 응답 DTO 생성
         ChatMessageResponse response = ChatMessageResponse.from(message, userId);
@@ -101,6 +105,9 @@ public class ChatService {
         // 6. 상대방에게 전송
         Long recipientUserId = getRecipientUserId(senderRole, matching);
         String recipientId = String.valueOf(recipientUserId);
+
+        log.info("[Chat] 메시지 전송: 발신자={}, 수신자={}, 온라인={}",
+                userId, recipientUserId, sessionManager.isOnline(recipientId));
 
         if (sessionManager.isOnline(recipientId)) {
             // 상대방이 온라인 → WebSocket으로 즉시 전달
