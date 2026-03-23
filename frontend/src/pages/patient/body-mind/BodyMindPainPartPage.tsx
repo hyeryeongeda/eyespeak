@@ -94,7 +94,6 @@ export default function BodyMindPainPartPage() {
 
   const selectedArea =
     getPainAreaOptionByKey(selectedAreaKey) ?? getPainAreaOptionByKey(group.options[0]?.key ?? null)
-  const selectedModel = getPainAreaModelByKey(selectedArea?.key)
   const groupModel = getPainAreaGroupModelByKey(group.key)
   const hoveredModel = getPainAreaModelByKey(hoveredAreaKey)
   const highlightModelUrl = hoveredModel?.modelUrl ?? null
