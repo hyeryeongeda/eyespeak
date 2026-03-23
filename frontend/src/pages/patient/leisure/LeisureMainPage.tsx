@@ -1,8 +1,12 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
-import { fetchLeisureMain, getLeisureCategories } from '../../../services/leisureService'
-import type { LeisureMainStatus } from '../../../types/leisure'
+import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
+import {
+  fetchLeisureCategoryRecommendations,
+  fetchLeisureMain,
+  getLeisureCategories,
+} from '../../../services/leisureService'
+import type { LeisureCategoryId, LeisureMainStatus } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureCategoryCard from './components/LeisureCategoryCard'
 import LeisureLayout from './components/LeisureLayout'
@@ -112,12 +116,40 @@ export default function LeisureMainPage() {
     }
   }, [])
 
-  const handleSelectCategory = (categoryId: string) => {
-    setStatus('transitioning')
-    navigate({
-      pathname: getPatientLeisureCategoryPath(categoryId),
-      search: location.search,
-    })
+  const handleSelectCategory = async (categoryId: LeisureCategoryId) => {
+    if (status === 'selecting' || status === 'transitioning') {
+      return
+    }
+
+    setStatus('selecting')
+
+    try {
+      const data = await fetchLeisureCategoryRecommendations(categoryId)
+      const firstContent = data.contents[0]
+
+      if (!firstContent) {
+        setStatus('empty')
+        return
+      }
+
+      setStatus('transitioning')
+      navigate(
+        {
+          pathname: getPatientLeisurePlayerPath(firstContent.id),
+          search: location.search,
+        },
+        {
+          state: {
+            fromPath: location.pathname,
+            fromLabel: 'Leisure',
+            categoryId,
+          },
+        },
+      )
+    } catch (error) {
+      console.error('Failed to select leisure category.', error)
+      setStatus('error')
+    }
   }
 
   const noticeMessage =
@@ -148,9 +180,11 @@ export default function LeisureMainPage() {
                   contentCount={0}
                   badge="카테고리"
                   variant="hero"
-                  disabled={status === 'transitioning'}
+                  disabled={status === 'transitioning' || status === 'selecting'}
                   slotId={`main-category-${category.id}`}
-                  onSelect={() => handleSelectCategory(category.id)}
+                  onSelect={() => {
+                    void handleSelectCategory(category.id)
+                  }}
                 />
               </div>
             ))}
@@ -166,9 +200,11 @@ export default function LeisureMainPage() {
                   contentCount={0}
                   badge="카테고리"
                   variant="hero"
-                  disabled={status === 'transitioning'}
+                  disabled={status === 'transitioning' || status === 'selecting'}
                   slotId={`main-category-${category.id}`}
-                  onSelect={() => handleSelectCategory(category.id)}
+                  onSelect={() => {
+                    void handleSelectCategory(category.id)
+                  }}
                 />
               </div>
             ))}
