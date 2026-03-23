@@ -17,13 +17,20 @@ import {
   getPainAreaGroupByKey,
   getPainAreaOptionByKey,
 } from './bodyMindMock'
-import { getPainAreaGroupModelByKey, getPainAreaModelByKey } from './bodyMindPainModels'
+import { getFullBodyModelUrl, getPainAreaModelByKey } from './bodyMindPainModels'
+import type { BodyViewOffset } from './components/BodyMindPainGuideCard'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
 import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
 
 const PREVIEW_DELAY_MS = 220
+
+const GROUP_VIEW_OFFSETS: Record<string, BodyViewOffset> = {
+  upper_body: { y: 1.0, z: 3.2 },
+  middle_body: { y: 0.0, z: 3.2 },
+  lower_body: { y: -1.0, z: 3.2 },
+}
 
 export default function BodyMindPainPartPage() {
   const navigate = useNavigate()
@@ -94,7 +101,8 @@ export default function BodyMindPainPartPage() {
 
   const selectedArea =
     getPainAreaOptionByKey(selectedAreaKey) ?? getPainAreaOptionByKey(group.options[0]?.key ?? null)
-  const groupModel = getPainAreaGroupModelByKey(group.key)
+  const fullBodyUrl = getFullBodyModelUrl()
+  const viewOffset = GROUP_VIEW_OFFSETS[group.key] ?? null
   const hoveredModel = getPainAreaModelByKey(hoveredAreaKey)
   const highlightModelUrl = hoveredModel?.modelUrl ?? null
   const REAR_VIEW_PARTS: PainAreaKey[] = ['back', 'hip']
@@ -152,19 +160,15 @@ export default function BodyMindPainPartPage() {
             onGazeEnter={() => handleGazeEnter(primaryLeftTop.key)}
             onGazeLeave={handleGazeLeave}
           />,
-          groupModel ? (
-            <BodyMindPainGuideCard
-              key={groupModel.key}
-              badge="상세 가이드"
-              modelUrl={groupModel.modelUrl}
-              fallbackModelUrl={groupModel.fallbackModelUrl}
-              highlightModelUrl={highlightModelUrl}
-              rotationY={guideRotationY}
-              headerText={`${selectedArea?.label ?? group.options[0]?.label} 부위를 중앙에서 확인할 수 있습니다.`}
-            />
-          ) : (
-            <BodyMindOptionCard key="pain-guide-fallback" title="상세 가이드" tone="slate" />
-          ),
+          <BodyMindPainGuideCard
+            key={`guide-${group.key}`}
+            badge="상세 가이드"
+            modelUrl={fullBodyUrl}
+            highlightModelUrl={highlightModelUrl}
+            rotationY={guideRotationY}
+            viewOffset={viewOffset}
+            headerText={`${selectedArea?.label ?? group.options[0]?.label} 부위를 중앙에서 확인할 수 있습니다.`}
+          />,
           <BodyMindOptionCard
             key={primaryLeftBottom.key}
             title={primaryLeftBottom.label}
