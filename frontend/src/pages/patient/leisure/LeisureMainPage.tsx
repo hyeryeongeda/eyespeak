@@ -103,14 +103,18 @@ export default function LeisureMainPage() {
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
   const [shortcutCards, setShortcutCards] = useState<LeisureShortcut[]>([])
 
-  const leisureMainCellMapping = useMemo(() => ({
-    0: `main-category-${categoryCards[0]?.id ?? 'sports'}`,
-    1: `main-category-${categoryCards[1]?.id ?? 'news'}`,
-    2: `main-category-${categoryCards[2]?.id ?? 'music'}`,
-    3: `main-category-${categoryCards[3]?.id ?? 'radio'}`,
-    4: `main-category-${categoryCards[4]?.id ?? 'audiobook'}`,
-    5: 'main-back',
-  } as Record<number, string | null>), [categoryCards])
+  const leisureMainCellMapping = useMemo(
+    () =>
+      ({
+        0: 'main-shortcut-1',
+        1: 'main-shortcut-2',
+        2: 'main-shortcut-3',
+        3: 'main-shortcut-4',
+        4: 'main-shortcut-5',
+        5: 'main-back',
+      }) as Record<number, string | null>,
+    [],
+  )
 
   useCellMapping(leisureMainCellMapping)
 

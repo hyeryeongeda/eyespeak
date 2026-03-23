@@ -248,11 +248,12 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
             })
           } else {
             const now = Date.now()
+            const snapshotToHold = this.lastReadySnapshot
             const shouldHoldSnapshot =
-              this.lastReadySnapshot !== null && now - this.lastReadyAt <= unstableFrameHoldMs
+              snapshotToHold !== null && now - this.lastReadyAt <= unstableFrameHoldMs
 
             if (shouldHoldSnapshot) {
-              useGazeInputStore.getState().setSnapshot(this.lastReadySnapshot)
+              useGazeInputStore.getState().setSnapshot(snapshotToHold)
               effectiveStatus = 'ready'
               this.emitRuntimeTelemetry(eyeTrackingProfileId, {
                 rawStatus,
