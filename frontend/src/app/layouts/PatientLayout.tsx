@@ -237,7 +237,7 @@ function PatientLayoutShell() {
 
     const targetPath = resumeContext.resumePath || resumeContext.fallbackPath || ROUTE_PATHS.PATIENT_LEISURE
 
-    if (resumeContext.routeKind !== 'player' || !resumeContext.canResumePlayback) {
+    if (resumeContext.routeKind !== 'player') {
       clearResumeContext()
     }
 
