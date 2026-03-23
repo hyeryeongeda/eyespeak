@@ -80,7 +80,10 @@ interface BodyMindOptionCardProps {
   badge?: string
   className?: string
   style?: CSSProperties
+  trackingId?: string
   onSelect?: () => void
+  onGazeEnter?: () => void
+  onGazeLeave?: () => void
 }
 
 export default function BodyMindOptionCard({
@@ -92,7 +95,10 @@ export default function BodyMindOptionCard({
   badge,
   className,
   style,
+  trackingId,
   onSelect,
+  onGazeEnter,
+  onGazeLeave,
 }: BodyMindOptionCardProps) {
   const toneStyle = toneStyleMap[tone]
   const resolvedStyle: CSSProperties = {
@@ -136,6 +142,9 @@ export default function BodyMindOptionCard({
       disabled={disabled}
       aria-pressed={selected}
       style={resolvedStyle}
+      data-tracking-id={trackingId}
+      onMouseEnter={onGazeEnter}
+      onMouseLeave={onGazeLeave}
     >
       {content}
     </button>
