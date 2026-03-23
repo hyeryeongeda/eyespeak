@@ -18,26 +18,18 @@ from flask import Flask, jsonify, request, send_file
 from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
-import pymysql
+import requests as http_requests
 from metrics import measure_time, record_api_time, get_timing_summary, reset_timing, log_to_mlflow
 
 load_dotenv()
 
-# ====== DB 설정 ======
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": int(os.getenv("DB_PORT", "3306")),
-    "user": os.getenv("DB_USERNAME", "root"),
-    "password": os.getenv("DB_PASSWORD", "root1234"),
-    "database": os.getenv("DB_NAME", "eyespeak"),
-    "charset": "utf8mb4",
-    "cursorclass": pymysql.cursors.DictCursor,
-}
+# ====== BE API 설정 ======
+BE_API_URL = os.getenv("BE_API_URL", "http://eyespeak-backend:8080/api/v1")
+AI_API_KEY = os.getenv("AI_INTERNAL_API_KEY", "eyespeak-ai-internal-2026-s14e205")
 
-
-def get_db():
-    """DB 커넥션 반환 (요청마다 새로 연결)"""
-    return pymysql.connect(**DB_CONFIG)
+def _be_headers():
+    """BE API 호출 시 인증 헤더"""
+    return {"X-AI-API-Key": AI_API_KEY, "Content-Type": "application/json"}
 
 
 # ====== 형태소 분석 (선택) ======
@@ -91,162 +83,89 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
     return float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-9))
 
 
-# ====== DB에서 데이터 로드 ======
+# ====== BE API에서 데이터 로드 ======
 SENTIMENT_MAP_REVERSE = {"POSITIVE": "긍정", "NEGATIVE": "부정", "NEUTRAL": "중립"}
 
 
 @measure_time
 def _load_user_data_from_db(matching_id: int) -> dict | None:
-    """matching_id 기준으로 DB에서 데이터 로드"""
-    conn = get_db()
+    """BE API로 환자 추천 컨텍스트 조회"""
     try:
-        with conn.cursor() as cur:
-            # 1. expressions + usage_count + keywords
-            cur.execute("""
-                SELECT e.id AS expr_id, e.content AS text, e.sentiment, e.category,
-                       e.last_used AS lastUsed,
-                       COUNT(ul.id) AS usageCount,
-                       GROUP_CONCAT(ek.keyword SEPARATOR ';;') AS keywords_str
-                FROM expressions e
-                LEFT JOIN usage_log ul ON ul.expr_id = e.id
-                LEFT JOIN expression_keywords ek ON ek.expr_id = e.id
-                WHERE e.matching_id = %s
-                GROUP BY e.id
-            """, (matching_id,))
-            rows = cur.fetchall()
+        resp = http_requests.get(
+            f"{BE_API_URL}/ai/user-context/{matching_id}",
+            headers=_be_headers(), timeout=10)
+        if resp.status_code != 200:
+            print(f"[user-context] BE API 실패: {resp.status_code}")
+            return None
+        data = resp.json().get("data")
+        if not data:
+            return None
 
-            user_db = []
-            for row in rows:
-                sentiment_kr = SENTIMENT_MAP_REVERSE.get(row["sentiment"], "중립")
-                keywords = row["keywords_str"].split(";;") if row["keywords_str"] else []
-                categories = [row["category"]] if row["category"] else []
-                user_db.append({
-                    "text": row["text"],
-                    "source": "user",
-                    "sentiment": sentiment_kr,
-                    "categories": categories,
-                    "keywords": keywords,
-                    "weight": 1.0 + math.log((row["usageCount"] or 0) + 1),
-                    "lastUsed": row["lastUsed"].isoformat() if row["lastUsed"] else None,
-                })
+        user_db = []
+        for expr in (data.get("userExpressions") or []):
+            user_db.append({
+                "text": expr["text"],
+                "source": "user",
+                "sentiment": SENTIMENT_MAP_REVERSE.get(expr.get("sentiment"), "중립"),
+                "categories": [expr["category"]] if expr.get("category") else [],
+                "keywords": expr.get("keywords") or [],
+                "weight": 1.0 + math.log((expr.get("usageCount") or 0) + 1),
+                "lastUsed": expr.get("lastUsed"),
+            })
 
-            # 2. user_words
-            cur.execute("SELECT subjects, objects, verbs FROM user_words WHERE matching_id = %s", (matching_id,))
-            uw_row = cur.fetchone()
-            default_word_lists = {
-                "subjects": ["나", "우리", "손녀딸", "딸", "여보"],
-                "objects": ["물", "음식", "약"],
-                "verbs": ["먹다", "마시다", "보다", "좋아하다"],
-                "punctuation": [".", "!", "?"]
-            }
-            if uw_row:
-                word_lists = {
-                    "subjects": json.loads(uw_row["subjects"]) if uw_row["subjects"] else [],
-                    "objects": json.loads(uw_row["objects"]) if uw_row["objects"] else [],
-                    "verbs": json.loads(uw_row["verbs"]) if uw_row["verbs"] else [],
-                    "punctuation": [".", "!", "?"],
-                }
-            else:
-                word_lists = default_word_lists.copy()
+        word_lists = data.get("wordLists") or {
+            "subjects": ["나", "우리", "손녀딸", "딸", "여보"],
+            "objects": ["물", "음식", "약"],
+            "verbs": ["먹다", "마시다", "보다", "좋아하다"],
+            "punctuation": [".", "!", "?"],
+        }
 
-            # 3. word_usage_freq
-            all_words_set = set()
-            for cat in ("subjects", "objects", "verbs"):
-                all_words_set |= set(word_lists.get(cat, []))
-            word_usage_freq = {}
-            for item in user_db:
-                weight = item["weight"]
-                for kw in item.get("keywords", []):
-                    if kw in all_words_set:
-                        word_usage_freq[kw] = word_usage_freq.get(kw, 0) + weight
-                for token in item["text"].replace("?", " ").replace(".", " ").split():
-                    if token in all_words_set:
-                        word_usage_freq[token] = word_usage_freq.get(token, 0) + weight
-
-            # 4. today_data
-            cur.execute("""
-                SELECT mood_type, mood_level FROM daily_mood
-                WHERE matching_id = %s AND mood_date = CURDATE()
-            """, (matching_id,))
-            mood_row = cur.fetchone()
-            today_data = {}
-            if mood_row:
-                today_data["mood"] = mood_row["mood_type"]
-                today_data["moodLevel"] = mood_row["mood_level"]
-
-            # 오늘 일정
-            cur.execute("""
-                SELECT ts.name AS time_slot, at.name AS activity
-                FROM routine_slot_tag rst
-                JOIN time_slot ts ON ts.id = rst.time_slot_id
-                JOIN activity_tag at ON at.id = rst.activity_tag_id
-                WHERE rst.matching_id = %s
-            """, (matching_id,))
-            schedule_rows = cur.fetchall()
-            if schedule_rows:
-                today_data["schedule"] = [{"time": r["time_slot"], "event": r["activity"]} for r in schedule_rows]
-
-            # 오늘 가장 많이 쓴 표현
-            cur.execute("""
-                SELECT e.content AS text, e.category, COUNT(*) AS cnt
-                FROM usage_log ul
-                JOIN expressions e ON e.id = ul.expr_id
-                WHERE ul.matching_id = %s AND DATE(ul.used_at) = CURDATE()
-                GROUP BY ul.expr_id
-                ORDER BY cnt DESC LIMIT 1
-            """, (matching_id,))
-            most_used = cur.fetchone()
-            if most_used:
-                today_data["mostUsedToday"] = {
-                    "category": most_used["category"],
-                    "expression": most_used["text"],
-                    "count": most_used["cnt"],
-                }
-
-            # 마지막 사용 기록
-            cur.execute("""
-                SELECT e.content AS text, e.category, ul.used_at
-                FROM usage_log ul
-                JOIN expressions e ON e.id = ul.expr_id
-                WHERE ul.matching_id = %s
-                ORDER BY ul.used_at DESC LIMIT 1
-            """, (matching_id,))
-            last_used = cur.fetchone()
-            if last_used:
-                today_data["lastUsedFeature"] = {
-                    "category": last_used["category"],
-                    "expression": last_used["text"],
-                    "time": last_used["used_at"].strftime("%H:%M") if last_used["used_at"] else "",
-                }
+        # word_usage_freq 계산
+        all_words_set = set()
+        for cat in ("subjects", "objects", "verbs"):
+            all_words_set |= set(word_lists.get(cat, []))
+        word_usage_freq = {}
+        for item in user_db:
+            weight = item["weight"]
+            for kw in item.get("keywords", []):
+                if kw in all_words_set:
+                    word_usage_freq[kw] = word_usage_freq.get(kw, 0) + weight
+            for token in item["text"].replace("?", " ").replace(".", " ").split():
+                if token in all_words_set:
+                    word_usage_freq[token] = word_usage_freq.get(token, 0) + weight
 
         return {
-            "today_data": today_data,
+            "today_data": data.get("todayData") or {},
             "user_db": user_db,
             "word_lists": word_lists,
             "word_usage_freq": word_usage_freq,
         }
-    finally:
-        conn.close()
-
+    except Exception as e:
+        print(f"[user-context] 에러: {e}")
+        return None
 
 def _load_general_db_from_db() -> list:
-    """general_corpus 테이블에서 범용 문장 로드"""
-    conn = get_db()
+    """BE API에서 범용 말뭉치 로드"""
     try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT content, sentiment, weight FROM general_corpus")
-            rows = cur.fetchall()
+        resp = http_requests.get(
+            f"{BE_API_URL}/ai/general-corpus",
+            headers=_be_headers(), timeout=30)
+        if resp.status_code != 200:
+            print(f"[general-corpus] BE API 실패: {resp.status_code}")
+            return []
+        rows = resp.json().get("data") or []
         return [
             {
                 "text": row["content"],
                 "source": "general",
                 "weight": float(row["weight"]) if row["weight"] else 1.0,
-                "sentiment": SENTIMENT_MAP_REVERSE.get(row["sentiment"], "중립"),
+                "sentiment": SENTIMENT_MAP_REVERSE.get(row.get("sentiment"), "중립"),
             }
             for row in rows
         ]
-    finally:
-        conn.close()
+    except Exception as e:
+        print(f"[general-corpus] 에러: {e}")
+        return []
 
 
 # 기동 시 general_db 로드
@@ -832,172 +751,30 @@ def generate():
     return jsonify({"sentences": sentences})
 
 
-@app.route("/expressions/use", methods=["POST"])
-def record_expression_use():
+@app.route("/expressions/classify", methods=["POST"])
+def classify_expression():
+    """문장 분류만 수행 (DB 저장 안 함 — BE가 저장)"""
     data = request.json or {}
-    matching_id = data.get("matching_id", 1)
     text = (data.get("text") or "").strip()
     if not text:
         return jsonify({"error": "text 필수"}), 400
 
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            # 기존 표현 확인
-            cur.execute("SELECT id FROM expressions WHERE matching_id = %s AND content = %s", (matching_id, text))
-            existing = cur.fetchone()
+    # AI가 감정/의도 분류 (기존 로직 그대로)
+    sentiment_kr, intent = _classify_sentence_for_storage(text)
+    sentiment_db = SENTIMENT_MAP.get(sentiment_kr, "NEUTRAL")
 
-            if existing:
-                expr_id = existing["id"]
-                cur.execute("UPDATE expressions SET last_used = NOW() WHERE id = %s", (expr_id,))
-            else:
-                # 새 표현: 분류 + 키워드 추출
-                sentiment_kr, intent = _classify_sentence_for_storage(text)
-                sentiment_db = SENTIMENT_MAP.get(sentiment_kr, "NEUTRAL")
-                new_keywords = _auto_generate_keywords(text)
-                cur.execute(
-                    "INSERT INTO expressions (matching_id, content, sentiment, category, last_used, created_at) VALUES (%s, %s, %s, %s, NOW(), NOW())",
-                    (matching_id, text, sentiment_db, intent)
-                )
-                expr_id = cur.lastrowid
-                for kw in new_keywords:
-                    if kw:
-                        cur.execute("INSERT INTO expression_keywords (expr_id, keyword) VALUES (%s, %s)", (expr_id, kw))
+    # AI가 키워드 추출 (기존 로직 그대로)
+    keywords = _auto_generate_keywords(text)
 
-            # usage_log 기록
-            hour = datetime.now().hour
-            if hour < 9:
-                slot = 1
-            elif hour < 12:
-                slot = 2
-            elif hour < 15:
-                slot = 3
-            elif hour < 18:
-                slot = 4
-            elif hour < 21:
-                slot = 5
-            else:
-                slot = 6
-            cur.execute(
-                "INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at) VALUES (%s, %s, %s, %s, NOW())",
-                (matching_id, expr_id, text, slot)
-            )
-        conn.commit()
-    except Exception as e:
-        print(f"[expressions/use 에러] {e}")
-        import traceback
-        traceback.print_exc()
-        conn.rollback()
-        return jsonify({"error": str(e)}), 500
-    finally:
-        conn.close()
-
-    # 추천 지표
-    _recommend_stats["expression_use_total"] += 1
-    last = _last_recommend_by_user.get(matching_id)
-    if last and last.get("sentences"):
-        try:
-            at = datetime.fromisoformat(last["at"].replace("Z", "").split("+")[0])
-            if (datetime.now() - at).total_seconds() <= _MAX_LAST_AGE_SEC:
-                for rank, s in enumerate(last["sentences"], start=1):
-                    if (s or "").strip() == text:
-                        _recommend_stats["expression_use_from_recommend"] += 1
-                        if rank <= 3:
-                            _recommend_stats[f"use_rank_{rank}"] += 1
-                        break
-        except Exception:
-            pass
-    return jsonify({"ok": True, "message": "expression recorded"})
-
-
-@app.route("/recommend/hints", methods=["POST"])
-def recommend_hints():
-    """카테고리 카드에 표시할 hint 데이터 조회"""
-    data = request.json or {}
-    matching_id = data.get("matching_id", 1)
-
-    mood_hint = None
-    schedule_hint = None
-    frequent_hint = None
-    recent_hint = None
-
-    conn = get_db()
-    try:
-        with conn.cursor() as cur:
-            # 1. mood hint — 오늘의 기분
-            cur.execute("""
-                SELECT mood_type FROM daily_mood
-                WHERE matching_id = %s AND mood_date = CURDATE()
-            """, (matching_id,))
-            mood_row = cur.fetchone()
-            if mood_row:
-                mood_map = {
-                    "HAPPY": "기분 좋음", "SAD": "슬픔", "CALM": "평온",
-                    "JOYFUL": "즐거움", "ANXIOUS": "불안", "ANGRY": "화남", "TIRED": "피곤"
-                }
-                mood_hint = mood_map.get(mood_row["mood_type"], mood_row["mood_type"])
-
-            # 2. schedule hint — 현재 시간대 활동
-            hour = datetime.now().hour
-            if hour < 9:
-                slot_id = 1
-            elif hour < 12:
-                slot_id = 2
-            elif hour < 15:
-                slot_id = 3
-            elif hour < 18:
-                slot_id = 4
-            elif hour < 21:
-                slot_id = 5
-            elif hour < 24:
-                slot_id = 6
-            else:
-                slot_id = 7
-
-            cur.execute("""
-                SELECT at.name AS activity
-                FROM routine_slot_tag rst
-                JOIN activity_tag at ON at.id = rst.activity_tag_id
-                WHERE rst.matching_id = %s AND rst.time_slot_id = %s
-                LIMIT 1
-            """, (matching_id, slot_id))
-            schedule_row = cur.fetchone()
-            if schedule_row:
-                schedule_hint = schedule_row["activity"]
-
-            # 3. frequent hint — 가장 많이 쓴 표현
-            cur.execute("""
-                SELECT e.content AS text, COUNT(*) AS cnt
-                FROM usage_log ul
-                JOIN expressions e ON e.id = ul.expr_id
-                WHERE ul.matching_id = %s
-                GROUP BY ul.expr_id
-                ORDER BY cnt DESC LIMIT 1
-            """, (matching_id,))
-            freq_row = cur.fetchone()
-            if freq_row:
-                frequent_hint = freq_row["text"]
-
-            # 4. recent hint — 가장 최근 사용한 표현
-            cur.execute("""
-                SELECT e.content AS text
-                FROM usage_log ul
-                JOIN expressions e ON e.id = ul.expr_id
-                WHERE ul.matching_id = %s
-                ORDER BY ul.used_at DESC LIMIT 1
-            """, (matching_id,))
-            recent_row = cur.fetchone()
-            if recent_row:
-                recent_hint = recent_row["text"]
-    finally:
-        conn.close()
-
+    # DB 저장 없이 분류 결과만 반환 → BE가 저장함
     return jsonify({
-        "mood_hint": mood_hint,
-        "schedule_hint": schedule_hint,
-        "frequent_hint": frequent_hint,
-        "recent_hint": recent_hint,
+        "sentiment": sentiment_db,
+        "category": intent,
+        "keywords": keywords,
     })
+
+
+# /recommend/hints 삭제됨 — BE가 RecommendationController에서 직접 DB 조회
 
 
 @app.route("/recommend/category", methods=["POST"])
