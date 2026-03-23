@@ -16,3 +16,6 @@ yt-dlp
 # 테스트
 pytest
 httpx
+
+# 실험 추적 (MLflow)
+mlflow
