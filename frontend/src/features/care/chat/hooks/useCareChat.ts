@@ -15,10 +15,9 @@ import { useNotificationStore } from '../../../../shared/stores/notificationStor
 import { getActiveApiMode } from '../../../../config/env'
 import {
   STOMP_DESTINATIONS,
-  parseInboundMessage,
+  parseChatMessage,
+  parseCallConfirmedMessage,
   buildChatPayload,
-  isStompChatInbound,
-  isStompCallConfirmed,
 } from '../../../../services/websocket'
 import type { StompChatInbound } from '../../../../services/websocket'
 import type { ChatMessage } from '../../types/chat'
@@ -84,44 +83,61 @@ export function useCareChat(): UseCareChatReturn {
     }
   }, [historyMessages])
 
-  // 구독 (real 모드에서만)
+  // 채팅 메시지 구독 (/user/queue/chat)
   useEffect(() => {
     if (isMock || !client || !connected) {
       return
     }
 
     const unsubscribe = client.subscribe(
-      STOMP_DESTINATIONS.SUBSCRIBE_PERSONAL,
+      STOMP_DESTINATIONS.SUBSCRIBE_CHAT,
       (stompMsg) => {
-        const parsed = parseInboundMessage(stompMsg)
+        const parsed = parseChatMessage(stompMsg)
 
         if (!parsed) {
           return
         }
 
-        if (isStompChatInbound(parsed)) {
-          const careMsg = toCareMessage(parsed)
+        const careMsg = toCareMessage(parsed)
 
-          if (knownIdsRef.current.has(careMsg.id)) {
-            return
-          }
-          knownIdsRef.current.add(careMsg.id)
+        if (knownIdsRef.current.has(careMsg.id)) {
+          return
+        }
+        knownIdsRef.current.add(careMsg.id)
 
-          setRealtimeMessages(prev => [...prev, careMsg])
+        setRealtimeMessages(prev => [...prev, careMsg])
+      },
+    )
+
+    return () => {
+      unsubscribe()
+    }
+  }, [isMock, client, connected])
+
+  // 호출 확인 구독 (/user/queue/call)
+  useEffect(() => {
+    if (isMock || !client || !connected) {
+      return
+    }
+
+    const unsubscribe = client.subscribe(
+      STOMP_DESTINATIONS.SUBSCRIBE_CALL,
+      (stompMsg) => {
+        const parsed = parseCallConfirmedMessage(stompMsg)
+
+        if (!parsed) {
           return
         }
 
-        if (isStompCallConfirmed(parsed)) {
-          showNotification({
-            type: parsed.callType === 'SOS' ? 'SOS' : 'CALL',
-            title: parsed.callType === 'SOS' ? 'SOS 확인' : '호출 확인',
-            body: parsed.body,
-            matchingId: parsed.matchingId,
-            senderId: String(parsed.senderId),
-            senderRole: parsed.senderRole,
-            callId: parsed.callId,
-          })
-        }
+        showNotification({
+          type: parsed.callType === 'SOS' ? 'SOS' : 'CALL',
+          title: parsed.callType === 'SOS' ? 'SOS 확인' : '호출 확인',
+          body: parsed.body,
+          matchingId: parsed.matchingId,
+          senderId: String(parsed.senderId),
+          senderRole: parsed.senderRole,
+          callId: parsed.callId,
+        })
       },
     )
 
