@@ -75,11 +75,13 @@ export interface UsePatientStompReturn {
 
 // ----- 훅 -----
 
+const isMockMode = import.meta.env.VITE_API_MODE === 'mock'
+
 export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientStompReturn {
-  const { client, status } = useStompClient(true)
+  const { client, status } = useStompClient(!isMockMode)
   const user = useAuthStore(state => state.user)
 
-  const connected = status === 'connected'
+  const connected = !isMockMode && status === 'connected'
 
   // 콜백을 ref 로 안정화 — 렌더마다 새 객체여도 구독 재생성 방지
   const callbacksRef = useRef(callbacks)

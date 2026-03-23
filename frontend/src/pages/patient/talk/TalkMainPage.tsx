@@ -27,18 +27,6 @@ const pageWrap: CSSProperties = {
   overflow: 'hidden',
 }
 
-const statusBar: CSSProperties = {
-  flexShrink: 0,
-  marginBottom: '12px',
-  padding: '12px 16px',
-  borderRadius: '16px',
-  backgroundColor: 'rgba(255, 255, 255, 0.92)',
-  border: '1px solid #dde7ed',
-  fontSize: '14px',
-  fontWeight: 700,
-  color: '#203042',
-}
-
 const threeColLayout: CSSProperties = {
   flex: 1,
   minHeight: 0,
@@ -214,29 +202,6 @@ const cardHoverStyle = `
   }
 `
 
-const statusLabelMap = {
-  idle: '준비',
-  waiting_message: '메시지 대기',
-  receiving: '수신 중',
-  received: '수신 완료',
-  unread: '미응답 있음',
-  incoming_interrupt: '인터럽트 표시 중',
-  reply_mode: '응답 모드',
-  suggestion_loading: '추천 생성 중',
-  suggestion_ready: '추천 준비 완료',
-  suggestion_failed: '추천 실패',
-  manual_input_select: '대체 입력 선택',
-  manual_input_typing: '대체 입력 작성 중',
-  sending: '전송 중',
-  sent: '전송 완료',
-  send_failed: '전송 실패',
-  conversation_active: '대화 중',
-  timeout: '응답 타임아웃',
-  deferred: '나중에 보기',
-  restoring: '복귀 중',
-  restored: '복귀 완료',
-} as const
-
 function DwellOnCard({
   active,
   phase,
@@ -273,10 +238,6 @@ export default function TalkMainPage() {
   return (
     <div style={pageWrap}>
       <style>{cardHoverStyle}</style>
-      <div style={statusBar}>
-        {statusLabelMap[chat.state.status]} · 미응답 {chat.unreadCount}건 · {chat.state.lastEventLabel}
-      </div>
-
       <div
         style={threeColLayout}
         ref={element => {
