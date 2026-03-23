@@ -2,6 +2,7 @@ import { API_ENDPOINTS } from './apiEndpoints'
 import { ROUTINE_ACTIVITY_TAG_IDS, ROUTINE_TIME_SLOT_IDS } from '../constants/routineCatalog'
 import type {
   AuthResponseDto,
+  EmailCheckRequestDto,
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
@@ -556,6 +557,27 @@ function handleGuardianSignup(request: GuardianSignupRequestDto) {
   })
 }
 
+function handleCheckEmail(request: EmailCheckRequestDto) {
+  assertRequiredText(request.email, '이메일을 입력해주세요.')
+
+  const database = readDatabase()
+  const normalizedEmail = request.email.trim().toLowerCase()
+  const isDuplicated =
+    database.guardians.some(guardian => guardian.email.toLowerCase() === normalizedEmail) ||
+    database.patientAccounts.some(account => account.loginId === normalizedEmail)
+
+  if (isDuplicated) {
+    throw new ApiError({
+      statusCode: 409,
+      source: 'mock',
+      message: '이미 가입된 이메일입니다.',
+      code: 'AUTH-204',
+    })
+  }
+
+  return undefined
+}
+
 function handleRegisterPatientInfo(
   request: RegisterPatientInfoRequestDto,
   accessToken?: string | null,
@@ -922,6 +944,8 @@ export const mockApiTransport: ApiTransport = {
     switch (`${method} ${url}`) {
       case `POST ${API_ENDPOINTS.AUTH_LOGIN}`:
         return handleLogin(data as LoginRequestDto) as TResponse
+      case `POST ${API_ENDPOINTS.AUTH_CHECK_EMAIL}`:
+        return handleCheckEmail(data as EmailCheckRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.AUTH_SIGNUP_GUARDIAN}`:
         return handleGuardianSignup(data as GuardianSignupRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.PATIENTS}`:
@@ -959,6 +983,14 @@ export function loginMockApi(request: LoginRequestDto) {
   return callMockApi<AuthResponseDto, LoginRequestDto>({
     method: 'POST',
     url: API_ENDPOINTS.AUTH_LOGIN,
+    data: request,
+  })
+}
+
+export function checkEmailMockApi(request: EmailCheckRequestDto) {
+  return callMockApi<void, EmailCheckRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_CHECK_EMAIL,
     data: request,
   })
 }

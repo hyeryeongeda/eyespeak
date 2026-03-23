@@ -97,3 +97,7 @@ export interface GuardianSignupRequestDto {
   name: string
   password: string
 }
+
+export interface EmailCheckRequestDto {
+  email: string
+}

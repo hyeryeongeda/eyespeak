@@ -2,21 +2,24 @@ import { getActiveApiMode, resolveApiSource } from '../config/env'
 import type { ApiMode, ServiceResult } from '../types/api'
 import type {
   AuthSession,
+  EmailCheckRequestDto,
   LoginFormValues,
   LoginRequestDto,
   PasswordResetRequestDto,
   PasswordResetResponseDto,
 } from '../types/auth'
 import { createServiceFailure, logServiceFailure } from '../utils/errorMapper'
-import { loginApi, logoutApi, refreshApi, requestPasswordResetApi, withdrawApi } from './authApi'
+import { checkEmailApi, loginApi, logoutApi, refreshApi, requestPasswordResetApi, withdrawApi } from './authApi'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import {
+  checkEmailMockApi,
   loginMockApi,
   logoutMockApi,
   refreshMockApi,
   requestPasswordResetMockApi,
   withdrawMockApi,
 } from './mockAuthApi'
+import { logAuthSuccessSilently } from './usageLogService'
 
 function mapLoginValuesToRequest(values: LoginFormValues): LoginRequestDto {
   return {
@@ -30,6 +33,31 @@ function getSessionApiMode(session?: Pick<AuthSession, 'authMode'> | null): ApiM
   return session?.authMode ?? getActiveApiMode()
 }
 
+export async function checkEmailAvailability(email: string) {
+  const authMode = getActiveApiMode()
+  const request: EmailCheckRequestDto = {
+    email: email.trim().toLowerCase(),
+  }
+
+  try {
+    if (authMode === 'mock') {
+      await checkEmailMockApi(request)
+    } else {
+      await checkEmailApi(request)
+    }
+
+    return {
+      success: true,
+      source: resolveApiSource(authMode),
+      data: null,
+    } as const
+  } catch (error) {
+    const failure = createServiceFailure(error, '이메일 중복 확인에 실패했습니다.')
+    logServiceFailure('auth.check-email', error, failure, { email: request.email })
+    return failure
+  }
+}
+
 export async function login(values: LoginFormValues): Promise<ServiceResult<AuthSession>> {
   const authMode = getActiveApiMode()
 
@@ -39,10 +67,14 @@ export async function login(values: LoginFormValues): Promise<ServiceResult<Auth
         ? await loginMockApi(mapLoginValuesToRequest(values))
         : await loginApi(mapLoginValuesToRequest(values))
 
+    const session = mapAuthResponseToSession(response, authMode)
+
+    logAuthSuccessSilently(session, 'login')
+
     return {
       success: true,
       source: resolveApiSource(authMode),
-      data: mapAuthResponseToSession(response, authMode),
+      data: session,
     }
   } catch (error) {
     const failure = createServiceFailure(error, '로그인에 실패했습니다.')
