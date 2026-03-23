@@ -21,11 +21,10 @@ import { useStompClient } from './useStompClient'
 import { useAuthStore } from '../stores/authStore'
 import {
   STOMP_DESTINATIONS,
-  parseInboundMessage,
+  parseChatMessage,
+  parseCallConfirmedMessage,
   buildChatPayload,
   buildCallPayload,
-  isStompChatInbound,
-  isStompCallConfirmed,
 } from '../services/websocket'
 import type {
   StompChatInbound,
@@ -89,29 +88,46 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
     callbacksRef.current = callbacks
   }, [callbacks])
 
-  // 구독
+  // 채팅 메시지 구독 (/user/queue/chat)
   useEffect(() => {
     if (!client || !connected) {
       return
     }
 
     const unsubscribe = client.subscribe(
-      STOMP_DESTINATIONS.SUBSCRIBE_PERSONAL,
+      STOMP_DESTINATIONS.SUBSCRIBE_CHAT,
       (stompMsg) => {
-        const parsed = parseInboundMessage(stompMsg)
+        const parsed = parseChatMessage(stompMsg)
 
         if (!parsed) {
           return
         }
 
-        if (isStompChatInbound(parsed)) {
-          callbacksRef.current?.onChatMessage?.(parsed)
+        callbacksRef.current?.onChatMessage?.(parsed)
+      },
+    )
+
+    return () => {
+      unsubscribe()
+    }
+  }, [client, connected])
+
+  // 호출 확인 구독 (/user/queue/call)
+  useEffect(() => {
+    if (!client || !connected) {
+      return
+    }
+
+    const unsubscribe = client.subscribe(
+      STOMP_DESTINATIONS.SUBSCRIBE_CALL,
+      (stompMsg) => {
+        const parsed = parseCallConfirmedMessage(stompMsg)
+
+        if (!parsed) {
           return
         }
 
-        if (isStompCallConfirmed(parsed)) {
-          callbacksRef.current?.onCallConfirmed?.(parsed)
-        }
+        callbacksRef.current?.onCallConfirmed?.(parsed)
       },
     )
 

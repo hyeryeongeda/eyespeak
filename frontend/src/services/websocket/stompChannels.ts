@@ -9,6 +9,8 @@
 import type { IMessage } from '@stomp/stompjs'
 import type {
   StompCallType,
+  StompChatInbound,
+  StompCallConfirmedInbound,
   StompContentType,
   StompInboundMessage,
   StompPublishCall,
@@ -23,17 +25,88 @@ export const STOMP_DESTINATIONS = {
   PUBLISH_CHAT: '/app/chat',
   /** 호출/SOS 발행 (환자 전용이지만, 상수는 공통 레이어에 정의) */
   PUBLISH_CALL: '/app/call',
-  /** 개인 큐 구독 — CHAT + CALL_CONFIRMED 수신 */
-  SUBSCRIBE_PERSONAL: '/user/queue/chat',
+  /** 채팅 메시지 수신 (개인 큐) */
+  SUBSCRIBE_CHAT: '/user/queue/chat',
+  /** 호출 확인 수신 (개인 큐) */
+  SUBSCRIBE_CALL: '/user/queue/call',
 } as const
 
 // ----- 수신 메시지 파서 -----
 
 /**
- * STOMP IMessage.body (JSON 문자열) → StompInboundMessage 파싱.
+ * /user/queue/chat 채널에서 수신한 메시지를 StompChatInbound 로 파싱.
  *
- * 파싱 실패 시 null 을 반환하므로 호출 측에서 null 체크 필요.
- * 알 수 없는 type 이면 역시 null (forward-compatibility).
+ * 채널이 분리되어 있으므로 type 필드 없이도 CHAT 으로 확정한다.
+ * 백엔드 ChatMessageResponse 의 timestamp → createdAt 매핑도 여기서 처리.
+ */
+export function parseChatMessage(stompMessage: IMessage): StompChatInbound | null {
+  try {
+    const raw: unknown = JSON.parse(stompMessage.body)
+
+    if (!raw || typeof raw !== 'object') {
+      return null
+    }
+
+    const obj = raw as Record<string, unknown>
+
+    return {
+      type: 'CHAT',
+      matchingId: obj.matchingId as number,
+      messageId: obj.messageId as number,
+      senderId: obj.senderId as number,
+      senderRole: obj.senderRole as StompChatInbound['senderRole'],
+      contentType: obj.contentType as StompChatInbound['contentType'],
+      text: obj.text as string,
+      phraseId: (obj.phraseId as number) ?? null,
+      exprId: (obj.exprId as number) ?? null,
+      isRead: (obj.isRead as boolean) ?? false,
+      // 백엔드가 timestamp 으로 보내면 createdAt 으로 매핑
+      createdAt: (obj.createdAt ?? obj.timestamp) as string,
+    }
+  } catch {
+    if (import.meta.env.DEV) {
+      console.warn('[STOMP] 채팅 메시지 파싱 실패:', stompMessage.body)
+    }
+    return null
+  }
+}
+
+/**
+ * /user/queue/call 채널에서 수신한 메시지를 StompCallConfirmedInbound 로 파싱.
+ *
+ * 채널이 분리되어 있으므로 type 필드 없이도 CALL_CONFIRMED 로 확정한다.
+ */
+export function parseCallConfirmedMessage(stompMessage: IMessage): StompCallConfirmedInbound | null {
+  try {
+    const raw: unknown = JSON.parse(stompMessage.body)
+
+    if (!raw || typeof raw !== 'object') {
+      return null
+    }
+
+    const obj = raw as Record<string, unknown>
+
+    return {
+      type: 'CALL_CONFIRMED',
+      matchingId: obj.matchingId as number,
+      senderId: obj.senderId as number,
+      senderRole: (obj.senderRole as StompCallConfirmedInbound['senderRole']) ?? 'GUARDIAN',
+      body: obj.body as string,
+      callId: obj.callId as number,
+      callType: obj.callType as StompCallConfirmedInbound['callType'],
+      createdAt: (obj.createdAt ?? obj.acknowledgedAt ?? obj.timestamp) as string,
+    }
+  } catch {
+    if (import.meta.env.DEV) {
+      console.warn('[STOMP] 호출 확인 메시지 파싱 실패:', stompMessage.body)
+    }
+    return null
+  }
+}
+
+/**
+ * @deprecated 채널 분리 후 parseChatMessage / parseCallConfirmedMessage 를 사용.
+ * 하위 호환을 위해 남겨둠.
  */
 export function parseInboundMessage(stompMessage: IMessage): StompInboundMessage | null {
   try {
@@ -50,7 +123,6 @@ export function parseInboundMessage(stompMessage: IMessage): StompInboundMessage
       return obj as unknown as StompInboundMessage
     }
 
-    // 서버에서 새로운 type 이 추가되더라도 프론트가 크래시되지 않도록 null 반환
     return null
   } catch {
     if (import.meta.env.DEV) {
