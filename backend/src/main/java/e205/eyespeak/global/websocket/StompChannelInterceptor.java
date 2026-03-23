@@ -10,6 +10,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -66,6 +67,9 @@ public class StompChannelInterceptor implements ChannelInterceptor {
             // 이 연결에 "신분증"을 붙여놓음 → 이후 모든 메시지에 따라다님
             accessor.setUser(new StompPrincipal(userId, role));
             log.info("WebSocket 연결: userId={}, role={}", userId, role);
+
+            // wrap()은 헤더 복사본을 만들므로, Principal이 반영된 새 메시지를 리턴해야 한다
+            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
         }
 
         return message;
