@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
@@ -22,9 +22,27 @@ const IncomingInterruptOverlay = lazy(() => import('../../components/patient/cha
 const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
 const DevChatTriggerPanel = lazy(() => import('../../components/patient/chat/DevChatTriggerPanel'))
 
+const patientLogoutButtonStyle = {
+  position: 'fixed',
+  top: '12px',
+  right: '12px',
+  zIndex: 1100,
+  minHeight: '40px',
+  padding: '0 14px',
+  borderRadius: '999px',
+  border: '1px solid rgba(142, 162, 196, 0.4)',
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  color: '#4a5d7d',
+  fontSize: '13px',
+  fontWeight: 800,
+  cursor: 'pointer',
+  backdropFilter: 'blur(6px)',
+} as const
+
 function PatientLayoutShell() {
+  const navigate = useNavigate()
   const chat = usePatientIncomingChat()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const location = useLocation()
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
@@ -97,9 +115,24 @@ function PatientLayoutShell() {
     }
   }, [isCalibrationRoute])
 
+  const handleLogout = async () => {
+    await logout()
+    navigate(ROUTE_PATHS.HOME, { replace: true })
+  }
+
   return (
     <>
       <Outlet />
+      {!isCalibrationRoute ? (
+        <button
+          type="button"
+          onClick={() => void handleLogout()}
+          style={patientLogoutButtonStyle}
+          aria-label="Log out"
+        >
+          Log out
+        </button>
+      ) : null}
 
       {!isCalibrationRoute && isGlobalMenuOpen ? (
         <Suspense fallback={null}>

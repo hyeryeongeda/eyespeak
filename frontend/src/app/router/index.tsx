@@ -412,7 +412,11 @@ const router = createBrowserRouter(
       children: [
         {
           index: true,
-          element: <HomePage />,
+          element: (
+            <PublicOnlyRoute>
+              <HomePage />
+            </PublicOnlyRoute>
+          ),
         },
         {
           path: ROUTE_SEGMENTS.AUTH.ROOT,
