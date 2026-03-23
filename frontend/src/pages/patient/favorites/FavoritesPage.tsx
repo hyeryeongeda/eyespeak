@@ -124,23 +124,23 @@ function getFavoriteTrackingId(itemId: string) {
 function getStatusLabel(status: FavoritesStatus): string {
   switch (status) {
     case 'idle':
-      return '?湲?以?'
+      return '대기 중'
     case 'loading':
-      return '利먭꺼李얘린瑜?遺덈윭?ㅻ뒗 以묒엯?덈떎'
+      return '즐겨찾기를 불러오는 중입니다'
     case 'visible':
-      return '??ぉ???좏깮?섏꽭??'
+      return '항목을 선택하세요'
     case 'selecting':
-      return '?좏깮 諛섏쁺 以?'
+      return '선택 반영 중'
     case 'completed':
-      return '?좏깮?덉뼱??'
+      return '선택했어요'
     case 'empty':
-      return '?깅줉??利먭꺼李얘린媛 ?놁뼱??'
+      return '등록된 즐겨찾기가 없어요'
     case 'transitioning':
-      return '?붾㈃ ?대룞 以?'
+      return '화면 이동 중'
     case 'error':
-      return '?ㅻ쪟媛 諛쒖깮?덉뼱??'
+      return '오류가 발생했어요'
     default:
-      return '利먭꺼李얘린'
+      return '즐겨찾기'
   }
 }
 
@@ -201,7 +201,7 @@ export default function FavoritesPage() {
         }
 
         setErrorKind('fetch')
-        setErrorMessage('紐⑸줉??遺덈윭?ㅼ? 紐삵뻽?댁슂. ?ㅼ떆 ?쒕룄??二쇱꽭??')
+        setErrorMessage('목록을 불러오지 못했어요. 다시 시도해 주세요.')
         setStatus('error')
       }
     }
@@ -220,7 +220,7 @@ export default function FavoritesPage() {
 
   const handleAfterSelection = useCallback((_item: FavoriteItem, success: boolean) => {
     if (success) {
-      setFeedbackText('?좏깮?덉뼱??')
+      setFeedbackText('선택했어요')
       setStatus('completed')
     }
   }, [])
@@ -261,7 +261,7 @@ export default function FavoritesPage() {
         handleAfterSelection(item, true)
       } catch {
         setErrorKind('submit')
-        setErrorMessage('?좏깮??諛섏쁺?섏? 紐삵뻽?댁슂. ?ㅼ떆 ?좏깮??二쇱꽭??')
+        setErrorMessage('선택을 반영하지 못했어요. 다시 선택해 주세요.')
         setStatus('error')
       }
     },
@@ -292,13 +292,13 @@ export default function FavoritesPage() {
     return (
       <main
         style={pageWrapStyle}
-        aria-label="利먭꺼李얘린"
+        aria-label="즐겨찾기"
         ref={element => {
           dwellFeedback.containerRef.current = element
         }}
       >
         <div style={headerStyle}>{getStatusLabel('loading')}</div>
-        <div style={loadingMessageStyle}>?좎떆留?湲곕떎??二쇱꽭??</div>
+        <div style={loadingMessageStyle}>잠시만 기다려 주세요.</div>
         <div style={bottomBarStyle}>
           <button
             type="button"
@@ -313,7 +313,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            ??뷀븯湲곕줈 ?뚯븘媛湲?
+            대화하기로 돌아가기
           </button>
         </div>
       </main>
@@ -324,7 +324,7 @@ export default function FavoritesPage() {
     return (
       <main
         style={pageWrapStyle}
-        aria-label="利먭꺼李얘린"
+        aria-label="즐겨찾기"
         ref={element => {
           dwellFeedback.containerRef.current = element
         }}
@@ -345,7 +345,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            ??뷀븯湲곕줈 ?뚯븘媛湲?
+            대화하기로 돌아가기
           </button>
         </div>
       </main>
@@ -356,17 +356,17 @@ export default function FavoritesPage() {
     return (
       <main
         style={pageWrapStyle}
-        aria-label="利먭꺼李얘린"
+        aria-label="즐겨찾기"
         ref={element => {
           dwellFeedback.containerRef.current = element
         }}
       >
         <div style={headerStyle}>{getStatusLabel('error')}</div>
         <FavoritesErrorState
-          title="利먭꺼李얘린瑜?遺덈윭?????놁뼱??"
+          title="즐겨찾기를 불러올 수 없어요"
           description={errorMessage}
           onRetry={loadFavorites}
-          retryLabel="?ㅼ떆 遺덈윭?ㅺ린"
+          retryLabel="다시 불러오기"
           retryTrackingId={TRACKING_RETRY_FETCH}
           dwellFeedback={dwellFeedback}
         />
@@ -384,7 +384,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            ??뷀븯湲곕줈 ?뚯븘媛湲?
+            대화하기로 돌아가기
           </button>
         </div>
       </main>
@@ -394,24 +394,24 @@ export default function FavoritesPage() {
   return (
     <main
       style={pageWrapStyle}
-      aria-label="利먭꺼李얘린"
+      aria-label="즐겨찾기"
       ref={element => {
         dwellFeedback.containerRef.current = element
       }}
     >
       <div style={headerStyle} aria-live="polite">
-        {PAGE_CODE} 쨌 {getStatusLabel(status)}
-        {feedbackText ? ` 쨌 ${feedbackText}` : ''}
-        {showPagination ? ` 쨌 ${pageIndex + 1}/${totalPages}` : ''}
+        {PAGE_CODE} · {getStatusLabel(status)}
+        {feedbackText ? ` · ${feedbackText}` : ''}
+        {showPagination ? ` · ${pageIndex + 1}/${totalPages}` : ''}
       </div>
 
       {status === 'error' && errorKind === 'submit' ? (
         <>
           <FavoritesErrorState
-            title="?좏깮??諛섏쁺?섏? 紐삵뻽?댁슂"
+            title="선택을 반영하지 못했어요"
             description={errorMessage}
             onRetry={() => setStatus('visible')}
-            retryLabel="?ㅼ떆 ?좏깮?섍린"
+            retryLabel="다시 선택하기"
             retryTrackingId="favorites-retry-submit"
             dwellFeedback={dwellFeedback}
           />
@@ -429,12 +429,12 @@ export default function FavoritesPage() {
                   remainingMs={dwellFeedback.remainingMs}
                 />
               ) : null}
-              ??뷀븯湲곕줈 ?뚯븘媛湲?
+              대화하기로 돌아가기
             </button>
           </div>
         </>
       ) : (
-        <section style={gridStyle} aria-label="利먭꺼李얘린 紐⑸줉">
+        <section style={gridStyle} aria-label="즐겨찾기 목록">
           {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => (
             <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
               {currentItems[index] ? (
@@ -466,8 +466,8 @@ export default function FavoritesPage() {
           </div>
           <div style={{ ...slotWrapStyle, gridArea: 'back' }}>
             <FavoritesActionCard
-              primaryText="?ㅻ줈媛湲?"
-              description="硫붿씤 ?붾㈃?쇰줈"
+              primaryText="뒤로가기"
+              description="메인 화면으로"
               onClick={handleBack}
               trackingId={TRACKING_BACK_BUTTON}
               dwellFeedback={dwellFeedback}

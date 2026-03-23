@@ -40,7 +40,7 @@ export default function BodyMindPainDetailPage() {
   const [selectedKey, setSelectedKey] = useState<PainDetailKey | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
   const [feedbackText, setFeedbackText] = useState(
-    '?듭쬆???깃꺽?대굹 ?꾩슂???뚮큵 ?붿껌???좏깮?섏꽭??',
+    '통증의 성격이나 필요한 돌봄 요청을 선택하세요.',
   )
   const currentOptions = painDetailOptionPages[pageIndex] ?? []
   const hasNextPage = pageIndex < painDetailOptionPages.length - 1
@@ -62,11 +62,11 @@ export default function BodyMindPainDetailPage() {
     } catch (error) {
       console.warn('Body-mind pain-detail chat send failed.', error)
       setStatus('visible')
-      setFeedbackText('?꾩넚???ㅽ뙣?덉뒿?덈떎. ?ㅼ떆 ?좏깮??二쇱꽭??')
+      setFeedbackText('전송에 실패했습니다. 다시 선택해 주세요.')
       return
     }
 
-    let completionSourceLabel = '梨꾪똿 ?꾩넚 ?꾨즺'
+    let completionSourceLabel = '채팅 전송 완료'
 
     try {
       const result = await submitBodyMindExpression({
@@ -77,7 +77,7 @@ export default function BodyMindPainDetailPage() {
       })
 
       completionSourceLabel =
-        result.source === 'mock' ? 'mock ????꾨즺' : 'API ?꾩넚 ?꾨즺'
+        result.source === 'mock' ? 'mock 저장 완료' : 'API 전송 완료'
     } catch (error) {
       console.warn('Body-mind pain-detail persistence failed after chat send.', error)
     }
@@ -93,7 +93,7 @@ export default function BodyMindPainDetailPage() {
     setSelectedKey(key)
     setStatus('completed')
     setFeedbackText(
-      `${selectedArea.label} 쨌 ${label} ?좏깮 ?꾨즺 쨌 ${completionSourceLabel}`,
+      `${selectedArea.label} · ${label} 선택 완료 · ${completionSourceLabel}`,
     )
   }
 
@@ -124,11 +124,11 @@ export default function BodyMindPainDetailPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-005"
-      title="?듭쬆 ?곸꽭"
-      description="?좏깮??遺?꾩뿉 ????듭쬆???깃꺽?대굹 ?꾩슂???뚮큵??援ъ껜?곸쑝濡??꾨떖?⑸땲??"
+      title="통증 상세"
+      description="선택한 부위에 대해 통증의 성격이나 필요한 돌봄을 구체적으로 전달합니다."
       status={status}
-      contextLabel={`?좏깮??遺?? ${selectedArea.label}`}
-      feedbackText={`${feedbackText} 쨌 ?섏씠吏 ${pageIndex + 1} / ${painDetailOptionPages.length}`}
+      contextLabel={`선택한 부위: ${selectedArea.label}`}
+      feedbackText={`${feedbackText} · 페이지 ${pageIndex + 1} / ${painDetailOptionPages.length}`}
     >
       <BodyMindFixedGrid
         primaryCards={currentOptions.map(option => (
@@ -143,8 +143,8 @@ export default function BodyMindPainDetailPage() {
         ))}
         topRightCard={
           <BodyMindOptionCard
-            title="?ㅼ쓬"
-            description={hasNextPage ? '?ㅼ쓬 ??ぉ 蹂닿린' : '留덉?留???ぉ?낅땲??'}
+            title="다음"
+            description={hasNextPage ? '다음 항목 보기' : '마지막 항목입니다'}
             tone="mint"
             disabled={!hasNextPage}
             onSelect={handleNext}
@@ -152,8 +152,8 @@ export default function BodyMindPainDetailPage() {
         }
         bottomRightCard={
           <BodyMindOptionCard
-            title="?ㅻ줈媛湲?"
-            description={pageIndex > 0 ? '?댁쟾 ??ぉ?쇰줈' : '?몃? 遺?꾨줈 ?뚯븘媛湲?'}
+            title="뒤로가기"
+            description={pageIndex > 0 ? '이전 항목으로' : '세부 부위로 돌아가기'}
             tone="slate"
             onSelect={handleBack}
           />
