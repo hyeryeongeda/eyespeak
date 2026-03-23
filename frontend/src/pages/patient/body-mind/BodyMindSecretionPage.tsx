@@ -21,7 +21,7 @@ export default function BodyMindSecretionPage() {
   const [selectedKey, setSelectedKey] = useState<SecretionOptionKey | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
   const [feedbackText, setFeedbackText] = useState(
-    '??ぉ???좏깮?섎㈃ ?꾩옱 ?붾㈃?먯꽌 ?좏깮 ?곹깭瑜??좎??⑸땲??',
+    '항목을 선택하면 현재 화면에서 선택 상태를 유지합니다.',
   )
   const currentOptions = secretionOptionPages[pageIndex] ?? []
   const hasNextPage = pageIndex < secretionOptionPages.length - 1
@@ -37,11 +37,11 @@ export default function BodyMindSecretionPage() {
     } catch (error) {
       console.warn('Body-mind secretion chat send failed.', error)
       setStatus('visible')
-      setFeedbackText('?꾩넚???ㅽ뙣?덉뒿?덈떎. ?ㅼ떆 ?좏깮??二쇱꽭??')
+      setFeedbackText('전송에 실패했습니다. 다시 선택해 주세요.')
       return
     }
 
-    let completionSourceLabel = '梨꾪똿 ?꾩넚 ?꾨즺'
+    let completionSourceLabel = '채팅 전송 완료'
 
     try {
       const result = await submitBodyMindExpression({
@@ -51,7 +51,7 @@ export default function BodyMindSecretionPage() {
       })
 
       completionSourceLabel =
-        result.source === 'mock' ? 'mock ????꾨즺' : 'API ?꾩넚 ?꾨즺'
+        result.source === 'mock' ? 'mock 저장 완료' : 'API 전송 완료'
     } catch (error) {
       console.warn('Body-mind secretion persistence failed after chat send.', error)
     }
@@ -66,7 +66,7 @@ export default function BodyMindSecretionPage() {
 
     setSelectedKey(key)
     setStatus('completed')
-    setFeedbackText(`${label} ?좏깮 ?꾨즺 쨌 ${completionSourceLabel}`)
+    setFeedbackText(`${label} 선택 완료 · ${completionSourceLabel}`)
   }
 
   const handleNext = () => {
@@ -94,11 +94,11 @@ export default function BodyMindSecretionPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-002"
-      title="媛??移?鍮쇱쨾"
-      description="媛?? 移? ?앹뀡 愿??遺덊렪怨??뚮큵 ?붿껌??援ъ껜?곸쑝濡??꾨떖?⑸땲??"
+      title="가래/침 빼줘"
+      description="가래, 침, 석션 관련 불편과 돌봄 요청을 구체적으로 전달합니다."
       status={status}
       feedbackText={feedbackText}
-      contextLabel={`?섏씠吏 ${pageIndex + 1} / ${secretionOptionPages.length}`}
+      contextLabel={`페이지 ${pageIndex + 1} / ${secretionOptionPages.length}`}
     >
       <BodyMindFixedGrid
         primaryCards={currentOptions.map(option => (
@@ -113,8 +113,8 @@ export default function BodyMindSecretionPage() {
         ))}
         topRightCard={
           <BodyMindOptionCard
-            title="?ㅼ쓬"
-            description={hasNextPage ? '?ㅼ쓬 ??ぉ 蹂닿린' : '留덉?留???ぉ?낅땲??'}
+            title="다음"
+            description={hasNextPage ? '다음 항목 보기' : '마지막 항목입니다'}
             tone="mint"
             disabled={!hasNextPage}
             onSelect={handleNext}
@@ -122,8 +122,8 @@ export default function BodyMindSecretionPage() {
         }
         bottomRightCard={
           <BodyMindOptionCard
-            title="?ㅻ줈媛湲?"
-            description={pageIndex > 0 ? '?댁쟾 ??ぉ?쇰줈' : '紐멸낵留덉쓬 硫붿씤?쇰줈'}
+            title="뒤로가기"
+            description={pageIndex > 0 ? '이전 항목으로' : '몸과마음 메인으로'}
             tone="slate"
             onSelect={handleBack}
           />

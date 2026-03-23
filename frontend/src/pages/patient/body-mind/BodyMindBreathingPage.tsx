@@ -20,7 +20,7 @@ export default function BodyMindBreathingPage() {
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedKey, setSelectedKey] = useState<BreathingOptionKey | null>(null)
   const [feedbackText, setFeedbackText] = useState(
-    '?명씉 ?곹깭瑜??좏깮?섎㈃ ?꾨즺 ?쇰뱶諛깆쓣 二쇨퀬 ?꾩옱 ?붾㈃???좎??⑸땲??',
+    '호흡 상태를 선택하면 완료 피드백을 주고 현재 화면을 유지합니다.',
   )
   const currentOptions = breathingOptionPages[0] ?? []
 
@@ -35,11 +35,11 @@ export default function BodyMindBreathingPage() {
     } catch (error) {
       console.warn('Body-mind breathing chat send failed.', error)
       setStatus('visible')
-      setFeedbackText('?꾩넚???ㅽ뙣?덉뒿?덈떎. ?ㅼ떆 ?좏깮??二쇱꽭??')
+      setFeedbackText('전송에 실패했습니다. 다시 선택해 주세요.')
       return
     }
 
-    let completionSourceLabel = '梨꾪똿 ?꾩넚 ?꾨즺'
+    let completionSourceLabel = '채팅 전송 완료'
 
     try {
       const result = await submitBodyMindExpression({
@@ -49,7 +49,7 @@ export default function BodyMindBreathingPage() {
       })
 
       completionSourceLabel =
-        result.source === 'mock' ? 'mock ????꾨즺' : 'API ?꾩넚 ?꾨즺'
+        result.source === 'mock' ? 'mock 저장 완료' : 'API 전송 완료'
     } catch (error) {
       console.warn('Body-mind breathing persistence failed after chat send.', error)
     }
@@ -64,7 +64,7 @@ export default function BodyMindBreathingPage() {
 
     setSelectedKey(key)
     setStatus('completed')
-    setFeedbackText(`${label} ?좏깮 ?꾨즺 쨌 ${completionSourceLabel}`)
+    setFeedbackText(`${label} 선택 완료 · ${completionSourceLabel}`)
   }
 
   const handleBack = () => {
@@ -75,11 +75,11 @@ export default function BodyMindBreathingPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-003"
-      title="???듬떟??"
-      description="?명씉 愿??遺덊렪 ?뺣룄? ?곹깭 蹂?붾? 援ъ껜?곸쑝濡??꾨떖?⑸땲??"
+      title="숨 답답해"
+      description="호흡 관련 불편 정도와 상태 변화를 구체적으로 전달합니다."
       status={status}
       feedbackText={feedbackText}
-      contextLabel="?섏씠吏 1 / 1"
+      contextLabel="페이지 1 / 1"
     >
       <BodyMindFixedGrid
         primaryCards={currentOptions.map(option => (
@@ -94,8 +94,8 @@ export default function BodyMindBreathingPage() {
         ))}
         topRightCard={
           <BodyMindOptionCard
-            title="?ㅼ쓬"
-            description="留덉?留???ぉ?낅땲??"
+            title="다음"
+            description="마지막 항목입니다"
             tone="mint"
             disabled
             onSelect={() => undefined}
@@ -103,8 +103,8 @@ export default function BodyMindBreathingPage() {
         }
         bottomRightCard={
           <BodyMindOptionCard
-            title="?ㅻ줈媛湲?"
-            description="紐멸낵留덉쓬 硫붿씤?쇰줈"
+            title="뒤로가기"
+            description="몸과마음 메인으로"
             tone="slate"
             onSelect={handleBack}
           />
