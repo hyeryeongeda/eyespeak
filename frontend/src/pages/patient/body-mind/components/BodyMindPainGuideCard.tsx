@@ -91,13 +91,21 @@ const placeholderDescriptionStyle: CSSProperties = {
   color: '#6e7d93',
 }
 
+export interface BodyViewOffset {
+  /** 카메라 Y 좌표 오프셋 (모델 중심 대비) */
+  y: number
+  /** 카메라 Z 거리 (줌 레벨, 작을수록 가까움) */
+  z: number
+}
+
 interface BodyMindPainGuideCardProps {
-  badge: string
+  badge?: string
   modelUrl: string
   fallbackModelUrl?: string
   headerText?: string
   highlightModelUrl?: string | null
   rotationY?: number
+  viewOffset?: BodyViewOffset | null
 }
 
 interface ModelErrorBoundaryProps {
@@ -205,6 +213,18 @@ function SmoothRotationGroup({
   return <group ref={groupRef}>{children}</group>
 }
 
+const CAMERA_LERP_SPEED = 4
+
+function CameraController({ viewOffset }: { viewOffset: BodyViewOffset }) {
+  useFrame(({ camera }, delta) => {
+    const t = 1 - Math.exp(-CAMERA_LERP_SPEED * delta)
+    camera.position.y = MathUtils.lerp(camera.position.y, viewOffset.y, t)
+    camera.position.z = MathUtils.lerp(camera.position.z, viewOffset.z, t)
+    camera.lookAt(0, viewOffset.y, 0)
+  })
+  return null
+}
+
 function Placeholder() {
   return (
     <div style={placeholderWrapStyle}>
@@ -227,6 +247,7 @@ export default function BodyMindPainGuideCard({
   headerText,
   highlightModelUrl,
   rotationY = 0,
+  viewOffset,
 }: BodyMindPainGuideCardProps) {
   const [modelState, setModelState] = useState(() => ({
     sourceModelUrl: modelUrl,
@@ -274,8 +295,8 @@ export default function BodyMindPainGuideCard({
   }
 
   return (
-    <section style={cardStyle} aria-label={`${badge} 3D 가이드`}>
-      <span style={badgeStyle}>{badge}</span>
+    <section style={badge || headerText ? cardStyle : { ...cardStyle, padding: '8px', gap: '0px' }} aria-label={`${badge ?? '3D'} 가이드`}>
+      {badge ? <span style={badgeStyle}>{badge}</span> : null}
       {headerText ? <p style={headerTextStyle}>{headerText}</p> : null}
       {currentModelState.hasFatalError ? (
         <Placeholder />
@@ -287,14 +308,26 @@ export default function BodyMindPainGuideCard({
               <directionalLight position={[4, 5, 4]} intensity={1.15} />
               <directionalLight position={[-3, 2, -3]} intensity={0.42} />
               <Suspense fallback={<LoadingOverlay />}>
-                <Bounds fit clip observe margin={1.15}>
-                  <Center>
-                    <SmoothRotationGroup targetRotationY={rotationY}>
-                      <ModelScene modelUrl={resolvedModelUrl} />
-                      {highlightModelUrl ? <HighlightModelScene modelUrl={highlightModelUrl} /> : null}
-                    </SmoothRotationGroup>
-                  </Center>
-                </Bounds>
+                {viewOffset ? (
+                  <>
+                    <CameraController viewOffset={viewOffset} />
+                    <Center>
+                      <SmoothRotationGroup targetRotationY={rotationY}>
+                        <ModelScene modelUrl={resolvedModelUrl} />
+                        {highlightModelUrl ? <HighlightModelScene modelUrl={highlightModelUrl} /> : null}
+                      </SmoothRotationGroup>
+                    </Center>
+                  </>
+                ) : (
+                  <Bounds fit clip observe margin={1.15}>
+                    <Center>
+                      <SmoothRotationGroup targetRotationY={rotationY}>
+                        <ModelScene modelUrl={resolvedModelUrl} />
+                        {highlightModelUrl ? <HighlightModelScene modelUrl={highlightModelUrl} /> : null}
+                      </SmoothRotationGroup>
+                    </Center>
+                  </Bounds>
+                )}
               </Suspense>
             </Canvas>
           </ModelErrorBoundary>
