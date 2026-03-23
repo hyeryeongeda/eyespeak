@@ -83,6 +83,21 @@ export function useCareChat(): UseCareChatReturn {
     }
   }, [historyMessages])
 
+  // [DEBUG] 서버 에러 구독 — 배포 확인 후 제거
+  useEffect(() => {
+    if (isMock || !client || !connected) {
+      return
+    }
+
+    const unsubErrors = client.subscribe('/user/queue/errors', (msg) => {
+      console.error('[STOMP ERROR]', msg.body)
+    })
+
+    return () => {
+      unsubErrors()
+    }
+  }, [isMock, client, connected])
+
   // 채팅 메시지 구독 (/user/queue/chat)
   useEffect(() => {
     if (isMock || !client || !connected) {
