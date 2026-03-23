@@ -4,13 +4,26 @@ import type { ChatMessageDto } from '../features/care/types/chat'
 import { useAuthStore } from '../stores/authStore'
 import type { PatientChatMessage } from '../types/chat'
 
+function normalizeDateTime(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (Array.isArray(value)) {
+    const [y, m, d, h = 0, min = 0, s = 0] = value as number[]
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+
+  return new Date().toISOString()
+}
+
 function dtoToPatientChatMessage(dto: ChatMessageDto): PatientChatMessage {
   return {
     id: String(dto.messageId),
     sender: dto.senderRole === 'PATIENT' ? 'patient' : 'guardian',
     type: 'text',
     content: dto.text,
-    createdAt: dto.timestamp,
+    createdAt: normalizeDateTime(dto.createdAt ?? dto.timestamp),
     status: 'replied',
     meta: {
       contentType: dto.contentType,
