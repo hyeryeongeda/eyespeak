@@ -2,6 +2,8 @@ export type LeisureCardTone = 'sky' | 'sand' | 'mint' | 'rose' | 'slate'
 
 export type LeisureCategoryId = 'sports' | 'news' | 'music' | 'radio' | 'audiobook'
 
+export type LeisureShortcutKind = 'content' | 'category'
+
 export type LeisureMainStatus =
   | 'idle'
   | 'loading'
@@ -56,6 +58,18 @@ export interface LeisureCategory {
   accentColor: string
 }
 
+export interface LeisureShortcut {
+  id: string
+  title: string
+  description: string
+  tone: LeisureCardTone
+  badgeLabel: string
+  kind: LeisureShortcutKind
+  contentId: string | null
+  categoryId: LeisureCategoryId | null
+  categoryLabel: string | null
+}
+
 export interface LeisureContent {
   id: string
   title: string
@@ -72,9 +86,7 @@ export interface LeisureContent {
 }
 
 export interface LeisureMainPayload {
-  categories: LeisureCategory[]
-  featuredContent: LeisureContent | null
-  registeredContents: LeisureContent[]
+  shortcutCards: LeisureShortcut[]
 }
 
 export interface LeisureCategoryPayload {

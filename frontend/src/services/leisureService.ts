@@ -1,15 +1,18 @@
 import { getLeisureContentsApi } from './leisureApi'
 import { getActiveApiMode } from './apiClient'
 import type {
+  LeisureCardTone,
   LeisureCategory,
   LeisureCategoryId,
   LeisureCategoryPayload,
   LeisureContent,
   LeisureContentResponseDto,
   LeisureMainPayload,
+  LeisureShortcut,
 } from '../types/leisure'
 
 const LEISURE_RECOMMENDATION_SIZE = 4
+const LEISURE_SHORTCUT_SIZE = 5
 
 const leisureCategories: LeisureCategory[] = [
   {
@@ -52,6 +55,8 @@ const leisureCategories: LeisureCategory[] = [
 const categoryMap = new Map<LeisureCategoryId, LeisureCategory>(
   leisureCategories.map(category => [category.id, category]),
 )
+
+const shortcutToneSequence: LeisureCardTone[] = ['sand', 'sky', 'mint', 'slate', 'rose']
 
 const MOCK_LEISURE_CONTENTS: LeisureContentResponseDto[] = [
   {
@@ -150,6 +155,14 @@ function extractVideoIdFromPath(pathname: string) {
   return segments[0] ?? null
 }
 
+function getShortcutTone(index: number, category: LeisureCategory | null) {
+  return category?.tone ?? shortcutToneSequence[index % shortcutToneSequence.length]
+}
+
+async function getRawLeisureContents() {
+  return getActiveApiMode() === 'real' ? await getLeisureContentsApi() : MOCK_LEISURE_CONTENTS
+}
+
 export function extractYouTubeVideoId(urlValue: string | null | undefined) {
   if (!urlValue) {
     return null
@@ -198,7 +211,6 @@ export function extractYouTubeVideoId(urlValue: string | null | undefined) {
 
 export function mapApiItemToLeisureContent(item: LeisureContentResponseDto): LeisureContent | null {
   if (!item.url) {
-    console.warn('Skipping leisure content without URL.', item)
     return null
   }
 
@@ -228,11 +240,56 @@ export function mapApiItemToLeisureContent(item: LeisureContentResponseDto): Lei
   }
 }
 
+function mapApiItemToShortcut(
+  item: LeisureContentResponseDto,
+  index: number,
+): LeisureShortcut | null {
+  const categoryId = normalizeCategory(item.category)
+  const category = categoryId ? categoryMap.get(categoryId) ?? null : null
+  const categoryLabel = item.categoryName ?? category?.label ?? null
+  const tone = getShortcutTone(index, category)
+
+  if (item.url) {
+    const content = mapApiItemToLeisureContent(item)
+
+    if (!content) {
+      return null
+    }
+
+    return {
+      id: String(item.id),
+      title: item.name,
+      description: '보호자가 등록한 YouTube 콘텐츠를 바로 재생합니다.',
+      tone,
+      badgeLabel: '바로 재생',
+      kind: 'content',
+      contentId: content.id,
+      categoryId: content.categoryId,
+      categoryLabel: content.categoryLabel,
+    }
+  }
+
+  if (!categoryId) {
+    return null
+  }
+
+  return {
+    id: String(item.id),
+    title: item.name,
+    description: `${
+      categoryLabel ?? '지정한 카테고리'
+    } 관련 콘텐츠를 바로 재생합니다.`,
+    tone,
+    badgeLabel: '카테고리',
+    kind: 'category',
+    contentId: null,
+    categoryId,
+    categoryLabel,
+  }
+}
+
 async function getPlayableContents() {
-  const response =
-    getActiveApiMode() === 'real'
-      ? await getLeisureContentsApi()
-      : MOCK_LEISURE_CONTENTS
+  const response = await getRawLeisureContents()
 
   return response
     .map(mapApiItemToLeisureContent)
@@ -258,13 +315,14 @@ export function getLeisureCategoryById(categoryId: string | null | undefined) {
 }
 
 export async function fetchLeisureMain(): Promise<LeisureMainPayload> {
-  const contents = await getPlayableContents()
-  const [featuredContent, ...remainingContents] = contents
+  const response = await getRawLeisureContents()
+  const shortcutCards = response
+    .map(mapApiItemToShortcut)
+    .filter((shortcut): shortcut is LeisureShortcut => Boolean(shortcut))
+    .slice(0, LEISURE_SHORTCUT_SIZE)
 
   return {
-    categories: leisureCategories,
-    featuredContent: featuredContent ?? null,
-    registeredContents: remainingContents.slice(0, LEISURE_RECOMMENDATION_SIZE),
+    shortcutCards,
   }
 }
 
