@@ -30,11 +30,11 @@ const noticeStackStyle: CSSProperties = {
 }
 
 type CustomTalkDirectionTrackingId =
-  | 'custom-talk-direction-today'
-  | 'custom-talk-direction-quick-reply-primary'
-  | 'custom-talk-direction-quick-reply-secondary'
+  | 'custom-talk-direction-recommendation-1'
+  | 'custom-talk-direction-recommendation-2'
+  | 'custom-talk-direction-recommendation-3'
+  | 'custom-talk-direction-recommendation-4'
   | 'custom-talk-direction-keyboard'
-  | 'custom-talk-direction-refresh'
   | 'custom-talk-direction-back'
 
 function pickCategory(
@@ -70,20 +70,24 @@ function buildMoodSentence(todayMood?: string) {
     return undefined
   }
 
-  return ensureSentence(normalized.startsWith('지금은') ? normalized : `지금은 ${normalized}`)
+  return ensureSentence(normalized.startsWith('지금') ? normalized : `지금 ${normalized}`)
 }
 
-function buildQuickReplySentences(
+function buildEntryRecommendationSentences(
   context: CustomTalkContextSummary | null,
   recommendedSentences: string[],
 ) {
   const candidates = [
-    recommendedSentences[1],
     recommendedSentences[0],
-    context?.frequentExpressions?.find(item => item.includes('불편')),
+    recommendedSentences[1],
+    recommendedSentences[2],
+    context?.frequentExpressions?.[0],
+    context?.frequentExpressions?.[1],
     buildMoodSentence(context?.todayMood),
     context?.recentUsedExpressions?.[0],
-    '조금만 도와주세요.',
+    context?.recentUsedExpressions?.[1],
+    '조금만 기다려 주세요.',
+    '지금 조금 먹고 싶어요.',
   ]
 
   const seen = new Set<string>()
@@ -99,19 +103,7 @@ function buildQuickReplySentences(
       seen.add(item)
       return true
     })
-    .slice(0, 2)
-}
-
-function buildTodayCardDescription(context: CustomTalkContextSummary | null) {
-  const tokens = [context?.todayMood, context?.todaySchedule].filter(
-    (item): item is string => Boolean(item),
-  )
-
-  if (tokens.length === 0) {
-    return '오늘 기분과 일정을 기준으로 바로 답할 문장을 추천합니다.'
-  }
-
-  return `${tokens.join(' · ')} 기준으로 추천합니다.`
+    .slice(0, 4)
 }
 
 export default function CustomTalkDirectionPage() {
@@ -129,7 +121,6 @@ export default function CustomTalkDirectionPage() {
   const completionMessage = useCustomTalkStore(state => state.completionMessage)
   const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
-  const refreshCategories = useCustomTalkStore(state => state.refreshCategories)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
@@ -146,9 +137,25 @@ export default function CustomTalkDirectionPage() {
   ])
 
   const todayCategory = pickCategory(visibleCategoryKeys, ['mood', 'schedule'], 'mood')
-  const quickReplies = buildQuickReplySentences(context, recommendedSentences)
-  const primaryQuickReply = quickReplies[0] ?? '몸이 조금 불편해요.'
-  const secondaryQuickReply = quickReplies[1] ?? '지금은 조금 피곤해요.'
+  const entryRecommendations = buildEntryRecommendationSentences(context, recommendedSentences)
+  const recommendationCards = [
+    {
+      sentence: entryRecommendations[0] ?? '몸이 조금 불편해요.',
+      trackingId: 'custom-talk-direction-recommendation-1' as const,
+    },
+    {
+      sentence: entryRecommendations[1] ?? '지금 조금 쉬고 싶어요.',
+      trackingId: 'custom-talk-direction-recommendation-2' as const,
+    },
+    {
+      sentence: entryRecommendations[2] ?? '조금만 물을 주세요.',
+      trackingId: 'custom-talk-direction-recommendation-3' as const,
+    },
+    {
+      sentence: entryRecommendations[3] ?? '지금 조금 먹고 싶어요.',
+      trackingId: 'custom-talk-direction-recommendation-4' as const,
+    },
+  ]
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
 
@@ -159,43 +166,54 @@ export default function CustomTalkDirectionPage() {
 
   return (
     <CustomTalkEntryLayout
-      title="맞춤대화"
+      title="맞춤문장"
       topLeft={{
-        title: '오늘 이야기',
-        description: buildTodayCardDescription(context),
-        tone: 'sky',
-        onSelect: () => {
-          selectCategory(todayCategory)
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
-        },
-        disabled: isBusy,
-        trackingId: 'custom-talk-direction-today',
-      }}
-      topCenter={{
-        title: primaryQuickReply,
-        description: '이 문장으로 바로 답변합니다.',
+        title: recommendationCards[0].sentence,
+        description: '추천문장으로 바로 말합니다.',
         tone: 'sand',
         onSelect: async () => {
           selectCategory(todayCategory)
-          await selectRecommendedSentence(primaryQuickReply)
+          await selectRecommendedSentence(recommendationCards[0].sentence)
         },
-        disabled: isBusy || !primaryQuickReply,
-        trackingId: 'custom-talk-direction-quick-reply-primary',
+        disabled: isBusy,
+        trackingId: recommendationCards[0].trackingId,
       }}
-      topRight={{
-        title: secondaryQuickReply,
-        description: '이 문장으로 바로 답변합니다.',
-        tone: 'sky',
+      topCenter={{
+        title: recommendationCards[1].sentence,
+        description: '추천문장으로 바로 말합니다.',
+        tone: 'sand',
         onSelect: async () => {
           selectCategory(todayCategory)
-          await selectRecommendedSentence(secondaryQuickReply)
+          await selectRecommendedSentence(recommendationCards[1].sentence)
         },
-        disabled: isBusy || !secondaryQuickReply,
-        trackingId: 'custom-talk-direction-quick-reply-secondary',
+        disabled: isBusy,
+        trackingId: recommendationCards[1].trackingId,
+      }}
+      topRight={{
+        title: recommendationCards[2].sentence,
+        description: '추천문장으로 바로 말합니다.',
+        tone: 'sand',
+        onSelect: async () => {
+          selectCategory(todayCategory)
+          await selectRecommendedSentence(recommendationCards[2].sentence)
+        },
+        disabled: isBusy,
+        trackingId: recommendationCards[2].trackingId,
       }}
       bottomLeft={{
-        title: '키보드 직접 입력',
-        description: '생성 문장 대신 직접 입력 화면으로 이동합니다.',
+        title: recommendationCards[3].sentence,
+        description: '추천문장으로 바로 말합니다.',
+        tone: 'sand',
+        onSelect: async () => {
+          selectCategory(todayCategory)
+          await selectRecommendedSentence(recommendationCards[3].sentence)
+        },
+        disabled: isBusy,
+        trackingId: recommendationCards[3].trackingId,
+      }}
+      bottomCenter={{
+        title: '직접말해요',
+        description: '직접 입력 화면으로 이동합니다.',
         tone: 'mint',
         onSelect: () => {
           openKeyboard('custom_entry')
@@ -203,17 +221,6 @@ export default function CustomTalkDirectionPage() {
         },
         disabled: status === 'submitting',
         trackingId: 'custom-talk-direction-keyboard',
-      }}
-      bottomCenter={{
-        title: '새로고침',
-        description: '추천 방향과 맥락을 다시 불러옵니다.',
-        tone: 'sand',
-        onSelect: async () => {
-          await refreshCategories()
-          await loadRecommendedSentences(todayCategory)
-        },
-        disabled: isBusy,
-        trackingId: 'custom-talk-direction-refresh',
       }}
       bottomRight={{
         title: '뒤로가기',
@@ -235,7 +242,7 @@ export default function CustomTalkDirectionPage() {
             <div style={noticeStackStyle}>
               {status === 'loading' || status === 'refreshing' ? (
                 <div style={customTalkLoadingNoticeStyle}>
-                  맞춤대화 맥락과 추천 문장을 불러오는 중입니다.
+                  맞춤문장 대화 내용과 추천 문장을 불러오는 중입니다.
                 </div>
               ) : null}
               {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
