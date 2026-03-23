@@ -32,7 +32,7 @@ import {
   getRecommendationRepliesApi,
   getRecommendationSentencesApi,
   getRecommendationWordsApi,
-  sendRecommendationApi,
+  recordRecommendationApi,
 } from './recommendationApi'
 import { playSynthesizeTts } from './ttsService'
 import { mockSendPatientReply, type MockSendPatientReplyInput, type MockSendPatientReplyResult } from './mockPatientChatService'
@@ -242,7 +242,7 @@ export async function submitPatientUtterance(input: {
     })
   }
 
-  const response = await sendRecommendationApi(
+  const response = await recordRecommendationApi(
     {
       text: normalizedText,
       source: input.source,
@@ -310,7 +310,7 @@ export async function sendPatientReply(
   }
 
   try {
-    const response = await sendRecommendationApi(
+    const response = await recordRecommendationApi(
       {
         text: input.content,
         source: mapReplyTypeToSendSource(input.type),

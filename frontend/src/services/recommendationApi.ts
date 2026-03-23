@@ -84,3 +84,16 @@ export function sendRecommendationApi(
     },
   )
 }
+
+export function recordRecommendationApi(
+  request: RecommendationSendRequestDto,
+  accessToken?: string | null,
+) {
+  return apiClient.post<RecommendationSendResponseDto, RecommendationSendRequestDto>(
+    API_ENDPOINTS.RECOMMENDATION_RECORD,
+    request,
+    {
+      accessToken,
+    },
+  )
+}

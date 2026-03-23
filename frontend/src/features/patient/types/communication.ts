@@ -117,7 +117,7 @@ export interface BodyMindStoredState {
 
 export interface SubmitBodyMindExpressionResult {
   success: boolean
-  source: 'mock' | 'todo'
+  source: 'mock' | 'real'
   payload: BodyMindExpressionPayload
 }
 
