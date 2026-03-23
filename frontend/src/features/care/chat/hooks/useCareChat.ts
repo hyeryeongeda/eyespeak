@@ -190,13 +190,11 @@ export function useCareChat(): UseCareChatReturn {
 
       const payload = buildChatPayload({
         matchingId: user.matchingId,
-        senderId: user.userId,
-        senderRole: 'GUARDIAN',
         text: content,
         contentType: 'TEXT',
       })
 
-      client.publish(STOMP_DESTINATIONS.PUBLISH_CHAT, payload as unknown as Record<string, unknown>)
+      client.publish(STOMP_DESTINATIONS.PUBLISH_CHAT, payload)
     },
     [isMock, client, connected, user],
   )

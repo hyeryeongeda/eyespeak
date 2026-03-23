@@ -14,7 +14,6 @@ import type {
   StompContentType,
   StompInboundMessage,
   StompPublishCall,
-  StompPublishChat,
   StompSenderRole,
 } from './stompTypes'
 
@@ -137,26 +136,23 @@ export function parseInboundMessage(stompMessage: IMessage): StompInboundMessage
 /**
  * 채팅 메시지 발행 페이로드를 생성한다.
  *
+ * 서버는 senderId/senderRole 을 JWT Principal 에서 가져오므로
+ * 페이로드에는 포함하지 않는다. type 역시 서버에서 사용하지 않는다.
+ * (STOMP 메시지 컨버터가 unknown property 에 대해 예외를 던질 수 있음)
+ *
  * 보호자는 contentType='TEXT' 만 사용하므로 phraseId/exprId 를 보내지 않는다.
  * 환자는 PHRASE/EXPRESSION 선택 시 해당 ID 를 포함하며,
  * 서버는 이를 message 테이블 + usage_log 테이블에 동시 기록한다.
- *
- * matchingId, senderId 는 ERD bigint 에 매핑되므로 number 타입이다.
  */
 export function buildChatPayload(params: {
   matchingId: number
-  senderId: number
-  senderRole: StompSenderRole
   text: string
   contentType: StompContentType
   phraseId?: number | null
   exprId?: number | null
-}): StompPublishChat {
-  const payload: StompPublishChat = {
-    type: 'CHAT',
+}): Record<string, unknown> {
+  const payload: Record<string, unknown> = {
     matchingId: params.matchingId,
-    senderId: params.senderId,
-    senderRole: params.senderRole,
     text: params.text,
     contentType: params.contentType,
   }
