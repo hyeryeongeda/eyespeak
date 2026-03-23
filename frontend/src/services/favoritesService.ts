@@ -25,6 +25,7 @@ import {
   updateFavoriteApi,
 } from './favoriteApi'
 import { MOCK_CATEGORIES, MOCK_FAVORITE_PHRASES, MOCK_PHRASES } from './mockCareData'
+import { logPhraseUsageSilently } from './usageLogService'
 
 const FAVORITES_PAGE_SIZE = 4
 
@@ -103,10 +104,18 @@ function mapFavoriteResponseToItem(response: FavoriteResponseDto): FavoriteItem 
 
 function mapFavoriteToPatientItem(item: FavoriteItem): PatientFavoriteItem {
   return {
-    id: String(item.favoriteId),
+    id: `${item.favoriteId}:${item.phraseId}`,
+    phraseId: item.phraseId,
     text: item.content,
     category: item.categoryName,
   }
+}
+
+function parsePhraseIdFromFavoriteItemId(favoriteId: string) {
+  const [, phraseIdSegment] = favoriteId.split(':')
+  const phraseId = Number.parseInt(phraseIdSegment ?? '', 10)
+
+  return Number.isInteger(phraseId) ? phraseId : null
 }
 
 function mapMockFavoriteToItem(favorite: FavoritePhrase): FavoriteItem | null {
@@ -322,10 +331,16 @@ export interface SubmitFavoriteSelectionResult {
 
 export async function submitFavoriteSelection(
   _patientId: string,
-  _favoriteId: string,
+  favoriteId: string,
   _text: string,
 ): Promise<SubmitFavoriteSelectionResult> {
   await new Promise<void>(resolve => setTimeout(resolve, 300))
+
+  const phraseId = parsePhraseIdFromFavoriteItemId(favoriteId)
+
+  if (phraseId != null) {
+    logPhraseUsageSilently(phraseId)
+  }
 
   return { success: true, source: 'mock' }
 }

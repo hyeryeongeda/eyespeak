@@ -7,11 +7,13 @@ import type {
   RegisterPatientInfoResponseDto,
 } from '../types/patient'
 import { createServiceFailure } from '../utils/errorMapper'
+import { checkEmailAvailability } from './authService'
 import { signUpGuardianApi } from './authApi'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import { signUpGuardianMockApi } from './mockAuthApi'
 import { mapPatientInfoInputToRequest, registerPatientInfo } from './patientService'
 import { createPatientRoutines, mapPatientRoutinesToRequest } from './routineService'
+import { logAuthSuccessSilently } from './usageLogService'
 
 export type GuardianSignupStage = 'guardian-account' | 'patient-profile' | 'patient-routines'
 
@@ -150,7 +152,10 @@ function resolveFailureReason(
     return 'network'
   }
 
-  if (stage === 'guardian-account' && failure.code === 'GUARDIAN_EMAIL_DUPLICATED') {
+  if (
+    stage === 'guardian-account' &&
+    (failure.code === 'GUARDIAN_EMAIL_DUPLICATED' || failure.code === 'AUTH-204')
+  ) {
     return 'email-duplicated'
   }
 
@@ -250,6 +255,18 @@ export async function signUpGuardian(
 
   if (!guardianSession) {
     const request = mapGuardianAccountToSignupRequest(input.guardianAccount)
+    const emailCheckResult = await checkEmailAvailability(request.email)
+
+    if (!emailCheckResult.success) {
+      return buildGuardianSignupFailure({
+        stage: 'guardian-account',
+        apiName: 'auth.signUpGuardian',
+        requestPayload: sanitizeGuardianSignupRequestForDebug(request),
+        failure: emailCheckResult,
+        guardianSession,
+        patientRegistration,
+      })
+    }
 
     try {
       const authResponse =
@@ -319,6 +336,8 @@ export async function signUpGuardian(
       patientRegistration,
     })
   }
+
+  logAuthSuccessSilently(guardianSession, 'signup')
 
   return {
     success: true,

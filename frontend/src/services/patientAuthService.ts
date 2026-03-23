@@ -7,10 +7,12 @@ import type {
   VerifiedTeamCode,
 } from '../types/patient'
 import { createServiceFailure, logServiceFailure } from '../utils/errorMapper'
+import { checkEmailAvailability } from './authService'
 import { normalizeTeamCode } from './authStorage'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import { findMockTeamCode, signUpPatientMockApi } from './mockAuthApi'
 import { signUpPatientApi } from './patientApi'
+import { logAuthSuccessSilently } from './usageLogService'
 
 export interface PatientSignupInput {
   teamCode: string
@@ -83,11 +85,19 @@ export async function signUpPatient(
 
   try {
     const request = mapPatientSignupInputToRequest(input)
+    const emailCheckResult = await checkEmailAvailability(request.loginId)
+
+    if (!emailCheckResult.success) {
+      return emailCheckResult
+    }
+
     const response =
       apiMode === 'mock'
         ? await signUpPatientMockApi(request)
         : await signUpPatientApi(request)
     const session = mapAuthResponseToSession(response, apiMode)
+
+    logAuthSuccessSilently(session, 'signup')
 
     return {
       success: true,

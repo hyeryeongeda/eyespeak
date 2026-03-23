@@ -1,8 +1,10 @@
 export const API_ENDPOINTS = {
+  AUTH_CHECK_EMAIL: '/auth/check-email',
   AUTH_LOGIN: '/auth/login',
   AUTH_LOGOUT: '/auth/log-out',
   AUTH_SIGNUP_GUARDIAN: '/auth/sign-up/guardian',
   AUTH_SIGNUP_PATIENT: '/auth/patients',
+  USAGE_LOGS: '/usage-logs',
   PATIENTS: '/patients',
   PATIENTS_INFO: '/patients/info',
   ROUTINES: '/routines',
