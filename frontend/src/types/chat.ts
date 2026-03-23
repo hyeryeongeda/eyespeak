@@ -81,6 +81,11 @@ export interface PatientChatMessageMeta {
   sourcePresetKey?: string
   suggestionMode?: PatientChatSuggestionMode
   sttConfidence?: number
+  contentType?: 'TEXT' | 'PHRASE' | 'EXPRESSION'
+  phraseId?: number | null
+  exprId?: number | null
+  isOptimistic?: boolean
+  historySource?: 'rest' | 'stomp' | 'local'
 }
 
 export interface PatientChatMessage {

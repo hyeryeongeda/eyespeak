@@ -27,6 +27,7 @@ export interface PatientIncomingChatContextValue {
     options?: { messageId?: string },
   ) => void
   triggerDuplicateMessage: () => void
+  focusLatestPendingMessage: () => void
   openLatestPendingReply: () => void
   enterReplyMode: (messageId?: string) => void
   retrySuggestions: () => void

@@ -2,7 +2,6 @@ import type { CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
-import ReplyModePanel from '../../../components/patient/chat/ReplyModePanel'
 import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
@@ -101,93 +100,12 @@ const cardSub: CSSProperties = {
 const centerArea: CSSProperties = {
   gridArea: 'center',
   display: 'flex',
-  flexDirection: 'column',
   minHeight: 0,
   borderRadius: '24px',
   border: '1px solid #dde7ed',
   boxShadow: '0 20px 48px rgba(40, 66, 90, 0.12)',
   backgroundColor: '#ffffff',
   overflow: 'hidden',
-}
-
-const centerHeader: CSSProperties = {
-  flexShrink: 0,
-  padding: '14px 20px',
-  borderBottom: '1px solid #e8eef4',
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: '12px',
-  flexWrap: 'wrap',
-}
-
-const headerTitleStyle: CSSProperties = {
-  margin: 0,
-  fontSize: '16px',
-  fontWeight: 800,
-  color: '#203042',
-}
-
-const headerSubStyle: CSSProperties = {
-  margin: '4px 0 0',
-  fontSize: '12px',
-  fontWeight: 700,
-  color: '#708191',
-}
-
-const inlinePanelWrapStyle: CSSProperties = {
-  flexShrink: 0,
-  padding: '0 18px 18px',
-}
-
-const pendingCardStyle: CSSProperties = {
-  margin: '0 18px 18px',
-  padding: '18px',
-  borderRadius: '20px',
-  border: '1px solid #dce6ed',
-  backgroundColor: '#fbfdff',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-}
-
-const pendingTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#223247',
-  fontSize: '17px',
-  fontWeight: 900,
-}
-
-const pendingTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#64748a',
-  fontSize: '14px',
-  fontWeight: 600,
-  lineHeight: 1.55,
-}
-
-const buttonRowStyle: CSSProperties = {
-  display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
-}
-
-const buttonBaseStyle: CSSProperties = {
-  minWidth: '120px',
-  height: '48px',
-  padding: '0 18px',
-  borderRadius: '999px',
-  border: '1px solid #cad7e2',
-  backgroundColor: '#ffffff',
-  color: '#31455e',
-  fontSize: '14px',
-  fontWeight: 800,
-  cursor: 'pointer',
-}
-
-const primaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: '1px solid #5f8cc9',
-  background: 'linear-gradient(135deg, #e8f2ff 0%, #dbe9ff 100%)',
 }
 
 const cardHoverStyle = `
@@ -233,7 +151,10 @@ export default function TalkMainPage() {
     enabled: true,
   })
 
-  const showInlineReplyPanel = Boolean(chat.activeReplyMessage)
+  const moveToReplyRoute = (routePath: string) => {
+    chat.focusLatestPendingMessage()
+    navigate(routePath)
+  }
 
   return (
     <div style={pageWrap}>
@@ -249,7 +170,7 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardLeftTop}
           data-tracking-id="talk-main-body-mind"
-          onClick={() => navigate(ROUTE_PATHS.PATIENT_BODY_MIND)}
+          onClick={() => moveToReplyRoute(ROUTE_PATHS.PATIENT_BODY_MIND)}
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-body-mind')}
@@ -266,7 +187,7 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardLeftBottom}
           data-tracking-id="talk-main-favorites"
-          onClick={() => navigate(ROUTE_PATHS.PATIENT_FAVORITES)}
+          onClick={() => moveToReplyRoute(ROUTE_PATHS.PATIENT_FAVORITES)}
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-favorites')}
@@ -278,89 +199,11 @@ export default function TalkMainPage() {
           <p style={cardSub}>자주 쓰는 표현 화면으로 이동</p>
         </button>
 
-        <section style={centerArea} aria-label="환자 응답 세션">
-          <div style={centerHeader}>
-            <div>
-              <h2 style={headerTitleStyle}>보호자 대화 세션</h2>
-              <p style={headerSubStyle}>
-                추천 응답, 직접 입력, 인터럽트 복귀를 같은 화면에서 처리합니다.
-              </p>
-            </div>
-            {chat.latestUnresolvedMessage ? (
-              <div style={buttonRowStyle}>
-                <button
-                  type="button"
-                  style={primaryButtonStyle}
-                  onClick={chat.openLatestPendingReply}
-                >
-                  미응답 바로 열기
-                </button>
-              </div>
-            ) : null}
-          </div>
-
+        <section style={centerArea} aria-label="환자 대화 세션">
           <ChatMessageList
             messages={chat.state.messages}
-            activeMessageId={chat.activeReplyMessage?.id ?? chat.activeMessage?.id}
+            activeMessageId={chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id}
           />
-
-          {showInlineReplyPanel ? (
-            <div style={inlinePanelWrapStyle}>
-              <ReplyModePanel
-                message={chat.activeReplyMessage}
-                status={chat.state.status}
-                suggestionState={chat.state.suggestionState}
-                fallbackState={chat.state.fallbackState}
-                suggestions={chat.state.suggestions}
-                selectedSuggestionId={chat.state.selectedSuggestionId}
-                suggestionError={chat.state.suggestionError}
-                sendError={chat.state.sendError}
-                manualInputMode={chat.state.manualInputMode}
-                manualDraft={chat.state.manualDraft}
-                manualWordBank={chat.manualWordBank}
-                unresolvedCount={chat.unresolvedCount}
-                timeoutMs={chat.timeoutMs}
-                onSelectSuggestion={chat.sendSuggestedReply}
-                onRetrySuggestions={chat.retrySuggestions}
-                onOpenManualInputSelect={chat.openManualInputSelect}
-                onSelectManualInputMode={chat.setManualInputMode}
-                onDraftChange={chat.updateManualDraft}
-                onAppendWord={chat.appendManualWord}
-                onClearDraft={chat.clearManualDraft}
-                onSendManualReply={chat.sendManualReply}
-                onDefer={chat.deferActiveMessage}
-                onClose={chat.closeReplyMode}
-                onOpenLatestPendingReply={chat.openLatestPendingReply}
-              />
-            </div>
-          ) : (
-            <section style={pendingCardStyle}>
-              <h3 style={pendingTitleStyle}>세션 상태</h3>
-              <p style={pendingTextStyle}>
-                {chat.latestUnresolvedMessage
-                  ? '미응답 보호자 메시지가 있습니다. 응답하기를 눌러 바로 답변할 수 있습니다.'
-                  : '현재 대기 중인 대화는 없고, 다음 보호자 메시지를 기다리는 상태입니다.'}
-              </p>
-              <div style={buttonRowStyle}>
-                {chat.latestUnresolvedMessage ? (
-                  <button
-                    type="button"
-                    style={primaryButtonStyle}
-                    onClick={chat.openLatestPendingReply}
-                  >
-                    응답 패널 열기
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  style={buttonBaseStyle}
-                  onClick={() => navigate(ROUTE_PATHS.PATIENT_MAIN)}
-                >
-                  환자 메인으로
-                </button>
-              </div>
-            </section>
-          )}
         </section>
 
         <button
@@ -368,7 +211,7 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardRightTop}
           data-tracking-id="talk-main-custom-talk"
-          onClick={() => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK)}
+          onClick={() => moveToReplyRoute(ROUTE_PATHS.PATIENT_CUSTOM_TALK)}
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-custom-talk')}
