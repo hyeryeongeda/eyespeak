@@ -14,7 +14,6 @@ import type {
   StompContentType,
   StompInboundMessage,
   StompPublishCall,
-  StompPublishChat,
   StompSenderRole,
 } from './stompTypes'
 
