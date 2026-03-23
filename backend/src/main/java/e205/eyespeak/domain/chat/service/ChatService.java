@@ -8,7 +8,6 @@ import e205.eyespeak.domain.chat.dto.ChatMessageResponse;
 import e205.eyespeak.domain.communication.entity.Message;
 import e205.eyespeak.domain.communication.repository.MessageRepository;
 import e205.eyespeak.domain.fcm.service.FcmService;
-import e205.eyespeak.domain.recommendation.service.ExpressionRecordService;
 import e205.eyespeak.domain.guardian.entity.Guardian;
 import e205.eyespeak.domain.guardian.repository.GuardianRepository;
 import e205.eyespeak.domain.matching.entity.Matching;
@@ -66,7 +65,6 @@ public class ChatService {
     private final SimpMessagingTemplate messagingTemplate;
     private final WebSocketSessionManager sessionManager;
     private final FcmService fcmService;
-    private final ExpressionRecordService expressionRecordService;
 
     @Transactional
     public void sendMessage(Long userId, Role senderRole, ChatMessageRequest request) {
@@ -96,16 +94,6 @@ public class ChatService {
 
         messageRepository.save(message);
         log.info("[Chat] 메시지 저장 완료: messageId={}", message.getId());
-
-        // 환자가 보낸 메시지면 AI 분류 + 학습 데이터 저장
-        if (senderRole == Role.PATIENT) {
-            try {
-                expressionRecordService.recordExpression(matching.getId(), content);
-                log.info("[Chat] 표현 기록 완료: matchingId={}, text={}", matching.getId(), content);
-            } catch (Exception e) {
-                log.warn("[Chat] 표현 기록 실패 (메시지 전송에 영향 없음): {}", e.getMessage());
-            }
-        }
 
         // 4. 응답 DTO 생성
         ChatMessageResponse response = ChatMessageResponse.from(message, userId);
