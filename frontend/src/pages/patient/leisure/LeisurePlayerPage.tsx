@@ -14,6 +14,7 @@ import LeisureLoadingState from './components/LeisureLoadingState'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 import { usePatientLeisureResumeStore } from '../../../stores/patientLeisureResumeStore'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {
@@ -252,6 +253,17 @@ export default function LeisurePlayerPage() {
 
   const [status, setStatus] = useState<LeisurePlayerStatus>('idle')
   const [content, setContent] = useState<LeisureContent | null>(null)
+
+  const playerCellMapping = useMemo(() => ({
+    0: 'player-related',
+    1: 'player-back',
+    2: 'player-related',
+    3: 'player-back',
+    4: 'player-related',
+    5: 'player-back',
+  } as Record<number, string | null>), [])
+
+  useCellMapping(playerCellMapping)
 
   useEffect(() => {
     let isMounted = true

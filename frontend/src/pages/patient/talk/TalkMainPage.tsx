@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
@@ -8,6 +8,7 @@ import {
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 type TalkMainTrackingId =
   | 'talk-main-body-mind'
@@ -150,6 +151,17 @@ export default function TalkMainPage() {
   const dwellFeedback = useDwellFeedback<TalkMainTrackingId>({
     enabled: true,
   })
+
+  const talkMainCellMapping = useMemo(() => ({
+    0: 'talk-main-body-mind',
+    1: null,
+    2: 'talk-main-custom-talk',
+    3: 'talk-main-favorites',
+    4: null,
+    5: 'talk-main-back-main',
+  } as Record<number, string | null>), [])
+
+  useCellMapping(talkMainCellMapping)
 
   const moveToReplyRoute = (routePath: string) => {
     chat.focusLatestPendingMessage()

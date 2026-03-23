@@ -16,6 +16,7 @@ import {
 } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import PatientCallOverlay from './PatientCallOverlay'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 type PatientMainTargetId = 'talk' | 'call' | 'leisure'
 
@@ -279,6 +280,17 @@ export default function PatientMainPage() {
   })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
+
+  const patientMainCellMapping = useMemo(() => ({
+    0: 'talk',
+    1: 'talk',
+    2: 'talk',
+    3: 'call',
+    4: 'call',
+    5: 'leisure',
+  } as Record<number, string | null>), [])
+
+  useCellMapping(patientMainCellMapping)
 
   const patientId = user?.id ?? 'patient-guest'
   const isOverlayVisible =

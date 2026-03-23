@@ -17,6 +17,37 @@ function stopMediaStream(stream: MediaStream | null) {
   })
 }
 
+function resolveStableNormalizedPoint(frame: {
+  screenX: number
+  screenY: number
+  ratioX: number | null
+  ratioY: number | null
+}) {
+  const isFiniteRatioX = Number.isFinite(frame.ratioX)
+  const isFiniteRatioY = Number.isFinite(frame.ratioY)
+
+  const screenX = frame.screenX
+  const screenY = frame.screenY
+
+  const shouldUseRatioX =
+    isFiniteRatioX &&
+    (screenX <= 0.001 || screenX >= 0.999) &&
+    frame.ratioX! >= 0.02 &&
+    frame.ratioX! <= 0.98
+
+  const shouldUseRatioY =
+    isFiniteRatioY &&
+    (screenY <= 0.001 || screenY >= 0.999) &&
+    frame.ratioY! >= 0.02 &&
+    frame.ratioY! <= 0.98
+
+  return {
+    normalizedX: shouldUseRatioX ? frame.ratioX! : screenX,
+    normalizedY: shouldUseRatioY ? frame.ratioY! : screenY,
+    usedRatioFallback: shouldUseRatioX || shouldUseRatioY,
+  }
+}
+
 async function warmUpStoredCalibration(eyeTrackingProfileId: string, signal?: AbortSignal) {
   try {
     const result = await ensurePatientEyeTrackingRuntimeReady(eyeTrackingProfileId, {
@@ -56,6 +87,39 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
   private frameCanvasElement: HTMLCanvasElement = document.createElement('canvas')
   private mediaStream: MediaStream | null = null
   private disposed = false
+  private lastRuntimeTelemetryAt = 0
+  private lastReadySnapshot: { clientX: number; clientY: number; cell: number | null } | null = null
+  private lastReadyAt = 0
+
+  private emitRuntimeTelemetry(
+    eyeTrackingProfileId: string,
+    payload: {
+      rawStatus: CalibrationTrackingStatus
+      effectiveStatus: CalibrationTrackingStatus
+      frameCell: number | null
+      frameScreenX: number
+      frameScreenY: number
+      action: 'setSnapshot' | 'holdSnapshot' | 'clearPoint'
+      usedRatioFallback?: boolean
+    },
+  ) {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const now = Date.now()
+
+    if (now - this.lastRuntimeTelemetryAt < 300) {
+      return
+    }
+
+    this.lastRuntimeTelemetryAt = now
+    console.info('[eye-tracking] runtime frame telemetry', {
+      eyeTrackingProfileId,
+      ...payload,
+      timestamp: now,
+    })
+  }
 
   async start({
     eyeTrackingProfileId,
@@ -69,6 +133,9 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
     onDoubleBlink: () => void
   }): Promise<void> {
     this.disposed = false
+    this.lastRuntimeTelemetryAt = 0
+    this.lastReadySnapshot = null
+    this.lastReadyAt = 0
     useGazeInputStore.getState().clearPoint()
     onTrackingStatusChange('face-not-detected')
 
@@ -144,6 +211,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
 
       let lastDoubleBlinkAt = 0
       let lastBlinkDetected = false
+      const unstableFrameHoldMs = 320
 
       while (!signal?.aborted && !this.disposed) {
         try {
@@ -153,17 +221,61 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
             signal,
           })
 
-          const status = mapEyeTrackingFrameToTrackingStatus(frame)
-          onTrackingStatusChange(status)
+          const rawStatus = mapEyeTrackingFrameToTrackingStatus(frame)
+          let effectiveStatus: CalibrationTrackingStatus = rawStatus
 
-          if (status === 'ready') {
-            useGazeInputStore.getState().setSnapshot({
-              ...getViewportPointFromEyeTrackingFrame(frame),
+          if (rawStatus === 'ready') {
+            const point = resolveStableNormalizedPoint(frame)
+            const snapshot = {
+              ...getViewportPointFromEyeTrackingFrame({
+                ...frame,
+                screenX: point.normalizedX,
+                screenY: point.normalizedY,
+              }),
               cell: frame.cell,
+            }
+            useGazeInputStore.getState().setSnapshot(snapshot)
+            this.lastReadySnapshot = snapshot
+            this.lastReadyAt = Date.now()
+            this.emitRuntimeTelemetry(eyeTrackingProfileId, {
+              rawStatus,
+              effectiveStatus,
+              frameCell: frame.cell,
+              frameScreenX: frame.screenX,
+              frameScreenY: frame.screenY,
+              action: 'setSnapshot',
+              usedRatioFallback: point.usedRatioFallback,
             })
           } else {
-            useGazeInputStore.getState().clearPoint()
+            const now = Date.now()
+            const shouldHoldSnapshot =
+              this.lastReadySnapshot !== null && now - this.lastReadyAt <= unstableFrameHoldMs
+
+            if (shouldHoldSnapshot) {
+              useGazeInputStore.getState().setSnapshot(this.lastReadySnapshot)
+              effectiveStatus = 'ready'
+              this.emitRuntimeTelemetry(eyeTrackingProfileId, {
+                rawStatus,
+                effectiveStatus,
+                frameCell: frame.cell,
+                frameScreenX: frame.screenX,
+                frameScreenY: frame.screenY,
+                action: 'holdSnapshot',
+              })
+            } else {
+              useGazeInputStore.getState().clearPoint()
+              this.emitRuntimeTelemetry(eyeTrackingProfileId, {
+                rawStatus,
+                effectiveStatus,
+                frameCell: frame.cell,
+                frameScreenX: frame.screenX,
+                frameScreenY: frame.screenY,
+                action: 'clearPoint',
+              })
+            }
           }
+
+          onTrackingStatusChange(effectiveStatus)
 
           if (import.meta.env.DEV && frame.blinkDetected && !lastBlinkDetected) {
             console.info('[eye-tracking] blink detected', {
@@ -180,7 +292,8 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
               eyeTrackingProfileId,
               trigger: frame.trigger,
               cell: frame.cell,
-              trackingStatus: status,
+              trackingStatus: effectiveStatus,
+              rawTrackingStatus: rawStatus,
             })
           }
 
