@@ -10,7 +10,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
-import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,7 +42,11 @@ public class StompChannelInterceptor implements ChannelInterceptor {
      */
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
+        StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
+
+        if (accessor == null || accessor.getCommand() == null) {
+            return message;
+        }
 
         if (StompCommand.CONNECT == accessor.getCommand()) {
             // STOMP CONNECT 프레임의 native header에서 Authorization 값을 꺼냄
@@ -64,12 +68,9 @@ public class StompChannelInterceptor implements ChannelInterceptor {
             Long userId = jwtProvider.getUserId(token);
             Role role = jwtProvider.getRole(token);
 
-            // 이 연결에 "신분증"을 붙여놓음 → 이후 모든 메시지에 따라다님
+            // 원본 accessor에 직접 Principal을 세팅 → 세션에 전파되어 이후 SEND에도 유지됨
             accessor.setUser(new StompPrincipal(userId, role));
             log.info("WebSocket 연결: userId={}, role={}", userId, role);
-
-            // wrap()은 헤더 복사본을 만들므로, Principal이 반영된 새 메시지를 리턴해야 한다
-            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
         }
 
         return message;
