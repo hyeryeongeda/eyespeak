@@ -17,6 +17,26 @@ import type {
   StompSenderRole,
 } from './stompTypes'
 
+/**
+ * Jackson LocalDateTime 직렬화 형식 통합 변환.
+ * STOMP 메시지 컨버터는 REST와 다른 ObjectMapper 를 사용하여
+ * LocalDateTime 을 배열 [2026,3,23,15,5,16] 으로 보낼 수 있다.
+ * ISO 문자열이면 그대로, 배열이면 ISO 문자열로 변환한다.
+ */
+function normalizeDateTime(value: unknown): string {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (Array.isArray(value)) {
+    // [year, month, day, hour, minute, second?, nano?]
+    const [y, m, d, h = 0, min = 0, s = 0] = value as number[]
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+
+  return new Date().toISOString()
+}
+
 // ----- STOMP Destinations -----
 
 export const STOMP_DESTINATIONS = {
@@ -59,8 +79,8 @@ export function parseChatMessage(stompMessage: IMessage): StompChatInbound | nul
       phraseId: (obj.phraseId as number) ?? null,
       exprId: (obj.exprId as number) ?? null,
       isRead: (obj.isRead as boolean) ?? false,
-      // 백엔드가 timestamp 으로 보내면 createdAt 으로 매핑
-      createdAt: (obj.createdAt ?? obj.timestamp) as string,
+      // 백엔드 LocalDateTime → 배열 or 문자열 양쪽 대응
+      createdAt: normalizeDateTime(obj.createdAt ?? obj.timestamp),
     }
   } catch {
     if (import.meta.env.DEV) {
@@ -93,7 +113,7 @@ export function parseCallConfirmedMessage(stompMessage: IMessage): StompCallConf
       body: obj.body as string,
       callId: obj.callId as number,
       callType: obj.callType as StompCallConfirmedInbound['callType'],
-      createdAt: (obj.createdAt ?? obj.acknowledgedAt ?? obj.timestamp) as string,
+      createdAt: normalizeDateTime(obj.createdAt ?? obj.acknowledgedAt ?? obj.timestamp),
     }
   } catch {
     if (import.meta.env.DEV) {
