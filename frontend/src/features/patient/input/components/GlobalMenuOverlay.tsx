@@ -7,8 +7,8 @@ import { useTracking } from '../hooks/useTracking'
 import {
   emitPatientGlobalMenuAction,
   PATIENT_DOUBLE_BLINK_EVENT,
-  type PatientGlobalMenuActionId,
   type PatientDoubleBlinkDetail,
+  type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
@@ -25,17 +25,15 @@ const SOS_COOLDOWN_SYNC_INTERVAL_MS = 250
 const responsiveStyle = `
   @media (max-width: 768px) {
     .patient-global-menu-shell {
-      padding: 12px;
+      padding: 0;
     }
 
     .patient-global-menu-panel {
-      padding: 18px;
-      gap: 18px;
-      border-radius: 24px;
+      padding: 8px;
     }
 
     .patient-global-menu-grid {
-      gap: 12px;
+      gap: 8px;
     }
   }
 `
@@ -45,21 +43,19 @@ const overlayStyle: CSSProperties = {
   inset: 0,
   zIndex: 1150,
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: 'clamp(12px, 2vw, 24px)',
+  alignItems: 'stretch',
+  justifyContent: 'stretch',
+  padding: 0,
   backgroundColor: 'rgba(13, 22, 35, 0.52)',
   backdropFilter: 'blur(10px)',
 }
 
 const panelStyle: CSSProperties = {
-  width: '100%',
-  height: '100%',
+  width: '100vw',
+  height: '100dvh',
   display: 'flex',
-  flexDirection: 'column',
-  gap: '22px',
-  padding: 'clamp(24px, 3vw, 40px)',
-  borderRadius: 'clamp(24px, 3vw, 36px)',
+  padding: 'clamp(8px, 1vw, 12px)',
+  borderRadius: 0,
   background:
     'linear-gradient(180deg, rgba(247, 250, 255, 0.96) 0%, rgba(239, 244, 253, 0.98) 100%)',
   boxShadow: '0 34px 70px rgba(9, 20, 35, 0.24)',
@@ -67,62 +63,14 @@ const panelStyle: CSSProperties = {
   overflow: 'hidden',
 }
 
-const headerRowStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '16px',
-  flexWrap: 'wrap',
-}
-
-const eyebrowStyle: CSSProperties = {
-  margin: 0,
-  color: '#5d7391',
-  fontSize: '14px',
-  fontWeight: 800,
-  letterSpacing: '0.08em',
-  textTransform: 'uppercase',
-}
-
-const titleStyle: CSSProperties = {
-  margin: '10px 0 0',
-  color: '#21344f',
-  fontSize: 'clamp(2rem, 3vw, 2.6rem)',
-  fontWeight: 900,
-  lineHeight: 1.05,
-  letterSpacing: '-0.04em',
-}
-
-const subtitleStyle: CSSProperties = {
-  margin: '10px 0 0',
-  color: '#61748f',
-  fontSize: '16px',
-  fontWeight: 700,
-  lineHeight: 1.5,
-}
-
-const statusChipStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  alignSelf: 'flex-start',
-  minHeight: '42px',
-  padding: '0 16px',
-  borderRadius: '999px',
-  backgroundColor: 'rgba(255, 255, 255, 0.86)',
-  border: '1px solid rgba(148, 165, 189, 0.28)',
-  color: '#4a617d',
-  fontSize: '14px',
-  fontWeight: 800,
-  boxShadow: '0 10px 24px rgba(84, 102, 131, 0.08)',
-}
-
 const gridStyle: CSSProperties = {
   flex: 1,
+  width: '100%',
+  height: '100%',
   display: 'grid',
   gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
-  gap: '16px',
+  gap: '12px',
   minHeight: 0,
 }
 
@@ -133,7 +81,7 @@ const buttonBaseStyle: CSSProperties = {
   minHeight: 0,
   border: 'none',
   borderRadius: '28px',
-  padding: '24px',
+  padding: 'clamp(24px, 2.4vw, 30px)',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
@@ -145,7 +93,7 @@ const buttonBaseStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(2.5rem, 5vw, 4rem)',
+  fontSize: 'clamp(3.75rem, 5vw, 5rem)',
   fontWeight: 900,
   letterSpacing: '-0.05em',
   lineHeight: 1,
@@ -153,17 +101,10 @@ const labelStyle: CSSProperties = {
 
 const helperTextStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)',
+  fontSize: 'clamp(1.2rem, 1.6vw, 1.6rem)',
   fontWeight: 700,
   lineHeight: 1.45,
   opacity: 0.86,
-}
-
-const footerTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#70829d',
-  fontSize: '14px',
-  fontWeight: 700,
 }
 
 function formatSeconds(seconds: number) {
@@ -498,18 +439,6 @@ export default function GlobalMenuOverlay() {
           role="dialog"
           aria-label="환자 글로벌 메뉴"
         >
-          <div style={headerRowStyle}>
-            <div>
-              <p style={eyebrowStyle}>Patient Global Menu</p>
-              <h2 style={titleStyle}>더블블링크로 열고 닫는 공통 메뉴</h2>
-              <p style={subtitleStyle}>
-                메뉴가 열린 뒤에는 각 영역을 {formatSeconds(dwellDurationMs / 1000)} 동안
-                유지하면 선택됩니다.
-              </p>
-            </div>
-            <div style={statusChipStyle}>더블블링크로 즉시 닫기</div>
-          </div>
-
           <div ref={gridRef} className="patient-global-menu-grid" style={gridStyle}>
             <button
               type="button"
@@ -539,7 +468,7 @@ export default function GlobalMenuOverlay() {
                 disabled: pendingTargetId !== null,
               })}
             >
-              <p style={labelStyle}>아니오</p>
+              <p style={labelStyle}>아니요</p>
               <p style={helperTextStyle}>공통 negative action 진입점</p>
             </button>
 
@@ -579,10 +508,6 @@ export default function GlobalMenuOverlay() {
               <p style={helperTextStyle}>환자 메인 화면으로 이동</p>
             </button>
           </div>
-
-          <p style={footerTextStyle}>
-            진행 바와 dwell 하이라이트는 표시하지 않습니다.
-          </p>
         </section>
       </div>
     </>
