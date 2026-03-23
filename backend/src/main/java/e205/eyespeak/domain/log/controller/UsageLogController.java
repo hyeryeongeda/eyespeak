@@ -1,8 +1,8 @@
 package e205.eyespeak.domain.log.controller;
 
 /**
- * 사용 로그 API — 환자가 문구/표현/키보드 입력을 최종 선택했을 때 호출
- * - 몸과마음, 맞춤대화, 키보드 자유입력, 즐겨찾기 어디서든 같은 API 사용
+ * 사용 로그 API — PHRASE(몸과마음/즐겨찾기) 선택 시 사용
+ * - 맞춤대화/키보드 입력은 POST /recommendations/record 사용
  */
 
 import e205.eyespeak.domain.log.dto.request.UsageLogCreateRequest;
@@ -27,14 +27,14 @@ public class UsageLogController {
     private final UsageLogService usageLogService;
 
     @Operation(
-            summary = "사용 로그 저장",
+            summary = "사용 로그 저장 (PHRASE 전용)",
             description = """
-                    환자가 표현을 최종 선택/입력했을 때 사용 로그를 저장합니다.
+                    몸과마음/즐겨찾기에서 문구를 선택했을 때 사용 로그를 저장합니다.
 
-                    **phraseId / exprId / content 중 정확히 1개만 보내야 합니다.**
+                    **phraseId만 보내세요.**
                     - 몸과마음/즐겨찾기에서 선택 → phraseId
-                    - 맞춤대화에서 선택 → exprId
-                    - 키보드 자유입력 → content
+
+                    ⚠️ 맞춤대화/키보드 입력은 이 API 대신 POST /recommendations/record를 사용하세요.
 
                     timeSlotId와 usedAt은 서버에서 현재 시각 기준으로 자동 계산됩니다.
                     """

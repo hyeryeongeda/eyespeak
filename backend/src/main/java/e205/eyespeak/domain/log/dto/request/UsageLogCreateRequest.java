@@ -1,9 +1,9 @@
 package e205.eyespeak.domain.log.dto.request;
 
 /**
- * 사용 로그 저장 요청 DTO
- * - 환자가 문구/표현/키보드 입력을 최종 선택했을 때 프론트에서 보내는 데이터
- * - phraseId / exprId / content 중 정확히 1개만 값이 있어야 함
+ * 사용 로그 저장 요청 DTO (PHRASE 전용)
+ * - 몸과마음/즐겨찾기에서 문구 선택 시 phraseId만 사용
+ * - exprId / content는 deprecated (POST /recommendations/record 사용)
  */
 
 import e205.eyespeak.global.enums.MoodType;
@@ -21,10 +21,10 @@ public class UsageLogCreateRequest {
     @Schema(description = "시드 문구 ID (몸과마음/즐겨찾기에서 선택 시)", example = "101")
     private Long phraseId;
 
-    @Schema(description = "맞춤 표현 ID (맞춤대화에서 선택 시)", example = "55")
+    @Schema(description = "맞춤 표현 ID — deprecated, POST /recommendations/record 사용", example = "55", deprecated = true)
     private Long exprId;
 
-    @Schema(description = "자유 입력 텍스트 (키보드 입력 시)", example = "배고파")
+    @Schema(description = "자유 입력 텍스트 — deprecated, POST /recommendations/record 사용", example = "배고파", deprecated = true)
     private String content;
 
     @Schema(description = "환자 기분 종류", example = "HAPPY")
