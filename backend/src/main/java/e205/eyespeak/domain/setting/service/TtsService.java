@@ -31,7 +31,7 @@ import java.util.Set;
 public class TtsService {
 
     private static final int MAX_VOICE_FILES = 10;
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("mp3", "wav", "mp4");
+    private static final Set<String> ALLOWED_EXTENSIONS = Set.of("mp3", "wav", "mp4", "m4a");
 
     private final TtsSettingRepository ttsSettingRepository;
     private final TtsVoiceFileRepository ttsVoiceFileRepository;
