@@ -17,6 +17,7 @@ services:
         - VITE_EYE_TRACKING_API_MODE=real
         - VITE_EYE_TRACKING_API_BASE_URL=/eye-tracking-api
         - VITE_EYE_TRACKING_UI_URL=/eye-tracking-api
+        - VITE_YOUTUBE_API_KEY=${VITE_YOUTUBE_API_KEY}
     deploy:
       resources:
         limits:
@@ -41,6 +42,7 @@ services:
         - VITE_EYE_TRACKING_API_MODE=real
         - VITE_EYE_TRACKING_API_BASE_URL=/eye-tracking-api
         - VITE_EYE_TRACKING_UI_URL=/eye-tracking-api
+        - VITE_YOUTUBE_API_KEY=${VITE_YOUTUBE_API_KEY}
     deploy:
       resources:
         limits:
