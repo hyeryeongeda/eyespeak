@@ -600,10 +600,6 @@ export default function LeisurePlayerPage() {
   )
 
   const handleOpenRelatedContents = () => {
-    if (!content?.categoryId) {
-      return
-    }
-
     setIsRelatedOverlayOpen(true)
     void loadRelatedContents()
   }
@@ -757,12 +753,12 @@ export default function LeisurePlayerPage() {
 
         <div className="leisure-player-side-actions" style={sideActionWrapStyle}>
           <LeisureActionCard
-            title="카테고리 목록"
-            description="같은 카테고리의 다른 콘텐츠를 확인합니다."
+            title="연관 영상"
+            description="관련된 다른 영상을 확인합니다."
             badge="추천 이동"
             variant="hero"
             tone="mint"
-            disabled={!content.categoryId || isRelatedOverlayOpen}
+            disabled={isRelatedOverlayOpen}
             slotId="player-related"
             onSelect={handleOpenRelatedContents}
           />
