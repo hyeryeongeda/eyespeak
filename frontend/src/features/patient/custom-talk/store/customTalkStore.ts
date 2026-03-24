@@ -206,6 +206,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   isInitialized: false,
   context: null,
   conversationLog: [],
+  visibleCategories: [],
   visibleCategoryKeys: [],
   recommendedSentences: [],
   composeStep: 'subject',
@@ -235,7 +236,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       contextOverride ?? state.context ?? undefined,
     )
     const mergedContext = mergeContext(state.context, nextContext)
-    const visibleCategoryKeys = await fetchVisibleCustomCategories({
+    const visibleCategories = await fetchVisibleCustomCategories({
       refreshCount: refreshCategoryCount,
       context: mergedContext,
     })
@@ -247,7 +248,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         state.conversationLog.length > 0
           ? state.conversationLog
           : buildConversationLog(mergedContext),
-      visibleCategoryKeys,
+      visibleCategories,
+      visibleCategoryKeys: visibleCategories.map(category => category.key),
       status: 'visible',
       errorMessage: null,
     })
@@ -263,14 +265,15 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     })
 
     try {
-      const visibleCategoryKeys = await fetchVisibleCustomCategories({
+      const visibleCategories = await fetchVisibleCustomCategories({
         refreshCount: refreshCategoryCount,
         context,
         shouldFail: mockFlags.failCategoryLoadOnce,
       })
 
       set(state => ({
-        visibleCategoryKeys,
+        visibleCategories,
+        visibleCategoryKeys: visibleCategories.map(category => category.key),
         status: 'visible',
         errorMessage: null,
         mockFlags: {
@@ -1175,6 +1178,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       isInitialized: false,
       context: null,
       conversationLog: [],
+      visibleCategories: [],
       visibleCategoryKeys: [],
       recommendedSentences: [],
       composeStep: 'subject',
