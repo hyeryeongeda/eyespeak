@@ -13,7 +13,6 @@ import {
   getNextComposeStep,
   getPreviousComposeStep,
   initializeCustomTalkKeyboard,
-  saveComposeSelection,
 } from '../services/customTalkMockService'
 import {
   fetchComposeWords,
@@ -39,6 +38,8 @@ const composeStepKeyMap: Record<
   predicate: 'predicate',
   punctuation: 'punctuation',
 }
+
+const composeStepOrder: ComposeStep[] = ['subject', 'object', 'predicate', 'punctuation']
 
 const initialMockFlags: CustomTalkMockFlags = {
   failCategoryLoadOnce: false,
@@ -160,13 +161,16 @@ function appendConversationLog(
 }
 
 function buildSelectedWordsForStep(draft: CustomTalkDraft, step: ComposeStep) {
+  const subject = draft.subject?.trim()
+  const object = draft.object?.trim()
+
   if (step === 'object') {
-    if (draft.subject === undefined) {
+    if (!subject) {
       return undefined
     }
 
     return {
-      subject: draft.subject,
+      subject,
     }
   }
 
@@ -176,12 +180,12 @@ function buildSelectedWordsForStep(draft: CustomTalkDraft, step: ComposeStep) {
       object?: string
     } = {}
 
-    if (draft.subject !== undefined) {
-      selectedWords.subject = draft.subject
+    if (subject) {
+      selectedWords.subject = subject
     }
 
-    if (draft.object !== undefined) {
-      selectedWords.object = draft.object
+    if (object) {
+      selectedWords.object = object
     }
 
     if (selectedWords.subject === undefined && selectedWords.object === undefined) {
@@ -192,6 +196,66 @@ function buildSelectedWordsForStep(draft: CustomTalkDraft, step: ComposeStep) {
   }
 
   return undefined
+}
+
+function resetComposeRefreshCounts() {
+  composeRefreshCounts.subject = 0
+  composeRefreshCounts.object = 0
+  composeRefreshCounts.predicate = 0
+  composeRefreshCounts.punctuation = 0
+}
+
+function resetComposeRefreshCountsFrom(step: ComposeStep) {
+  const startIndex = composeStepOrder.indexOf(step)
+
+  composeStepOrder.slice(startIndex).forEach(composeStep => {
+    composeRefreshCounts[composeStep] = 0
+  })
+}
+
+function buildDraftWithComposeSelection(
+  draft: CustomTalkDraft,
+  step: ComposeStep,
+  value?: string,
+): CustomTalkDraft {
+  const stepIndex = composeStepOrder.indexOf(step)
+  const normalizedValue = value?.trim()
+  const punctuationValue =
+    normalizedValue === '.' || normalizedValue === '!' || normalizedValue === '?'
+      ? normalizedValue
+      : undefined
+  const nextDraft: CustomTalkDraft = {
+    ...draft,
+    selectedGeneratedSentence: undefined,
+  }
+
+  composeStepOrder.slice(stepIndex).forEach(composeStep => {
+    nextDraft[composeStepKeyMap[composeStep]] = undefined
+  })
+
+  if (step === 'punctuation') {
+    nextDraft.punctuation = punctuationValue
+  } else {
+    nextDraft[composeStepKeyMap[step] as 'subject' | 'object' | 'predicate'] = normalizedValue
+  }
+
+  return nextDraft
+}
+
+function buildComposeOptionsAfterSelection(
+  composeOptions: Record<ComposeStep, string[]>,
+  step: ComposeStep,
+) {
+  const stepIndex = composeStepOrder.indexOf(step)
+  const nextOptions = {
+    ...composeOptions,
+  }
+
+  composeStepOrder.slice(stepIndex + 1).forEach(composeStep => {
+    nextOptions[composeStep] = []
+  })
+
+  return nextOptions
 }
 
 export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
@@ -286,6 +350,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectCategory: categoryKey => {
+    resetComposeRefreshCounts()
+
     set(() => ({
       draft: {
         categoryKey,
@@ -434,8 +500,21 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   startCompose: async () => {
     const state = get()
+    resetComposeRefreshCounts()
+
     set({
+      draft: {
+        ...state.draft,
+        subject: undefined,
+        object: undefined,
+        predicate: undefined,
+        punctuation: undefined,
+        selectedGeneratedSentence: undefined,
+      },
       composeStep: 'subject',
+      composeOptions: initialComposeOptions,
+      generatedSentences: [],
+      completionMessage: null,
       status: 'loading',
       errorMessage: null,
     })
@@ -519,57 +598,58 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectComposeWord: async (step, value) => {
-    const state = get()
+    resetComposeRefreshCountsFrom(step)
+    const nextStep = getNextComposeStep(step)
+
     set({
       status: 'selecting',
       errorMessage: null,
     })
 
-    try {
-      await saveComposeSelection({
-        step,
-        value,
-        shouldFail: state.mockFlags.failComposeSaveOnce,
-      })
+    set(currentState => ({
+      draft: buildDraftWithComposeSelection(currentState.draft, step, value),
+      composeOptions: buildComposeOptionsAfterSelection(currentState.composeOptions, step),
+      generatedSentences: [],
+      completionMessage: null,
+      composeStep: nextStep ?? currentState.composeStep,
+      status: 'visible',
+      errorMessage: null,
+      mockFlags: {
+        ...currentState.mockFlags,
+        failComposeSaveOnce: false,
+      },
+    }))
 
-      const draftKey = composeStepKeyMap[step]
-      const nextStep = getNextComposeStep(step)
-
-      set(currentState => ({
-        draft: {
-          ...currentState.draft,
-          [draftKey]: value,
-        },
-        composeStep: nextStep ?? currentState.composeStep,
-        status: 'visible',
-        errorMessage: null,
-        mockFlags: {
-          ...currentState.mockFlags,
-          failComposeSaveOnce: false,
-        },
-      }))
-
-      if (nextStep && get().composeOptions[nextStep].length === 0) {
-        await get().refreshComposeStep(nextStep)
-      }
-
-      return nextStep === null
-    } catch (error) {
-      set(currentState => ({
-        status: 'error',
-        errorMessage:
-          error instanceof Error ? error.message : '선택 내용을 저장하지 못했습니다.',
-        mockFlags: {
-          ...currentState.mockFlags,
-          failComposeSaveOnce: false,
-        },
-      }))
-      return false
+    if (nextStep && get().composeOptions[nextStep].length === 0) {
+      await get().refreshComposeStep(nextStep)
     }
+
+    return nextStep === null
   },
 
   skipComposeStep: async step => {
-    return get().selectComposeWord(step, '')
+    resetComposeRefreshCountsFrom(step)
+    const nextStep = getNextComposeStep(step)
+
+    set(currentState => ({
+      draft: buildDraftWithComposeSelection(currentState.draft, step),
+      composeOptions: buildComposeOptionsAfterSelection(currentState.composeOptions, step),
+      generatedSentences: [],
+      completionMessage: null,
+      composeStep: nextStep ?? currentState.composeStep,
+      status: 'visible',
+      errorMessage: null,
+      mockFlags: {
+        ...currentState.mockFlags,
+        failComposeSaveOnce: false,
+      },
+    }))
+
+    if (nextStep && get().composeOptions[nextStep].length === 0) {
+      await get().refreshComposeStep(nextStep)
+    }
+
+    return nextStep === null
   },
 
   goBackComposeStep: () => {
@@ -1084,10 +1164,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   resetCustomTalkSession: () => {
     refreshCategoryCount = 0
-    composeRefreshCounts.subject = 0
-    composeRefreshCounts.object = 0
-    composeRefreshCounts.predicate = 0
-    composeRefreshCounts.punctuation = 0
+    resetComposeRefreshCounts()
     stopActiveCustomTalkAudioPlayback()
 
     set({

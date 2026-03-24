@@ -57,6 +57,11 @@ function mapContextToRecentMessages(context: CustomTalkContextSummary | null | u
   return context?.recentMessages ?? []
 }
 
+function normalizeOptionalText(value?: string | null) {
+  const normalizedValue = value?.trim()
+  return normalizedValue ? normalizedValue : undefined
+}
+
 function mapCustomTalkCategoryKey(value: CustomCategoryKey): RecommendationCategoryKey {
   return value
 }
@@ -118,10 +123,10 @@ function buildComposeRequest(draft: CustomTalkDraft) {
     categoryKey: draft.categoryKey
       ? mapCustomTalkCategoryKey(draft.categoryKey)
       : undefined,
-    subject: draft.subject,
-    object: draft.object,
-    predicate: draft.predicate,
-    punctuation: draft.punctuation,
+    subject: normalizeOptionalText(draft.subject),
+    object: normalizeOptionalText(draft.object),
+    predicate: normalizeOptionalText(draft.predicate),
+    punctuation: normalizeOptionalText(draft.punctuation),
   }
 }
 
@@ -266,6 +271,16 @@ export async function fetchComposeWords(input: {
     return fetchComposeWordsMock(input)
   }
 
+  const selectedSubject = normalizeOptionalText(input.selectedWords?.subject)
+  const selectedObject = normalizeOptionalText(input.selectedWords?.object)
+  const selectedWords =
+    selectedSubject || selectedObject
+      ? {
+          subject: selectedSubject,
+          object: selectedObject,
+        }
+      : undefined
+
   const response = await getRecommendationWordsApi(
     {
       categoryKey: input.categoryKey
@@ -273,7 +288,7 @@ export async function fetchComposeWords(input: {
         : undefined,
       step: mapComposeStep(input.step),
       refreshCount: input.refreshCount,
-      selectedWords: input.selectedWords,
+      selectedWords,
     },
     getAccessToken(),
   )
