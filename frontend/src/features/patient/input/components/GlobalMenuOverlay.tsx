@@ -15,6 +15,7 @@ import {
   getRemainingPatientSosCooldownMs,
   requestMockPatientSos,
 } from '../../../../services/patientSosService'
+import { useCallStatusStore } from '../../../../stores/callStatusStore'
 import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
 
 type GlobalMenuTargetId = PatientGlobalMenuActionId
@@ -408,6 +409,8 @@ export default function GlobalMenuOverlay() {
 
         return
       }
+
+      useCallStatusStore.getState().setPending()
 
       const handled = emitPatientGlobalMenuAction('sos')
 
