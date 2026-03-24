@@ -55,12 +55,7 @@ declare global {
 
 // ----- Capacitor 네이티브 STT -----
 
-async function getCapacitorSpeechRecognition() {
-  const { SpeechRecognition } = await import(
-    '@capacitor-community/speech-recognition'
-  )
-  return SpeechRecognition
-}
+import { SpeechRecognition as CapacitorSpeechRecognition } from '@capacitor-community/speech-recognition'
 
 // ----- 훅 -----
 
@@ -79,7 +74,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   // ----- 네이티브 (Capacitor) -----
 
   const startNative = useCallback(async () => {
-    const SpeechRecognition = await getCapacitorSpeechRecognition()
+    const SpeechRecognition = CapacitorSpeechRecognition
 
     const permResult = await SpeechRecognition.requestPermissions()
     if (permResult.speechRecognition !== 'granted') {
@@ -103,7 +98,7 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
   }, [])
 
   const stopNative = useCallback(async () => {
-    const SpeechRecognition = await getCapacitorSpeechRecognition()
+    const SpeechRecognition = CapacitorSpeechRecognition
     await SpeechRecognition.stop()
     SpeechRecognition.removeAllListeners()
     setIsListening(false)
