@@ -276,6 +276,7 @@ const responsiveStyle = `
 export default function PatientMainPage() {
   const navigate = useNavigate()
   const { logout, user, clearPatientPostAuth } = useAuth()
+  const isMouseRecalibrationIntentRef = useRef(false)
   const isMouseLogoutIntentRef = useRef(false)
   const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
     enabled: true,
@@ -312,6 +313,22 @@ export default function PatientMainPage() {
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
 
+  const handleRecalibrationPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    isMouseRecalibrationIntentRef.current = event.pointerType === 'mouse'
+  }
+
+  const handleRecalibrationClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (!isMouseRecalibrationIntentRef.current || event.detail === 0) {
+      isMouseRecalibrationIntentRef.current = false
+      return
+    }
+
+    isMouseRecalibrationIntentRef.current = false
+    clearPatientPostAuth()
+    requestPatientRecalibration(user)
+    navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
+  }
+
   const handleLogoutPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
     isMouseLogoutIntentRef.current = event.pointerType === 'mouse'
   }
@@ -324,12 +341,6 @@ export default function PatientMainPage() {
 
     isMouseLogoutIntentRef.current = false
     void handleLogout()
-  }
-
-  const handleRecalibration = () => {
-    clearPatientPostAuth()
-    requestPatientRecalibration(user)
-    navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
   }
 
   function closeCallOverlay() {
@@ -431,7 +442,22 @@ export default function PatientMainPage() {
               <p style={trackingTextStyle}>{trackingStatusText}</p>
             </div>
             <div style={topBarActionRowStyle}>
-              <button type="button" onClick={handleRecalibration} style={recalibrationButtonStyle}>
+              <button
+                type="button"
+                onPointerDown={handleRecalibrationPointerDown}
+                onClick={handleRecalibrationClick}
+                onPointerLeave={() => {
+                  isMouseRecalibrationIntentRef.current = false
+                }}
+                onPointerCancel={() => {
+                  isMouseRecalibrationIntentRef.current = false
+                }}
+                onBlur={() => {
+                  isMouseRecalibrationIntentRef.current = false
+                }}
+                style={recalibrationButtonStyle}
+                data-gaze-selection="mouse-only"
+              >
                 재캘리브레이션
               </button>
               <button

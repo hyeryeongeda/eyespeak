@@ -56,11 +56,11 @@ export function usePatientTrackingBridge({
         return
       }
 
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] tracking status changed', {
-          status,
-        })
-      }
+      // if (import.meta.env.DEV) {
+      //   console.info('[patient-input] tracking status changed', {
+      //     status,
+      //   })
+      // }
 
       usePatientModeStore.getState().setTrackingStatus(status)
     }

@@ -6,12 +6,9 @@ import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
-  customTalkPanelStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
-import { CUSTOM_TALK_CATEGORY_POOL } from '../mocks/customCategoryPool.mock'
 import { useCustomTalkStore } from '../store/customTalkStore'
-import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 
 const centerStackStyle: CSSProperties = {
@@ -24,32 +21,6 @@ const noticeStackStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '10px',
-}
-
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#223247',
-  fontSize: '18px',
-  fontWeight: 900,
-}
-
-const sectionTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#65778f',
-  fontSize: '14px',
-  fontWeight: 600,
-  lineHeight: 1.6,
-}
-
-const selectedSentenceStyle: CSSProperties = {
-  padding: '16px 18px',
-  borderRadius: '20px',
-  backgroundColor: '#eef8f1',
-  border: '1px solid #cce4d2',
-  color: '#3f6e4c',
-  fontSize: '15px',
-  fontWeight: 800,
-  lineHeight: 1.6,
 }
 
 function getVisibleSentences(sentences: string[]) {
@@ -108,8 +79,6 @@ export default function CustomTalkRecommendPage() {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
 
-  const categoryLabel =
-    CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === draft.categoryKey)?.title ?? '맞춤 대화'
   const visibleSentences = getVisibleSentences(recommendedSentences)
 
   return (
@@ -185,20 +154,7 @@ export default function CustomTalkRecommendPage() {
           <CustomTalkContextPanel
             context={context}
             conversationLog={conversationLog}
-            previewText={buildCustomTalkDraftPreview(draft)}
           />
-
-          <section style={customTalkPanelStyle}>
-            <h3 style={sectionTitleStyle}>{categoryLabel} 추천 문장</h3>
-            <p style={sectionTextStyle}>
-              원하는 문장을 바로 선택하거나, 원하는 표현이 없으면 형태소 조합 단계로 이어서 문장을 만들 수 있습니다.
-            </p>
-            {draft.selectedRecommendedSentence ? (
-              <div style={selectedSentenceStyle}>{draft.selectedRecommendedSentence}</div>
-            ) : (
-              <div style={customTalkLoadingNoticeStyle}>아직 전송한 추천 문장이 없습니다.</div>
-            )}
-          </section>
 
           {status === 'loading' || errorMessage || completionMessage ? (
             <div style={noticeStackStyle}>

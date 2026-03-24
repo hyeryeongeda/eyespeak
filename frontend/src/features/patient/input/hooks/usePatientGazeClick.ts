@@ -650,41 +650,41 @@ export function usePatientGazeClick({
     }
   }, [])
 
-  useEffect(() => {
-    if (!enabled || !import.meta.env.DEV) {
-      return
-    }
-
-    console.info('[patient-input] gaze-target-observed', {
-      gazePointPresent: gazePoint !== null,
-      hasCellMapping: cellMapping !== null,
-      hasFallbackPatientMainMapping: getFallbackPatientMainCellMapping() !== null,
-      hasGenericCellDomFallback: getFallbackInteractiveElementFromCell(gazeCell) !== null,
-      patientMainPointTargetFound: getPatientMainPointTarget(gazePoint) !== null,
-      hasNearestPointFallback: getNearestInteractiveTargetFromPoint(gazePoint) !== null,
-      rawTargetKey: rawGazeTarget?.key ?? null,
-      rawTargetSource: rawGazeTarget?.source ?? null,
-      rawTargetCell: rawGazeTarget?.cell ?? null,
-      stableTargetKey: stableGazeTarget?.key ?? null,
-      stableTargetSource: stableGazeTarget?.source ?? null,
-      stableTargetCell: stableGazeTarget?.cell ?? null,
-      mappedTrackingId:
-        typeof gazeCell === 'number' && cellMapping ? (cellMapping[gazeCell] ?? null) : null,
-      gazeCell,
-      updatedAt: gazePoint?.updatedAt ?? null,
-    })
-  }, [
-    cellMapping,
-    enabled,
-    gazeCell,
-    gazePoint?.updatedAt,
-    rawGazeTarget?.cell,
-    rawGazeTarget?.key,
-    rawGazeTarget?.source,
-    stableGazeTarget?.cell,
-    stableGazeTarget?.key,
-    stableGazeTarget?.source,
-  ])
+  // useEffect(() => {
+  //   if (!enabled || !import.meta.env.DEV) {
+  //     return
+  //   }
+  //
+  //   console.info('[patient-input] gaze-target-observed', {
+  //     gazePointPresent: gazePoint !== null,
+  //     hasCellMapping: cellMapping !== null,
+  //     hasFallbackPatientMainMapping: getFallbackPatientMainCellMapping() !== null,
+  //     hasGenericCellDomFallback: getFallbackInteractiveElementFromCell(gazeCell) !== null,
+  //     patientMainPointTargetFound: getPatientMainPointTarget(gazePoint) !== null,
+  //     hasNearestPointFallback: getNearestInteractiveTargetFromPoint(gazePoint) !== null,
+  //     rawTargetKey: rawGazeTarget?.key ?? null,
+  //     rawTargetSource: rawGazeTarget?.source ?? null,
+  //     rawTargetCell: rawGazeTarget?.cell ?? null,
+  //     stableTargetKey: stableGazeTarget?.key ?? null,
+  //     stableTargetSource: stableGazeTarget?.source ?? null,
+  //     stableTargetCell: stableGazeTarget?.cell ?? null,
+  //     mappedTrackingId:
+  //       typeof gazeCell === 'number' && cellMapping ? (cellMapping[gazeCell] ?? null) : null,
+  //     gazeCell,
+  //     updatedAt: gazePoint?.updatedAt ?? null,
+  //   })
+  // }, [
+  //   cellMapping,
+  //   enabled,
+  //   gazeCell,
+  //   gazePoint?.updatedAt,
+  //   rawGazeTarget?.cell,
+  //   rawGazeTarget?.key,
+  //   rawGazeTarget?.source,
+  //   stableGazeTarget?.cell,
+  //   stableGazeTarget?.key,
+  //   stableGazeTarget?.source,
+  // ])
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
