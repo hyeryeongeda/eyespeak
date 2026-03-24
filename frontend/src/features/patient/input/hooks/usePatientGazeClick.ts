@@ -214,39 +214,6 @@ function getNearestInteractiveTargetFromPoint(
   }
 }
 
-function getFallbackInteractiveElementFromCell(cell: number | null): GazeTarget | null {
-  if (typeof document === 'undefined' || cell === null) {
-    return null
-  }
-
-  const interactiveElements = Array.from(
-    document.querySelectorAll<HTMLElement>('button, a[href], input[type="button"], input[type="submit"], [role="button"]')
-  ).filter(isElementVisuallyInteractive)
-
-  if (interactiveElements.length === 0) {
-    return null
-  }
-
-  const sorted = interactiveElements.sort((a, b) => {
-    const ar = a.getBoundingClientRect()
-    const br = b.getBoundingClientRect()
-    if (Math.abs(ar.top - br.top) > 12) {
-      return ar.top - br.top
-    }
-    return ar.left - br.left
-  })
-
-  const index = Math.max(0, Math.min(sorted.length - 1, cell))
-  const element = sorted[index]
-
-  return {
-    element,
-    key: getInteractiveElementSelectionKey(element),
-    source: 'cell-dom-fallback',
-    cell,
-  }
-}
-
 function getInteractiveElementBlockReason(element: HTMLElement | null) {
   if (!element) {
     return 'missing-target'
@@ -650,41 +617,41 @@ export function usePatientGazeClick({
     }
   }, [])
 
-  useEffect(() => {
-    if (!enabled || !import.meta.env.DEV) {
-      return
-    }
-
-    console.info('[patient-input] gaze-target-observed', {
-      gazePointPresent: gazePoint !== null,
-      hasCellMapping: cellMapping !== null,
-      hasFallbackPatientMainMapping: getFallbackPatientMainCellMapping() !== null,
-      hasGenericCellDomFallback: getFallbackInteractiveElementFromCell(gazeCell) !== null,
-      patientMainPointTargetFound: getPatientMainPointTarget(gazePoint) !== null,
-      hasNearestPointFallback: getNearestInteractiveTargetFromPoint(gazePoint) !== null,
-      rawTargetKey: rawGazeTarget?.key ?? null,
-      rawTargetSource: rawGazeTarget?.source ?? null,
-      rawTargetCell: rawGazeTarget?.cell ?? null,
-      stableTargetKey: stableGazeTarget?.key ?? null,
-      stableTargetSource: stableGazeTarget?.source ?? null,
-      stableTargetCell: stableGazeTarget?.cell ?? null,
-      mappedTrackingId:
-        typeof gazeCell === 'number' && cellMapping ? (cellMapping[gazeCell] ?? null) : null,
-      gazeCell,
-      updatedAt: gazePoint?.updatedAt ?? null,
-    })
-  }, [
-    cellMapping,
-    enabled,
-    gazeCell,
-    gazePoint?.updatedAt,
-    rawGazeTarget?.cell,
-    rawGazeTarget?.key,
-    rawGazeTarget?.source,
-    stableGazeTarget?.cell,
-    stableGazeTarget?.key,
-    stableGazeTarget?.source,
-  ])
+  // useEffect(() => {
+  //   if (!enabled || !import.meta.env.DEV) {
+  //     return
+  //   }
+  //
+  //   console.info('[patient-input] gaze-target-observed', {
+  //     gazePointPresent: gazePoint !== null,
+  //     hasCellMapping: cellMapping !== null,
+  //     hasFallbackPatientMainMapping: getFallbackPatientMainCellMapping() !== null,
+  //     hasGenericCellDomFallback: getFallbackInteractiveElementFromCell(gazeCell) !== null,
+  //     patientMainPointTargetFound: getPatientMainPointTarget(gazePoint) !== null,
+  //     hasNearestPointFallback: getNearestInteractiveTargetFromPoint(gazePoint) !== null,
+  //     rawTargetKey: rawGazeTarget?.key ?? null,
+  //     rawTargetSource: rawGazeTarget?.source ?? null,
+  //     rawTargetCell: rawGazeTarget?.cell ?? null,
+  //     stableTargetKey: stableGazeTarget?.key ?? null,
+  //     stableTargetSource: stableGazeTarget?.source ?? null,
+  //     stableTargetCell: stableGazeTarget?.cell ?? null,
+  //     mappedTrackingId:
+  //       typeof gazeCell === 'number' && cellMapping ? (cellMapping[gazeCell] ?? null) : null,
+  //     gazeCell,
+  //     updatedAt: gazePoint?.updatedAt ?? null,
+  //   })
+  // }, [
+  //   cellMapping,
+  //   enabled,
+  //   gazeCell,
+  //   gazePoint?.updatedAt,
+  //   rawGazeTarget?.cell,
+  //   rawGazeTarget?.key,
+  //   rawGazeTarget?.source,
+  //   stableGazeTarget?.cell,
+  //   stableGazeTarget?.key,
+  //   stableGazeTarget?.source,
+  // ])
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
