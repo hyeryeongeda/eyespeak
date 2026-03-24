@@ -10,11 +10,7 @@ import {
   customTalkPanelStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
-import type {
-  CustomCategoryKey,
-  CustomTalkCategoryOption,
-  CustomTalkContextSummary,
-} from '../types'
+import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
 
@@ -34,29 +30,38 @@ const noticeStackStyle: CSSProperties = {
   gap: '10px',
 }
 
-const categoryMetaStyle: CSSProperties = {
+const categoryListStyle: CSSProperties = {
   ...customTalkPanelStyle,
-  gap: '8px',
+  gap: '12px',
 }
 
-const categoryTitleStyle: CSSProperties = {
+const categoryGuideTitleStyle: CSSProperties = {
   margin: 0,
   color: '#223247',
   fontSize: '16px',
   fontWeight: 900,
 }
 
-const categoryDescriptionStyle: CSSProperties = {
+const categoryGuideTextStyle: CSSProperties = {
   margin: 0,
   color: '#5f7288',
   fontSize: '14px',
   fontWeight: 700,
-  lineHeight: 1.5,
+  lineHeight: 1.6,
 }
 
-const categoryHintStyle: CSSProperties = {
-  margin: 0,
-  color: '#7d6b39',
+const categoryChipListStyle: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '10px',
+}
+
+const categoryChipStyle: CSSProperties = {
+  padding: '10px 14px',
+  borderRadius: '999px',
+  backgroundColor: '#f4f8fc',
+  border: '1px solid #dce6ed',
+  color: '#32465e',
   fontSize: '13px',
   fontWeight: 800,
 }
@@ -69,79 +74,51 @@ type CustomTalkDirectionTrackingId =
   | 'custom-talk-direction-keyboard'
   | 'custom-talk-direction-back'
 
-function pickCategory(
-  visibleCategories: CustomTalkCategoryOption[],
-  candidates: CustomCategoryKey[],
-  fallback: CustomCategoryKey,
-) {
-  return (
-    candidates.find(key => visibleCategories.some(category => category.key === key)) ??
-    visibleCategories[0]?.key ??
-    fallback
-  )
+type CategoryCardModel = {
+  title: string
+  description: string
+  tone: 'sand' | 'sky' | 'mint'
+  disabled: boolean
+  trackingId:
+    | 'custom-talk-direction-recommendation-1'
+    | 'custom-talk-direction-recommendation-2'
+    | 'custom-talk-direction-recommendation-3'
+    | 'custom-talk-direction-recommendation-4'
+  category: CustomTalkCategoryOption | null
 }
 
-function ensureSentence(text?: string) {
-  if (!text) {
-    return undefined
-  }
+function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): CategoryCardModel[] {
+  const tones = ['sand', 'sky', 'mint', 'sand'] as const
+  const trackingIds = [
+    'custom-talk-direction-recommendation-1',
+    'custom-talk-direction-recommendation-2',
+    'custom-talk-direction-recommendation-3',
+    'custom-talk-direction-recommendation-4',
+  ] as const
 
-  const trimmed = text.trim()
+  return trackingIds.map((trackingId, index) => {
+    const category = visibleCategories[index]
 
-  if (!trimmed) {
-    return undefined
-  }
-
-  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`
-}
-
-function buildMoodSentence(todayMood?: string) {
-  if (!todayMood) {
-    return undefined
-  }
-
-  const normalized = todayMood.trim()
-
-  if (!normalized) {
-    return undefined
-  }
-
-  return ensureSentence(
-    normalized.startsWith('지금') ? normalized : `지금 ${normalized}`,
-  )
-}
-
-function buildEntryRecommendationSentences(
-  context: CustomTalkContextSummary | null,
-  recommendedSentences: string[],
-) {
-  const candidates = [
-    recommendedSentences[0],
-    recommendedSentences[1],
-    recommendedSentences[2],
-    context?.frequentExpressions?.[0],
-    context?.frequentExpressions?.[1],
-    buildMoodSentence(context?.todayMood),
-    context?.recentUsedExpressions?.[0],
-    context?.recentUsedExpressions?.[1],
-    '조금만 기다려 주세요.',
-    '지금 조금 피곤해요.',
-  ]
-
-  const seen = new Set<string>()
-
-  return candidates
-    .map(item => ensureSentence(item))
-    .filter((item): item is string => Boolean(item))
-    .filter(item => {
-      if (seen.has(item)) {
-        return false
+    if (!category) {
+      return {
+        title: '카테고리 준비 중',
+        description: '추천 카테고리를 불러오고 있습니다.',
+        tone: tones[index],
+        disabled: true,
+        trackingId,
+        category: null,
       }
+    }
 
-      seen.add(item)
-      return true
-    })
-    .slice(0, 4)
+    return {
+      title: category.title,
+      description: category.hint?.trim() || category.description,
+      tone: tones[index],
+      disabled: false,
+      trackingId,
+      category,
+    }
+  })
 }
 
 export default function CustomTalkDirectionPage() {
@@ -153,15 +130,12 @@ export default function CustomTalkDirectionPage() {
   const context = useCustomTalkStore(state => state.context)
   const conversationLog = useCustomTalkStore(state => state.conversationLog)
   const visibleCategories = useCustomTalkStore(state => state.visibleCategories)
-  const recommendedSentences = useCustomTalkStore(state => state.recommendedSentences)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
   const completionMessage = useCustomTalkStore(state => state.completionMessage)
   const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
-  const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
-  const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
-  const startCompose = useCustomTalkStore(state => state.startCompose)
+  const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
 
   useEffect(() => {
     void initializeCustomTalk({
@@ -174,99 +148,68 @@ export default function CustomTalkDirectionPage() {
     initializeCustomTalk,
   ])
 
-  const todayCategory = pickCategory(visibleCategories, ['mood', 'schedule'], 'mood')
-  const activeCategory =
-    visibleCategories.find(category => category.key === todayCategory) ?? null
-  const entryRecommendations = buildEntryRecommendationSentences(context, recommendedSentences)
-  const recommendationCards = [
-    {
-      sentence: entryRecommendations[0] ?? '몸이 조금 불편해요.',
-      trackingId: 'custom-talk-direction-recommendation-1' as const,
-    },
-    {
-      sentence: entryRecommendations[1] ?? '지금 조금 쉬고 싶어요.',
-      trackingId: 'custom-talk-direction-recommendation-2' as const,
-    },
-    {
-      sentence: entryRecommendations[2] ?? '물을 조금만 주세요.',
-      trackingId: 'custom-talk-direction-recommendation-3' as const,
-    },
-    {
-      sentence: entryRecommendations[3] ?? '지금 조금 피곤해요.',
-      trackingId: 'custom-talk-direction-recommendation-4' as const,
-    },
-  ]
+  const categoryCards = buildCategoryCards(visibleCategories)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
-  const recommendationDescription = `${activeCategory?.title ?? '추천'} 기반 문장입니다.`
 
-  useEffect(() => {
-    selectCategory(todayCategory)
-    void loadRecommendedSentences(todayCategory)
-  }, [loadRecommendedSentences, selectCategory, todayCategory])
+  const handleSelectCategory = (category: CustomTalkCategoryOption | null) => {
+    if (!category) {
+      return
+    }
+
+    selectCategory(category.key)
+    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
+  }
 
   return (
     <CustomTalkEntryLayout
-      title="맞춤대화"
+      title="맞춤 카테고리"
       topLeft={{
-        title: recommendationCards[0].sentence,
-        description: recommendationDescription,
-        tone: 'sand',
-        onSelect: async () => {
-          selectCategory(todayCategory)
-          await selectRecommendedSentence(recommendationCards[0].sentence)
-        },
-        disabled: isBusy,
-        trackingId: recommendationCards[0].trackingId,
+        title: categoryCards[0].title,
+        description: categoryCards[0].description,
+        tone: categoryCards[0].tone,
+        onSelect: () => handleSelectCategory(categoryCards[0].category),
+        disabled: isBusy || categoryCards[0].disabled,
+        trackingId: categoryCards[0].trackingId,
       }}
       topCenter={{
-        title: recommendationCards[1].sentence,
-        description: recommendationDescription,
-        tone: 'sand',
-        onSelect: async () => {
-          selectCategory(todayCategory)
-          await selectRecommendedSentence(recommendationCards[1].sentence)
-        },
-        disabled: isBusy,
-        trackingId: recommendationCards[1].trackingId,
+        title: categoryCards[1].title,
+        description: categoryCards[1].description,
+        tone: categoryCards[1].tone,
+        onSelect: () => handleSelectCategory(categoryCards[1].category),
+        disabled: isBusy || categoryCards[1].disabled,
+        trackingId: categoryCards[1].trackingId,
       }}
       topRight={{
-        title: recommendationCards[2].sentence,
-        description: recommendationDescription,
-        tone: 'sand',
-        onSelect: async () => {
-          selectCategory(todayCategory)
-          await selectRecommendedSentence(recommendationCards[2].sentence)
-        },
-        disabled: isBusy,
-        trackingId: recommendationCards[2].trackingId,
+        title: categoryCards[2].title,
+        description: categoryCards[2].description,
+        tone: categoryCards[2].tone,
+        onSelect: () => handleSelectCategory(categoryCards[2].category),
+        disabled: isBusy || categoryCards[2].disabled,
+        trackingId: categoryCards[2].trackingId,
       }}
       bottomLeft={{
-        title: recommendationCards[3].sentence,
-        description: recommendationDescription,
-        tone: 'sand',
-        onSelect: async () => {
-          selectCategory(todayCategory)
-          await selectRecommendedSentence(recommendationCards[3].sentence)
-        },
-        disabled: isBusy,
-        trackingId: recommendationCards[3].trackingId,
+        title: categoryCards[3].title,
+        description: categoryCards[3].description,
+        tone: categoryCards[3].tone,
+        onSelect: () => handleSelectCategory(categoryCards[3].category),
+        disabled: isBusy || categoryCards[3].disabled,
+        trackingId: categoryCards[3].trackingId,
       }}
       bottomCenter={{
         title: '직접말해요',
-        description: '주어부터 차례로 조합한 뒤 생성 문장을 고릅니다.',
+        description: '추천을 건너뛰고 키보드로 바로 문장을 입력합니다.',
         tone: 'mint',
-        onSelect: async () => {
-          selectCategory(todayCategory)
-          await startCompose()
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
+        onSelect: () => {
+          openKeyboard('custom_entry')
+          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
         disabled: status === 'submitting',
         trackingId: 'custom-talk-direction-keyboard',
       }}
       bottomRight={{
         title: '뒤로가기',
-        description: '대화하기 메인으로 돌아갑니다.',
+        description: '대화 메인 화면으로 돌아갑니다.',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN),
         trackingId: 'custom-talk-direction-back',
@@ -280,19 +223,28 @@ export default function CustomTalkDirectionPage() {
             mode="entry"
           />
 
-          {activeCategory ? (
-            <section style={categoryMetaStyle}>
-              <h3 style={categoryTitleStyle}>{activeCategory.title}</h3>
-              <p style={categoryDescriptionStyle}>{activeCategory.description}</p>
-              <p style={categoryHintStyle}>힌트: {activeCategory.hint}</p>
-            </section>
-          ) : null}
+          <section style={categoryListStyle}>
+            <h3 style={categoryGuideTitleStyle}>추천 카테고리를 먼저 선택하세요</h3>
+            <p style={categoryGuideTextStyle}>
+              첫 화면에서는 카테고리만 조회합니다. 카테고리를 누르면 다음 화면에서
+              추천 문장을 불러옵니다.
+            </p>
+            {visibleCategories.length > 0 ? (
+              <div style={categoryChipListStyle}>
+                {visibleCategories.map(category => (
+                  <span key={category.key} style={categoryChipStyle}>
+                    {category.title}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </section>
 
           {status === 'loading' || status === 'refreshing' || errorMessage || completionMessage ? (
             <div style={noticeStackStyle}>
               {status === 'loading' || status === 'refreshing' ? (
                 <div style={customTalkLoadingNoticeStyle}>
-                  맞춤대화 내용과 추천 문장을 불러오는 중입니다.
+                  맞춤대화 카테고리를 불러오는 중입니다.
                 </div>
               ) : null}
               {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
