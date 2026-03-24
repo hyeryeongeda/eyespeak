@@ -142,3 +142,5 @@ FCM_key.json
 
 # 임시 CI 빌드 디렉토리
 tmp-frontend-ci/
+tmp-frontend-ci-2/
+tmp-frontend-head/
