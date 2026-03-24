@@ -9,6 +9,7 @@ import { CUSTOM_TALK_CATEGORY_POOL } from '../features/patient/custom-talk/mocks
 import type {
   ComposeStep,
   CustomCategoryKey,
+  CustomTalkCategoryOption,
   CustomTalkContextSummary,
   CustomTalkDraft,
 } from '../features/patient/custom-talk/types'
@@ -42,6 +43,10 @@ import { buildMockSuggestedResponses } from './mockSuggestionService'
 
 const knownCategoryKeys = new Set(
   CUSTOM_TALK_CATEGORY_POOL.map(category => category.key),
+)
+
+const customTalkCategoryMap = new Map(
+  CUSTOM_TALK_CATEGORY_POOL.map(category => [category.key, category]),
 )
 
 function getAccessToken() {
@@ -87,6 +92,33 @@ function mapVisibleCategoryKeys(input: Array<{ key: string }>): CustomCategoryKe
     .filter((key): key is CustomCategoryKey => knownCategoryKeys.has(key as CustomCategoryKey))
 }
 
+function mapVisibleCategories(
+  input: Array<{ key: string; title?: string; description?: string; hint?: string | null }>,
+): CustomTalkCategoryOption[] {
+  return input
+    .map(category => {
+      const key = category.key as CustomCategoryKey
+
+      if (!knownCategoryKeys.has(key)) {
+        return null
+      }
+
+      const fallback = customTalkCategoryMap.get(key)
+
+      if (!fallback) {
+        return null
+      }
+
+      return {
+        key,
+        title: category.title?.trim() || fallback.title,
+        description: category.description?.trim() || fallback.description,
+        hint: category.hint?.trim() || fallback.hint,
+      }
+    })
+    .filter((category): category is CustomTalkCategoryOption => Boolean(category))
+}
+
 function buildComposeRequest(draft: CustomTalkDraft) {
   return {
     categoryKey: draft.categoryKey
@@ -113,6 +145,20 @@ function normalizeUtteranceText(text: string) {
   return text.trim()
 }
 
+function mapCustomTalkSourceToMessageType(
+  source: 'recommended' | 'generated' | 'manual',
+): 'text' | 'manual_text' | 'word_combination' {
+  if (source === 'generated') {
+    return 'word_combination'
+  }
+
+  if (source === 'manual') {
+    return 'manual_text'
+  }
+
+  return 'text'
+}
+
 function toCustomTalkSubmitSource(
   source: RecommendationSendSource,
 ): 'recommended' | 'generated' | 'manual' {
@@ -126,13 +172,18 @@ function toCustomTalkSubmitSource(
 async function sendPatientChatNow(input: {
   text: string
   type?: 'text' | 'suggested_reply' | 'manual_text' | 'word_combination'
+  contentType?: 'TEXT' | 'PHRASE' | 'EXPRESSION'
+  phraseId?: number | null
+  exprId?: number | null
   replyToId?: string
 }) {
   const result = await dispatchPatientChatMessage({
     text: input.text,
     type: input.type,
     replyToId: input.replyToId,
-    contentType: 'TEXT',
+    contentType: input.contentType ?? 'TEXT',
+    phraseId: input.phraseId,
+    exprId: input.exprId,
   })
 
   if (!result.success || !result.message) {
@@ -147,6 +198,9 @@ function recordRecommendationInBackground(input: {
   source: RecommendationSendSource
   replyToId?: string
 }) {
+  void input.source
+  void input.replyToId
+
   if (getActiveAiApiMode() !== 'real') {
     return
   }
@@ -154,8 +208,6 @@ function recordRecommendationInBackground(input: {
   void recordRecommendationApi(
     {
       text: input.text,
-      source: input.source,
-      replyToId: input.replyToId,
     },
     getAccessToken(),
   ).catch(error => {
@@ -173,10 +225,10 @@ export async function fetchVisibleCustomCategories(input: {
   }
 
   const response = await getRecommendationCategoriesApi(getAccessToken())
-  const visibleKeys = mapVisibleCategoryKeys(response.categories)
+  const visibleCategories = mapVisibleCategories(response.categories)
 
-  if (visibleKeys.length > 0) {
-    return visibleKeys
+  if (visibleCategories.length > 0) {
+    return visibleCategories
   }
 
   return fetchVisibleCustomCategoriesMock({
@@ -276,7 +328,7 @@ export async function submitPatientUtterance(input: {
 
     const message = await sendPatientChatNow({
       text: normalizedText,
-      type: 'text',
+      type: mapCustomTalkSourceToMessageType(toCustomTalkSubmitSource(input.source)),
     })
 
     return {
@@ -286,14 +338,18 @@ export async function submitPatientUtterance(input: {
     }
   }
 
+  const recordResponse = await recordRecommendationApi(
+    {
+      text: normalizedText,
+    },
+    getAccessToken(),
+  )
+
   const message = await sendPatientChatNow({
     text: normalizedText,
-    type: 'text',
-  })
-
-  recordRecommendationInBackground({
-    text: normalizedText,
-    source: input.source,
+    type: mapCustomTalkSourceToMessageType(toCustomTalkSubmitSource(input.source)),
+    contentType: 'EXPRESSION',
+    exprId: recordResponse.expressionId,
   })
 
   return {

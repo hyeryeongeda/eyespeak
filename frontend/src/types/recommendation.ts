@@ -64,6 +64,15 @@ export interface RecommendationComposeResponseDto {
   sentences: string[]
 }
 
+export interface RecommendationRecordRequestDto {
+  text: string
+}
+
+export interface RecommendationRecordResponseDto {
+  expressionId: number
+  isNew: boolean
+}
+
 export interface RecommendationReplyHistoryItemDto {
   sender: RecommendationReplySender
   content: string
