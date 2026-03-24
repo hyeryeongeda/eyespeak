@@ -876,8 +876,10 @@ export function PatientIncomingChatProvider({
 
   const { connected, sendChat } = usePatientStomp({
     onChatMessage: handleStompChat,
-    onCallConfirmed: () => {
-      useCallStatusStore.getState().setConfirmed()
+    onCallConfirmed: payload => {
+      useCallStatusStore
+        .getState()
+        .setConfirmed(payload.callType === 'SOS' ? 'sos' : 'call', payload.body)
     },
   })
 

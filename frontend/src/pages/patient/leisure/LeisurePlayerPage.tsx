@@ -67,31 +67,6 @@ const videoInnerWrapStyle: CSSProperties = {
   boxShadow: 'inset 0 0 0 1px rgba(196, 210, 229, 0.92)',
 }
 
-const playOverlayStyle: CSSProperties = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: '54px',
-  height: '54px',
-  borderRadius: '999px',
-  backgroundColor: 'rgba(255, 255, 255, 0.94)',
-  boxShadow: '0 18px 34px rgba(81, 104, 136, 0.16)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  pointerEvents: 'none',
-}
-
-const playTriangleStyle: CSSProperties = {
-  width: 0,
-  height: 0,
-  borderTop: '8px solid transparent',
-  borderBottom: '8px solid transparent',
-  borderLeft: '12px solid #5d92de',
-  marginLeft: '4px',
-}
-
 const pausedBadgeStyle: CSSProperties = {
   position: 'absolute',
   top: '16px',
@@ -226,6 +201,7 @@ function buildYouTubePlayerUrl(embedUrl: string) {
   url.searchParams.set('rel', '0')
   url.searchParams.set('modestbranding', '1')
   url.searchParams.set('playsinline', '1')
+  url.searchParams.set('autoplay', '1')
   url.searchParams.set('enablejsapi', '1')
 
   if (typeof window !== 'undefined') {
@@ -382,6 +358,7 @@ export default function LeisurePlayerPage() {
               }
 
               playerRef.current = nextPlayer
+              nextPlayer?.playVideo()
               patchResumeContext(currentContext =>
                 currentContext.resumePath === currentPlayerPath &&
                 (currentContext.contentId == null || currentContext.contentId === content.id)
@@ -681,9 +658,6 @@ export default function LeisurePlayerPage() {
                 referrerPolicy="strict-origin-when-cross-origin"
                 style={iframeWrapStyle}
               />
-              <div aria-hidden style={playOverlayStyle}>
-                <div style={playTriangleStyle} />
-              </div>
             </div>
           </div>
         </div>

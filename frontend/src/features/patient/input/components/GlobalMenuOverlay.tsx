@@ -410,7 +410,9 @@ export default function GlobalMenuOverlay() {
         return
       }
 
-      useCallStatusStore.getState().setPending()
+      useCallStatusStore
+        .getState()
+        .setPending('sos', '보호자에게 SOS 호출 신호가 전송되었습니다.')
 
       const handled = emitPatientGlobalMenuAction('sos')
 
