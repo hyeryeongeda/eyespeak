@@ -6,13 +6,16 @@ package e205.eyespeak.domain.auth.service;
  * - 환자 회원가입 (팀코드로 Matching 조회 → User 생성 → Patient에 연결)
  * - 로그인 (이메일 + 비밀번호 검증 → JWT 발급)
  * - 토큰 갱신 (Refresh Token → 새 Access/Refresh Token 발급)
+ * - 비밀번호 재설정: 임시 비밀번호 발급 후 DB 에 임시 비밀번호로 수정
  */
 
 import e205.eyespeak.domain.auth.dto.request.GuardianSignupRequest;
 import e205.eyespeak.domain.auth.dto.request.LoginRequest;
+import e205.eyespeak.domain.auth.dto.request.PasswordResetRequest;
 import e205.eyespeak.domain.auth.dto.request.PatientSignupRequest;
 import e205.eyespeak.domain.auth.dto.request.RefreshRequest;
 import e205.eyespeak.domain.auth.dto.response.AuthResponse;
+import e205.eyespeak.domain.auth.dto.response.PasswordResetResponse;
 import e205.eyespeak.domain.auth.dto.response.PatientSignupResponse;
 import e205.eyespeak.domain.guardian.entity.Guardian;
 import e205.eyespeak.domain.guardian.repository.GuardianRepository;
@@ -28,6 +31,7 @@ import e205.eyespeak.global.enums.Role;
 import e205.eyespeak.global.error.BusinessException;
 import e205.eyespeak.global.error.ErrorCode;
 import e205.eyespeak.global.jwt.JwtProvider;
+import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -184,6 +188,64 @@ public class AuthService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.TOKEN_INVALID));
 
         return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public PasswordResetResponse resetPassword(PasswordResetRequest request) {
+        // 이메일로 사용자 조회
+        User user = userRepository.findByLoginId(request.getIdentifier())
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_FAILED));
+
+        // role이 있으면 역할 검증
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            String rawRole = request.getRole().toUpperCase();
+            Role role;
+            if ("CAREGIVER".equals(rawRole) || "GUARDIAN".equals(rawRole)) {
+                role = Role.GUARDIAN;
+            } else if ("PATIENT".equals(rawRole)) {
+                role = Role.PATIENT;
+            } else {
+                throw new BusinessException(ErrorCode.LOGIN_FAILED);
+            }
+            if (user.getRole() != role) {
+                throw new BusinessException(ErrorCode.LOGIN_FAILED);
+            }
+        }
+
+        // 임시 비밀번호 생성 및 저장
+        String tempPassword = generateTemporaryPassword();
+        user.changePassword(passwordEncoder.encode(tempPassword));
+
+        // 이메일 마스킹 (ho***@email.com)
+        String maskedIdentifier = maskEmail(user.getLoginId());
+
+        String roleLabel = user.getRole() == Role.GUARDIAN ? "guardian" : "patient";
+
+        return PasswordResetResponse.builder()
+                .userRole(roleLabel)
+                .userName(user.getName())
+                .maskedIdentifier(maskedIdentifier)
+                .temporaryPassword(tempPassword)
+                .message("임시 비밀번호가 발급되었습니다. 로그인 후 비밀번호를 변경해주세요.")
+                .build();
+    }
+
+    private String generateTemporaryPassword() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#^";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(10);
+        for (int i = 0; i < 10; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
+    private String maskEmail(String email) {
+        int atIndex = email.indexOf('@');
+        if (atIndex <= 2) {
+            return email.charAt(0) + "***" + email.substring(atIndex);
+        }
+        return email.substring(0, 2) + "***" + email.substring(atIndex);
     }
 
     private AuthResponse buildAuthResponse(User user) {
