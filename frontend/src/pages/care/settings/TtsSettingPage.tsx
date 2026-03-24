@@ -17,7 +17,7 @@ export default function TtsSettingPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
 
-  const ACCEPTED_FORMATS = '.mp3,.wav,.mp4'
+  const ACCEPTED_FORMATS = '.mp3,.wav,.mp4,.m4a'
 
   useEffect(() => {
     const fetchSettings = async () => {
