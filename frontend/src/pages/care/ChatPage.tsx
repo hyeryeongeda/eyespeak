@@ -20,9 +20,9 @@ export default function ChatPage() {
         >
           &#8249;
         </button>
-        <span className="text-[17px] font-bold text-[#3D405B]">채팅</span>
+        <span className="text-[18px] font-bold text-[#3D405B]">대화</span>
         {!connected && (
-          <span className="ml-auto text-[12px] text-[#F59E0B]">연결 중...</span>
+          <span className="ml-auto text-[12px] text-[#F59E0B]">연결 중..</span>
         )}
       </header>
 

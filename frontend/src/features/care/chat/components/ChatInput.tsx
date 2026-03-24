@@ -48,7 +48,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-center gap-2 px-3 py-2 border-t border-[#E2E8F0] bg-white"
+      className="flex items-center gap-1.5 px-2 py-2 border-t border-[#E2E8F0] bg-white"
     >
       {/* STT 버튼 */}
       {sttSupported && (
@@ -83,14 +83,14 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
         onChange={(e) => setText(e.target.value)}
         placeholder={isListening ? '듣고 있어요...' : '메시지를 입력하세요'}
         disabled={disabled}
-        className="flex-1 min-h-[44px] px-4 py-2 bg-[#F1F5F9] rounded-full text-[15px] text-[#1E293B] placeholder-[#94A3B8] outline-none focus:ring-2 focus:ring-[#3B82F6] disabled:opacity-50"
+        className="flex-1 min-w-0 min-h-[44px] px-4 py-2 bg-[#F1F5F9] rounded-full text-[15px] text-[#1E293B] placeholder-[#3D405B] outline-none focus:ring-2 focus:ring-[#3D405B] disabled:opacity-50"
       />
 
       {/* 전송 버튼 */}
       <button
         type="submit"
         disabled={disabled || !text.trim()}
-        className="w-11 shrink-0 min-h-[44px] flex items-center justify-center rounded-full bg-[#3B82F6] text-white disabled:opacity-40 transition-colors hover:bg-[#2563EB]"
+        className="w-11 shrink-0 min-h-[44px] flex items-center justify-center rounded-full bg-[#3D405B] text-white disabled:opacity-40 transition-colors hover:bg-[#2563EB]"
         aria-label="메시지 전송"
       >
         <svg

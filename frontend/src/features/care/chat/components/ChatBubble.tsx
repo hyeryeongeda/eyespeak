@@ -20,9 +20,9 @@ export default function ChatBubble({ message }: ChatBubbleProps) {
     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'} mb-2`}>
       <div className={`max-w-[75%] ${isMine ? 'items-end' : 'items-start'}`}>
         <div
-          className={`px-3 py-2 rounded-2xl text-[15px] leading-relaxed break-words ${
+          className={`px-3 py-2 rounded-2xl text-[16px] leading-relaxed break-words ${
             isMine
-              ? 'bg-[#3B82F6] text-white rounded-br-md'
+              ? 'bg-[#3D405B] text-[#FEFEFE] rounded-br-md'
               : 'bg-[#F1F5F9] text-[#1E293B] rounded-bl-md'
           }`}
         >
