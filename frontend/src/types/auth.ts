@@ -5,8 +5,6 @@ export type UserRole = 'guardian' | 'patient'
 
 export type AuthEntryMode = 'login' | 'signup'
 
-export type GuardianSessionExitReason = 'idle-timeout' | 'refresh-failed'
-
 export interface AuthRedirectTarget {
   pathname: string
   search?: string

@@ -1,5 +1,7 @@
 export const TRACKING_TARGET_ATTRIBUTE = 'data-tracking-id'
 export const LOCAL_GAZE_SELECTION_ATTRIBUTE = 'data-gaze-selection'
+export const LOCAL_GAZE_ONLY_VALUE = 'local'
+export const MOUSE_ONLY_GAZE_VALUE = 'mouse-only'
 
 const INTERACTIVE_ELEMENT_SELECTOR = [
   'button',
@@ -98,7 +100,7 @@ export function getInteractiveElementFromPoint(
       continue
     }
 
-    if (interactiveElement.closest(`[${LOCAL_GAZE_SELECTION_ATTRIBUTE}="local"]`)) {
+    if (!isInteractiveElementEligibleForGlobalGazeSelection(interactiveElement)) {
       continue
     }
 
@@ -110,6 +112,13 @@ export function getInteractiveElementFromPoint(
   }
 
   return null
+}
+
+export function isInteractiveElementEligibleForGlobalGazeSelection(element: HTMLElement) {
+  return !element.closest(
+    `[${LOCAL_GAZE_SELECTION_ATTRIBUTE}="${LOCAL_GAZE_ONLY_VALUE}"], ` +
+      `[${LOCAL_GAZE_SELECTION_ATTRIBUTE}="${MOUSE_ONLY_GAZE_VALUE}"]`,
+  )
 }
 
 export function getInteractiveElementSelectionKey(element: HTMLElement) {

@@ -1,4 +1,5 @@
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -275,6 +276,7 @@ const responsiveStyle = `
 export default function PatientMainPage() {
   const navigate = useNavigate()
   const { logout, user, clearPatientPostAuth } = useAuth()
+  const isMouseLogoutIntentRef = useRef(false)
   const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
     enabled: true,
   })
@@ -308,6 +310,20 @@ export default function PatientMainPage() {
   const handleLogout = async () => {
     await logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
+  }
+
+  const handleLogoutPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    isMouseLogoutIntentRef.current = event.pointerType === 'mouse'
+  }
+
+  const handleLogoutClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (!isMouseLogoutIntentRef.current || event.detail === 0) {
+      isMouseLogoutIntentRef.current = false
+      return
+    }
+
+    isMouseLogoutIntentRef.current = false
+    void handleLogout()
   }
 
   const handleRecalibration = () => {
@@ -418,7 +434,22 @@ export default function PatientMainPage() {
               <button type="button" onClick={handleRecalibration} style={recalibrationButtonStyle}>
                 재캘리브레이션
               </button>
-              <button type="button" onClick={() => void handleLogout()} style={logoutButtonStyle}>
+              <button
+                type="button"
+                onPointerDown={handleLogoutPointerDown}
+                onClick={handleLogoutClick}
+                onPointerLeave={() => {
+                  isMouseLogoutIntentRef.current = false
+                }}
+                onPointerCancel={() => {
+                  isMouseLogoutIntentRef.current = false
+                }}
+                onBlur={() => {
+                  isMouseLogoutIntentRef.current = false
+                }}
+                style={logoutButtonStyle}
+                data-gaze-selection="mouse-only"
+              >
                 로그아웃
               </button>
             </div>

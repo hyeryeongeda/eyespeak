@@ -25,23 +25,6 @@ const ReturnToLeisureOverlay = lazy(
 )
 const CallStatusOverlay = lazy(() => import('../../components/patient/CallStatusOverlay'))
 
-const patientLogoutButtonStyle = {
-  position: 'fixed',
-  top: '12px',
-  right: '12px',
-  zIndex: 1100,
-  minHeight: '40px',
-  padding: '0 14px',
-  borderRadius: '999px',
-  border: '1px solid rgba(142, 162, 196, 0.4)',
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  color: '#4a5d7d',
-  fontSize: '13px',
-  fontWeight: 800,
-  cursor: 'pointer',
-  backdropFilter: 'blur(6px)',
-} as const
-
 type PatientLayoutRouteKind = 'talk' | 'custom_talk' | 'leisure' | 'leisure_player' | 'other'
 
 function getPatientLayoutRouteKind(pathname: string): PatientLayoutRouteKind {
@@ -75,7 +58,7 @@ function isChatRouteKind(kind: string | null | undefined) {
 function PatientLayoutShell() {
   const navigate = useNavigate()
   const chat = usePatientIncomingChat()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const location = useLocation()
   const [isReturnToLeisureOverlayVisible, setIsReturnToLeisureOverlayVisible] = useState(false)
   const previousPathnameRef = useRef(location.pathname)
@@ -182,11 +165,6 @@ function PatientLayoutShell() {
     setIsReturnToLeisureOverlayVisible(true)
   }, [chat.state.status, currentRouteKind, resumeContext])
 
-  const handleLogout = async () => {
-    await logout()
-    navigate(ROUTE_PATHS.HOME, { replace: true })
-  }
-
   const handleReplyNow = () => {
     const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
 
@@ -252,16 +230,6 @@ function PatientLayoutShell() {
       <Outlet />
       {!isCalibrationRoute ? (
         <EyeTrackingRuntimeHost enabled={true} eyeTrackingProfileId={eyeTrackingProfileId} />
-      ) : null}
-      {!isCalibrationRoute ? (
-        <button
-          type="button"
-          onClick={() => void handleLogout()}
-          style={patientLogoutButtonStyle}
-          aria-label="Log out"
-        >
-          Log out
-        </button>
       ) : null}
 
       {!isCalibrationRoute && isGlobalMenuOpen ? (
