@@ -322,7 +322,7 @@ export default function PatientMainPage() {
   }
 
   async function requestPatientCall() {
-    const result = await requestMockPatientCall(patientId)
+    const result = await requestMockPatientCall(patientId, user!.matchingId!, user!.accessToken)
 
     if (!result.success) {
       setCooldownSeconds(Math.ceil(result.remainingMs / 1000))

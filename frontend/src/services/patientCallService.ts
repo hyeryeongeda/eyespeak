@@ -1,7 +1,8 @@
+import { apiClient } from './apiClient'
+import { API_ENDPOINTS } from './apiEndpoints'
 import type { MockPatientCallRequestResult } from '../types/patientCall'
 
 export const PATIENT_CALL_COOLDOWN_MS = 30_000
-export const MOCK_PATIENT_CALL_DELAY_MS = 1500
 
 const PATIENT_CALL_STORAGE_PREFIX = 'patientCallLastRequestedAt'
 
@@ -52,6 +53,8 @@ export function getPatientCallCooldownSeconds(patientId: string, now = Date.now(
 
 export async function requestMockPatientCall(
   patientId: string,
+  matchingId: number,
+  accessToken: string,
 ): Promise<MockPatientCallRequestResult> {
   const remainingMs = getRemainingPatientCallCooldownMs(patientId)
 
@@ -63,12 +66,14 @@ export async function requestMockPatientCall(
     }
   }
 
-  await new Promise(resolve => {
-    setTimeout(resolve, MOCK_PATIENT_CALL_DELAY_MS)
-  })
-
   const requestedAt = Date.now()
   storeLastPatientCallAt(patientId, requestedAt)
+
+  await apiClient.post(
+    API_ENDPOINTS.CALL_CREATE,
+    { matchingId, type: 'NORMAL' },
+    { accessToken },
+  )
 
   return {
     success: true,
