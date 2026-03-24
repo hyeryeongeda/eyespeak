@@ -3,12 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
-import {
-  consumeGuardianSessionExitReason,
-  setStoredEntryMode,
-  setStoredRole,
-} from '../../services/authStorage'
-import type { AuthRouteState, GuardianSessionExitReason } from '../../types/auth'
+import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
+import type { AuthRouteState } from '../../types/auth'
 import AuthBrand from './AuthBrand'
 import {
   card,
@@ -36,9 +32,6 @@ export default function CareLoginPage() {
   const location = useLocation()
   const { login, isPending } = useAuth()
   const locationState = (location.state as CareLoginLocationState | null) ?? null
-  const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
-    consumeGuardianSessionExitReason(),
-  )
   const guardianSignupRoute = resolveAuthEntryRoute('signup', 'guardian', location.state)
   const [form, setForm] = useState({
     identifier: locationState?.guardianEmail ?? '',
@@ -89,19 +82,6 @@ export default function CareLoginPage() {
             보호자 회원가입에서 사용한 이메일과 비밀번호로 로그인합니다.
           </p>
         </div>
-
-        {sessionNotice ? (
-          <div style={infoBox}>
-            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
-              세션 안내
-            </p>
-            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-              {sessionNotice === 'idle-timeout'
-                ? '오랫동안 활동이 없어 보호자 세션이 자동으로 종료되었습니다. 다시 로그인해주세요.'
-                : '보호자 세션을 갱신하지 못해 다시 로그인이 필요합니다.'}
-            </p>
-          </div>
-        ) : null}
 
         {locationState?.signupCompleted ? (
           <div style={infoBox}>

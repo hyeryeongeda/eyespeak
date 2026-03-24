@@ -9,6 +9,7 @@ import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackin
 import {
   getInteractiveElementFromPoint,
   getInteractiveElementSelectionKey,
+  isInteractiveElementEligibleForGlobalGazeSelection,
 } from '../services/trackingService'
 import {
   PATIENT_DOUBLE_BLINK_EVENT,
@@ -137,6 +138,10 @@ function isElementVisuallyInteractive(element: HTMLElement) {
     return false
   }
 
+  if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
+    return false
+  }
+
   if (element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') {
     return false
   }
@@ -255,6 +260,10 @@ function getInteractiveElementBlockReason(element: HTMLElement | null) {
 
   if (computedStyle.visibility === 'hidden') {
     return 'visibility-hidden'
+  }
+
+  if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
+    return 'mouse-only'
   }
 
   return null
