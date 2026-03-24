@@ -48,65 +48,69 @@ export const initFcm = async (): Promise<void> => {
     return;
   }
 
-  // 1. 푸시 알림 권한 요청
-  const permission = await PushNotifications.requestPermissions();
-  if (permission.receive !== 'granted') {
-    console.warn('[FCM] 푸시 알림 권한이 거부되었습니다.');
-    return;
+  try {
+    // 1. 푸시 알림 권한 요청
+    const permission = await PushNotifications.requestPermissions();
+    if (permission.receive !== 'granted') {
+      console.warn('[FCM] 푸시 알림 권한이 거부되었습니다.');
+      return;
+    }
+
+    // 2. 토큰 발급 성공 리스너
+    PushNotifications.addListener('registration', async (tokenData) => {
+      const newToken = tokenData.value;
+      const currentToken = useFcmStore.getState().token;
+
+      console.log('[FCM] 토큰 발급 성공:', newToken);
+
+      // 토큰이 변경된 경우에만 서버에 전송
+      if (newToken !== currentToken) {
+        useFcmStore.getState().setToken(newToken);
+        await sendTokenToServer(newToken);
+      }
+    });
+
+    // 3. 토큰 발급 실패 리스너
+    PushNotifications.addListener('registrationError', (error) => {
+      console.error('[FCM] 토큰 발급 실패:', error);
+    });
+
+    // 앱 포그라운드 상태에서 알림 수신
+    PushNotifications.addListener('pushNotificationReceived', (notification) => {
+      const data = notification.data;
+      console.log('[FCM] 포그라운드 알림 수신:', data);
+
+      const type = data?.type as FcmType | undefined;
+      if (type) {
+        playNotificationSound(type);
+        useNotificationStore.getState().showNotification({
+          type,
+          title: data.title ?? '',
+          body: data.body ?? '',
+          matchingId: data.matchingId ? Number(data.matchingId) : undefined,
+          senderId: data.senderId,
+          senderRole: data.senderRole,
+          messageId: data.messageId,
+          callId: data.callId ? Number(data.callId) : undefined,
+        });
+      }
+    });
+
+    // 사용자가 알림 탭해서 앱 진입
+    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+      const data = action.notification.data;
+      console.log('[FCM] 알림 탭:', data);
+
+      const type = data?.type as FcmType | undefined;
+      // TODO: type별 화면 이동 (라우터 연동 후)
+      if (type) {
+        console.log(`[FCM] ${type} 알림 탭 → 화면 이동 예정`);
+      }
+    });
+
+    // 4. 푸시 알림 등록 시작 (토큰 발급 요청)
+    await PushNotifications.register();
+  } catch (error) {
+    console.error('[FCM] 초기화 실패 (google-services.json 누락 가능):', error);
   }
-
-  // 2. 토큰 발급 성공 리스너
-  PushNotifications.addListener('registration', async (tokenData) => {
-    const newToken = tokenData.value;
-    const currentToken = useFcmStore.getState().token;
-
-    console.log('[FCM] 토큰 발급 성공:', newToken);
-
-    // 토큰이 변경된 경우에만 서버에 전송
-    if (newToken !== currentToken) {
-      useFcmStore.getState().setToken(newToken);
-      await sendTokenToServer(newToken);
-    }
-  });
-
-  // 3. 토큰 발급 실패 리스너
-  PushNotifications.addListener('registrationError', (error) => {
-    console.error('[FCM] 토큰 발급 실패:', error);
-  });
-
-  // 앱 포그라운드 상태에서 알림 수신
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    const data = notification.data;
-    console.log('[FCM] 포그라운드 알림 수신:', data);
-
-    const type = data?.type as FcmType | undefined;
-    if (type) {
-      playNotificationSound(type);
-      useNotificationStore.getState().showNotification({
-        type,
-        title: data.title ?? '',
-        body: data.body ?? '',
-        matchingId: data.matchingId ? Number(data.matchingId) : undefined,
-        senderId: data.senderId,
-        senderRole: data.senderRole,
-        messageId: data.messageId,
-        callId: data.callId ? Number(data.callId) : undefined,
-      });
-    }
-  });
-
-  // 사용자가 알림 탭해서 앱 진입
-  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    const data = action.notification.data;
-    console.log('[FCM] 알림 탭:', data);
-
-    const type = data?.type as FcmType | undefined;
-    // TODO: type별 화면 이동 (라우터 연동 후)
-    if (type) {
-      console.log(`[FCM] ${type} 알림 탭 → 화면 이동 예정`);
-    }
-  });
-
-  // 4. 푸시 알림 등록 시작 (토큰 발급 요청)
-  await PushNotifications.register();
 };
