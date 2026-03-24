@@ -1,10 +1,11 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
 import {
-  fetchLeisureCategoryRecommendations,
-  fetchLeisureMain,
-} from '../../../services/leisureService'
+  ROUTE_PATHS,
+  getPatientLeisureCategoryPath,
+  getPatientLeisurePlayerPath,
+} from '../../../app/router/routePaths'
+import { fetchLeisureMain } from '../../../services/leisureService'
 import type { LeisureMainStatus, LeisureShortcut } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureLayout from './components/LeisureLayout'
@@ -180,35 +181,20 @@ export default function LeisureMainPage() {
       return
     }
 
-    setStatus('selecting')
-
-    try {
-      const data = await fetchLeisureCategoryRecommendations(shortcut.categoryId)
-      const firstContent = data.contents[0]
-
-      if (!firstContent) {
-        setStatus('empty')
-        return
-      }
-
-      setStatus('transitioning')
-      navigate(
-        {
-          pathname: getPatientLeisurePlayerPath(firstContent.id),
-          search: location.search,
+    setStatus('transitioning')
+    navigate(
+      {
+        pathname: getPatientLeisureCategoryPath(shortcut.categoryId),
+        search: location.search,
+      },
+      {
+        state: {
+          fromPath: location.pathname,
+          fromLabel: shortcut.title,
+          categoryId: shortcut.categoryId,
         },
-        {
-          state: {
-            fromPath: location.pathname,
-            fromLabel: shortcut.title,
-            categoryId: shortcut.categoryId,
-          },
-        },
-      )
-    } catch (error) {
-      console.error('Failed to select leisure shortcut.', error)
-      setStatus('error')
-    }
+      },
+    )
   }
 
   const noticeMessage =
