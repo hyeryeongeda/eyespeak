@@ -58,8 +58,8 @@ export default function InAppNotification() {
       setConfirming(true);
       const accessToken = getActiveAuthSession()?.accessToken ?? null;
       if (accessToken) {
-        await apiClient.post(
-          `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/confirm`,
+        await apiClient.patch(
+          `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/acknowledge`,
           undefined,
           { accessToken },
         );

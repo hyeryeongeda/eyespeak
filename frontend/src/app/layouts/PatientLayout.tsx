@@ -23,6 +23,7 @@ const IncomingInterruptOverlay = lazy(() => import('../../components/patient/cha
 const ReturnToLeisureOverlay = lazy(
   () => import('../../components/patient/chat/ReturnToLeisureOverlay'),
 )
+const CallStatusOverlay = lazy(() => import('../../components/patient/CallStatusOverlay'))
 
 const patientLogoutButtonStyle = {
   position: 'fixed',
@@ -282,6 +283,12 @@ function PatientLayoutShell() {
             onReplyNow={handleReplyNow}
             onLater={handleInterruptLater}
           />
+        </Suspense>
+      ) : null}
+
+      {!isCalibrationRoute ? (
+        <Suspense fallback={null}>
+          <CallStatusOverlay />
         </Suspense>
       ) : null}
 

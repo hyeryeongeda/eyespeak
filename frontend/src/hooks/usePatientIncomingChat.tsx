@@ -19,6 +19,7 @@ import {
 } from './patientIncomingChatContext'
 import { getActiveApiMode } from '../config/env'
 import { usePatientStomp } from './usePatientStomp'
+import { useCallStatusStore } from '../stores/callStatusStore'
 import { usePatientChatHistory } from './usePatientChatHistory'
 import {
   registerPatientChatDispatcher,
@@ -873,7 +874,12 @@ export function PatientIncomingChatProvider({
     [pathname],
   )
 
-  const { connected, sendChat } = usePatientStomp({ onChatMessage: handleStompChat })
+  const { connected, sendChat } = usePatientStomp({
+    onChatMessage: handleStompChat,
+    onCallConfirmed: () => {
+      useCallStatusStore.getState().setConfirmed()
+    },
+  })
 
   const dispatchOutgoingPatientChat = useCallback(
     async (input: DispatchPatientChatInput): Promise<DispatchPatientChatResult> => {
