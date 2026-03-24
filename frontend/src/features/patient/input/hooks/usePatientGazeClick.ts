@@ -214,39 +214,6 @@ function getNearestInteractiveTargetFromPoint(
   }
 }
 
-function getFallbackInteractiveElementFromCell(cell: number | null): GazeTarget | null {
-  if (typeof document === 'undefined' || cell === null) {
-    return null
-  }
-
-  const interactiveElements = Array.from(
-    document.querySelectorAll<HTMLElement>('button, a[href], input[type="button"], input[type="submit"], [role="button"]')
-  ).filter(isElementVisuallyInteractive)
-
-  if (interactiveElements.length === 0) {
-    return null
-  }
-
-  const sorted = interactiveElements.sort((a, b) => {
-    const ar = a.getBoundingClientRect()
-    const br = b.getBoundingClientRect()
-    if (Math.abs(ar.top - br.top) > 12) {
-      return ar.top - br.top
-    }
-    return ar.left - br.left
-  })
-
-  const index = Math.max(0, Math.min(sorted.length - 1, cell))
-  const element = sorted[index]
-
-  return {
-    element,
-    key: getInteractiveElementSelectionKey(element),
-    source: 'cell-dom-fallback',
-    cell,
-  }
-}
-
 function getInteractiveElementBlockReason(element: HTMLElement | null) {
   if (!element) {
     return 'missing-target'
