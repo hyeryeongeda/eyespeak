@@ -45,16 +45,7 @@ const previewStyle: CSSProperties = {
 }
 
 function getVisibleGeneratedSentences(sentences: string[]) {
-  const fallbackSentences = ['조금만 쉬고 싶어요.', '지금은 괜찮아요.']
-  const visible = [...sentences]
-
-  fallbackSentences.forEach(sentence => {
-    if (visible.length < 2 && !visible.includes(sentence)) {
-      visible.push(sentence)
-    }
-  })
-
-  return visible.slice(0, 2)
+  return sentences.filter(Boolean).slice(0, 2)
 }
 
 export default function CustomTalkGeneratedPage() {
