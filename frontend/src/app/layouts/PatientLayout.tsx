@@ -7,7 +7,6 @@ import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGa
 import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
 import usePatientRuntimeTracking from '../../features/patient/input/hooks/usePatientRuntimeTracking'
 import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
-import { useCellMappingStore } from '../../features/patient/input/stores/cellMappingStore'
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   isPatientTrackingAvailable,
@@ -91,7 +90,6 @@ function PatientLayoutShell() {
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
-  const setCellMapping = useCellMappingStore(state => state.setCellMapping)
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
@@ -115,28 +113,6 @@ function PatientLayoutShell() {
   useEffect(() => {
     closeGlobalMenu()
   }, [closeGlobalMenu, location.pathname])
-
-  useEffect(() => {
-    const path = location.pathname.replace(/\/+$/, '')
-    const isPatientMainPath =
-      path === ROUTE_PATHS.PATIENT_ROOT ||
-      path === ROUTE_PATHS.PATIENT_MAIN ||
-      path.startsWith(`${ROUTE_PATHS.PATIENT_MAIN}/`)
-
-    if (!isPatientMainPath) {
-      return
-    }
-
-    setCellMapping({
-      0: 'talk',
-      1: 'talk',
-      2: 'talk',
-      3: 'call',
-      4: 'call',
-      5: 'leisure',
-    })
-  }, [location.pathname, setCellMapping])
-
 
   useEffect(() => {
     if (!isTrackingBlocked) {

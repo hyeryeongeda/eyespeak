@@ -3,8 +3,6 @@ import { getEyeTrackingApiBaseUrl, getEyeTrackingRequestTimeoutMs } from './eyeT
 import { ApiError } from '../types/api'
 import type {
   EyeTrackingCalibrationLoadResponseDto,
-  EyeTrackingCalibrationResponseDto,
-  EyeTrackingCalibrationSample,
   EyeTrackingFrame,
   EyeTrackingFrameResponseDto,
   EyeTrackingHealthResponseDto,
@@ -202,39 +200,6 @@ export async function analyzeEyeTrackingFrameApi(
   })
 
   return mapFrameResponse(response)
-}
-
-export function resetEyeTrackingCalibrationApi(signal?: AbortSignal) {
-  return requestEyeTrackingApi<EyeTrackingCalibrationResponseDto>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE_RESET,
-    signal,
-  })
-}
-
-export function submitEyeTrackingCalibrationApi(
-  samples: EyeTrackingCalibrationSample[],
-  signal?: AbortSignal,
-) {
-  return requestEyeTrackingApi<EyeTrackingCalibrationResponseDto, { calibration: EyeTrackingCalibrationSample[] }>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE,
-    body: {
-      calibration: samples,
-    },
-    signal,
-  })
-}
-
-export function saveEyeTrackingCalibrationApi(userId: string, signal?: AbortSignal) {
-  return requestEyeTrackingApi<EyeTrackingCalibrationResponseDto, { user_id: string }>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE_SAVE,
-    body: {
-      user_id: userId,
-    },
-    signal,
-  })
 }
 
 export function loadEyeTrackingCalibrationApi(userId: string, signal?: AbortSignal) {

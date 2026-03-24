@@ -2,10 +2,8 @@ import { useEffect, useState, type RefObject } from 'react'
 import {
   getTrackingTargetIdFromPoint,
   isPointInsideElement,
-  getTrackingTargetIdFromCell,
 } from '../services/trackingService'
 import { useGazeInputStore } from '../stores/gazeInputStore'
-import { useCellMappingStore } from '../stores/cellMappingStore'
 
 interface UseTrackingOptions {
   containerRef: RefObject<HTMLElement | null>
@@ -98,28 +96,13 @@ export function useTracking<TTarget extends string>({
 
     const updateFromPoint = () => {
       const gazePoint = useGazeInputStore.getState().point
-      const gazeCell = useGazeInputStore.getState().cell
       const container = containerRef.current
-      const cellMapping = useCellMappingStore.getState().cellMapping
 
       if (!gazePoint || !container) {
         setGazeTrackingState(INITIAL_TRACKING_STATE)
         return
       }
 
-      // 셀 기반 우선 시도
-      if (cellMapping && gazeCell !== null) {
-        const targetId = getTrackingTargetIdFromCell<TTarget>(gazeCell, cellMapping)
-        setGazeTrackingState({
-          hoveredTargetId: targetId,
-          isPointerInside: targetId !== null,
-          pointerType: 'gaze',
-          inputSource: 'gaze',
-        })
-        return
-      }
-
-      // 폴백: 픽셀 기반 (보간된 current 좌표 = point.clientX/Y)
       const isPointerInside = isPointInsideElement(gazePoint.clientX, gazePoint.clientY, container)
 
       if (!isPointerInside) {
@@ -138,6 +121,7 @@ export function useTracking<TTarget extends string>({
         inputSource: 'gaze',
       })
     }
+
 
     const tick = () => {
       updateFromPoint()

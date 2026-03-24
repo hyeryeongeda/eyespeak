@@ -1,9 +1,5 @@
 import type { CalibrationTrackingStatus } from '../../../../types/calibration'
-import {
-  isBrowserEyeTrackingEnabled,
-  isEyeTrackingApiEnabled,
-} from '../../../../services/eyeTrackingServiceConfig'
-import { createBrowserPatientRuntimeTrackingService } from './browserPatientRuntimeTrackingService'
+import { isEyeTrackingApiEnabled } from '../../../../services/eyeTrackingServiceConfig'
 import { createRealPatientRuntimeTrackingService } from './realPatientRuntimeTrackingService'
 
 export interface PatientRuntimeTrackingStartOptions {
@@ -26,9 +22,7 @@ class NoopPatientRuntimeTrackingService implements PatientRuntimeTrackingService
 
 let patientRuntimeTrackingServiceFactory = isEyeTrackingApiEnabled()
   ? createRealPatientRuntimeTrackingService
-  : isBrowserEyeTrackingEnabled()
-    ? createBrowserPatientRuntimeTrackingService
-    : () => new NoopPatientRuntimeTrackingService()
+  : () => new NoopPatientRuntimeTrackingService()
 
 export function createPatientRuntimeTrackingService(): PatientRuntimeTrackingService {
   return patientRuntimeTrackingServiceFactory()
