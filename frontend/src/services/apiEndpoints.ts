@@ -37,5 +37,6 @@ export const API_ENDPOINTS = {
   COMMUNICATION_RECORDS_DAILY: '/communication-records/daily',
   CHAT_MESSAGES: '/chat',
   FCM_TOKEN: '/fcm/token',
+  CALL_CREATE: '/calls',
   CALL_CONFIRM: '/calls',
 } as const

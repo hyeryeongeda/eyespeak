@@ -96,15 +96,24 @@ export const initFcm = async (): Promise<void> => {
       }
     });
 
-    // 사용자가 알림 탭해서 앱 진입
+    // 사용자가 알림 탭해서 앱 진입 (백그라운드/종료 상태에서)
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       const data = action.notification.data;
       console.log('[FCM] 알림 탭:', data);
 
       const type = data?.type as FcmType | undefined;
-      // TODO: type별 화면 이동 (라우터 연동 후)
       if (type) {
-        console.log(`[FCM] ${type} 알림 탭 → 화면 이동 예정`);
+        // 백그라운드 알림 탭 시 인앱 알림 UI를 표시하여 보호자가 확인 버튼을 누를 수 있게 함
+        useNotificationStore.getState().showNotification({
+          type,
+          title: data.title ?? '',
+          body: data.body ?? '',
+          matchingId: data.matchingId ? Number(data.matchingId) : undefined,
+          senderId: data.senderId,
+          senderRole: data.senderRole,
+          messageId: data.messageId,
+          callId: data.callId ? Number(data.callId) : undefined,
+        });
       }
     });
 
