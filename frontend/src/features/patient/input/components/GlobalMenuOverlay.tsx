@@ -13,7 +13,7 @@ import {
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
   getRemainingPatientSosCooldownMs,
-  requestMockPatientSos,
+  requestPatientCall,
 } from '../../../../services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
 import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
@@ -396,7 +396,17 @@ export default function GlobalMenuOverlay() {
         return
       }
 
-      const result = await requestMockPatientSos(patientId, user)
+      const matchingId = user?.matchingId ?? null
+
+      if (matchingId == null) {
+        if (import.meta.env.DEV) {
+          console.info('[patient-input] global menu SOS blocked: no matchingId')
+        }
+
+        return
+      }
+
+      const result = await requestPatientCall(matchingId, 'SOS', user)
       setSosRemainingMs(getRemainingPatientSosCooldownMs(patientId))
 
       if (!result.success) {
