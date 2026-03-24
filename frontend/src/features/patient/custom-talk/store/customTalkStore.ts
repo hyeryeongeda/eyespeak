@@ -218,6 +218,11 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   initializeCustomTalk: async contextOverride => {
     const state = get()
+    const hasNewGuardianMessage =
+      typeof contextOverride?.guardianMessage === 'string' &&
+      contextOverride.guardianMessage.trim().length > 0 &&
+      contextOverride.guardianMessage !== state.context?.guardianMessage
+
     set({
       status: 'loading',
       errorMessage: null,
@@ -236,10 +241,25 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       isInitialized: true,
       context: mergedContext,
       conversationLog:
-        state.conversationLog.length > 0
-          ? state.conversationLog
-          : buildConversationLog(mergedContext),
+        hasNewGuardianMessage || state.conversationLog.length === 0
+          ? buildConversationLog(mergedContext)
+          : state.conversationLog,
       visibleCategoryKeys,
+      recommendedSentences: hasNewGuardianMessage ? [] : state.recommendedSentences,
+      composeStep: hasNewGuardianMessage ? 'subject' : state.composeStep,
+      composeOptions: hasNewGuardianMessage ? initialComposeOptions : state.composeOptions,
+      draft: hasNewGuardianMessage ? initialDraft : state.draft,
+      generatedSentences: hasNewGuardianMessage ? [] : state.generatedSentences,
+      keyboardStatus: hasNewGuardianMessage ? 'idle' : state.keyboardStatus,
+      keyboardNavigation: hasNewGuardianMessage
+        ? {
+            currentPage: 0,
+            canGoNext: false,
+          }
+        : state.keyboardNavigation,
+      keyboardOptions: hasNewGuardianMessage ? [] : state.keyboardOptions,
+      keyboardErrorMessage: hasNewGuardianMessage ? null : state.keyboardErrorMessage,
+      completionMessage: hasNewGuardianMessage ? null : state.completionMessage,
       status: 'visible',
       errorMessage: null,
     })

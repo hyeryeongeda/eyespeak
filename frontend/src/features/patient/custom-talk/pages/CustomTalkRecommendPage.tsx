@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkStageLayout from '../components/CustomTalkStageLayout'
 import {
@@ -11,6 +12,7 @@ import {
 } from '../components/customTalkUi'
 import { CUSTOM_TALK_CATEGORY_POOL } from '../mocks/customCategoryPool.mock'
 import { useCustomTalkStore } from '../store/customTalkStore'
+import type { CustomCategoryKey } from '../types'
 import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
@@ -46,62 +48,84 @@ const selectedSentenceStyle: CSSProperties = {
 }
 
 function getVisibleSentences(sentences: string[]) {
-  const fallbackSentences = [
-    '지금은 잘 모르겠어요.',
-    '조금만 기다려 주세요.',
-  ]
-  const visible = [...sentences]
+  const visible = sentences.filter(Boolean)
 
-  fallbackSentences.forEach(sentence => {
-    if (visible.length < 2 && !visible.includes(sentence)) {
-      visible.push(sentence)
-    }
-  })
+  if (visible.length >= 2) {
+    return visible.slice(0, 2)
+  }
 
-  return visible.slice(0, 2)
+  return [...visible, '지금 바로 답하고 싶어요.', '조금 더 구체적으로 말해 주세요.'].slice(0, 2)
+}
+
+function pickCategory(
+  visibleCategoryKeys: CustomCategoryKey[],
+  candidates: CustomCategoryKey[],
+  fallback: CustomCategoryKey,
+) {
+  return candidates.find(key => visibleCategoryKeys.includes(key)) ?? fallback
 }
 
 export default function CustomTalkRecommendPage() {
   const navigate = useNavigate()
+  const chat = usePatientIncomingChat()
   const context = useCustomTalkStore(state => state.context)
   const conversationLog = useCustomTalkStore(state => state.conversationLog)
+  const visibleCategoryKeys = useCustomTalkStore(state => state.visibleCategoryKeys)
   const draft = useCustomTalkStore(state => state.draft)
   const recommendedSentences = useCustomTalkStore(state => state.recommendedSentences)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
   const completionMessage = useCustomTalkStore(state => state.completionMessage)
+  const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
+  const selectCategory = useCustomTalkStore(state => state.selectCategory)
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const startCompose = useCustomTalkStore(state => state.startCompose)
-  const hasCategoryKey = Boolean(draft.categoryKey)
+  const categoryKey =
+    draft.categoryKey ?? pickCategory(visibleCategoryKeys, ['mood', 'schedule'], 'mood')
   const isActionLocked =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
 
   useEffect(() => {
-    if (!hasCategoryKey || recommendedSentences.length > 0) {
+    void initializeCustomTalk({
+      guardianMessage:
+        chat.latestUnresolvedMessage?.content ?? chat.activeMessage?.content ?? undefined,
+    })
+  }, [
+    chat.activeMessage?.content,
+    chat.latestUnresolvedMessage?.content,
+    initializeCustomTalk,
+  ])
+
+  useEffect(() => {
+    if (draft.categoryKey) {
       return
     }
 
-    void loadRecommendedSentences(draft.categoryKey)
-  }, [draft.categoryKey, hasCategoryKey, loadRecommendedSentences, recommendedSentences.length])
+    selectCategory(categoryKey)
+  }, [categoryKey, draft.categoryKey, selectCategory])
 
-  if (!hasCategoryKey) {
-    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
-  }
+  useEffect(() => {
+    if (recommendedSentences.length > 0) {
+      return
+    }
+
+    void loadRecommendedSentences(categoryKey)
+  }, [categoryKey, loadRecommendedSentences, recommendedSentences.length])
 
   const categoryLabel =
-    CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === draft.categoryKey)?.title ?? '맞춤대화'
+    CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === categoryKey)?.title ?? '추천 응답'
   const visibleSentences = getVisibleSentences(recommendedSentences)
 
   return (
     <CustomTalkStageLayout
       code="PAT-CUSTOM-002"
-      title="추천 문장 선택"
-      description="가운데 채팅은 확인만 하고, 양쪽 네 버튼으로만 선택합니다."
-      stepLabel={`${categoryLabel} 추천 문장`}
+      title="추천 응답"
+      description="보호자 메시지를 바탕으로 바로 답할 수 있는 문장을 준비했습니다."
+      stepLabel={`${categoryLabel} 추천 응답`}
       leftTop={{
-        title: visibleSentences[0] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
+        title: visibleSentences[0] ?? '추천 응답을 불러오는 중입니다.',
+        description: '선택하면 바로 환자 응답으로 전송됩니다.',
         tone: 'sky',
         onSelect: () => {
           if (visibleSentences[0]) {
@@ -111,8 +135,8 @@ export default function CustomTalkRecommendPage() {
         disabled: !visibleSentences[0] || isActionLocked,
       }}
       leftBottom={{
-        title: visibleSentences[1] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
+        title: visibleSentences[1] ?? '추천 응답을 불러오는 중입니다.',
+        description: '선택하면 바로 환자 응답으로 전송됩니다.',
         tone: 'sand',
         onSelect: () => {
           if (visibleSentences[1]) {
@@ -122,8 +146,8 @@ export default function CustomTalkRecommendPage() {
         disabled: !visibleSentences[1] || isActionLocked,
       }}
       rightTop={{
-        title: '단어로 표현하기',
-        description: '추천 문장 대신 단어를 조합해서 표현합니다.',
+        title: '단어 조합으로 답하기',
+        description: '추천 문장이 맞지 않으면 단어를 조합해서 새 문장을 만듭니다.',
         tone: 'mint',
         onSelect: async () => {
           await startCompose()
@@ -132,8 +156,8 @@ export default function CustomTalkRecommendPage() {
         disabled: isActionLocked,
       }}
       rightBottom={{
-        title: '뒤로가기',
-        description: '맞춤대화 첫 화면으로 돌아갑니다.',
+        title: '추천응답 처음으로',
+        description: '추천응답 첫 화면으로 돌아갑니다.',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK),
       }}
@@ -146,7 +170,7 @@ export default function CustomTalkRecommendPage() {
           />
 
           {status === 'loading' ? (
-            <div style={customTalkLoadingNoticeStyle}>추천 문장을 준비하는 중입니다.</div>
+            <div style={customTalkLoadingNoticeStyle}>추천 응답을 불러오는 중입니다.</div>
           ) : null}
           {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
           {completionMessage ? (
@@ -154,15 +178,15 @@ export default function CustomTalkRecommendPage() {
           ) : null}
 
           <section style={customTalkPanelStyle}>
-            <h3 style={sectionTitleStyle}>{categoryLabel} 기준 추천 문장</h3>
+            <h3 style={sectionTitleStyle}>{categoryLabel} 추천 응답</h3>
             <p style={sectionTextStyle}>
-              이 화면에서는 가운데를 누르지 않고, 왼쪽 두 버튼 또는 오른쪽 위 버튼만 사용합니다.
+              보호자 선발화가 들어오면 이 화면에서 바로 응답 후보를 고를 수 있습니다.
             </p>
             {draft.selectedRecommendedSentence ? (
               <div style={selectedSentenceStyle}>{draft.selectedRecommendedSentence}</div>
             ) : (
               <div style={customTalkLoadingNoticeStyle}>
-                아직 선택한 문장이 없습니다.
+                아직 선택한 추천 응답이 없습니다.
               </div>
             )}
           </section>

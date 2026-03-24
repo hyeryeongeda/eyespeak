@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import EyeTrackingRuntimeHost from '../../features/patient/input/components/EyeTrackingRuntimeHost'
@@ -81,6 +81,7 @@ function PatientLayoutShell() {
   const previousPathnameRef = useRef(location.pathname)
   const promptedResumeAtRef = useRef<number | null>(null)
   const isResumeNavigationInFlightRef = useRef(false)
+  const autoNavigatedMessageIdRef = useRef<string | null>(null)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
@@ -182,35 +183,81 @@ function PatientLayoutShell() {
     setIsReturnToLeisureOverlayVisible(true)
   }, [chat.state.status, currentRouteKind, resumeContext])
 
+  const saveLeisureResumeContext = useCallback(() => {
+    if (!isLeisureRouteKind(currentRouteKind)) {
+      return
+    }
+
+    const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
+    const isPlayerRoute = currentRouteKind === 'leisure_player'
+
+    setResumeContext({
+      routeKind: isPlayerRoute ? 'player' : 'browse',
+      resumePath: `${location.pathname}${location.search}`,
+      fallbackPath: resumeContext?.fallbackPath ?? ROUTE_PATHS.PATIENT_LEISURE,
+      contentId: isPlayerRoute ? resumeContext?.contentId ?? null : null,
+      categoryId: isPlayerRoute ? resumeContext?.categoryId ?? null : null,
+      routeState: isPlayerRoute ? resumeContext?.routeState ?? null : null,
+      playbackPositionSec: isPlayerRoute ? resumeContext?.playbackPositionSec ?? null : null,
+      wasPlaying: isPlayerRoute ? resumeContext?.wasPlaying ?? false : false,
+      canResumePlayback: isPlayerRoute ? resumeContext?.canResumePlayback ?? false : false,
+      fromLeisure: true,
+      interruptedMessageId,
+      savedAt: Date.now(),
+    })
+  }, [
+    chat.activeMessage?.id,
+    chat.latestUnresolvedMessage?.id,
+    currentRouteKind,
+    location.pathname,
+    location.search,
+    resumeContext,
+    setResumeContext,
+  ])
+
+  const moveToRecommendedReply = useCallback(() => {
+    saveLeisureResumeContext()
+    chat.focusLatestPendingMessage()
+
+    if (location.pathname === ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND) {
+      return
+    }
+
+    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
+  }, [chat, location.pathname, navigate, saveLeisureResumeContext])
+
+  useEffect(() => {
+    const latestMessage = chat.latestUnresolvedMessage
+
+    if (!latestMessage || latestMessage.sender !== 'guardian') {
+      return
+    }
+
+    if (autoNavigatedMessageIdRef.current === latestMessage.id) {
+      return
+    }
+
+    const isFreshIncoming =
+      chat.state.status === 'receiving' ||
+      chat.state.status === 'received' ||
+      chat.state.status === 'unread' ||
+      chat.state.status === 'incoming_interrupt'
+
+    if (!isFreshIncoming) {
+      return
+    }
+
+    autoNavigatedMessageIdRef.current = latestMessage.id
+    moveToRecommendedReply()
+  }, [chat.latestUnresolvedMessage, chat.state.status, moveToRecommendedReply])
+
   const handleLogout = async () => {
     await logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
 
   const handleReplyNow = () => {
-    const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
-
-    if (isLeisureRouteKind(currentRouteKind)) {
-      const isPlayerRoute = currentRouteKind === 'leisure_player'
-
-      setResumeContext({
-        routeKind: isPlayerRoute ? 'player' : 'browse',
-        resumePath: `${location.pathname}${location.search}`,
-        fallbackPath: resumeContext?.fallbackPath ?? ROUTE_PATHS.PATIENT_LEISURE,
-        contentId: isPlayerRoute ? resumeContext?.contentId ?? null : null,
-        categoryId: isPlayerRoute ? resumeContext?.categoryId ?? null : null,
-        routeState: isPlayerRoute ? resumeContext?.routeState ?? null : null,
-        playbackPositionSec: isPlayerRoute ? resumeContext?.playbackPositionSec ?? null : null,
-        wasPlaying: isPlayerRoute ? resumeContext?.wasPlaying ?? false : false,
-        canResumePlayback: isPlayerRoute ? resumeContext?.canResumePlayback ?? false : false,
-        fromLeisure: true,
-        interruptedMessageId,
-        savedAt: Date.now(),
-      })
-    }
-
-    chat.focusLatestPendingMessage()
-    navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+    moveToRecommendedReply()
   }
 
   const handleInterruptLater = () => {

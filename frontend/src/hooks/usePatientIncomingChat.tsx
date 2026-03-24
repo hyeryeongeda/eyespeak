@@ -26,6 +26,7 @@ import {
   type DispatchPatientChatInput,
   type DispatchPatientChatResult,
 } from '../services/patientChatDispatch'
+import { registerPatientSosRequestTransport } from '../services/patientSosService'
 import type { StompChatInbound } from '../services/websocket'
 import type {
   PatientChatManualInputMode,
@@ -630,7 +631,7 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
       pathname,
       label: '여가 재생',
       kind: 'leisure_player',
-      responseSurface: 'overlay',
+      responseSurface: 'inline',
       canEnterReplyMode: true,
       shouldPauseMediaOnInterrupt: true,
     }
@@ -674,7 +675,7 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
       pathname,
       label: '맞춤 대화',
       kind: 'custom_talk',
-      responseSurface: 'overlay',
+      responseSurface: 'inline',
       canEnterReplyMode: true,
       shouldPauseMediaOnInterrupt: false,
     }
@@ -874,7 +875,7 @@ export function PatientIncomingChatProvider({
     [pathname],
   )
 
-  const { connected, sendChat } = usePatientStomp({
+  const { connected, sendChat, sendCall } = usePatientStomp({
     onChatMessage: handleStompChat,
     onCallConfirmed: payload => {
       useCallStatusStore
@@ -882,6 +883,21 @@ export function PatientIncomingChatProvider({
         .setConfirmed(payload.callType === 'SOS' ? 'sos' : 'call', payload.body)
     },
   })
+
+  useEffect(() => {
+    if (!connected) {
+      return
+    }
+
+    registerPatientSosRequestTransport(async () => {
+      sendCall('SOS')
+      return { success: true, data: null, source: 'api' as const }
+    })
+
+    return () => {
+      registerPatientSosRequestTransport(null)
+    }
+  }, [connected, sendCall])
 
   const dispatchOutgoingPatientChat = useCallback(
     async (input: DispatchPatientChatInput): Promise<DispatchPatientChatResult> => {
