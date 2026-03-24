@@ -28,7 +28,7 @@ export type CustomTalkStatus =
   | 'completed'
   | 'error'
 
-export type KeyboardEntrySource = 'custom_entry' | 'generated'
+export type KeyboardEntrySource = 'custom_entry' | 'compose' | 'generated'
 
 export interface CustomTalkContextSummary {
   guardianMessage?: string
@@ -137,7 +137,8 @@ export interface CustomTalkState {
   goBackComposeStep: () => ComposeStep | null
   buildGeneratedSentences: () => Promise<void>
   selectGeneratedSentence: (text: string) => Promise<boolean>
-  openKeyboard: (entrySource: KeyboardEntrySource) => void
+  submitComposedSentence: () => Promise<boolean>
+  openKeyboard: (entrySource: KeyboardEntrySource, seedText?: string) => void
   initializeKeyboard: () => Promise<void>
   selectKeyboardRootMenu: (menu: KeyboardRootMenu) => void
   selectKeyboardGroup: (groupId: string) => void
