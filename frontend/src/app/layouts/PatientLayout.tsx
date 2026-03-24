@@ -23,6 +23,7 @@ import { ROUTE_PATHS } from '../router/routePaths'
 
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
 const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
+const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
 const ReturnToLeisureOverlay = lazy(
   () => import('../../components/patient/chat/ReturnToLeisureOverlay'),
 )
@@ -74,7 +75,6 @@ function PatientLayoutShell() {
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const resumeContext = usePatientLeisureResumeStore(state => state.resumeContext)
-  const setResumeContext = usePatientLeisureResumeStore(state => state.setResumeContext)
   const clearResumeContext = usePatientLeisureResumeStore(state => state.clearResumeContext)
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
@@ -211,29 +211,9 @@ function PatientLayoutShell() {
   }, [chat.state.status, currentRouteKind, resumeContext])
 
   const handleReplyNow = () => {
-    const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
-
-    if (isLeisureRouteKind(currentRouteKind)) {
-      const isPlayerRoute = currentRouteKind === 'leisure_player'
-
-      setResumeContext({
-        routeKind: isPlayerRoute ? 'player' : 'browse',
-        resumePath: `${location.pathname}${location.search}`,
-        fallbackPath: resumeContext?.fallbackPath ?? ROUTE_PATHS.PATIENT_LEISURE,
-        contentId: isPlayerRoute ? resumeContext?.contentId ?? null : null,
-        categoryId: isPlayerRoute ? resumeContext?.categoryId ?? null : null,
-        routeState: isPlayerRoute ? resumeContext?.routeState ?? null : null,
-        playbackPositionSec: isPlayerRoute ? resumeContext?.playbackPositionSec ?? null : null,
-        wasPlaying: isPlayerRoute ? resumeContext?.wasPlaying ?? false : false,
-        canResumePlayback: isPlayerRoute ? resumeContext?.canResumePlayback ?? false : false,
-        fromLeisure: true,
-        interruptedMessageId,
-        savedAt: Date.now(),
-      })
-    }
-
-    chat.focusLatestPendingMessage()
-    navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+    setIsReturnToLeisureOverlayVisible(false)
+    promptedResumeAtRef.current = null
+    chat.enterReplyMode()
   }
 
   const handleInterruptLater = () => {
@@ -338,6 +318,38 @@ function PatientLayoutShell() {
             visible={isReturnToLeisureOverlayVisible}
             onReturnToLeisure={handleReturnToLeisure}
             onStayInChat={handleStayInChat}
+          />
+        </Suspense>
+      ) : null}
+
+      {!isCalibrationRoute && chat.shouldShowReplyOverlay ? (
+        <Suspense fallback={null}>
+          <ReplyModePanel
+            overlay
+            message={chat.activeReplyMessage}
+            status={chat.state.status}
+            suggestionState={chat.state.suggestionState}
+            fallbackState={chat.state.fallbackState}
+            suggestions={chat.state.suggestions}
+            selectedSuggestionId={chat.state.selectedSuggestionId}
+            suggestionError={chat.state.suggestionError}
+            sendError={chat.state.sendError}
+            manualInputMode={chat.state.manualInputMode}
+            manualDraft={chat.state.manualDraft}
+            manualWordBank={chat.manualWordBank}
+            unresolvedCount={chat.unresolvedCount}
+            timeoutMs={chat.timeoutMs}
+            onSelectSuggestion={chat.sendSuggestedReply}
+            onRetrySuggestions={chat.retrySuggestions}
+            onOpenManualInputSelect={chat.openManualInputSelect}
+            onSelectManualInputMode={chat.setManualInputMode}
+            onDraftChange={chat.updateManualDraft}
+            onAppendWord={chat.appendManualWord}
+            onClearDraft={chat.clearManualDraft}
+            onSendManualReply={chat.sendManualReply}
+            onDefer={chat.deferActiveMessage}
+            onClose={chat.closeReplyMode}
+            onOpenLatestPendingReply={chat.openLatestPendingReply}
           />
         </Suspense>
       ) : null}
