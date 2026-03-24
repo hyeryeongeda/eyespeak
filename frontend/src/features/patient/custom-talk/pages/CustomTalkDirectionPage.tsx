@@ -123,7 +123,7 @@ export default function CustomTalkDirectionPage() {
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
-  const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
+  const startCompose = useCustomTalkStore(state => state.startCompose)
 
   useEffect(() => {
     void initializeCustomTalk({
@@ -213,11 +213,12 @@ export default function CustomTalkDirectionPage() {
       }}
       bottomCenter={{
         title: '직접말해요',
-        description: '직접 입력 화면으로 이동합니다.',
+        description: '주어부터 차례로 조합해서 문장을 만듭니다.',
         tone: 'mint',
-        onSelect: () => {
-          openKeyboard('custom_entry')
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
+        onSelect: async () => {
+          selectCategory(todayCategory)
+          await startCompose()
+          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
         },
         disabled: status === 'submitting',
         trackingId: 'custom-talk-direction-keyboard',

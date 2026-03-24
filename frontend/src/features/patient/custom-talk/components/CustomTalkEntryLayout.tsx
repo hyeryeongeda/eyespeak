@@ -154,7 +154,7 @@ function ActionCard({
         />
       ) : null}
       <h2 style={cardTitleStyle}>{card.title}</h2>
-      <p style={cardDescriptionStyle}>{card.description}</p>
+      {card.description ? <p style={cardDescriptionStyle}>{card.description}</p> : null}
     </button>
   )
 }
