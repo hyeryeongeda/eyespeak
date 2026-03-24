@@ -56,7 +56,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           type="button"
           onClick={handleToggleSTT}
           disabled={disabled}
-          className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full transition-colors ${
+          className={`w-11 shrink-0 min-h-[44px] flex items-center justify-center rounded-full transition-colors ${
             isListening
               ? 'bg-red-500 text-white animate-pulse'
               : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'
@@ -90,7 +90,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
       <button
         type="submit"
         disabled={disabled || !text.trim()}
-        className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-[#3B82F6] text-white disabled:opacity-40 transition-colors hover:bg-[#2563EB]"
+        className="w-11 shrink-0 min-h-[44px] flex items-center justify-center rounded-full bg-[#3B82F6] text-white disabled:opacity-40 transition-colors hover:bg-[#2563EB]"
         aria-label="메시지 전송"
       >
         <svg
