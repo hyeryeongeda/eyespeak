@@ -14,13 +14,12 @@ interface CustomTalkContextPanelProps {
 const wrapStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
   minHeight: 0,
 }
 
 const panelStyle: CSSProperties = {
   minHeight: 0,
-  borderRadius: '20px',
+  borderRadius: '24px',
   backgroundColor: '#fbfdff',
   border: '1px solid #dce6ed',
   display: 'flex',
@@ -28,60 +27,21 @@ const panelStyle: CSSProperties = {
   overflow: 'hidden',
 }
 
-const panelHeaderStyle: CSSProperties = {
-  padding: '16px 18px 12px',
-  borderBottom: '1px solid #e6eef4',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-}
-
-const panelTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#223247',
-  fontSize: '18px',
-  fontWeight: 900,
-}
-
-const tagWrapStyle: CSSProperties = {
-  display: 'flex',
-  gap: '8px',
-  flexWrap: 'wrap',
-}
-
-const tagStyle: CSSProperties = {
-  padding: '8px 12px',
-  borderRadius: '999px',
-  backgroundColor: '#eef5ff',
-  color: '#5879a6',
-  fontSize: '13px',
-  fontWeight: 700,
-}
-
 const chatListStyle: CSSProperties = {
   minHeight: 0,
-  maxHeight: '520px',
-  overflow: 'auto',
-  padding: '16px 18px',
+  padding: '20px 24px',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  justifyContent: 'center',
 }
 
 const rowBaseStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '4px',
-}
-
-const metaStyle: CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 700,
-  color: '#7b8a9f',
 }
 
 const emptyStyle: CSSProperties = {
-  margin: 'auto 0',
+  margin: 0,
   padding: '18px',
   borderRadius: '18px',
   backgroundColor: '#f6f9fc',
@@ -93,14 +53,7 @@ const emptyStyle: CSSProperties = {
 }
 
 const previewWrapStyle: CSSProperties = {
-  padding: '0 18px 18px',
-}
-
-const previewLabelStyle: CSSProperties = {
-  margin: '0 0 8px',
-  color: '#95773a',
-  fontSize: '12px',
-  fontWeight: 900,
+  paddingTop: '12px',
 }
 
 function getBubbleStyle(
@@ -112,26 +65,15 @@ function getBubbleStyle(
 
   return {
     alignSelf: isGuardian ? 'flex-start' : 'flex-end',
-    maxWidth: '88%',
-    padding: '14px 16px',
-    borderRadius: isGuardian ? '18px 18px 18px 6px' : '18px 18px 6px 18px',
+    width: 'fit-content',
+    maxWidth: '100%',
+    padding: '18px 24px',
+    borderRadius: isGuardian ? '24px' : '24px',
     backgroundColor: isGuardian ? '#f5f8fb' : isPatient ? '#e9f3ff' : '#f6f9fc',
     border: '1px solid #dbe4eb',
     color: '#243246',
     boxShadow: isPreview ? '0 12px 28px rgba(101, 128, 174, 0.12)' : 'none',
   }
-}
-
-function getSenderLabel(sender: CustomTalkConversationLogItem['sender']) {
-  if (sender === 'guardian') {
-    return '보호자'
-  }
-
-  if (sender === 'patient') {
-    return '환자'
-  }
-
-  return '시스템'
 }
 
 export default function CustomTalkContextPanel({
@@ -142,7 +84,7 @@ export default function CustomTalkContextPanel({
 }: CustomTalkContextPanelProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const isEntryMode = mode === 'entry'
-  const visibleConversationLog = isEntryMode ? conversationLog.slice(-2) : conversationLog
+  const visibleConversationLog = conversationLog.slice(-1)
   const shouldShowPreview = mode === 'default' && Boolean(previewText)
   const panelStyleByMode: CSSProperties = {
     ...panelStyle,
@@ -155,15 +97,7 @@ export default function CustomTalkContextPanel({
   }
   const chatListStyleByMode: CSSProperties = {
     ...chatListStyle,
-    maxHeight: isEntryMode ? '240px' : chatListStyle.maxHeight,
-    padding: isEntryMode ? '24px 26px' : chatListStyle.padding,
-    gap: isEntryMode ? '16px' : chatListStyle.gap,
-    justifyContent:
-      isEntryMode && visibleConversationLog.length <= 2 ? 'center' : undefined,
-  }
-  const metaStyleByMode: CSSProperties = {
-    ...metaStyle,
-    fontSize: isEntryMode ? '12px' : metaStyle.fontSize,
+    padding: isEntryMode ? '26px 28px' : chatListStyle.padding,
   }
 
   useEffect(() => {
@@ -175,28 +109,11 @@ export default function CustomTalkContextPanel({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [conversationLog.length, isEntryMode, previewText])
 
-  return (
-    <section style={wrapStyle} aria-label="맞춤대화 채팅 맥락">
-      <div style={panelStyleByMode}>
-        {isEntryMode ? null : (
-          <div style={panelHeaderStyle}>
-            <h2 style={panelTitleStyle}>최근 대화</h2>
-            <div style={tagWrapStyle}>
-              {context?.todayMood ? (
-                <span style={tagStyle}>오늘 기분: {context.todayMood}</span>
-              ) : null}
-              {context?.todaySchedule ? (
-                <span style={tagStyle}>오늘 일정: {context.todaySchedule}</span>
-              ) : null}
-              {context?.recentUsedExpressions?.slice(0, 2).map(item => (
-                <span key={item} style={tagStyle}>
-                  최근 표현: {item}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
+  void context
 
+  return (
+    <section style={wrapStyle} aria-label="맞춤대화 맥락">
+      <div style={panelStyleByMode}>
         <div style={chatListStyleByMode}>
           {visibleConversationLog.length === 0 ? (
             <div style={emptyStyle}>아직 연결된 최근 대화가 없습니다.</div>
@@ -212,18 +129,14 @@ export default function CustomTalkContextPanel({
                     alignItems: isGuardian ? 'flex-start' : 'flex-end',
                   }}
                 >
-                  <span style={metaStyleByMode}>
-                    {getSenderLabel(item.sender)} · {item.createdAt}
-                  </span>
-                  <div
-                    style={getBubbleStyle(item.sender, false)}
-                  >
+                  <div style={getBubbleStyle(item.sender, false)}>
                     <div
                       style={{
-                        fontSize: isEntryMode ? '16px' : '15px',
-                        fontWeight: 700,
+                        fontSize: isEntryMode ? '18px' : '16px',
+                        fontWeight: 800,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',
+                        wordBreak: 'keep-all',
                       }}
                     >
                       {item.content || '내용 없음'}
@@ -239,7 +152,6 @@ export default function CustomTalkContextPanel({
 
       {shouldShowPreview ? (
         <div style={previewWrapStyle}>
-          <p style={previewLabelStyle}>지금 만들고 있는 표현</p>
           <div style={getBubbleStyle('patient', true)}>
             <div
               style={{
@@ -247,6 +159,7 @@ export default function CustomTalkContextPanel({
                 fontWeight: 800,
                 lineHeight: 1.55,
                 whiteSpace: 'pre-wrap',
+                wordBreak: 'keep-all',
               }}
             >
               {previewText}

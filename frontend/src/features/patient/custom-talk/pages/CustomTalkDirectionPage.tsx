@@ -7,7 +7,6 @@ import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
-  customTalkPanelStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import type { CustomTalkCategoryOption } from '../types'
@@ -20,50 +19,15 @@ const centerStackStyle: CSSProperties = {
   gap: '12px',
   minHeight: 0,
   height: '100%',
-  padding: '18px',
+  padding: '16px',
   boxSizing: 'border-box',
+  justifyContent: 'center',
 }
 
 const noticeStackStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '10px',
-}
-
-const categoryListStyle: CSSProperties = {
-  ...customTalkPanelStyle,
-  gap: '12px',
-}
-
-const categoryGuideTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#223247',
-  fontSize: '16px',
-  fontWeight: 900,
-}
-
-const categoryGuideTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#5f7288',
-  fontSize: '14px',
-  fontWeight: 700,
-  lineHeight: 1.6,
-}
-
-const categoryChipListStyle: CSSProperties = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '10px',
-}
-
-const categoryChipStyle: CSSProperties = {
-  padding: '10px 14px',
-  borderRadius: '999px',
-  backgroundColor: '#f4f8fc',
-  border: '1px solid #dce6ed',
-  color: '#32465e',
-  fontSize: '13px',
-  fontWeight: 800,
 }
 
 type CustomTalkDirectionTrackingId =
@@ -222,23 +186,6 @@ export default function CustomTalkDirectionPage() {
             conversationLog={conversationLog}
             mode="entry"
           />
-
-          <section style={categoryListStyle}>
-            <h3 style={categoryGuideTitleStyle}>추천 카테고리를 먼저 선택하세요</h3>
-            <p style={categoryGuideTextStyle}>
-              첫 화면에서는 카테고리만 조회합니다. 카테고리를 누르면 다음 화면에서
-              추천 문장을 불러옵니다.
-            </p>
-            {visibleCategories.length > 0 ? (
-              <div style={categoryChipListStyle}>
-                {visibleCategories.map(category => (
-                  <span key={category.key} style={categoryChipStyle}>
-                    {category.title}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </section>
 
           {status === 'loading' || status === 'refreshing' || errorMessage || completionMessage ? (
             <div style={noticeStackStyle}>
