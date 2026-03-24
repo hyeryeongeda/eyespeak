@@ -381,6 +381,8 @@
   const AUTO_START = searchParams.get('autostart') === '1';
   const EMBED_USER_ID = (searchParams.get('userId') || '').trim();
   const EMBED_PROFILE_ID = (searchParams.get('profileId') || EMBED_USER_ID).trim();
+  const RETURN_URL = (searchParams.get('returnUrl') || '').trim();
+  const RETURN_REQUEST_ID = (searchParams.get('requestId') || '').trim();
   const MESSAGE_SOURCE = 'eyespeak-eye-tracking';
   const EMBED_MESSAGE_TYPES = Object.freeze({
     EMBED_LOADED: 'EMBED_LOADED',
@@ -447,6 +449,66 @@
       profileId: EMBED_PROFILE_ID || undefined,
       ...detail
     }, PARENT_TARGET_ORIGIN);
+  }
+
+  function buildReturnUrl(status, detail = {}) {
+    if (!RETURN_URL) {
+      return null;
+    }
+
+    try {
+      const url = new URL(RETURN_URL, window.location.href);
+      url.searchParams.set('calibrationStatus', status);
+
+      if (RETURN_REQUEST_ID && !url.searchParams.get('requestId')) {
+        url.searchParams.set('requestId', RETURN_REQUEST_ID);
+      }
+
+      if (detail.message) {
+        url.searchParams.set('message', detail.message);
+      } else {
+        url.searchParams.delete('message');
+      }
+
+      return url.toString();
+    } catch (error) {
+      console.warn('Failed to build calibration return URL.', error);
+      return null;
+    }
+  }
+
+  function returnToFrontend(status, detail = {}) {
+    const targetUrl = buildReturnUrl(status, detail);
+
+    if (!targetUrl) {
+      return false;
+    }
+
+    window.location.replace(targetUrl);
+    return true;
+  }
+
+  function reportCalibrationError(message) {
+    statusEl.textContent = message;
+    showToast(message);
+    notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, { message });
+
+    if (RETURN_URL) {
+      window.setTimeout(() => {
+        returnToFrontend('error', { message });
+      }, 80);
+    }
+  }
+
+  function handleCalibrationComplete() {
+    statusEl.textContent = 'Calibration complete.';
+    notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_COMPLETE);
+
+    if (RETURN_URL) {
+      window.setTimeout(() => {
+        returnToFrontend('success');
+      }, 80);
+    }
   }
 
   if (EMBED_MODE && topbarEl) {
@@ -820,15 +882,12 @@
         }).catch(() => {});
       }
 
-      statusEl.textContent = 'Calibration complete.';
-      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_COMPLETE);
+      handleCalibrationComplete();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Calibration sync failed.';
       console.warn(message, error);
-      statusEl.textContent = message;
-      showToast(message);
-      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, { message });
+      reportCalibrationError(message);
     }
   }
 
@@ -1173,9 +1232,7 @@
       console.error(EMBED_LOG_PREFIX, 'camera or detector init failed', e);
       debugEl.textContent = '초기화 오류: ' + e.message;
       statusEl.textContent = '오류 발생 — 페이지를 새로고침하세요';
-      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, {
-        message: e && e.message ? e.message : 'MediaPipe init failed.'
-      });
+      reportCalibrationError(e && e.message ? e.message : 'MediaPipe init failed.');
       console.error('MediaPipe init error:', e);
     }
   }
@@ -1196,9 +1253,7 @@
   }
   window.addEventListener('load', () => {
     if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
-      notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_ERROR, {
-        message: 'MediaPipe CDN scripts failed to load.'
-      });
+      reportCalibrationError('MediaPipe CDN scripts failed to load.');
     }
   });
 })();

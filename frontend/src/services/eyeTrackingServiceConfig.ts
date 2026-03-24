@@ -1,4 +1,4 @@
-export type EyeTrackingApiMode = 'real' | 'browser' | 'mock' | 'disabled'
+export type EyeTrackingApiMode = 'real' | 'disabled'
 
 function normalizeTextValue(value: string | undefined) {
   return value?.trim() ?? ''
@@ -20,14 +20,6 @@ function normalizeModeValue(value: string | undefined) {
 function resolveEyeTrackingApiMode(value: string | undefined): EyeTrackingApiMode {
   const normalizedValue = normalizeModeValue(value)
 
-  if (normalizedValue === 'real') {
-    return 'real'
-  }
-
-  if (normalizedValue === 'browser') {
-    return 'browser'
-  }
-
   if (
     normalizedValue === 'disabled' ||
     normalizedValue === 'off' ||
@@ -37,7 +29,7 @@ function resolveEyeTrackingApiMode(value: string | undefined): EyeTrackingApiMod
     return 'disabled'
   }
 
-  return 'mock'
+  return 'real'
 }
 
 function getPositiveNumber(value: string | undefined, fallback: number) {
@@ -122,10 +114,6 @@ export function getEyeTrackingConfigSnapshot() {
 
 export function isEyeTrackingApiEnabled() {
   return EYE_TRACKING_API_MODE === 'real'
-}
-
-export function isBrowserEyeTrackingEnabled() {
-  return EYE_TRACKING_API_MODE === 'browser'
 }
 
 export function getEyeTrackingApiBaseUrl() {

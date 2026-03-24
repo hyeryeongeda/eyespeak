@@ -38,11 +38,6 @@ export interface EyeTrackingHealthStatus {
   calibrated: boolean
 }
 
-export interface EyeTrackingCalibrationSample {
-  rx: number
-  ry: number
-}
-
 export interface EyeTrackingCalibrationResponseDto {
   ok?: boolean
   error?: string
