@@ -119,7 +119,7 @@ export function useTracking<TTarget extends string>({
         return
       }
 
-      // 폴백: 기존 픽셀 기반
+      // 폴백: 픽셀 기반 (보간된 current 좌표 = point.clientX/Y)
       const isPointerInside = isPointInsideElement(gazePoint.clientX, gazePoint.clientY, container)
 
       if (!isPointerInside) {
@@ -139,16 +139,15 @@ export function useTracking<TTarget extends string>({
       })
     }
 
-    frameId = window.requestAnimationFrame(updateFromPoint)
+    const tick = () => {
+      updateFromPoint()
+      frameId = window.requestAnimationFrame(tick)
+    }
 
-    const unsubscribe = useGazeInputStore.subscribe(() => {
-      window.cancelAnimationFrame(frameId)
-      frameId = window.requestAnimationFrame(updateFromPoint)
-    })
+    frameId = window.requestAnimationFrame(tick)
 
     return () => {
       window.cancelAnimationFrame(frameId)
-      unsubscribe()
     }
   }, [containerRef, enabled])
 

@@ -68,12 +68,12 @@ const EYE_TRACKING_UI_URL =
 
 const EYE_TRACKING_REQUEST_TIMEOUT_MS = getPositiveNumber(
   import.meta.env.VITE_EYE_TRACKING_REQUEST_TIMEOUT_MS,
-  5000,
+  3000,
 )
 
 const EYE_TRACKING_RUNTIME_POLL_INTERVAL_MS = getPositiveNumber(
   import.meta.env.VITE_EYE_TRACKING_RUNTIME_POLL_INTERVAL_MS,
-  250,
+  100,
 )
 
 const EYE_TRACKING_CAPTURE_SAMPLE_INTERVAL_MS = getPositiveNumber(

@@ -17,6 +17,25 @@ export function usePatientRuntimeTracking({
 }: UsePatientRuntimeTrackingOptions) {
   useEffect(() => {
     if (!enabled || !eyeTrackingProfileId) {
+      return
+    }
+
+    let rafId = 0
+
+    const runInterpolationFrame = () => {
+      useGazeInputStore.getState().interpolate()
+      rafId = window.requestAnimationFrame(runInterpolationFrame)
+    }
+
+    rafId = window.requestAnimationFrame(runInterpolationFrame)
+
+    return () => {
+      window.cancelAnimationFrame(rafId)
+    }
+  }, [enabled, eyeTrackingProfileId])
+
+  useEffect(() => {
+    if (!enabled || !eyeTrackingProfileId) {
       useGazeInputStore.getState().clearPoint()
       emitPatientTrackingStatus('idle')
       return

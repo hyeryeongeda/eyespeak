@@ -16,6 +16,20 @@ from typing import Any, Dict, Optional, Tuple
 logger = logging.getLogger(__name__)
 
 
+def _one_euro_quartet_from_smoothing(sm: Dict[str, Any]) -> Tuple[float, float, float, float]:
+    """축별 4값 또는 구버전 단일 (min_cutoff, beta) 쌍에서 (mcx, bx, mcy, by)를 만든다."""
+    if "one_euro_min_cutoff_x" in sm:
+        return (
+            float(sm["one_euro_min_cutoff_x"]),
+            float(sm["one_euro_beta_x"]),
+            float(sm["one_euro_min_cutoff_y"]),
+            float(sm["one_euro_beta_y"]),
+        )
+    mc = float(sm["one_euro_min_cutoff"])
+    b = float(sm["one_euro_beta"])
+    return (mc, b, mc, b)
+
+
 @functools.lru_cache(maxsize=1)
 def _smoothing_from_config() -> Dict[str, Any]:
     """``smoothing`` 설정을 한 번 로드해 캐시한다.
@@ -57,10 +71,9 @@ class OneEuroAxis:
         beta: Optional[float] = None,
     ) -> None:
         sm = _smoothing_from_config()
-        self.min_cutoff = float(
-            min_cutoff if min_cutoff is not None else sm["one_euro_min_cutoff"]
-        )
-        self.beta = float(beta if beta is not None else sm["one_euro_beta"])
+        mcx, bx, _, _ = _one_euro_quartet_from_smoothing(sm)
+        self.min_cutoff = float(min_cutoff if min_cutoff is not None else mcx)
+        self.beta = float(beta if beta is not None else bx)
         self._x_prev: Optional[float] = None
         self._dx_prev: float = 0.0
 
@@ -105,7 +118,7 @@ class OneEuroAxis:
 
 
 class OneEuroRefiner:
-    """(yaw, pitch) 쌍에 One-Euro 필터를 적용한다.
+    """(rx, ry) 쌍에 One-Euro 필터를 적용한다 (축별 min_cutoff·beta).
 
     느린 움직임에서는 강한 스무딩, 빠른 시선 이동(saccade)에서는 지연을 줄인다.
     """
@@ -114,42 +127,59 @@ class OneEuroRefiner:
         self,
         min_cutoff: Optional[float] = None,
         beta: Optional[float] = None,
+        min_cutoff_x: Optional[float] = None,
+        beta_x: Optional[float] = None,
+        min_cutoff_y: Optional[float] = None,
+        beta_y: Optional[float] = None,
     ) -> None:
-        self._yaw_filter = OneEuroAxis(min_cutoff, beta)
-        self._pitch_filter = OneEuroAxis(min_cutoff, beta)
+        sm = _smoothing_from_config()
+        mcx0, bx0, mcy0, by0 = _one_euro_quartet_from_smoothing(sm)
+        legacy = min_cutoff is not None or beta is not None
+        if legacy:
+            mcx = float(min_cutoff if min_cutoff is not None else mcx0)
+            mcy = mcx
+            bx = float(beta if beta is not None else bx0)
+            by = bx
+        else:
+            mcx = float(min_cutoff_x if min_cutoff_x is not None else mcx0)
+            bx = float(beta_x if beta_x is not None else bx0)
+            mcy = float(min_cutoff_y if min_cutoff_y is not None else mcy0)
+            by = float(beta_y if beta_y is not None else by0)
+        self._x_filter = OneEuroAxis(mcx, bx)
+        self._y_filter = OneEuroAxis(mcy, by)
         self._last_t: Optional[float] = None
 
     def update(
         self,
-        yaw_deg: Optional[float],
-        pitch_deg: Optional[float],
+        rx: Optional[float],
+        ry: Optional[float],
     ) -> Tuple[Optional[float], Optional[float]]:
-        """한 프레임의 (yaw, pitch)를 필터링한다.
+        """한 프레임의 (rx, ry)를 필터링한다.
 
         Args:
-            yaw_deg: 요 각도(도). ``None``이면 이전 필터 출력을 유지.
-            pitch_deg: 피치 각도(도).
+            rx: 수평 정규화 시선(0~1). ``None``이면 이전 필터 출력을 유지.
+            ry: 수직 정규화 시선(0~1).
 
         Returns:
-            ``(filtered_yaw, filtered_pitch)``. 입력이 ``None``이면 마지막 값.
+            ``(filtered_rx, filtered_ry)``. 입력이 ``None``이면 마지막 값.
         """
-        if yaw_deg is None or pitch_deg is None:
+        if rx is None or ry is None:
             return (
-                self._yaw_filter.last_filtered,
-                self._pitch_filter.last_filtered,
+                self._x_filter.last_filtered,
+                self._y_filter.last_filtered,
             )
         t = time.time()
         te = (t - self._last_t) if self._last_t is not None else 0.02
         self._last_t = t
-        yaw_out = self._yaw_filter.update(yaw_deg, te)
-        pitch_out = self._pitch_filter.update(pitch_deg, te)
-        return (yaw_out, pitch_out)
+        rx_out = self._x_filter.update(rx, te)
+        ry_out = self._y_filter.update(ry, te)
+        return (rx_out, ry_out)
 
     def reset(self) -> None:
         """필터 및 시각 상태를 초기화한다."""
         logger.debug("OneEuroRefiner.reset")
-        self._yaw_filter.reset()
-        self._pitch_filter.reset()
+        self._x_filter.reset()
+        self._y_filter.reset()
         self._last_t = None
 
 

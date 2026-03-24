@@ -6,6 +6,7 @@ import {
   readEyeTrackingFrameFromVideo,
   waitForAbortableDelay,
 } from '../../../../services/eyeTrackingCore'
+import { OneEuroAxis } from '../../../../services/eyeTracking/oneEuroFilter'
 import { getEyeTrackingRuntimePollIntervalMs } from '../../../../services/eyeTrackingServiceConfig'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import type { PatientRuntimeTrackingService } from './patientRuntimeTrackingService'
@@ -90,6 +91,15 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
   private lastRuntimeTelemetryAt = 0
   private lastReadySnapshot: { clientX: number; clientY: number; cell: number | null } | null = null
   private lastReadyAt = 0
+  private filterX = new OneEuroAxis(1.2, 0.15)
+  private filterY = new OneEuroAxis(0.8, 0.05)
+  private lastFilterTimestamp: number | null = null
+
+  private resetGazeFilters() {
+    this.filterX.reset()
+    this.filterY.reset()
+    this.lastFilterTimestamp = null
+  }
 
   private emitRuntimeTelemetry(
     eyeTrackingProfileId: string,
@@ -136,6 +146,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
     this.lastRuntimeTelemetryAt = 0
     this.lastReadySnapshot = null
     this.lastReadyAt = 0
+    this.resetGazeFilters()
     useGazeInputStore.getState().clearPoint()
     onTrackingStatusChange('face-not-detected')
 
@@ -226,11 +237,17 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
 
           if (rawStatus === 'ready') {
             const point = resolveStableNormalizedPoint(frame)
+            const now = performance.now()
+            const te =
+              this.lastFilterTimestamp !== null ? (now - this.lastFilterTimestamp) / 1000 : 0.02
+            this.lastFilterTimestamp = now
+            const smoothedX = this.filterX.update(point.normalizedX, te)
+            const smoothedY = this.filterY.update(point.normalizedY, te)
             const snapshot = {
               ...getViewportPointFromEyeTrackingFrame({
                 ...frame,
-                screenX: point.normalizedX,
-                screenY: point.normalizedY,
+                screenX: smoothedX,
+                screenY: smoothedY,
               }),
               cell: frame.cell,
             }
@@ -346,6 +363,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
 
   dispose() {
     this.disposed = true
+    this.resetGazeFilters()
     useGazeInputStore.getState().clearPoint()
 
     if (this.hiddenVideoElement) {

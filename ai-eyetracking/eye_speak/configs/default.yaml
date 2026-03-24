@@ -23,8 +23,10 @@ smoothing:
   # "ema" | "one_euro"
   refiner_type: one_euro
   gaze_refiner_alpha: 0.3
-  one_euro_min_cutoff: 0.5
-  one_euro_beta: 0.05
+  one_euro_min_cutoff_x: 1.2
+  one_euro_beta_x: 0.15
+  one_euro_min_cutoff_y: 0.8
+  one_euro_beta_y: 0.05
   # EAR 이 값 이하 → 눈 감음 (iris 정규화 신뢰도)
   blink_ear_threshold: 0.18
 
