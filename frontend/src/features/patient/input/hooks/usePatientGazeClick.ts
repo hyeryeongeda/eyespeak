@@ -556,6 +556,7 @@ export function usePatientGazeClick({
     if (!enabled) {
       clearTargetSwitchTimer()
       resetTargetSwitchGraceTracking()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStableGazeTarget(null)
       return
     }
@@ -621,7 +622,18 @@ export function usePatientGazeClick({
       targetSwitchGraceStartedAt: gracePending ? targetSwitchGraceStartedAtRef.current : null,
       gazePointUpdatedAt: gazePoint?.updatedAt ?? null,
     }
-    const nextDebugSignature = JSON.stringify(debugPayload)
+    const nextDebugSignature = JSON.stringify({
+      gazeCell: debugPayload.gazeCell,
+      rawTargetKey: debugPayload.rawTargetKey,
+      stableTargetKey: debugPayload.stableTargetKey,
+      rawTargetSource: debugPayload.rawTargetSource,
+      stableTargetSource: debugPayload.stableTargetSource,
+      rawTargetCell: debugPayload.rawTargetCell,
+      stableTargetCell: debugPayload.stableTargetCell,
+      gracePending: debugPayload.gracePending,
+      targetSwitchGraceMs: debugPayload.targetSwitchGraceMs,
+      targetSwitchGraceStartedAt: debugPayload.targetSwitchGraceStartedAt,
+    })
 
     if (lastGazeTargetDebugSignatureRef.current === nextDebugSignature) {
       return
