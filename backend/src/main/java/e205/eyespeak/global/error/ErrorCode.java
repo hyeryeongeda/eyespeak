@@ -225,6 +225,12 @@ public enum ErrorCode {
     INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
             "허용되지 않는 설정값입니다"),
 
+    // ====== MOOD (기분 기록) ======
+
+    MOOD_ALREADY_RECORDED(HttpStatus.CONFLICT, "MOOD-1201",
+            "오늘의 기분은 이미 등록되었습니다"),
+    // → 같은 날 기분 중복 등록 시도 (daily_mood 유니크 제약)
+
     // ====== AI INTERNAL (AI 서버 내부 API) ======
 
     AI_CLASSIFY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI-703",
