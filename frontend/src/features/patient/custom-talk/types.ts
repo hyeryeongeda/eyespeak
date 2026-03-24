@@ -111,7 +111,7 @@ export interface CustomTalkState {
   isInitialized: boolean
   context: CustomTalkContextSummary | null
   conversationLog: CustomTalkConversationLogItem[]
-  visibleCategoryKeys: CustomCategoryKey[]
+  visibleCategories: CustomTalkCategoryOption[]
   recommendedSentences: string[]
   composeStep: ComposeStep
   composeOptions: Record<ComposeStep, string[]>
@@ -137,7 +137,6 @@ export interface CustomTalkState {
   goBackComposeStep: () => ComposeStep | null
   buildGeneratedSentences: () => Promise<void>
   selectGeneratedSentence: (text: string) => Promise<boolean>
-  submitComposedSentence: () => Promise<boolean>
   openKeyboard: (entrySource: KeyboardEntrySource, seedText?: string) => void
   initializeKeyboard: () => Promise<void>
   selectKeyboardRootMenu: (menu: KeyboardRootMenu) => void

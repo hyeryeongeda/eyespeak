@@ -83,6 +83,10 @@ export default function EyeTrackingRuntimeHost({
           break
         }
         case 'RUNTIME_ERROR':
+          console.error(
+            '[EyeTrackingRuntimeHost] Runtime error:',
+            event.data.payload.message ?? 'unknown',
+          )
           useGazeInputStore.getState().clearPoint()
           emitPatientTrackingStatus(clampTrackingStatus(event.data.payload.status))
           break

@@ -4,6 +4,8 @@ import type {
   RecommendationCategoryListResponseDto,
   RecommendationComposeRequestDto,
   RecommendationComposeResponseDto,
+  RecommendationRecordRequestDto,
+  RecommendationRecordResponseDto,
   RecommendationRepliesRequestDto,
   RecommendationRepliesResponseDto,
   RecommendationSendRequestDto,
@@ -86,10 +88,10 @@ export function sendRecommendationApi(
 }
 
 export function recordRecommendationApi(
-  request: RecommendationSendRequestDto,
+  request: RecommendationRecordRequestDto,
   accessToken?: string | null,
 ) {
-  return apiClient.post<RecommendationSendResponseDto, RecommendationSendRequestDto>(
+  return apiClient.post<RecommendationRecordResponseDto, RecommendationRecordRequestDto>(
     API_ENDPOINTS.RECOMMENDATION_RECORD,
     request,
     {

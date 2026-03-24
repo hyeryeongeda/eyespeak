@@ -33,7 +33,6 @@ const pageWrap: CSSProperties = {
 
 const gridStyle: CSSProperties = {
   width: '100%',
-  minWidth: '1120px',
   minHeight: 'calc(100dvh - 40px)',
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
@@ -110,6 +109,10 @@ const centerAreaStyle: CSSProperties = {
 }
 
 const layoutCss = `
+  .custom-talk-entry-page {
+    overflow-x: hidden;
+  }
+
   .custom-talk-entry-card:hover:not(:disabled) {
     transform: translateY(-4px);
     box-shadow: 0 26px 56px rgba(53, 77, 103, 0.14);
@@ -118,6 +121,46 @@ const layoutCss = `
   .custom-talk-entry-card:focus-visible {
     outline: 3px solid #6b91c7;
     outline-offset: 3px;
+  }
+
+  @media (max-width: 1200px) {
+    .custom-talk-entry-layout {
+      min-height: auto !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      grid-template-rows: repeat(4, minmax(180px, auto)) !important;
+      grid-template-areas:
+        "top-left top-center"
+        "top-right bottom-left"
+        "center center"
+        "bottom-center bottom-right" !important;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .custom-talk-entry-page {
+      padding: 12px !important;
+    }
+
+    .custom-talk-entry-layout {
+      min-height: auto !important;
+      grid-template-columns: 1fr !important;
+      grid-template-rows: repeat(7, minmax(132px, auto)) !important;
+      grid-template-areas:
+        "top-left"
+        "top-center"
+        "top-right"
+        "center"
+        "bottom-left"
+        "bottom-center"
+        "bottom-right" !important;
+      gap: 12px !important;
+    }
+
+    .custom-talk-entry-card {
+      min-height: 132px;
+      padding: 22px 18px !important;
+      border-radius: 24px !important;
+    }
   }
 `
 
@@ -171,7 +214,7 @@ export default function CustomTalkEntryLayout({
   dwellFeedback,
 }: CustomTalkEntryLayoutProps) {
   return (
-    <main style={pageWrap} aria-label={title}>
+    <main className="custom-talk-entry-page" style={pageWrap} aria-label={title}>
       <style>{layoutCss}</style>
       <div
         className="custom-talk-entry-layout"

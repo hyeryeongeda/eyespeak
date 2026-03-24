@@ -29,7 +29,6 @@ import {
   getKeyboardGroupPage,
   getKeyboardRootPage,
 } from '../utils/keyboardNavigator'
-import { polishSentence } from '../utils/polishSentence'
 
 const composeStepKeyMap: Record<
   ComposeStep,
@@ -195,18 +194,11 @@ function buildSelectedWordsForStep(draft: CustomTalkDraft, step: ComposeStep) {
   return undefined
 }
 
-function buildComposedSentence(draft: CustomTalkDraft) {
-  return polishSentence(
-    [draft.subject, draft.object, draft.predicate].filter(Boolean).join(' '),
-    draft.punctuation ?? '',
-  )
-}
-
 export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   isInitialized: false,
   context: null,
   conversationLog: [],
-  visibleCategoryKeys: [],
+  visibleCategories: [],
   recommendedSentences: [],
   composeStep: 'subject',
   composeOptions: initialComposeOptions,
@@ -235,7 +227,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       contextOverride ?? state.context ?? undefined,
     )
     const mergedContext = mergeContext(state.context, nextContext)
-    const visibleCategoryKeys = await fetchVisibleCustomCategories({
+    const visibleCategories = await fetchVisibleCustomCategories({
       refreshCount: refreshCategoryCount,
       context: mergedContext,
     })
@@ -247,7 +239,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         state.conversationLog.length > 0
           ? state.conversationLog
           : buildConversationLog(mergedContext),
-      visibleCategoryKeys,
+      visibleCategories,
       status: 'visible',
       errorMessage: null,
     })
@@ -263,14 +255,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     })
 
     try {
-      const visibleCategoryKeys = await fetchVisibleCustomCategories({
+      const visibleCategories = await fetchVisibleCustomCategories({
         refreshCount: refreshCategoryCount,
         context,
         shouldFail: mockFlags.failCategoryLoadOnce,
       })
 
       set(state => ({
-        visibleCategoryKeys,
+        visibleCategories,
         status: 'visible',
         errorMessage: null,
         mockFlags: {
@@ -721,85 +713,6 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     }
   },
 
-  submitComposedSentence: async () => {
-    const state = get()
-    const text = buildComposedSentence(state.draft)
-
-    if (state.status === 'submitting' || state.status === 'loading') {
-      return false
-    }
-
-    if (!text) {
-      set({
-        status: 'error',
-        errorMessage: '조합한 문장이 아직 없습니다. 주어, 목적어, 서술어를 먼저 선택해 주세요.',
-      })
-      return false
-    }
-
-    set({
-      status: 'submitting',
-      errorMessage: null,
-    })
-
-    try {
-      stopActiveCustomTalkAudioPlayback()
-
-      await submitCustomTalkUtterance({
-        text,
-        source: 'generated',
-        shouldFail: state.mockFlags.failSubmitOnce,
-      })
-
-      let ttsErrorMessage: string | null = null
-
-      try {
-        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
-          text,
-        })
-      } catch (error) {
-        ttsErrorMessage = toErrorMessage(
-          error,
-          '문장 전송은 완료됐지만 음성 재생에는 실패했습니다.',
-        )
-      }
-
-      set(currentState => ({
-        draft: {
-          ...currentState.draft,
-          selectedGeneratedSentence: text,
-        },
-        conversationLog: appendConversationLog(
-          currentState.conversationLog,
-          'patient',
-          text,
-          'utterance',
-        ),
-        status: 'completed',
-        errorMessage: ttsErrorMessage,
-        completionMessage: `조합한 문장을 발화했습니다: ${text}`,
-        mockFlags: {
-          ...currentState.mockFlags,
-          failSubmitOnce: false,
-        },
-      }))
-
-      return true
-    } catch (error) {
-      set(currentState => ({
-        status: 'error',
-        errorMessage:
-          error instanceof Error ? error.message : '조합한 문장 발화에 실패했습니다.',
-        mockFlags: {
-          ...currentState.mockFlags,
-          failSubmitOnce: false,
-        },
-      }))
-
-      return false
-    }
-  },
-
   openKeyboard: (entrySource, seedText) => {
     set(state => ({
       draft: {
@@ -1175,7 +1088,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       isInitialized: false,
       context: null,
       conversationLog: [],
-      visibleCategoryKeys: [],
+      visibleCategories: [],
       recommendedSentences: [],
       composeStep: 'subject',
       composeOptions: initialComposeOptions,

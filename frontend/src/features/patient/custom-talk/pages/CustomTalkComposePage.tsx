@@ -59,8 +59,6 @@ type CustomTalkComposeTrackingId =
   | 'custom-talk-compose-option-3'
   | 'custom-talk-compose-skip'
   | 'custom-talk-compose-refresh'
-  | 'custom-talk-compose-keyboard'
-  | 'custom-talk-compose-complete'
   | 'custom-talk-compose-back'
 
 function getVisibleComposeOptions(options: string[]) {
@@ -94,14 +92,11 @@ export default function CustomTalkComposePage() {
   const selectComposeWord = useCustomTalkStore(state => state.selectComposeWord)
   const skipComposeStep = useCustomTalkStore(state => state.skipComposeStep)
   const goBackComposeStep = useCustomTalkStore(state => state.goBackComposeStep)
-  const submitComposedSentence = useCustomTalkStore(state => state.submitComposedSentence)
-  const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
   const visibleOptions = getVisibleComposeOptions(composeOptions[composeStep])
   const composedText = buildComposedText(draft)
-  const isPunctuationStep = composeStep === 'punctuation'
 
   useEffect(() => {
     if (!hasCategoryKey || composeOptions[composeStep].length > 0) {
@@ -122,9 +117,15 @@ export default function CustomTalkComposePage() {
         title: visibleOptions[0] ?? composeStepLabelMap[composeStep],
         description: '',
         tone: 'sky',
-        onSelect: () => {
-          if (visibleOptions[0]) {
-            void selectComposeWord(composeStep, visibleOptions[0])
+        onSelect: async () => {
+          if (!visibleOptions[0]) {
+            return
+          }
+
+          const completed = await selectComposeWord(composeStep, visibleOptions[0])
+
+          if (completed) {
+            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: !visibleOptions[0] || isBusy,
@@ -134,9 +135,15 @@ export default function CustomTalkComposePage() {
         title: visibleOptions[1] ?? composeStepLabelMap[composeStep],
         description: '',
         tone: 'sand',
-        onSelect: () => {
-          if (visibleOptions[1]) {
-            void selectComposeWord(composeStep, visibleOptions[1])
+        onSelect: async () => {
+          if (!visibleOptions[1]) {
+            return
+          }
+
+          const completed = await selectComposeWord(composeStep, visibleOptions[1])
+
+          if (completed) {
+            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: !visibleOptions[1] || isBusy,
@@ -146,48 +153,43 @@ export default function CustomTalkComposePage() {
         title: visibleOptions[2] ?? composeStepLabelMap[composeStep],
         description: '',
         tone: 'mint',
-        onSelect: () => {
-          if (visibleOptions[2]) {
-            void selectComposeWord(composeStep, visibleOptions[2])
+        onSelect: async () => {
+          if (!visibleOptions[2]) {
+            return
+          }
+
+          const completed = await selectComposeWord(composeStep, visibleOptions[2])
+
+          if (completed) {
+            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: !visibleOptions[2] || isBusy,
         trackingId: 'custom-talk-compose-option-3',
       }}
       bottomLeft={{
-        title: isPunctuationStep ? '문장 끝' : '건너뛰기',
+        title: '건너뛰기',
         description: '',
         tone: 'sand',
-        onSelect: () => {
-          if (isPunctuationStep) {
-            void submitComposedSentence()
-            return
-          }
+        onSelect: async () => {
+          const completed = await skipComposeStep(composeStep)
 
-          void skipComposeStep(composeStep)
+          if (completed) {
+            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
+          }
         },
         disabled: isBusy,
-        trackingId: isPunctuationStep
-          ? 'custom-talk-compose-complete'
-          : 'custom-talk-compose-skip',
+        trackingId: 'custom-talk-compose-skip',
       }}
       bottomCenter={{
-        title: isPunctuationStep ? '키보드' : '새로고침',
+        title: '새로고침',
         description: '',
         tone: 'sky',
         onSelect: () => {
-          if (isPunctuationStep) {
-            openKeyboard('compose', composedText)
-            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
-            return
-          }
-
           void refreshComposeStep(composeStep)
         },
         disabled: isBusy,
-        trackingId: isPunctuationStep
-          ? 'custom-talk-compose-keyboard'
-          : 'custom-talk-compose-refresh',
+        trackingId: 'custom-talk-compose-refresh',
       }}
       bottomRight={{
         title: '뒤로가기',

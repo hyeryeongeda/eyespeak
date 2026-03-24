@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
 import {
   fetchLeisureCategoryRecommendations,
+  getLeisureCategoryErrorMessage,
   getLeisureCategoryById,
 } from '../../../services/leisureService'
 import type { LeisureCategoryStatus, LeisureContent } from '../../../types/leisure'
@@ -133,7 +134,7 @@ export default function LeisureCategoryPage() {
 
         setContents([])
         setStatus('error')
-        setNoticeMessage(null)
+        setNoticeMessage(getLeisureCategoryErrorMessage(error))
       }
     }
 

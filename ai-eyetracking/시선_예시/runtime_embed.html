@@ -316,15 +316,38 @@
           clearRuntimePoint('idle');
         }
 
+        async function acquireCamera(maxRetries, delayMs) {
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              return await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false,
+              });
+            } catch (err) {
+              const isRetryable =
+                err instanceof Error &&
+                (err.name === 'NotReadableError' || err.name === 'AbortError');
+              if (!isRetryable || attempt >= maxRetries) {
+                throw err;
+              }
+              console.warn(
+                '[EyeTracking Runtime] Camera busy, retrying in ' +
+                  delayMs +
+                  'ms (attempt ' +
+                  (attempt + 1) +
+                  '/' +
+                  maxRetries +
+                  ')',
+              );
+              await new Promise(resolve => window.setTimeout(resolve, delayMs));
+            }
+          }
+        }
+
         async function startRuntime() {
           await fetchRuntimeConfig();
 
-          mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: 'user',
-            },
-            audio: false,
-          });
+          mediaStream = await acquireCamera(3, 1500);
 
           videoEl.srcObject = mediaStream;
           await videoEl.play().catch(() => undefined);
@@ -374,11 +397,18 @@
         }
 
         void startRuntime().catch(error => {
+          const errorName = error instanceof Error ? error.name : 'Unknown';
+          const errorMsg = error instanceof Error ? error.message : 'runtime startup failed';
+          console.error('[EyeTracking Runtime] Startup failed:', errorName, errorMsg);
+          // NotAllowedError → 카메라 권한 거부 (Permissions-Policy 또는 사용자 거부)
+          // NotFoundError → 카메라 디바이스 없음
+          // NotReadableError → 카메라가 다른 프로세스에 점유됨
+          // AbortError → 하드웨어 에러
           postMessage('RUNTIME_ERROR', {
-            message: error instanceof Error ? error.message : 'runtime startup failed',
+            message: errorName + ': ' + errorMsg,
             status: 'tracking-unstable',
           });
-          setStatus('tracking-unstable');
+          setStatus('error: ' + errorName);
         });
       })();
     </script>

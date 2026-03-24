@@ -7,9 +7,14 @@ import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import {
   customTalkErrorNoticeStyle,
   customTalkLoadingNoticeStyle,
+  customTalkPanelStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
-import type { CustomCategoryKey, CustomTalkContextSummary } from '../types'
+import type {
+  CustomCategoryKey,
+  CustomTalkCategoryOption,
+  CustomTalkContextSummary,
+} from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
 
@@ -29,6 +34,33 @@ const noticeStackStyle: CSSProperties = {
   gap: '10px',
 }
 
+const categoryMetaStyle: CSSProperties = {
+  ...customTalkPanelStyle,
+  gap: '8px',
+}
+
+const categoryTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#223247',
+  fontSize: '16px',
+  fontWeight: 900,
+}
+
+const categoryDescriptionStyle: CSSProperties = {
+  margin: 0,
+  color: '#5f7288',
+  fontSize: '14px',
+  fontWeight: 700,
+  lineHeight: 1.5,
+}
+
+const categoryHintStyle: CSSProperties = {
+  margin: 0,
+  color: '#7d6b39',
+  fontSize: '13px',
+  fontWeight: 800,
+}
+
 type CustomTalkDirectionTrackingId =
   | 'custom-talk-direction-recommendation-1'
   | 'custom-talk-direction-recommendation-2'
@@ -38,11 +70,15 @@ type CustomTalkDirectionTrackingId =
   | 'custom-talk-direction-back'
 
 function pickCategory(
-  visibleCategoryKeys: CustomCategoryKey[],
+  visibleCategories: CustomTalkCategoryOption[],
   candidates: CustomCategoryKey[],
   fallback: CustomCategoryKey,
 ) {
-  return candidates.find(key => visibleCategoryKeys.includes(key)) ?? fallback
+  return (
+    candidates.find(key => visibleCategories.some(category => category.key === key)) ??
+    visibleCategories[0]?.key ??
+    fallback
+  )
 }
 
 function ensureSentence(text?: string) {
@@ -70,7 +106,9 @@ function buildMoodSentence(todayMood?: string) {
     return undefined
   }
 
-  return ensureSentence(normalized.startsWith('지금') ? normalized : `지금 ${normalized}`)
+  return ensureSentence(
+    normalized.startsWith('지금') ? normalized : `지금 ${normalized}`,
+  )
 }
 
 function buildEntryRecommendationSentences(
@@ -87,7 +125,7 @@ function buildEntryRecommendationSentences(
     context?.recentUsedExpressions?.[0],
     context?.recentUsedExpressions?.[1],
     '조금만 기다려 주세요.',
-    '지금 조금 먹고 싶어요.',
+    '지금 조금 피곤해요.',
   ]
 
   const seen = new Set<string>()
@@ -114,7 +152,7 @@ export default function CustomTalkDirectionPage() {
   })
   const context = useCustomTalkStore(state => state.context)
   const conversationLog = useCustomTalkStore(state => state.conversationLog)
-  const visibleCategoryKeys = useCustomTalkStore(state => state.visibleCategoryKeys)
+  const visibleCategories = useCustomTalkStore(state => state.visibleCategories)
   const recommendedSentences = useCustomTalkStore(state => state.recommendedSentences)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
@@ -136,7 +174,9 @@ export default function CustomTalkDirectionPage() {
     initializeCustomTalk,
   ])
 
-  const todayCategory = pickCategory(visibleCategoryKeys, ['mood', 'schedule'], 'mood')
+  const todayCategory = pickCategory(visibleCategories, ['mood', 'schedule'], 'mood')
+  const activeCategory =
+    visibleCategories.find(category => category.key === todayCategory) ?? null
   const entryRecommendations = buildEntryRecommendationSentences(context, recommendedSentences)
   const recommendationCards = [
     {
@@ -148,16 +188,17 @@ export default function CustomTalkDirectionPage() {
       trackingId: 'custom-talk-direction-recommendation-2' as const,
     },
     {
-      sentence: entryRecommendations[2] ?? '조금만 물을 주세요.',
+      sentence: entryRecommendations[2] ?? '물을 조금만 주세요.',
       trackingId: 'custom-talk-direction-recommendation-3' as const,
     },
     {
-      sentence: entryRecommendations[3] ?? '지금 조금 먹고 싶어요.',
+      sentence: entryRecommendations[3] ?? '지금 조금 피곤해요.',
       trackingId: 'custom-talk-direction-recommendation-4' as const,
     },
   ]
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const recommendationDescription = `${activeCategory?.title ?? '추천'} 기반 문장입니다.`
 
   useEffect(() => {
     selectCategory(todayCategory)
@@ -166,10 +207,10 @@ export default function CustomTalkDirectionPage() {
 
   return (
     <CustomTalkEntryLayout
-      title="맞춤문장"
+      title="맞춤대화"
       topLeft={{
         title: recommendationCards[0].sentence,
-        description: '추천문장으로 바로 말합니다.',
+        description: recommendationDescription,
         tone: 'sand',
         onSelect: async () => {
           selectCategory(todayCategory)
@@ -180,7 +221,7 @@ export default function CustomTalkDirectionPage() {
       }}
       topCenter={{
         title: recommendationCards[1].sentence,
-        description: '추천문장으로 바로 말합니다.',
+        description: recommendationDescription,
         tone: 'sand',
         onSelect: async () => {
           selectCategory(todayCategory)
@@ -191,7 +232,7 @@ export default function CustomTalkDirectionPage() {
       }}
       topRight={{
         title: recommendationCards[2].sentence,
-        description: '추천문장으로 바로 말합니다.',
+        description: recommendationDescription,
         tone: 'sand',
         onSelect: async () => {
           selectCategory(todayCategory)
@@ -202,7 +243,7 @@ export default function CustomTalkDirectionPage() {
       }}
       bottomLeft={{
         title: recommendationCards[3].sentence,
-        description: '추천문장으로 바로 말합니다.',
+        description: recommendationDescription,
         tone: 'sand',
         onSelect: async () => {
           selectCategory(todayCategory)
@@ -213,7 +254,7 @@ export default function CustomTalkDirectionPage() {
       }}
       bottomCenter={{
         title: '직접말해요',
-        description: '주어부터 차례로 조합해서 문장을 만듭니다.',
+        description: '주어부터 차례로 조합한 뒤 생성 문장을 고릅니다.',
         tone: 'mint',
         onSelect: async () => {
           selectCategory(todayCategory)
@@ -239,11 +280,19 @@ export default function CustomTalkDirectionPage() {
             mode="entry"
           />
 
+          {activeCategory ? (
+            <section style={categoryMetaStyle}>
+              <h3 style={categoryTitleStyle}>{activeCategory.title}</h3>
+              <p style={categoryDescriptionStyle}>{activeCategory.description}</p>
+              <p style={categoryHintStyle}>힌트: {activeCategory.hint}</p>
+            </section>
+          ) : null}
+
           {status === 'loading' || status === 'refreshing' || errorMessage || completionMessage ? (
             <div style={noticeStackStyle}>
               {status === 'loading' || status === 'refreshing' ? (
                 <div style={customTalkLoadingNoticeStyle}>
-                  맞춤문장 대화 내용과 추천 문장을 불러오는 중입니다.
+                  맞춤대화 내용과 추천 문장을 불러오는 중입니다.
                 </div>
               ) : null}
               {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
