@@ -83,7 +83,7 @@ const cardRightBottom: CSSProperties = {
 
 const cardTitle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1rem, 1.8vw, 1.35rem)',
+  fontSize: 'clamp(1.35rem, 2.2vw, 1.9rem)',
   fontWeight: 800,
   color: '#203042',
   textAlign: 'center',
@@ -92,7 +92,7 @@ const cardTitle: CSSProperties = {
 
 const cardSub: CSSProperties = {
   margin: '6px 0 0',
-  fontSize: 'clamp(0.8rem, 1.2vw, 0.95rem)',
+  fontSize: 'clamp(1rem, 1.4vw, 1.12rem)',
   fontWeight: 600,
   color: '#708191',
   textAlign: 'center',

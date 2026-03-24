@@ -40,7 +40,7 @@ const statusBar: CSSProperties = {
   borderRadius: '16px',
   backgroundColor: 'rgba(255, 255, 255, 0.92)',
   border: '1px solid #dde7ed',
-  fontSize: '14px',
+  fontSize: '16px',
   fontWeight: 700,
   color: '#203042',
 }
@@ -93,7 +93,7 @@ function getCardStyle(gridArea: string, tone: CustomTalkStageTone, disabled: boo
 
 const cardTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1rem, 1.8vw, 1.35rem)',
+  fontSize: 'clamp(1.35rem, 2.2vw, 1.9rem)',
   fontWeight: 800,
   color: '#203042',
   lineHeight: 1.3,
@@ -101,7 +101,7 @@ const cardTitleStyle: CSSProperties = {
 
 const cardSubStyle: CSSProperties = {
   margin: '8px 0 0',
-  fontSize: 'clamp(0.82rem, 1.15vw, 0.95rem)',
+  fontSize: 'clamp(1rem, 1.35vw, 1.1rem)',
   fontWeight: 600,
   color: '#708191',
   lineHeight: 1.5,
@@ -127,14 +127,14 @@ const centerHeader: CSSProperties = {
 
 const headerTitleStyle: CSSProperties = {
   margin: 0,
-  fontSize: '16px',
+  fontSize: 'clamp(1.45rem, 2vw, 1.95rem)',
   fontWeight: 800,
   color: '#203042',
 }
 
 const headerSubStyle: CSSProperties = {
   margin: '4px 0 0',
-  fontSize: '12px',
+  fontSize: 'clamp(1rem, 1.25vw, 1.08rem)',
   fontWeight: 700,
   color: '#708191',
   lineHeight: 1.5,

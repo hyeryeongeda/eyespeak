@@ -39,7 +39,7 @@ const fullCardButtonStyle: CSSProperties = {
 
 const primaryStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.25rem, 2vw, 1.6rem)',
+  fontSize: 'clamp(1.5rem, 2.25vw, 2rem)',
   fontWeight: 800,
   color: '#203042',
   lineHeight: 1.2,
@@ -47,7 +47,7 @@ const primaryStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(0.75rem, 1.1vw, 0.85rem)',
+  fontSize: 'clamp(0.95rem, 1.3vw, 1.08rem)',
   fontWeight: 600,
   color: '#647587',
   lineHeight: 1.4,
@@ -74,7 +74,7 @@ const halfButtonStyle: CSSProperties = {
   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
   appearance: 'none',
   color: '#203042',
-  fontSize: 'clamp(1.1rem, 1.8vw, 1.4rem)',
+  fontSize: 'clamp(1.3rem, 2vw, 1.75rem)',
   fontWeight: 800,
   position: 'relative',
 }

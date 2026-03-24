@@ -47,7 +47,7 @@ const emptyStyle: CSSProperties = {
   backgroundColor: '#f6f9fc',
   border: '1px solid #d9e3eb',
   color: '#607086',
-  fontSize: '14px',
+  fontSize: '16px',
   fontWeight: 600,
   textAlign: 'center',
 }
@@ -132,7 +132,7 @@ export default function CustomTalkContextPanel({
                   <div style={getBubbleStyle(item.sender, false)}>
                     <div
                       style={{
-                        fontSize: isEntryMode ? '18px' : '16px',
+                        fontSize: isEntryMode ? '22px' : '19px',
                         fontWeight: 800,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',
@@ -155,7 +155,7 @@ export default function CustomTalkContextPanel({
           <div style={getBubbleStyle('patient', true)}>
             <div
               style={{
-                fontSize: '16px',
+                fontSize: '19px',
                 fontWeight: 800,
                 lineHeight: 1.55,
                 whiteSpace: 'pre-wrap',
