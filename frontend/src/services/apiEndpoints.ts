@@ -5,6 +5,7 @@ export const API_ENDPOINTS = {
   AUTH_SIGNUP_GUARDIAN: '/auth/sign-up/guardian',
   AUTH_SIGNUP_PATIENT: '/auth/patients',
   USAGE_LOGS: '/usage-logs',
+  DAILY_MOOD: '/daily-mood',
   PATIENTS: '/patients',
   PATIENTS_INFO: '/patients/info',
   ROUTINES: '/routines',

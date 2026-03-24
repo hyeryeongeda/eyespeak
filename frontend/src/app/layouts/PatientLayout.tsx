@@ -13,9 +13,12 @@ import {
   isPatientTrackingBlocked,
   usePatientModeStore,
 } from '../../features/patient/input/stores/patientModeStore'
+import PatientDailyMoodOverlay from '../../features/patient/daily-mood/components/PatientDailyMoodOverlay'
 import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
 import { usePatientIncomingChat } from '../../hooks/patientIncomingChatContext'
+import { createDailyMood, getTodayDailyMood } from '../../services/dailyMoodService'
 import { usePatientLeisureResumeStore } from '../../stores/patientLeisureResumeStore'
+import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'
 import { ROUTE_PATHS } from '../router/routePaths'
 
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
@@ -60,6 +63,9 @@ function PatientLayoutShell() {
   const chat = usePatientIncomingChat()
   const { user } = useAuth()
   const location = useLocation()
+  const [isDailyMoodOverlayVisible, setIsDailyMoodOverlayVisible] = useState(false)
+  const [isDailyMoodSubmitting, setIsDailyMoodSubmitting] = useState(false)
+  const [dailyMoodErrorMessage, setDailyMoodErrorMessage] = useState<string | null>(null)
   const [isReturnToLeisureOverlayVisible, setIsReturnToLeisureOverlayVisible] = useState(false)
   const previousPathnameRef = useRef(location.pathname)
   const promptedResumeAtRef = useRef<number | null>(null)
@@ -93,6 +99,45 @@ function PatientLayoutShell() {
   useEffect(() => {
     closeGlobalMenu()
   }, [closeGlobalMenu, location.pathname])
+
+  useEffect(() => {
+    if (!user || user.role !== 'patient') {
+      setIsDailyMoodOverlayVisible(false)
+      setIsDailyMoodSubmitting(false)
+      setDailyMoodErrorMessage(null)
+      return
+    }
+
+    if (isCalibrationRoute) {
+      setIsDailyMoodOverlayVisible(false)
+      setIsDailyMoodSubmitting(false)
+      setDailyMoodErrorMessage(null)
+      return
+    }
+
+    let isMounted = true
+
+    setIsDailyMoodSubmitting(false)
+    setDailyMoodErrorMessage(null)
+
+    void getTodayDailyMood(user.accessToken).then(result => {
+      if (!isMounted) {
+        return
+      }
+
+      if (!result.success) {
+        console.warn('Daily mood overlay initialization failed.', result)
+        setIsDailyMoodOverlayVisible(false)
+        return
+      }
+
+      setIsDailyMoodOverlayVisible(result.data === null)
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isCalibrationRoute, user?.accessToken, user?.id, user?.role])
 
   useEffect(() => {
     if (!isTrackingBlocked) {
@@ -225,6 +270,34 @@ function PatientLayoutShell() {
     promptedResumeAtRef.current = null
   }
 
+  const handleDailyMoodSubmit = async (request: DailyMoodCreateRequestDto) => {
+    if (!user || user.role !== 'patient') {
+      return
+    }
+
+    setIsDailyMoodSubmitting(true)
+    setDailyMoodErrorMessage(null)
+
+    const result = await createDailyMood(request, user.accessToken)
+
+    if (!result.success) {
+      if (result.code === 'MOOD-1201' || result.statusCode === 409) {
+        setIsDailyMoodOverlayVisible(false)
+        setIsDailyMoodSubmitting(false)
+        setDailyMoodErrorMessage(null)
+        return
+      }
+
+      setIsDailyMoodSubmitting(false)
+      setDailyMoodErrorMessage(result.message)
+      return
+    }
+
+    setIsDailyMoodOverlayVisible(false)
+    setIsDailyMoodSubmitting(false)
+    setDailyMoodErrorMessage(null)
+  }
+
   return (
     <>
       <Outlet />
@@ -267,6 +340,15 @@ function PatientLayoutShell() {
             onStayInChat={handleStayInChat}
           />
         </Suspense>
+      ) : null}
+
+      {!isCalibrationRoute && isDailyMoodOverlayVisible ? (
+        <PatientDailyMoodOverlay
+          visible={isDailyMoodOverlayVisible}
+          submitting={isDailyMoodSubmitting}
+          errorMessage={dailyMoodErrorMessage}
+          onSubmit={handleDailyMoodSubmit}
+        />
       ) : null}
     </>
   )
