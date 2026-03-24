@@ -356,7 +356,15 @@ export function usePatientGazeClick({
       return null
     }
 
-    if (gazePoint) {
+    // DEV flag: window.__DEV_GAZE_DISABLE_POINT_HIT_TEST = true で
+    // point-hit-test を完全スキップして cell-mapping のみ使用
+    // 브라우저 콘솔에서 토글 가능, 다음 gaze 업데이트부터 반영
+    const disablePointHitTest =
+      import.meta.env.DEV &&
+      typeof window !== 'undefined' &&
+      (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
+
+    if (gazePoint && !disablePointHitTest) {
       const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
       if (patientMainPointTarget) {
         return patientMainPointTarget
@@ -609,11 +617,23 @@ export function usePatientGazeClick({
     }
 
     const gracePending = targetSwitchTimerRef.current !== null
+    const disablePointHitTestFlag =
+      typeof window !== 'undefined' &&
+      (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
     const debugPayload = {
+      // 좌표계 확인용: hit-test에 실제 사용된 viewport 픽셀 좌표
+      clientX: gazePoint?.clientX ?? null,
+      clientY: gazePoint?.clientY ?? null,
+      viewport: typeof window !== 'undefined'
+        ? { width: window.innerWidth, height: window.innerHeight }
+        : null,
+      // rawTargetSource: 'point-hit-test' | 'cell-mapping' | 'cell-dom-fallback'
+      // point-hit-test → clientX/clientY 기반 document.elementsFromPoint() 결과
+      // cell-mapping   → iframe이 보낸 cell 번호 기반 매핑 결과
+      rawTargetSource: rawGazeTarget?.source ?? null,
       gazeCell,
       rawTargetKey: rawGazeTarget?.key ?? null,
       stableTargetKey: stableGazeTarget?.key ?? null,
-      rawTargetSource: rawGazeTarget?.source ?? null,
       stableTargetSource: stableGazeTarget?.source ?? null,
       rawTargetCell: rawGazeTarget?.cell ?? null,
       stableTargetCell: stableGazeTarget?.cell ?? null,
@@ -621,6 +641,7 @@ export function usePatientGazeClick({
       targetSwitchGraceMs: gracePending ? GAZE_TARGET_SWITCH_GRACE_MS : null,
       targetSwitchGraceStartedAt: gracePending ? targetSwitchGraceStartedAtRef.current : null,
       gazePointUpdatedAt: gazePoint?.updatedAt ?? null,
+      DEV_GAZE_DISABLE_POINT_HIT_TEST: disablePointHitTestFlag,
     }
     const nextDebugSignature = JSON.stringify({
       gazeCell: debugPayload.gazeCell,
