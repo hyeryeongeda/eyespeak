@@ -22,6 +22,10 @@ import { generateCustomSentences } from '../utils/generateCustomSentences'
 const DEFAULT_DELAY_MS = 220
 let mockSequence = 0
 
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined
+}
+
 function delay(ms = DEFAULT_DELAY_MS) {
   return new Promise<void>(resolve => {
     window.setTimeout(resolve, ms)
@@ -66,7 +70,7 @@ export async function fetchVisibleCustomCategories(input: {
   const visible = rotated
     .slice(0, 3)
     .map(key => CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === key))
-    .filter(Boolean)
+    .filter(isDefined)
 
   if (visible.length > 0) {
     return visible
@@ -75,7 +79,7 @@ export async function fetchVisibleCustomCategories(input: {
   // TODO: todayData 미존재 시 fallback 우선순위 정책 확정
   return CUSTOM_TALK_FALLBACK_CATEGORY_KEYS
     .map(key => CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === key))
-    .filter(Boolean)
+    .filter(isDefined)
 }
 
 export async function fetchRecommendedCustomSentences(input: {

@@ -112,7 +112,6 @@ export interface CustomTalkState {
   context: CustomTalkContextSummary | null
   conversationLog: CustomTalkConversationLogItem[]
   visibleCategories: CustomTalkCategoryOption[]
-  visibleCategoryKeys: CustomCategoryKey[]
   recommendedSentences: string[]
   composeStep: ComposeStep
   composeOptions: Record<ComposeStep, string[]>

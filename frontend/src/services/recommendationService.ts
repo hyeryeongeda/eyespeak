@@ -86,12 +86,6 @@ function mapRecommendedReplies(replies: RecommendationReplyDto[]): PatientSugges
   }))
 }
 
-function mapVisibleCategoryKeys(input: Array<{ key: string }>): CustomCategoryKey[] {
-  return input
-    .map(category => category.key)
-    .filter((key): key is CustomCategoryKey => knownCategoryKeys.has(key as CustomCategoryKey))
-}
-
 function mapVisibleCategories(
   input: Array<{ key: string; title?: string; description?: string; hint?: string | null }>,
 ): CustomTalkCategoryOption[] {
