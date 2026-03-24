@@ -17,7 +17,8 @@ interface CallCreateResponse {
   matchingId: number
   type: string
   status: string
-  createdAt: string
+  senderId: number
+  timestamp: string
 }
 
 export interface PatientCallRequestResult {
