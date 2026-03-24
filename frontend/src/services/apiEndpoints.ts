@@ -28,7 +28,6 @@ export const API_ENDPOINTS = {
   TTS_TEST: '/tts/test',
   TTS_SETTINGS: '/tts/settings',
   TTS_SETTINGS_TOGGLE: '/tts/settings/toggle',
-  EYE_TRACKING_GAZE: '/api/gaze',
   EYE_TRACKING_CALIBRATE: '/api/calibrate',
   EYE_TRACKING_CALIBRATE_RESET: '/api/calibrate/reset',
   EYE_TRACKING_CALIBRATE_SAVE: '/api/calibrate/save',

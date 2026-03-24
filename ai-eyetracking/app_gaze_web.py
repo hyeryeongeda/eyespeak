@@ -111,6 +111,21 @@ def api_health():
     })
 
 
+@app.route("/api/runtime-config", methods=["GET"])
+def api_runtime_config():
+    runtime = dict(pipe._cfg.get("runtime", {}))
+    trigger = dict(pipe._cfg.get("trigger", {}))
+    return jsonify(
+        {
+            "poll_interval_ms": int(runtime.get("poll_interval_ms", 100)),
+            "frame_max_width": int(runtime.get("frame_max_width", 480)),
+            "jpeg_quality": float(runtime.get("frame_jpeg_quality", 0.72)),
+            "lerp_factor": float(runtime.get("lerp_factor", 0.15)),
+            "dwell_time_sec": float(trigger.get("dwell_time_sec", 1.5)),
+        }
+    )
+
+
 @app.route("/")
 def index():
     if STATIC_DIR.is_dir():

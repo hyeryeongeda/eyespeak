@@ -28,6 +28,10 @@ smoothing:
   one_euro_min_cutoff_y: 0.8
   one_euro_beta_y: 0.05
   # EAR 이 값 이하 → 눈 감음 (iris 정규화 신뢰도)
+  screen_hold_ms: 280
+  screen_outlier_distance: 0.35
+  screen_fallback_jump_margin: 0.08
+  readiness_valid_streak: 2
   blink_ear_threshold: 0.18
 
 weights:
@@ -75,3 +79,10 @@ trigger:
 
 paths:
   calib_save_dir: calibration_data
+
+runtime:
+  poll_interval_ms: 100
+  frame_max_width: 480
+  frame_jpeg_quality: 0.72
+  # Consumed by runtime_embed.html for the client-side interpolation loop.
+  lerp_factor: 0.15
