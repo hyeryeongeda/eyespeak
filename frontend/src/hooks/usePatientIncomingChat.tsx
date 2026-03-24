@@ -468,18 +468,27 @@ function patientChatReducer(
           ? { ...message, status: 'replied' as const }
           : message,
       )
+      const mergedMessages = mergePatientMessages(nextMessages, [action.replyMessage])
+      const nextActiveMessage = getLatestUnresolvedGuardianMessage(mergedMessages)
 
       return {
         ...state,
         status: 'sent',
-        messages: mergePatientMessages(nextMessages, [action.replyMessage]),
+        interruptState: 'none',
+        messages: mergedMessages,
+        activeMessageId: nextActiveMessage?.id ?? null,
+        activeReplyMessageId: null,
         sendError: null,
+        suggestionError: null,
         selectedSuggestionId: null,
         suggestionState: 'idle',
         suggestions: [],
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
+        responseTimeoutAt: null,
+        responseTimeoutMessageId: null,
+        isMediaPausedByInterrupt: false,
         lastEventLabel: '응답을 전송했습니다.',
       }
     }
@@ -619,7 +628,7 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
       pathname,
       label: '대화하기',
       kind: 'talk',
-      responseSurface: 'inline',
+      responseSurface: 'overlay',
       canEnterReplyMode: true,
       shouldPauseMediaOnInterrupt: false,
     }

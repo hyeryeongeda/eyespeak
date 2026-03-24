@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react'
+import usePatientGlobalMenuActionTarget from '../../../features/patient/input/hooks/usePatientGlobalMenuActionTarget'
 import type {
   PatientChatFallbackState,
   PatientChatManualInputMode,
@@ -7,8 +8,6 @@ import type {
   PatientChatSuggestionState,
   PatientSuggestedResponse,
 } from '../../../types/chat'
-import FallbackInputPanel from './FallbackInputPanel'
-import SuggestionList from './SuggestionList'
 
 interface ReplyModePanelProps {
   message: PatientChatMessage | null
@@ -38,303 +37,340 @@ interface ReplyModePanelProps {
   onOpenLatestPendingReply: () => void
 }
 
+type SuggestionCard = {
+  id: string
+  label: string
+  suggestion: PatientSuggestedResponse
+  disabled?: boolean
+}
+
 const overlayWrapStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
-  padding: '20px',
-  backgroundColor: 'rgba(24, 38, 56, 0.22)',
-  backdropFilter: 'blur(6px)',
+  padding: 'clamp(12px, 2vw, 24px)',
+  background:
+    'linear-gradient(180deg, rgba(245, 247, 252, 0.9) 0%, rgba(232, 236, 244, 0.92) 100%)',
+  backdropFilter: 'blur(10px)',
   display: 'flex',
-  alignItems: 'center',
+  alignItems: 'stretch',
   justifyContent: 'center',
-  zIndex: 1100,
+  zIndex: 1120,
 }
 
 const panelStyle: CSSProperties = {
-  width: 'min(760px, 100%)',
-  maxHeight: 'min(92dvh, 940px)',
-  overflow: 'auto',
-  padding: '24px',
-  borderRadius: '28px',
-  backgroundColor: 'rgba(255, 255, 255, 0.97)',
-  border: '1px solid #d8e2ea',
-  boxShadow: '0 30px 64px rgba(53, 71, 95, 0.18)',
+  width: 'min(1100px, 100%)',
+  minHeight: '100%',
+  padding: 'clamp(18px, 2.8vw, 32px)',
+  borderRadius: '34px',
+  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+  boxShadow: '0 28px 60px rgba(53, 71, 95, 0.12)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px',
+  gap: '18px',
+  boxSizing: 'border-box',
 }
 
-const headerRowStyle: CSSProperties = {
+const headerStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
+  alignItems: 'flex-start',
   gap: '12px',
   flexWrap: 'wrap',
 }
 
-const titleStyle: CSSProperties = {
+const eyebrowStyle: CSSProperties = {
   margin: 0,
-  color: '#213247',
-  fontSize: 'clamp(1.4rem, 2.4vw, 2rem)',
-  fontWeight: 900,
-  letterSpacing: '-0.03em',
+  color: '#b6b8bf',
+  fontSize: 'clamp(1rem, 1.8vw, 1.25rem)',
+  fontWeight: 700,
 }
 
-const badgeStyle: CSSProperties = {
+const metaStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  width: 'fit-content',
   padding: '8px 14px',
   borderRadius: '999px',
-  backgroundColor: '#eef5ff',
-  color: '#6580a4',
-  fontSize: '13px',
+  backgroundColor: '#eef3fb',
+  color: '#6b7e9d',
+  fontSize: '14px',
   fontWeight: 800,
 }
 
-const guardianBoxStyle: CSSProperties = {
-  padding: '18px 20px',
+const gridStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  gridTemplateRows: 'minmax(160px, 1fr) auto minmax(160px, 1fr)',
+  gap: '14px',
+}
+
+const cardBaseStyle: CSSProperties = {
   borderRadius: '22px',
-  backgroundColor: '#f5f8fb',
-  border: '1px solid #dae4eb',
-}
-
-const guardianLabelStyle: CSSProperties = {
-  margin: '0 0 8px',
-  color: '#7b8a9f',
-  fontSize: '12px',
-  fontWeight: 800,
-}
-
-const guardianTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#23354b',
-  fontSize: '20px',
-  lineHeight: 1.5,
-  fontWeight: 800,
-}
-
-const statusTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#63748a',
-  fontSize: '14px',
-  fontWeight: 700,
-  lineHeight: 1.55,
-}
-
-const sectionCardStyle: CSSProperties = {
-  padding: '18px',
-  borderRadius: '20px',
-  backgroundColor: '#fbfdff',
-  border: '1px solid #dbe4eb',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-}
-
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#243246',
-  fontSize: '16px',
-  fontWeight: 900,
-}
-
-const loadingBoxStyle: CSSProperties = {
-  padding: '18px',
-  borderRadius: '18px',
-  backgroundColor: '#f6f9fc',
-  border: '1px solid #dce5ed',
-  color: '#677a90',
-  fontSize: '14px',
-  fontWeight: 700,
-}
-
-const errorTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#c04d4d',
-  fontSize: '14px',
-  fontWeight: 800,
-}
-
-const actionRowStyle: CSSProperties = {
-  display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
-}
-
-const buttonBaseStyle: CSSProperties = {
-  minWidth: '120px',
-  height: '48px',
-  padding: '0 18px',
-  borderRadius: '999px',
-  border: '1px solid #ccd8e2',
+  border: '1px solid #d6dee8',
   backgroundColor: '#ffffff',
-  color: '#31455e',
-  fontSize: '14px',
-  fontWeight: 800,
-  cursor: 'pointer',
+  boxShadow: '0 10px 28px rgba(41, 57, 79, 0.06)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '20px',
+  textAlign: 'center',
+  boxSizing: 'border-box',
 }
 
-const primaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: '1px solid #5f8cc9',
-  background: 'linear-gradient(135deg, #e8f2ff 0%, #dbe9ff 100%)',
-}
-
-function getStatusCopy(
-  status: PatientChatSessionStatus,
-  timeoutMs: number,
-  unresolvedCount: number,
-) {
-  switch (status) {
-    case 'suggestion_loading':
-      return `보호자 메시지를 바탕으로 추천 응답을 생성 중입니다. dev 기준 ${Math.round(timeoutMs / 1000)}초 안에 입력이 없으면 복귀합니다.`
-    case 'suggestion_failed':
-      return '추천 응답 생성에 실패했습니다. 직접 입력이나 단어 조합으로 바로 전환할 수 있습니다.'
-    case 'manual_input_select':
-      return '추천 응답이 맞지 않으면 대체 입력 방식을 선택하세요.'
-    case 'manual_input_typing':
-      return '직접 입력 또는 단어 조합으로 응답을 작성 중입니다.'
-    case 'sending':
-      return '중복 전송을 막기 위해 현재 응답을 잠금 상태로 전송 중입니다.'
-    case 'sent':
-      return '응답 전송이 완료되었습니다. 대화 세션은 계속 유지됩니다.'
-    case 'send_failed':
-      return '응답 전송에 실패했습니다. 재전송하거나 대체 입력으로 다시 보낼 수 있습니다.'
-    case 'conversation_active':
-      return unresolvedCount > 0
-        ? `대화 세션이 유지 중입니다. 아직 미응답 메시지 ${unresolvedCount}건이 남아 있습니다.`
-        : '대화 세션이 유지 중입니다. 다음 보호자 메시지를 계속 받을 수 있습니다.'
-    default:
-      return '추천 응답을 선택하거나 직접 입력으로 응답할 수 있습니다.'
+function getSuggestionCardStyle(selected: boolean, disabled: boolean): CSSProperties {
+  return {
+    ...cardBaseStyle,
+    appearance: 'none',
+    cursor: disabled ? 'default' : 'pointer',
+    color: '#131313',
+    fontSize: 'clamp(2rem, 4vw, 3.2rem)',
+    fontWeight: 900,
+    letterSpacing: '-0.04em',
+    opacity: disabled ? 0.58 : 1,
+    border: selected ? '2px solid #7e9dcc' : cardBaseStyle.border,
+    background: selected ? 'linear-gradient(180deg, #f6faff 0%, #ebf3ff 100%)' : '#ffffff',
+    transform: selected ? 'translateY(-2px)' : 'none',
   }
 }
 
-export default function ReplyModePanel({
-  message,
-  status,
-  suggestionState,
-  fallbackState,
-  suggestions,
-  selectedSuggestionId,
-  suggestionError,
-  sendError,
-  manualInputMode,
-  manualDraft,
-  manualWordBank,
-  unresolvedCount,
-  timeoutMs,
-  overlay = false,
-  onSelectSuggestion,
-  onRetrySuggestions,
-  onOpenManualInputSelect,
-  onSelectManualInputMode,
-  onDraftChange,
-  onAppendWord,
-  onClearDraft,
-  onSendManualReply,
-  onDefer,
-  onClose,
-  onOpenLatestPendingReply,
-}: ReplyModePanelProps) {
+const guardianMessageWrapStyle: CSSProperties = {
+  ...cardBaseStyle,
+  gridColumn: '1 / -1',
+  minHeight: '96px',
+  alignItems: 'stretch',
+  justifyContent: 'center',
+  padding: '0 20px',
+  backgroundColor: '#fbfcff',
+}
+
+const guardianMessageStyle: CSSProperties = {
+  margin: 0,
+  color: '#39445b',
+  fontSize: 'clamp(1.5rem, 2.6vw, 2rem)',
+  fontWeight: 800,
+  lineHeight: 1.4,
+  display: 'flex',
+  alignItems: 'center',
+  minHeight: '100%',
+}
+
+const infoTextStyle: CSSProperties = {
+  margin: 0,
+  color: '#6d788c',
+  fontSize: '15px',
+  fontWeight: 700,
+  lineHeight: 1.5,
+}
+
+const helperButtonStyle: CSSProperties = {
+  ...cardBaseStyle,
+  appearance: 'none',
+  cursor: 'pointer',
+  color: '#151515',
+  fontSize: 'clamp(1.9rem, 3.6vw, 3rem)',
+  fontWeight: 900,
+  letterSpacing: '-0.04em',
+}
+
+const refreshButtonStyle: CSSProperties = {
+  ...helperButtonStyle,
+  backgroundColor: '#ffffff',
+}
+
+const backButtonStyle: CSSProperties = {
+  ...helperButtonStyle,
+  backgroundColor: '#ffffff',
+}
+
+const fallbackButtonStyle: CSSProperties = {
+  ...helperButtonStyle,
+  backgroundColor: '#ffffff',
+}
+
+const inlineWrapStyle: CSSProperties = {
+  width: '100%',
+}
+
+const defaultQuickReplyLabels = ['왜?', '응', '아니', '모르겠어']
+
+function buildSuggestionCards(
+  message: PatientChatMessage,
+  suggestions: PatientSuggestedResponse[],
+): SuggestionCard[] {
+  const cards: SuggestionCard[] = suggestions.slice(0, 4).map(suggestion => ({
+    id: suggestion.id,
+    label: suggestion.label,
+    suggestion,
+    disabled: false,
+  }))
+
+  if (cards.length >= 4) {
+    return cards
+  }
+
+  const usedLabels = new Set(cards.map(card => card.label))
+
+  while (cards.length < 4) {
+    const fallbackLabel =
+      defaultQuickReplyLabels.find(label => !usedLabels.has(label)) ??
+      defaultQuickReplyLabels[cards.length] ??
+      '모르겠어'
+
+    usedLabels.add(fallbackLabel)
+
+    cards.push({
+      id: `${message.id}-fallback-${cards.length + 1}`,
+      label: fallbackLabel,
+      disabled: false,
+      suggestion: {
+        id: `${message.id}-fallback-${cards.length + 1}`,
+        label: fallbackLabel,
+        intentKey: 'fallback',
+        source: 'fallback',
+        rank: cards.length + 1,
+      },
+    })
+  }
+
+  return cards
+}
+
+function getStatusCopy(
+  suggestionState: PatientChatSuggestionState,
+  suggestionError: string | null,
+  sendError: string | null,
+  timeoutMs: number,
+) {
+  if (sendError) {
+    return sendError
+  }
+
+  if (suggestionState === 'failed') {
+    return suggestionError ?? '추천 응답을 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.'
+  }
+
+  if (suggestionState === 'loading') {
+    return `추천 응답을 준비 중입니다. ${Math.round(timeoutMs / 1000)}초 동안 입력이 없으면 이전 상태로 복귀합니다.`
+  }
+
+  return '추천 응답을 바로 선택하거나 새로고침으로 다시 받을 수 있습니다.'
+}
+
+export default function ReplyModePanel(props: ReplyModePanelProps) {
+  const {
+    message,
+    status,
+    suggestionState,
+    suggestions,
+    selectedSuggestionId,
+    suggestionError,
+    sendError,
+    unresolvedCount,
+    timeoutMs,
+    overlay = false,
+    onSelectSuggestion,
+    onRetrySuggestions,
+    onClose,
+  } = props
+
+  const isSending = status === 'sending'
+  const suggestionCards = message
+    ? buildSuggestionCards(message, suggestions)
+    : []
+  const topCards = suggestionCards.slice(0, 3)
+  const bottomSuggestionCard = suggestionCards[3] ?? null
+  const statusCopy = getStatusCopy(suggestionState, suggestionError, sendError, timeoutMs)
+
+  usePatientGlobalMenuActionTarget({
+    enabled: overlay,
+    priority: 320,
+    onPositiveAction:
+      !isSending && topCards[0] && suggestionState !== 'loading'
+        ? () => onSelectSuggestion(topCards[0].suggestion)
+        : suggestionState === 'failed'
+          ? onRetrySuggestions
+          : undefined,
+    onNegativeAction: onClose,
+  })
+
   if (!message) {
     return null
   }
 
-  const isSending = status === 'sending'
   const content = (
-    <section style={panelStyle}>
-      <div style={headerRowStyle}>
+    <section style={panelStyle} aria-label="보호자 선발화 응답">
+      <div style={headerStyle}>
         <div>
-          <span style={badgeStyle}>응답 모드 · 미응답 {unresolvedCount}건</span>
-          <h2 style={titleStyle}>보호자 메시지에 응답합니다.</h2>
+          <p style={eyebrowStyle}>보호자 선발화</p>
+          <p style={infoTextStyle}>{statusCopy}</p>
         </div>
-        <div style={actionRowStyle}>
-          <button type="button" style={buttonBaseStyle} onClick={onDefer}>
-            나중에 보기
-          </button>
-          <button type="button" style={buttonBaseStyle} onClick={onClose}>
-            닫기
-          </button>
-        </div>
+        <span style={metaStyle}>미응답 {unresolvedCount}건</span>
       </div>
 
-      <div style={guardianBoxStyle}>
-        <p style={guardianLabelStyle}>보호자 원문</p>
-        <p style={guardianTextStyle}>{message.content || '내용 없음'}</p>
-      </div>
+      <div style={gridStyle}>
+        {topCards.map(card => (
+          <button
+            key={card.id}
+            type="button"
+            style={getSuggestionCardStyle(selectedSuggestionId === card.id, isSending || suggestionState === 'loading')}
+            disabled={isSending || suggestionState === 'loading'}
+            onClick={() => onSelectSuggestion(card.suggestion)}
+          >
+            {suggestionState === 'loading' ? '...' : card.label}
+          </button>
+        ))}
 
-      <p style={statusTextStyle}>{getStatusCopy(status, timeoutMs, unresolvedCount)}</p>
+        <div style={guardianMessageWrapStyle}>
+          <p style={guardianMessageStyle}>{message.content || '내용 없음'}</p>
+        </div>
 
-      <section style={sectionCardStyle}>
-        <h3 style={sectionTitleStyle}>추천 응답</h3>
-        {suggestionState === 'loading' ? (
-          <div style={loadingBoxStyle}>추천 응답을 생성 중입니다...</div>
-        ) : null}
-        {suggestionState === 'ready' && suggestions.length > 0 ? (
-          <SuggestionList
-            suggestions={suggestions}
-            selectedSuggestionId={selectedSuggestionId}
-            disabled={isSending}
-            onSelect={onSelectSuggestion}
-          />
-        ) : null}
-        {suggestionState === 'failed' ? (
-          <>
-            <p style={errorTextStyle}>{suggestionError}</p>
-            <div style={actionRowStyle}>
-              <button type="button" style={buttonBaseStyle} onClick={onRetrySuggestions}>
-                추천 다시 시도
-              </button>
-              <button type="button" style={primaryButtonStyle} onClick={onOpenManualInputSelect}>
-                직접 입력으로 전환
-              </button>
-            </div>
-          </>
-        ) : null}
-        {sendError && fallbackState !== 'manual_input_typing' ? (
-          <p style={errorTextStyle}>{sendError}</p>
-        ) : null}
-      </section>
+        <button
+          type="button"
+          style={fallbackButtonStyle}
+          disabled={!bottomSuggestionCard || isSending || suggestionState === 'loading'}
+          onClick={() => {
+            if (bottomSuggestionCard) {
+              onSelectSuggestion(bottomSuggestionCard.suggestion)
+            }
+          }}
+        >
+          {suggestionState === 'loading'
+            ? '...'
+            : bottomSuggestionCard?.label ?? '모르겠어'}
+        </button>
 
-      <section style={sectionCardStyle}>
-        <h3 style={sectionTitleStyle}>대체 입력</h3>
-        <FallbackInputPanel
-          manualInputMode={manualInputMode}
-          manualDraft={manualDraft}
-          wordBank={manualWordBank}
+        <button
+          type="button"
+          style={refreshButtonStyle}
           disabled={isSending}
-          error={fallbackState === 'send_failed' ? sendError : null}
-          onSelectMode={onSelectManualInputMode}
-          onDraftChange={onDraftChange}
-          onAppendWord={onAppendWord}
-          onClearDraft={onClearDraft}
-          onSend={onSendManualReply}
-        />
-        {(fallbackState === 'manual_input_select' || fallbackState === 'manual_input_typing') &&
-        suggestionState !== 'loading' ? (
-          <button type="button" style={buttonBaseStyle} onClick={onRetrySuggestions}>
-            추천 응답으로 복귀
-          </button>
-        ) : (
-          <button type="button" style={buttonBaseStyle} onClick={onOpenManualInputSelect}>
-            단어 조합 / 직접 입력 열기
-          </button>
-        )}
-      </section>
+          onClick={onRetrySuggestions}
+        >
+          새로고침
+        </button>
 
-      {unresolvedCount > 1 ? (
-        <div style={actionRowStyle}>
-          <button type="button" style={primaryButtonStyle} onClick={onOpenLatestPendingReply}>
-            다음 미응답 보기
-          </button>
-        </div>
-      ) : null}
+        <button
+          type="button"
+          style={backButtonStyle}
+          disabled={isSending}
+          onClick={onClose}
+        >
+          뒤로가기
+        </button>
+      </div>
     </section>
   )
 
   if (!overlay) {
-    return content
+    return <div style={inlineWrapStyle}>{content}</div>
   }
 
-  return <div style={overlayWrapStyle}>{content}</div>
+  return (
+    <div style={overlayWrapStyle} role="dialog" aria-modal="true" aria-labelledby="guardian-reply-title">
+      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} id="guardian-reply-title">
+        보호자 선발화 응답
+      </div>
+      {content}
+    </div>
+  )
 }
