@@ -350,6 +350,21 @@ function dedupeContents(contents: LeisureContent[]) {
   })
 }
 
+function getFallbackCategoryContents(
+  categoryId: LeisureCategoryId,
+  options?: {
+    excludeVideoIds?: Set<string>
+    maxResults?: number
+  },
+) {
+  const fallbackContents = MOCK_LEISURE_CONTENTS.map(toPlayableLeisureItem)
+    .filter((content): content is LeisureContent => Boolean(content))
+    .filter(content => content.categoryId === categoryId)
+    .filter(content => !options?.excludeVideoIds?.has(content.videoId))
+
+  return dedupeContents(fallbackContents).slice(0, options?.maxResults ?? LEISURE_RECOMMENDATION_SIZE)
+}
+
 function buildCategorySearchQueries(categoryId: LeisureCategoryId, queryHints: string[]) {
   const baseQuery = categorySearchQueryMap[categoryId]
   const hintedQueries = queryHints
@@ -770,14 +785,31 @@ export async function fetchLeisureCategoryRecommendations(
 
   let contents = dedupeContents(directContents)
 
-  if (getActiveApiMode() === 'real' && contents.length < LEISURE_RECOMMENDATION_SIZE) {
-    const youtubeContents = await resolveYoutubeContentFromCategory(categoryId, {
+  if (contents.length < LEISURE_RECOMMENDATION_SIZE) {
+    const fallbackContents = getFallbackCategoryContents(categoryId, {
       excludeVideoIds: new Set(contents.map(content => content.videoId)),
       maxResults: LEISURE_RECOMMENDATION_SIZE - contents.length,
-      queryHints,
     })
 
-    contents = dedupeContents([...contents, ...youtubeContents])
+    contents = dedupeContents([...contents, ...fallbackContents])
+  }
+
+  if (getActiveApiMode() === 'real' && contents.length < LEISURE_RECOMMENDATION_SIZE) {
+    try {
+      const youtubeContents = await resolveYoutubeContentFromCategory(categoryId, {
+        excludeVideoIds: new Set(contents.map(content => content.videoId)),
+        maxResults: LEISURE_RECOMMENDATION_SIZE - contents.length,
+        queryHints,
+      })
+
+      contents = dedupeContents([...contents, ...youtubeContents])
+    } catch (error) {
+      console.warn('Falling back to local leisure category contents after YouTube lookup failed.', {
+        categoryId,
+        refreshRequested: options?.refresh ?? false,
+        error,
+      })
+    }
   }
 
   contents = contents.slice(0, LEISURE_RECOMMENDATION_SIZE)
