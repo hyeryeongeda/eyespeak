@@ -1,10 +1,9 @@
 import { getActiveAiApiMode } from './aiServiceConfig'
 import { getActiveAuthSession } from './authSessionRegistry'
-import { synthesizeTtsApi, testTtsApi } from './ttsApi'
+import { synthesizeTtsApi } from './ttsApi'
 import type {
   AudioPlaybackHandle,
   AudioPlaybackSource,
-  TtsPreviewRequestDto,
   TtsSynthesizeRequestDto,
 } from '../types/tts'
 import { createSilentWavBlob, normalizeAudioResponse, playAudioSource } from '../utils/audio'
@@ -17,12 +16,12 @@ function createMockAudioSource() {
   return normalizeAudioResponse(createSilentWavBlob())
 }
 
-export async function previewTts(request: TtsPreviewRequestDto): Promise<AudioPlaybackSource> {
+export async function previewTts(request: TtsSynthesizeRequestDto): Promise<AudioPlaybackSource> {
   if (getActiveAiApiMode() !== 'real') {
     return createMockAudioSource()
   }
 
-  const response = await testTtsApi(request, getAccessToken())
+  const response = await synthesizeTtsApi(request, getAccessToken())
   return normalizeAudioResponse(response)
 }
 

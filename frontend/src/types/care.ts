@@ -19,7 +19,7 @@ export type MatchingStatus = 'PENDING' | 'LINKED' | 'UNLINKED'
 export type ContentType = 'TEXT' | 'PHRASE' | 'EXPRESSION'
 export type CallType = 'NORMAL' | 'SOS'
 export type CallStatus = 'PENDING' | 'RECEIVED' | 'MISSED'
-export type TtsStatus = 'NONE' | 'TRAINING' | 'READY' | 'FAILED'
+export type TtsStatus = 'NONE' | 'READY'
 export type MoodType = 'SAD' | 'HAPPY' | 'CALM' | 'JOYFUL' | 'ANXIOUS' | 'ANGRY' | 'TIRED'
 export type SentimentType = 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL'
 
