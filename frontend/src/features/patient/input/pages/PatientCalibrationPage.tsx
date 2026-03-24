@@ -57,7 +57,8 @@ function buildEyeTrackingEntryUrl(args: {
     mode,
   } = args
 
-  const calibrationUrl = new URL(eyeTrackingUiUrl, typeof window === 'undefined' ? undefined : window.location.origin)
+  const normalizedUiUrl = eyeTrackingUiUrl.endsWith('/') ? eyeTrackingUiUrl : `${eyeTrackingUiUrl}/`
+  const calibrationUrl = new URL(normalizedUiUrl, typeof window === 'undefined' ? undefined : window.location.origin)
   const returnUrl = new URL(buildAbsoluteAppUrl(ROUTE_PATHS.PATIENT_CALIBRATION))
 
   returnUrl.searchParams.set('redirectPath', redirectPath)
@@ -175,15 +176,9 @@ export default function PatientCalibrationPage() {
       return
     }
 
-    let isMounted = true
-
     const finalizeCalibration = async () => {
       setPagePhase('returning')
       const result = await completePatientCalibration(user)
-
-      if (!isMounted) {
-        return
-      }
 
       if (!result.success) {
         setPagePhase('error')
@@ -197,10 +192,6 @@ export default function PatientCalibrationPage() {
     }
 
     void finalizeCalibration()
-
-    return () => {
-      isMounted = false
-    }
   }, [callbackMessage, callbackStatus, clearPatientPostAuth, navigate, redirectPath, user])
 
   useEffect(() => {

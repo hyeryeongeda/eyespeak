@@ -1,9 +1,4 @@
-"""시선 (yaw, pitch) 스무딩: EMA 및 One-Euro 필터.
-
-``iris_gaze_refine.py``의 리파이너와 ``pipeline.py``의 One-Euro 보조 함수를
-하나의 구현으로 통합한다. 기본 하이퍼파라미터는 ``configs/default.yaml``의
-``smoothing`` 섹션에서 읽는다.
-"""
+"""Shared smoothing and runtime gaze-stability helpers."""
 
 from __future__ import annotations
 
@@ -11,13 +6,14 @@ import functools
 import logging
 import math
 import time
+from dataclasses import dataclass
 from typing import Any, Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 def _one_euro_quartet_from_smoothing(sm: Dict[str, Any]) -> Tuple[float, float, float, float]:
-    """축별 4값 또는 구버전 단일 (min_cutoff, beta) 쌍에서 (mcx, bx, mcy, by)를 만든다."""
+    """Return per-axis One-Euro parameters from smoothing config."""
     if "one_euro_min_cutoff_x" in sm:
         return (
             float(sm["one_euro_min_cutoff_x"]),
@@ -26,44 +22,40 @@ def _one_euro_quartet_from_smoothing(sm: Dict[str, Any]) -> Tuple[float, float, 
             float(sm["one_euro_beta_y"]),
         )
     mc = float(sm["one_euro_min_cutoff"])
-    b = float(sm["one_euro_beta"])
-    return (mc, b, mc, b)
+    beta = float(sm["one_euro_beta"])
+    return (mc, beta, mc, beta)
 
 
 @functools.lru_cache(maxsize=1)
 def _smoothing_from_config() -> Dict[str, Any]:
-    """``smoothing`` 설정을 한 번 로드해 캐시한다.
-
-    Returns:
-        ``load_config()[\"smoothing\"]`` 딕셔너리.
-    """
     from eye_speak.configs.loader import load_config
 
     return dict(load_config()["smoothing"])
 
 
 def one_euro_alpha(fc: float, te: float) -> float:
-    """One-Euro 필터: 차단 주파수 ``fc``(Hz), 샘플 간격 ``te``(s)로 알파 계산.
-
-    Args:
-        fc: 차단 주파수 (Hz). ``te``가 0 이하이면 필터를 적용하지 않음.
-        te: 이전 샘플과의 시간 차(초).
-
-    Returns:
-        0~1 사이 저역통과 계수.
-    """
     if te <= 0:
         return 1.0
     tau = 1.0 / (2.0 * math.pi * fc)
     return 1.0 / (1.0 + tau / te)
 
 
-class OneEuroAxis:
-    """단일 축(예: yaw 또는 pitch, 또는 화면 rx/ry)에 대한 One-Euro 필터 상태.
+def _is_valid_normalized(value: Optional[float]) -> bool:
+    return value is not None and math.isfinite(value) and 0.0 <= value <= 1.0
 
-    ``iris_gaze_refine._OneEuroAxis``와 ``pipeline._Axis1Euro``의 동작을 합친 클래스.
-    ``update``와 ``__call__`` 모두 지원한다.
-    """
+
+@dataclass(frozen=True)
+class StabilizedPoint:
+    x: Optional[float]
+    y: Optional[float]
+    space: str
+    reason: str
+    used_fallback: bool = False
+    outlier_suppressed: bool = False
+
+
+class OneEuroAxis:
+    """One-Euro filter state for a single axis."""
 
     def __init__(
         self,
@@ -79,24 +71,13 @@ class OneEuroAxis:
 
     @property
     def last_filtered(self) -> Optional[float]:
-        """마지막으로 필터링된 값. 아직 샘플이 없으면 ``None``."""
         return self._x_prev
 
     def reset(self) -> None:
-        """상태를 초기화한다."""
         self._x_prev = None
         self._dx_prev = 0.0
 
     def update(self, x: float, te: float) -> float:
-        """새 샘플 ``x``를 반영한 필터 출력.
-
-        Args:
-            x: 현재 측정값.
-            te: 이전 업데이트와의 시간 간격(초). 0 이하면 ``0.02``로 대체.
-
-        Returns:
-            스무딩된 값.
-        """
         if te <= 0:
             te = 0.02
         if self._x_prev is None:
@@ -113,15 +94,11 @@ class OneEuroAxis:
         return x_filtered
 
     def __call__(self, x: float, te: float) -> float:
-        """``pipeline._Axis1Euro`` 호환: ``update``와 동일."""
         return self.update(x, te)
 
 
 class OneEuroRefiner:
-    """(rx, ry) 쌍에 One-Euro 필터를 적용한다 (축별 min_cutoff·beta).
-
-    느린 움직임에서는 강한 스무딩, 빠른 시선 이동(saccade)에서는 지연을 줄인다.
-    """
+    """Apply One-Euro smoothing to an (rx, ry) pair."""
 
     def __init__(
         self,
@@ -154,37 +131,120 @@ class OneEuroRefiner:
         rx: Optional[float],
         ry: Optional[float],
     ) -> Tuple[Optional[float], Optional[float]]:
-        """한 프레임의 (rx, ry)를 필터링한다.
-
-        Args:
-            rx: 수평 정규화 시선(0~1). ``None``이면 이전 필터 출력을 유지.
-            ry: 수직 정규화 시선(0~1).
-
-        Returns:
-            ``(filtered_rx, filtered_ry)``. 입력이 ``None``이면 마지막 값.
-        """
         if rx is None or ry is None:
-            return (
-                self._x_filter.last_filtered,
-                self._y_filter.last_filtered,
-            )
+            return (self._x_filter.last_filtered, self._y_filter.last_filtered)
         t = time.time()
         te = (t - self._last_t) if self._last_t is not None else 0.02
         self._last_t = t
-        rx_out = self._x_filter.update(rx, te)
-        ry_out = self._y_filter.update(ry, te)
-        return (rx_out, ry_out)
+        return (self._x_filter.update(rx, te), self._y_filter.update(ry, te))
 
     def reset(self) -> None:
-        """필터 및 시각 상태를 초기화한다."""
         logger.debug("OneEuroRefiner.reset")
         self._x_filter.reset()
         self._y_filter.reset()
         self._last_t = None
 
 
+class ScreenStabilizer:
+    """Validate screen candidates and prefer safer fallbacks on outliers."""
+
+    def __init__(
+        self,
+        outlier_distance: Optional[float] = None,
+        fallback_jump_margin: Optional[float] = None,
+    ) -> None:
+        sm = _smoothing_from_config()
+        self._outlier_distance = max(
+            0.01,
+            float(
+                outlier_distance
+                if outlier_distance is not None
+                else sm.get("screen_outlier_distance", 0.35)
+            ),
+        )
+        self._fallback_jump_margin = max(
+            0.0,
+            float(
+                fallback_jump_margin
+                if fallback_jump_margin is not None
+                else sm.get("screen_fallback_jump_margin", 0.08)
+            ),
+        )
+        self._last_x: Optional[float] = None
+        self._last_y: Optional[float] = None
+
+    def reset(self) -> None:
+        self._last_x = None
+        self._last_y = None
+
+    def stabilize(
+        self,
+        primary_x: Optional[float],
+        primary_y: Optional[float],
+        *,
+        primary_space: str,
+        fallback_x: Optional[float] = None,
+        fallback_y: Optional[float] = None,
+        fallback_space: str = "ratio",
+        prefer_hold: bool = False,
+    ) -> StabilizedPoint:
+        primary_valid = _is_valid_normalized(primary_x) and _is_valid_normalized(primary_y)
+        fallback_valid = _is_valid_normalized(fallback_x) and _is_valid_normalized(fallback_y)
+
+        choice_x = primary_x
+        choice_y = primary_y
+        choice_space = primary_space
+        used_fallback = False
+        outlier_suppressed = False
+        reason = "primary"
+
+        if not primary_valid:
+            if not fallback_valid:
+                return StabilizedPoint(None, None, primary_space, "invalid_primary")
+            choice_x = fallback_x
+            choice_y = fallback_y
+            choice_space = fallback_space
+            used_fallback = True
+            reason = "fallback_invalid_primary"
+        elif self._last_x is not None and self._last_y is not None and fallback_valid:
+            dist_primary = math.hypot(primary_x - self._last_x, primary_y - self._last_y)
+            dist_fallback = math.hypot(fallback_x - self._last_x, fallback_y - self._last_y)
+            if (
+                dist_primary > self._outlier_distance
+                and dist_fallback + self._fallback_jump_margin < dist_primary
+            ):
+                choice_x = fallback_x
+                choice_y = fallback_y
+                choice_space = fallback_space
+                used_fallback = True
+                outlier_suppressed = True
+                reason = "fallback_outlier_jump"
+            elif prefer_hold and dist_primary > self._outlier_distance:
+                return StabilizedPoint(
+                    None,
+                    None,
+                    primary_space,
+                    "prefer_hold_outlier_jump",
+                    outlier_suppressed=True,
+                )
+
+        if not (_is_valid_normalized(choice_x) and _is_valid_normalized(choice_y)):
+            return StabilizedPoint(None, None, choice_space, "invalid_choice")
+
+        self._last_x = float(choice_x)
+        self._last_y = float(choice_y)
+        return StabilizedPoint(
+            float(choice_x),
+            float(choice_y),
+            choice_space,
+            reason,
+            used_fallback=used_fallback,
+            outlier_suppressed=outlier_suppressed,
+        )
+
+
 class GazeRefiner:
-    """(yaw_deg, pitch_deg)에 지수 이동 평균(EMA)을 적용한다."""
+    """Apply simple EMA smoothing to (yaw, pitch)."""
 
     def __init__(self, alpha: Optional[float] = None) -> None:
         sm = _smoothing_from_config()
@@ -198,17 +258,15 @@ class GazeRefiner:
         yaw_deg: Optional[float],
         pitch_deg: Optional[float],
     ) -> Tuple[Optional[float], Optional[float]]:
-        """한 프레임 (yaw, pitch) 입력 → 스무딩된 (yaw, pitch) 반환."""
         if yaw_deg is None or pitch_deg is None:
             return (self._yaw, self._pitch)
         if self._yaw is None:
             self._yaw, self._pitch = yaw_deg, pitch_deg
             return (yaw_deg, pitch_deg)
-        self._yaw = self.alpha * yaw_deg + (1 - self.alpha) * self._yaw
-        self._pitch = self.alpha * pitch_deg + (1 - self.alpha) * self._pitch
+        self._yaw = self.alpha * yaw_deg + (1.0 - self.alpha) * self._yaw
+        self._pitch = self.alpha * pitch_deg + (1.0 - self.alpha) * self._pitch
         return (self._yaw, self._pitch)
 
     def reset(self) -> None:
-        """상태 초기화 (캘리 후 등)."""
         self._yaw = None
         self._pitch = None

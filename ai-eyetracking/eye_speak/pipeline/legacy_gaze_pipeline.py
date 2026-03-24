@@ -72,8 +72,7 @@ class GazePipeline(HybridTracker):
 
     def reset_filters(self) -> None:
         """캘리·스무딩·트리거·온라인 학습 초기화."""
-        self._one_euro.reset()
-        self._mapper.reset_stabilizer()
+        self._reset_runtime_state(reset_trigger=True)
         self._calibrated = False
         self._poly = PolynomialCalibrator()
         bth = float(self._cfg["smoothing"]["blink_ear_threshold"])
@@ -146,8 +145,7 @@ class GazePipeline(HybridTracker):
             if self._cal_refiner.sample_count >= 3:
                 self._cal_refiner.fit()
             self._calibrated = True
-            self._mapper.reset_stabilizer()
-            self._one_euro.reset()
+            self._reset_runtime_state()
             logger.info("캘리 로드: %s", filepath)
             return True
         except Exception as exc:

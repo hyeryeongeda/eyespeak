@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
+import EyeTrackingRuntimeHost from '../../features/patient/input/components/EyeTrackingRuntimeHost'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
 import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGazeClick'
 import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
-import usePatientRuntimeTracking from '../../features/patient/input/hooks/usePatientRuntimeTracking'
 import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import {
@@ -93,10 +93,6 @@ function PatientLayoutShell() {
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
-  })
-  usePatientRuntimeTracking({
-    enabled: !isCalibrationRoute,
-    eyeTrackingProfileId,
   })
   usePatientGlobalMenuActionListener({
     enabled: !isCalibrationRoute,
@@ -254,6 +250,9 @@ function PatientLayoutShell() {
   return (
     <>
       <Outlet />
+      {!isCalibrationRoute ? (
+        <EyeTrackingRuntimeHost enabled={true} eyeTrackingProfileId={eyeTrackingProfileId} />
+      ) : null}
       {!isCalibrationRoute ? (
         <button
           type="button"

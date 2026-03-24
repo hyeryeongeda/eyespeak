@@ -1,4 +1,4 @@
-"""1~7단계 모듈을 묶은 하이브리드 시선 파이프라인 (수식 + 선택적 AI)."""
+"""Hybrid gaze pipeline with runtime-quality stabilization."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from eye_speak.iris_tracker.detector import MediaPipeDetector
 from eye_speak.iris_tracker.grid_mapper import GridMapper
 from eye_speak.iris_tracker.head_pose import head_pose_from_landmarks
 from eye_speak.iris_tracker.iris_normalizer import IrisNormalizer
-from eye_speak.iris_tracker.smoother import OneEuroRefiner
+from eye_speak.iris_tracker.smoother import OneEuroRefiner, ScreenStabilizer
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def _repo_root() -> Path:
 
 
 class HybridTracker:
-    """MediaPipe → 홍채 정규화 → 헤드 퓨전 → One-Euro → 다항식 캘리 → 그리드 → 트리거."""
+    """MediaPipe + optional AI fusion with calibration and runtime stabilization."""
 
     def __init__(
         self,
@@ -53,11 +53,6 @@ class HybridTracker:
         use_ai: bool = False,
         ai_checkpoint: Optional[str] = None,
     ) -> None:
-        """Args:
-            config_path: YAML 경로. 없으면 패키지 기본 설정.
-            use_ai: ``True``면 AI ``GazeEstimator`` 로드 시도 (실패 시 수식만).
-            ai_checkpoint: 우선 사용할 ``.pt`` 경로. ``None``이면 기본 탐색.
-        """
         cp = Path(config_path)
         self._cfg: Dict[str, Any] = load_config(cp if cp.is_file() else None)
         sm = self._cfg["smoothing"]
@@ -72,6 +67,7 @@ class HybridTracker:
         self.detector = MediaPipeDetector(0.3, 0.3)
         self.iris_normalizer = IrisNormalizer(bth)
         self._one_euro = OneEuroRefiner()
+        self._screen_stabilizer = ScreenStabilizer()
         self._poly = PolynomialCalibrator()
         self._mapper = GridMapper(
             int(gr["rows"]),
@@ -83,6 +79,12 @@ class HybridTracker:
         self.trigger = TriggerDetector(blink_threshold=bth)
         self._ear_samples: deque[float] = deque(maxlen=120)
         self._calibrated = False
+        self._screen_hold_sec = max(0.0, float(sm.get("screen_hold_ms", 280.0)) / 1000.0)
+        self._readiness_valid_streak = max(1, int(sm.get("readiness_valid_streak", 2)))
+        self._last_valid_output: Optional[Dict[str, Any]] = None
+        self._last_valid_at: Optional[float] = None
+        self._ready_streak = 0
+        self._runtime_ready = False
         self._gaze: Optional[GazeEstimator] = None
         self._use_ai = use_ai
         if use_ai:
@@ -97,7 +99,7 @@ class HybridTracker:
                         logger.warning("AI checkpoint not loaded; formula fallback only")
                 except Exception as exc:
                     logger.warning("GazeEstimator failed (%s); formula fallback only", exc)
-            elif use_ai:
+            else:
                 logger.warning("use_ai=True but no valid checkpoint path")
 
     def _find_l2cs_checkpoint(self) -> Optional[str]:
@@ -109,8 +111,49 @@ class HybridTracker:
                 return str(p)
         return None
 
+    def _reset_runtime_state(self, *, reset_trigger: bool = False) -> None:
+        self._one_euro.reset()
+        self._screen_stabilizer.reset()
+        self._mapper.reset_stabilizer()
+        self._last_valid_output = None
+        self._last_valid_at = None
+        self._ready_streak = 0
+        self._runtime_ready = False
+        if reset_trigger:
+            self.trigger.reset()
+            self._ear_samples.clear()
+
+    def _maybe_hold_last_output(
+        self,
+        *,
+        timestamp: float,
+        ear: float,
+        blink: bool,
+        trigger: str,
+        reason: str,
+    ) -> Optional[Dict[str, Any]]:
+        if (
+            self._last_valid_output is None
+            or self._last_valid_at is None
+            or timestamp - self._last_valid_at > self._screen_hold_sec
+        ):
+            return None
+        held = dict(self._last_valid_output)
+        held["ear"] = round(float(ear), 3)
+        held["blink"] = bool(blink)
+        held["trigger"] = trigger
+        logger.debug("HybridTracker: short hold applied (%s)", reason)
+        return held
+
+    def _mark_valid_ready_frame(self) -> bool:
+        if self._runtime_ready:
+            return True
+        self._ready_streak += 1
+        if self._ready_streak >= self._readiness_valid_streak:
+            self._runtime_ready = True
+        return self._runtime_ready
+
     def set_calibration(self, points: List[Dict[str, Any]]) -> None:
-        """다항식 캘리브레이션 적용. ``points``: ``{\"rx\",\"ry\"}`` 목록."""
         if self._ear_samples:
             mean_ear = sum(self._ear_samples) / len(self._ear_samples)
             th = max(0.10, mean_ear * 0.6)
@@ -128,26 +171,44 @@ class HybridTracker:
         tgt_pts = [(trx[i], try_[i]) for i in range(n)]
         self._poly.fit(raw_pts, tgt_pts)
         self._calibrated = True
-        self._one_euro.reset()
-        self._mapper.reset_stabilizer()
+        self._reset_runtime_state()
         logger.info("HybridTracker: calibration fitted (%s points)", n)
 
     def run(self, frame: np.ndarray) -> Dict[str, Any]:
-        """BGR 프레임 한 장 처리."""
         out = dict(_FAIL)
+        now = time.monotonic()
         if frame is None or frame.size == 0:
-            return out
+            held = self._maybe_hold_last_output(
+                timestamp=now,
+                ear=0.0,
+                blink=False,
+                trigger="none",
+                reason="empty_frame",
+            )
+            return held if held is not None else out
+
         h, w = frame.shape[:2]
         fb = frame
         if w < 480:
-            s = 480 / w
-            fb = cv2.resize(fb, (480, int(h * s)))
+            scale = 480 / w
+            fb = cv2.resize(fb, (480, int(h * scale)))
             h, w = fb.shape[:2]
         fb = preprocess_frame_cv(fb, use_clahe=True, use_denoise=False)
         det = self.detector.detect(fb)
         lm = det.get("landmarks")
         if lm is None:
+            held = self._maybe_hold_last_output(
+                timestamp=now,
+                ear=0.0,
+                blink=False,
+                trigger="none",
+                reason="no_landmarks",
+            )
+            if held is not None:
+                return held
+            self._reset_runtime_state(reset_trigger=True)
             return out
+
         rx, ry, ear, is_blink = self.iris_normalizer(lm)
         trig = self.trigger.update(ear, time.time())
         self._ear_samples.append(ear)
@@ -159,17 +220,24 @@ class HybridTracker:
             yn = max(0.0, min(1.0, (hy + self._grid_yaw) / (2.0 * self._grid_yaw)))
             pn = max(0.0, min(1.0, (hp + self._grid_pitch) / (2.0 * self._grid_pitch)))
 
-        # 홍채 비율이 없을 때(깜빡임·검출 실패) 조기 반환하면 rx/ry가 null이라
-        # 웹 프론트가 tracking-unstable로 처리해 시선 포인트가 갱신되지 않는다.
-        # 얼굴·랜드마크가 있으면 헤드 포즈만으로 0~1 시선 대용 값을 채운다.
         used_head_pose_fallback = False
         if rx is None or ry is None:
             if yn is None or pn is None:
+                held = self._maybe_hold_last_output(
+                    timestamp=now,
+                    ear=ear,
+                    blink=is_blink,
+                    trigger=trig,
+                    reason="missing_gaze",
+                )
+                if held is not None:
+                    return held
+                self._reset_runtime_state(reset_trigger=True)
                 out.update(
                     {
                         "face": True,
                         "ear": round(ear, 3),
-                        "blink": is_blink,
+                        "blink": bool(is_blink),
                         "trigger": trig,
                     }
                 )
@@ -190,9 +258,7 @@ class HybridTracker:
                     fx, fy, fw, fh = int(roi[0]), int(roi[1]), int(roi[2]), int(roi[3])
                     if fw > 10 and fh > 10:
                         crop = fb[fy : fy + fh, fx : fx + fw]
-                        face_rgb = cv2.cvtColor(
-                            cv2.resize(crop, (224, 224)), cv2.COLOR_BGR2RGB
-                        )
+                        face_rgb = cv2.cvtColor(cv2.resize(crop, (224, 224)), cv2.COLOR_BGR2RGB)
                         yaw_r, pit_r = self._gaze(face_rgb)
                         yd = math.degrees(yaw_r)
                         pd = math.degrees(pit_r)
@@ -208,18 +274,80 @@ class HybridTracker:
         if rx_s is None or ry_s is None:
             rx_s, ry_s = fused_rx, fused_ry
 
+        primary_space = "ratio"
         if self._calibrated and self._poly.is_fitted:
             px, py = self._poly.predict(float(rx_s), float(ry_s))
-            px = max(0.0, min(1.0, px))
-            py = max(0.0, min(1.0, py))
-            raw_cell = self._mapper.map_to_cell(px, py, from_screen_normalized=True)
-            screen_x, screen_y = px, py
+            primary_x, primary_y = float(px), float(py)
+            primary_space = "screen"
         else:
-            raw_cell = self._mapper.map_to_cell(float(rx_s), float(ry_s))
-            screen_x, screen_y = float(rx_s), float(ry_s)
+            primary_x, primary_y = float(rx_s), float(ry_s)
 
+        stabilized = self._screen_stabilizer.stabilize(
+            primary_x,
+            primary_y,
+            primary_space=primary_space,
+            fallback_x=float(rx_s),
+            fallback_y=float(ry_s),
+            fallback_space="ratio",
+            prefer_hold=used_head_pose_fallback or bool(is_blink),
+        )
+        if stabilized.used_fallback or stabilized.outlier_suppressed:
+            logger.debug(
+                "HybridTracker: screen stabilization reason=%s fallback=%s primary=(%.4f, %.4f) fallback=(%.4f, %.4f)",
+                stabilized.reason,
+                stabilized.used_fallback,
+                primary_x,
+                primary_y,
+                float(rx_s),
+                float(ry_s),
+            )
+
+        if stabilized.x is None or stabilized.y is None:
+            held = self._maybe_hold_last_output(
+                timestamp=now,
+                ear=ear,
+                blink=is_blink,
+                trigger=trig,
+                reason=stabilized.reason,
+            )
+            if held is not None:
+                return held
+            self._reset_runtime_state(reset_trigger=True)
+            out.update(
+                {
+                    "face": True,
+                    "ear": round(ear, 3),
+                    "blink": bool(is_blink) if used_head_pose_fallback else False,
+                    "trigger": trig,
+                }
+            )
+            return out
+
+        raw_cell = self._mapper.map_to_cell(
+            stabilized.x,
+            stabilized.y,
+            from_screen_normalized=stabilized.space == "screen",
+        )
+        screen_x, screen_y = stabilized.x, stabilized.y
         cell = self._mapper.stabilize(raw_cell)
-        return {
+
+        if not self._mark_valid_ready_frame():
+            out.update(
+                {
+                    "cell": None,
+                    "raw_rx": round(float(raw_rx), 4),
+                    "raw_ry": round(float(raw_ry), 4),
+                    "ear": round(ear, 3),
+                    "face": True,
+                    "blink": bool(is_blink) if used_head_pose_fallback else False,
+                    "trigger": trig,
+                    "screen_x": round(screen_x, 4),
+                    "screen_y": round(screen_y, 4),
+                }
+            )
+            return out
+
+        result = {
             "cell": cell,
             "rx": round(float(rx_s), 4),
             "ry": round(float(ry_s), 4),
@@ -232,3 +360,6 @@ class HybridTracker:
             "screen_x": round(screen_x, 4),
             "screen_y": round(screen_y, 4),
         }
+        self._last_valid_output = dict(result)
+        self._last_valid_at = now
+        return result

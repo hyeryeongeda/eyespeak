@@ -1,4 +1,4 @@
-"""공유 pytest 픽스처."""
+"""Shared pytest fixtures for eye_speak tests."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ import yaml
 
 
 def _clear_eye_speak_caches() -> None:
-    """LRU 캐시된 설정 로더를 비워 테스트 간 격리한다."""
     try:
         from eye_speak.iris_tracker import blink_detector as bd
 
@@ -48,13 +47,11 @@ def _reset_caches() -> Any:
 
 
 def _build_open_eye_landmarks() -> List[Tuple[float, float]]:
-    """478점: 양안 개안·EAR·홍채 인덱스에 물리적으로 일관된 좌표."""
     lm: List[Tuple[float, float]] = [(320.0, 240.0)] * 478
 
     def s(i: int, x: float, y: float) -> None:
         lm[i] = (x, y)
 
-    # Person's right eye (image-left)
     s(33, 160.0, 240.0)
     s(133, 240.0, 240.0)
     for i in (159, 160, 158, 161):
@@ -63,13 +60,11 @@ def _build_open_eye_landmarks() -> List[Tuple[float, float]]:
         s(i, 200.0, 270.0)
     for j, ix in enumerate((469, 470, 471, 472)):
         s(ix, 198.0 + j * 2.0, 238.0)
-    # R_EAR [33,160,158,133,153,144]
     s(160, 200.0, 212.0)
     s(158, 200.0, 228.0)
     s(153, 200.0, 252.0)
     s(144, 200.0, 268.0)
 
-    # Person's left eye (image-right)
     s(362, 400.0, 240.0)
     s(263, 480.0, 240.0)
     for i in (386, 387, 385, 388):
@@ -93,7 +88,6 @@ def synthetic_landmarks_478() -> List[Tuple[float, float]]:
 
 @pytest.fixture
 def dummy_frame() -> np.ndarray:
-    """640×480 BGR 검정 프레임."""
     return np.zeros((480, 640, 3), dtype=np.uint8)
 
 
@@ -113,8 +107,14 @@ _MINIMAL_CFG: Dict[str, Any] = {
         "use_gaze_refiner": True,
         "refiner_type": "one_euro",
         "gaze_refiner_alpha": 0.3,
-        "one_euro_min_cutoff": 0.5,
-        "one_euro_beta": 0.05,
+        "one_euro_min_cutoff_x": 0.5,
+        "one_euro_beta_x": 0.05,
+        "one_euro_min_cutoff_y": 0.5,
+        "one_euro_beta_y": 0.05,
+        "screen_hold_ms": 280,
+        "screen_outlier_distance": 0.35,
+        "screen_fallback_jump_margin": 0.08,
+        "readiness_valid_streak": 2,
         "blink_ear_threshold": 0.18,
     },
     "weights": {
@@ -142,7 +142,6 @@ _MINIMAL_CFG: Dict[str, Any] = {
 
 @pytest.fixture
 def config_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """테스트 전용 YAML 경로. ``load_config``가 이 파일을 읽도록 패치."""
     p = tmp_path / "test_config.yaml"
     p.write_text(yaml.safe_dump(_MINIMAL_CFG, allow_unicode=True), encoding="utf-8")
 
@@ -158,6 +157,7 @@ def config_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         return real_load(use)
 
     monkeypatch.setattr(loader, "load_config", _patched)
+
     import eye_speak.pipeline.hybrid_tracker as ht
 
     monkeypatch.setattr(ht, "load_config", _patched)
