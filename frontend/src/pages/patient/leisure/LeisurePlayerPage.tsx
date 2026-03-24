@@ -1,16 +1,27 @@
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
+import {
+  ROUTE_PATHS,
+  getPatientLeisureCategoryPath,
+  getPatientLeisurePlayerPath,
+} from '../../../app/router/routePaths'
 import {
   fetchLeisureContentDetail,
+  fetchRelatedLeisureContents,
   getLeisureCategoryById,
 } from '../../../services/leisureService'
-import type { LeisureContent, LeisurePlayerRouteState, LeisurePlayerStatus } from '../../../types/leisure'
+import type {
+  LeisureContent,
+  LeisureOverlayStatus,
+  LeisurePlayerRouteState,
+  LeisurePlayerStatus,
+} from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureEmptyState from './components/LeisureEmptyState'
 import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
+import RelatedContentOverlay from './components/RelatedContentOverlay'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 import { usePatientLeisureResumeStore } from '../../../stores/patientLeisureResumeStore'
@@ -229,17 +240,38 @@ export default function LeisurePlayerPage() {
 
   const [status, setStatus] = useState<LeisurePlayerStatus>('idle')
   const [content, setContent] = useState<LeisureContent | null>(null)
+  const [isRelatedOverlayOpen, setIsRelatedOverlayOpen] = useState(false)
+  const [relatedStatus, setRelatedStatus] = useState<LeisureOverlayStatus>('idle')
+  const [relatedContents, setRelatedContents] = useState<LeisureContent[]>([])
+  const [relatedNoticeMessage, setRelatedNoticeMessage] = useState<string | null>(null)
 
-  const playerCellMapping = useMemo(() => ({
-    0: 'player-related',
-    1: 'player-back',
-    2: 'player-related',
-    3: 'player-back',
-    4: 'player-related',
-    5: 'player-back',
-  } as Record<number, string | null>), [])
+  const playerCellMapping = useMemo(
+    () =>
+      ({
+        0: 'player-related',
+        1: 'player-back',
+        2: 'player-related',
+        3: 'player-back',
+        4: 'player-related',
+        5: 'player-back',
+      }) as Record<number, string | null>,
+    [],
+  )
 
-  useCellMapping(playerCellMapping)
+  const relatedOverlayCellMapping = useMemo(
+    () =>
+      ({
+        0: 'related-content-1',
+        1: 'related-content-2',
+        2: 'related-refresh',
+        3: 'related-content-3',
+        4: 'related-content-4',
+        5: 'related-close',
+      }) as Record<number, string | null>,
+    [],
+  )
+
+  useCellMapping(isRelatedOverlayOpen ? relatedOverlayCellMapping : playerCellMapping)
 
   useEffect(() => {
     let isMounted = true
@@ -281,18 +313,23 @@ export default function LeisurePlayerPage() {
     }
   }, [params.contentId])
 
+  useEffect(() => {
+    setIsRelatedOverlayOpen(false)
+    setRelatedContents([])
+    setRelatedStatus('idle')
+    setRelatedNoticeMessage(null)
+  }, [params.contentId])
+
   const currentCategory = getLeisureCategoryById(content?.categoryId ?? routeState?.categoryId)
   const fallbackBackPath =
     content?.categoryId ? getPatientLeisureCategoryPath(content.categoryId) : ROUTE_PATHS.PATIENT_LEISURE
-  const relatedContentsPath =
-    content?.categoryId || routeState?.categoryId
-      ? getPatientLeisureCategoryPath(content?.categoryId ?? routeState?.categoryId ?? '')
-      : ROUTE_PATHS.PATIENT_LEISURE
   const currentPlayerPath = `${location.pathname}${location.search}`
   const playerSrc = useMemo(
     () => (content ? buildYouTubePlayerUrl(content.embedUrl) : ''),
     [content],
   )
+  const relatedOverlayTone = currentCategory?.tone ?? 'mint'
+  const relatedOverlayCategoryLabel = content?.categoryLabel ?? currentCategory?.label ?? '관련 콘텐츠'
 
   const capturePlaybackSnapshot = useCallback((): LeisurePlaybackSnapshot => {
     const player = playerRef.current
@@ -528,6 +565,7 @@ export default function LeisurePlayerPage() {
   }, [clearResumeContext, currentPlayerPath, navigate, resumeContext, status])
 
   const handleBack = () => {
+    setIsRelatedOverlayOpen(false)
     clearResumeContext()
     setStatus('transitioning')
     navigate({
@@ -536,13 +574,68 @@ export default function LeisurePlayerPage() {
     })
   }
 
+  const loadRelatedContents = useCallback(
+    async (options?: { refresh?: boolean }) => {
+      if (!content?.id) {
+        setRelatedContents([])
+        setRelatedStatus('empty')
+        return
+      }
+
+      setRelatedNoticeMessage(null)
+      setRelatedStatus(options?.refresh ? 'refreshing' : 'loading')
+
+      try {
+        const nextContents = await fetchRelatedLeisureContents(content.id, options)
+        setRelatedContents(nextContents)
+        setRelatedStatus(nextContents.length > 0 ? 'visible' : 'empty')
+      } catch (error) {
+        console.error('Failed to load related leisure contents.', error)
+        setRelatedContents([])
+        setRelatedStatus('error')
+        setRelatedNoticeMessage('관련 영상을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')
+      }
+    },
+    [content?.id],
+  )
+
   const handleOpenRelatedContents = () => {
+    if (!content?.categoryId) {
+      return
+    }
+
+    setIsRelatedOverlayOpen(true)
+    void loadRelatedContents()
+  }
+
+  const handleRefreshRelatedContents = () => {
+    void loadRelatedContents({ refresh: true })
+  }
+
+  const handleCloseRelatedContents = () => {
+    setRelatedStatus('closing')
+    setIsRelatedOverlayOpen(false)
+    setRelatedNoticeMessage(null)
+  }
+
+  const handleSelectRelatedContent = (nextContent: LeisureContent) => {
+    setRelatedStatus('selecting')
+    setIsRelatedOverlayOpen(false)
     clearResumeContext()
     setStatus('transitioning')
-    navigate({
-      pathname: relatedContentsPath,
-      search: location.search,
-    })
+    navigate(
+      {
+        pathname: getPatientLeisurePlayerPath(nextContent.id),
+        search: location.search,
+      },
+      {
+        state: {
+          fromPath: currentPlayerPath,
+          fromLabel: content?.title ?? routeState?.fromLabel ?? '여가 콘텐츠',
+          categoryId: nextContent.categoryId ?? content?.categoryId ?? routeState?.categoryId,
+        },
+      },
+    )
   }
 
   if (status === 'loading') {
@@ -669,6 +762,7 @@ export default function LeisurePlayerPage() {
             badge="추천 이동"
             variant="hero"
             tone="mint"
+            disabled={!content.categoryId || isRelatedOverlayOpen}
             slotId="player-related"
             onSelect={handleOpenRelatedContents}
           />
@@ -683,6 +777,20 @@ export default function LeisurePlayerPage() {
           />
         </div>
       </section>
+
+      {isRelatedOverlayOpen ? (
+        <RelatedContentOverlay
+          title="관련 영상"
+          categoryLabel={relatedOverlayCategoryLabel}
+          tone={relatedOverlayTone}
+          status={relatedStatus}
+          contents={relatedContents}
+          noticeMessage={relatedNoticeMessage}
+          onSelectContent={handleSelectRelatedContent}
+          onRefresh={handleRefreshRelatedContents}
+          onClose={handleCloseRelatedContents}
+        />
+      ) : null}
     </LeisureLayout>
   )
 }
