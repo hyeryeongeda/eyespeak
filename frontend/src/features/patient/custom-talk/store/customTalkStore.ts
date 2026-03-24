@@ -286,14 +286,20 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectCategory: categoryKey => {
-    set(state => ({
+    set(() => ({
       draft: {
-        ...state.draft,
         categoryKey,
+        subject: undefined,
+        object: undefined,
+        predicate: undefined,
+        punctuation: undefined,
         selectedRecommendedSentence: undefined,
         selectedGeneratedSentence: undefined,
+        manualInput: '',
       },
       recommendedSentences: [],
+      composeStep: 'subject',
+      composeOptions: initialComposeOptions,
       generatedSentences: [],
       completionMessage: null,
       errorMessage: null,
