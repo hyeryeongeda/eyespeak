@@ -29,6 +29,8 @@ interface UsePatientGazeClickOptions {
 
 const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
 const GAZE_TARGET_SWITCH_GRACE_MS = 140
+const SELECTION_CONFIRM_FEEDBACK_MS = 900
+const TARGET_RESELECTION_COOLDOWN_MS = 3000
 
 interface GazeTarget {
   element: HTMLElement
@@ -38,6 +40,12 @@ interface GazeTarget {
 }
 
 type PatientSelectionCommitSource = 'dwell' | 'double-blink'
+
+interface SelectionCooldownEntry {
+  element: HTMLElement | null
+  expiresAt: number
+  timerId: number
+}
 
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
   return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
@@ -282,7 +290,96 @@ export function usePatientGazeClick({
   const lastDoubleBlinkAtRef = useRef(0)
   const targetSwitchTimerRef = useRef<number | null>(null)
   const highlightedElementRef = useRef<HTMLElement | null>(null)
+  const confirmedElementRef = useRef<HTMLElement | null>(null)
+  const confirmedTimerRef = useRef<number | null>(null)
+  const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
   const [stableGazeTarget, setStableGazeTarget] = useState<GazeTarget | null>(null)
+
+  const clearConfirmedTimer = () => {
+    if (confirmedTimerRef.current !== null) {
+      window.clearTimeout(confirmedTimerRef.current)
+      confirmedTimerRef.current = null
+    }
+  }
+
+  const clearConfirmedSelection = (element?: HTMLElement | null) => {
+    const targetElement = element ?? confirmedElementRef.current
+    if (targetElement) {
+      targetElement.removeAttribute('data-gaze-confirmed')
+    }
+
+    if (!element || confirmedElementRef.current === element) {
+      confirmedElementRef.current = null
+    }
+
+    clearConfirmedTimer()
+  }
+
+  const clearSelectionCooldown = (targetKey: string) => {
+    const entry = selectionCooldownsRef.current.get(targetKey)
+    if (!entry) {
+      return
+    }
+
+    window.clearTimeout(entry.timerId)
+    entry.element?.removeAttribute('data-gaze-cooldown')
+    selectionCooldownsRef.current.delete(targetKey)
+  }
+
+  const isTargetCoolingDown = (targetKey: string) => {
+    const entry = selectionCooldownsRef.current.get(targetKey)
+    if (!entry) {
+      return false
+    }
+
+    if (entry.expiresAt <= Date.now()) {
+      clearSelectionCooldown(targetKey)
+      return false
+    }
+
+    return true
+  }
+
+  const markSelectionConfirmed = (element: HTMLElement) => {
+    if (confirmedElementRef.current && confirmedElementRef.current !== element) {
+      confirmedElementRef.current.removeAttribute('data-gaze-confirmed')
+    }
+
+    clearConfirmedTimer()
+    element.setAttribute('data-gaze-confirmed', 'true')
+    confirmedElementRef.current = element
+    confirmedTimerRef.current = window.setTimeout(() => {
+      if (confirmedElementRef.current === element) {
+        confirmedElementRef.current = null
+      }
+
+      element.removeAttribute('data-gaze-confirmed')
+      confirmedTimerRef.current = null
+    }, SELECTION_CONFIRM_FEEDBACK_MS)
+  }
+
+  const startSelectionCooldown = (targetKey: string, element: HTMLElement) => {
+    clearSelectionCooldown(targetKey)
+
+    element.setAttribute('data-gaze-cooldown', 'true')
+
+    const expiresAt = Date.now() + TARGET_RESELECTION_COOLDOWN_MS
+    const timerId = window.setTimeout(() => {
+      const currentEntry = selectionCooldownsRef.current.get(targetKey)
+      if (!currentEntry || currentEntry.timerId !== timerId) {
+        return
+      }
+
+      currentEntry.element?.removeAttribute('data-gaze-cooldown')
+      selectionCooldownsRef.current.delete(targetKey)
+    }, TARGET_RESELECTION_COOLDOWN_MS)
+
+    selectionCooldownsRef.current.set(targetKey, {
+      element,
+      expiresAt,
+      timerId,
+    })
+  }
 
   const rawGazeTarget = useMemo(() => {
     if (!enabled) {
@@ -409,6 +506,19 @@ export function usePatientGazeClick({
 
     activeElementRef.current = resolvedTarget.element
 
+    if (isTargetCoolingDown(resolvedTarget.key)) {
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] selection-commit-blocked', {
+          source,
+          reason: 'cooldown',
+          targetKey: resolvedTarget.key,
+          trackingStatus,
+        })
+      }
+
+      return false
+    }
+
     const blockReason = getInteractiveElementBlockReason(resolvedTarget.element)
 
     if (blockReason) {
@@ -443,6 +553,8 @@ export function usePatientGazeClick({
     }
 
     submitActiveEyeTrackingSelectionFeedback()
+    markSelectionConfirmed(resolvedTarget.element)
+    startSelectionCooldown(resolvedTarget.key, resolvedTarget.element)
     resolvedTarget.element.click()
 
     if (import.meta.env.DEV) {
@@ -527,6 +639,16 @@ export function usePatientGazeClick({
       }
     }
   }, [stableGazeTarget])
+
+  useEffect(() => {
+    return () => {
+      clearConfirmedSelection()
+
+      for (const targetKey of selectionCooldownsRef.current.keys()) {
+        clearSelectionCooldown(targetKey)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!enabled || !import.meta.env.DEV) {

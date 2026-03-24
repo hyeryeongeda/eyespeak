@@ -28,7 +28,7 @@ const cardStyle: CSSProperties = {
 
 const textStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.1rem, 1.9vw, 1.5rem)',
+  fontSize: 'clamp(1.4rem, 2.2vw, 1.95rem)',
   fontWeight: 800,
   lineHeight: 1.3,
   color: '#203042',
@@ -36,7 +36,7 @@ const textStyle: CSSProperties = {
 
 const categoryStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(0.8rem, 1.2vw, 0.95rem)',
+  fontSize: 'clamp(0.95rem, 1.35vw, 1.08rem)',
   fontWeight: 600,
   color: '#647587',
 }

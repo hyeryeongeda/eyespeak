@@ -40,7 +40,7 @@ const metaWrapStyle: CSSProperties = {
 const titleStyle: CSSProperties = {
   margin: 0,
   color: '#203042',
-  fontSize: '15px',
+  fontSize: 'clamp(1.2rem, 1.8vw, 1.6rem)',
   fontWeight: 900,
   lineHeight: 1.35,
 }
@@ -48,7 +48,7 @@ const titleStyle: CSSProperties = {
 const subtitleStyle: CSSProperties = {
   margin: 0,
   color: '#6a8095',
-  fontSize: '13px',
+  fontSize: '15px',
   fontWeight: 700,
   lineHeight: 1.4,
 }

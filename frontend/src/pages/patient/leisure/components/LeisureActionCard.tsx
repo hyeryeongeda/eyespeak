@@ -5,7 +5,7 @@ import { leisureCardBaseStyle, leisurePillStyle, leisureToneMap } from './leisur
 const titleStyle: CSSProperties = {
   margin: 0,
   color: '#203042',
-  fontSize: 'clamp(1.2rem, 1.6vw, 1.45rem)',
+  fontSize: 'clamp(1.45rem, 2vw, 1.85rem)',
   fontWeight: 900,
   letterSpacing: '-0.03em',
   lineHeight: 1.2,
@@ -14,7 +14,7 @@ const titleStyle: CSSProperties = {
 const descriptionStyle: CSSProperties = {
   margin: 0,
   color: '#677b90',
-  fontSize: '15px',
+  fontSize: '17px',
   fontWeight: 700,
   lineHeight: 1.5,
 }
@@ -74,7 +74,7 @@ export default function LeisureActionCard({
         <h3
           style={{
             ...titleStyle,
-            fontSize: isHero ? 'clamp(1.95rem, 2.8vw, 2.45rem)' : titleStyle.fontSize,
+            fontSize: isHero ? 'clamp(2.3rem, 3.4vw, 3rem)' : titleStyle.fontSize,
             lineHeight: isHero ? 1.05 : titleStyle.lineHeight,
           }}
         >
