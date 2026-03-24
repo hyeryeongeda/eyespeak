@@ -28,7 +28,7 @@ interface UsePatientGazeClickOptions {
 }
 
 const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
-const GAZE_TARGET_SWITCH_GRACE_MS = 140
+const GAZE_TARGET_SWITCH_GRACE_MS = 300
 const SELECTION_CONFIRM_FEEDBACK_MS = 900
 const TARGET_RESELECTION_COOLDOWN_MS = 3000
 
@@ -256,6 +256,9 @@ export function usePatientGazeClick({
   const activeElementRef = useRef<HTMLElement | null>(null)
   const lastDoubleBlinkAtRef = useRef(0)
   const targetSwitchTimerRef = useRef<number | null>(null)
+  const targetSwitchGraceStartedAtRef = useRef<number | null>(null)
+  const targetSwitchPendingKeyRef = useRef<string | null>(null)
+  const lastGazeTargetDebugSignatureRef = useRef<string | null>(null)
   const highlightedElementRef = useRef<HTMLElement | null>(null)
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
@@ -353,7 +356,15 @@ export function usePatientGazeClick({
       return null
     }
 
-    if (gazePoint) {
+    // DEV flag: window.__DEV_GAZE_DISABLE_POINT_HIT_TEST = true で
+    // point-hit-test を完全スキップして cell-mapping のみ使用
+    // 브라우저 콘솔에서 토글 가능, 다음 gaze 업데이트부터 반영
+    const disablePointHitTest =
+      import.meta.env.DEV &&
+      typeof window !== 'undefined' &&
+      (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
+
+    if (gazePoint && !disablePointHitTest) {
       const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
       if (patientMainPointTarget) {
         return patientMainPointTarget
@@ -545,9 +556,15 @@ export function usePatientGazeClick({
         targetSwitchTimerRef.current = null
       }
     }
+    const resetTargetSwitchGraceTracking = () => {
+      targetSwitchGraceStartedAtRef.current = null
+      targetSwitchPendingKeyRef.current = null
+    }
 
     if (!enabled) {
       clearTargetSwitchTimer()
+      resetTargetSwitchGraceTracking()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStableGazeTarget(null)
       return
     }
@@ -557,6 +574,7 @@ export function usePatientGazeClick({
 
     if (currentTargetKey === nextTargetKey) {
       clearTargetSwitchTimer()
+      resetTargetSwitchGraceTracking()
 
       if (
         stableGazeTarget &&
@@ -572,17 +590,89 @@ export function usePatientGazeClick({
     clearTargetSwitchTimer()
 
     if (!stableGazeTarget && rawGazeTarget) {
+      resetTargetSwitchGraceTracking()
       setStableGazeTarget(rawGazeTarget)
       return
     }
 
+    const pendingTargetSwitchKey = `${currentTargetKey ?? 'null'}=>${nextTargetKey ?? 'null'}`
+    if (targetSwitchPendingKeyRef.current !== pendingTargetSwitchKey) {
+      targetSwitchPendingKeyRef.current = pendingTargetSwitchKey
+      targetSwitchGraceStartedAtRef.current = Date.now()
+    }
+
     targetSwitchTimerRef.current = window.setTimeout(() => {
       targetSwitchTimerRef.current = null
+      resetTargetSwitchGraceTracking()
       setStableGazeTarget(rawGazeTarget)
     }, GAZE_TARGET_SWITCH_GRACE_MS)
 
     return clearTargetSwitchTimer
   }, [enabled, rawGazeTarget, stableGazeTarget])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      lastGazeTargetDebugSignatureRef.current = null
+      return
+    }
+
+    const gracePending = targetSwitchTimerRef.current !== null
+    const disablePointHitTestFlag =
+      typeof window !== 'undefined' &&
+      (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
+    const debugPayload = {
+      // 좌표계 확인용: hit-test에 실제 사용된 viewport 픽셀 좌표
+      clientX: gazePoint?.clientX ?? null,
+      clientY: gazePoint?.clientY ?? null,
+      viewport: typeof window !== 'undefined'
+        ? { width: window.innerWidth, height: window.innerHeight }
+        : null,
+      // rawTargetSource: 'point-hit-test' | 'cell-mapping' | 'cell-dom-fallback'
+      // point-hit-test → clientX/clientY 기반 document.elementsFromPoint() 결과
+      // cell-mapping   → iframe이 보낸 cell 번호 기반 매핑 결과
+      rawTargetSource: rawGazeTarget?.source ?? null,
+      gazeCell,
+      rawTargetKey: rawGazeTarget?.key ?? null,
+      stableTargetKey: stableGazeTarget?.key ?? null,
+      stableTargetSource: stableGazeTarget?.source ?? null,
+      rawTargetCell: rawGazeTarget?.cell ?? null,
+      stableTargetCell: stableGazeTarget?.cell ?? null,
+      gracePending,
+      targetSwitchGraceMs: gracePending ? GAZE_TARGET_SWITCH_GRACE_MS : null,
+      targetSwitchGraceStartedAt: gracePending ? targetSwitchGraceStartedAtRef.current : null,
+      gazePointUpdatedAt: gazePoint?.updatedAt ?? null,
+      DEV_GAZE_DISABLE_POINT_HIT_TEST: disablePointHitTestFlag,
+    }
+    const nextDebugSignature = JSON.stringify({
+      gazeCell: debugPayload.gazeCell,
+      rawTargetKey: debugPayload.rawTargetKey,
+      stableTargetKey: debugPayload.stableTargetKey,
+      rawTargetSource: debugPayload.rawTargetSource,
+      stableTargetSource: debugPayload.stableTargetSource,
+      rawTargetCell: debugPayload.rawTargetCell,
+      stableTargetCell: debugPayload.stableTargetCell,
+      gracePending: debugPayload.gracePending,
+      targetSwitchGraceMs: debugPayload.targetSwitchGraceMs,
+      targetSwitchGraceStartedAt: debugPayload.targetSwitchGraceStartedAt,
+    })
+
+    if (lastGazeTargetDebugSignatureRef.current === nextDebugSignature) {
+      return
+    }
+
+    lastGazeTargetDebugSignatureRef.current = nextDebugSignature
+    console.info('[patient-input] gaze-target-state', debugPayload)
+  }, [
+    enabled,
+    gazeCell,
+    gazePoint?.updatedAt,
+    rawGazeTarget?.cell,
+    rawGazeTarget?.key,
+    rawGazeTarget?.source,
+    stableGazeTarget?.cell,
+    stableGazeTarget?.key,
+    stableGazeTarget?.source,
+  ])
 
   useEffect(() => {
     const nextHighlightedElement = stableGazeTarget?.element ?? null
