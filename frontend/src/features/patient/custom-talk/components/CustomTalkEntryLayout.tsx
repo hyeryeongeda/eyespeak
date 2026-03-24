@@ -25,7 +25,7 @@ interface CustomTalkEntryLayoutProps {
 const pageWrap: CSSProperties = {
   minHeight: '100dvh',
   width: '100%',
-  padding: '20px',
+  padding: '16px',
   boxSizing: 'border-box',
   background: 'linear-gradient(180deg, #edf3f8 0%, #f8fbff 48%, #eef2f6 100%)',
   overflow: 'auto',
@@ -33,21 +33,21 @@ const pageWrap: CSSProperties = {
 
 const gridStyle: CSSProperties = {
   width: '100%',
-  minHeight: 'calc(100dvh - 40px)',
+  minHeight: 'calc(100dvh - 32px)',
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'minmax(240px, 1.05fr) minmax(180px, 0.72fr) minmax(240px, 1.05fr)',
+  gridTemplateRows: 'minmax(200px, 0.92fr) minmax(120px, auto) minmax(200px, 0.92fr)',
   gridTemplateAreas: `
     "top-left top-center top-right"
     "center center center"
     "bottom-left bottom-center bottom-right"
   `,
-  gap: '16px',
+  gap: '12px',
 }
 
 const cardBaseStyle: CSSProperties = {
   borderRadius: '30px',
-  padding: '26px 24px',
+  padding: '20px 18px',
   border: '1px solid rgba(216, 225, 235, 0.9)',
   boxShadow: '0 22px 48px rgba(53, 77, 103, 0.1)',
   display: 'flex',
@@ -84,16 +84,16 @@ function getCardStyle(
 const cardTitleStyle: CSSProperties = {
   margin: 0,
   color: '#1f3047',
-  fontSize: 'clamp(1.45rem, 2.1vw, 2.2rem)',
+  fontSize: 'clamp(1.2rem, 1.75vw, 1.9rem)',
   fontWeight: 900,
   lineHeight: 1.28,
 }
 
 const cardDescriptionStyle: CSSProperties = {
-  margin: '14px 0 0',
+  margin: '10px 0 0',
   maxWidth: '20ch',
   color: '#6f8095',
-  fontSize: 'clamp(0.95rem, 1.15vw, 1.12rem)',
+  fontSize: 'clamp(0.85rem, 1vw, 1rem)',
   fontWeight: 700,
   lineHeight: 1.58,
 }
