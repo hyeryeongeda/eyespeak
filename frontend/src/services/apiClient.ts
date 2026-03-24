@@ -14,6 +14,10 @@ const axiosInstance = axios.create({
   baseURL: getApiBaseUrl(),
   timeout: 8000,
   withCredentials: DEFAULT_WITH_CREDENTIALS,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
 })
 
 type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody> & {

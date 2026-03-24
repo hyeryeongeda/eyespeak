@@ -87,16 +87,11 @@ export function createStompClient(
     },
   })
 
-  // 개발 환경에서만 디버그 로그 활성화
-  if (import.meta.env.DEV) {
-    client.debug = (msg: string) => {
-      // STOMP heartbeat 로그는 너무 빈번하므로 제외
-      if (!msg.startsWith('>>> PING') && !msg.startsWith('<<< PONG')) {
-        console.debug('[STOMP]', msg)
-      }
+  // 디버그 로그 활성화 (Android 디버깅용, 추후 DEV 조건 복원)
+  client.debug = (msg: string) => {
+    if (!msg.startsWith('>>> PING') && !msg.startsWith('<<< PONG')) {
+      console.debug('[STOMP]', msg)
     }
-  } else {
-    client.debug = () => {}
   }
 
   return {

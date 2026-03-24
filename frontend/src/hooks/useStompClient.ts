@@ -12,6 +12,7 @@
 // ============================================================
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Capacitor } from '@capacitor/core'
 import { createStompClient } from '../services/websocket/stompClient'
 import type { EyeSpeakStompClient } from '../services/websocket/stompClient'
 import type { StompConnectionStatus } from '../services/websocket/stompTypes'
@@ -34,7 +35,12 @@ function buildWsUrl(): string {
     return `${WS_BASE_URL}${endpoint}`
   }
 
-  // WS_BASE_URL 미설정 시 현재 호스트 기준으로 자동 생성
+  // Capacitor 네이티브 앱: window.location 기반 감지가 불가하므로 직접 지정
+  if (Capacitor.isNativePlatform()) {
+    return `wss://j14e205.p.ssafy.io/dev${WS_ENDPOINT}`
+  }
+
+  // 웹 브라우저: 현재 호스트 기준으로 자동 생성
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   // Dev 환경(/dev/) 경로 자동 감지: /dev/ws 로 연결
   const basePath = window.location.pathname.startsWith('/dev') ? '/dev' : ''
@@ -85,23 +91,27 @@ export function useStompClient(enabled = true): UseStompClientReturn {
       return
     }
 
+    const wsUrl = buildWsUrl()
+    // 디버그: 연결 시도 URL 확인 (Android 디버깅용, 추후 제거)
+    console.log('[STOMP] 연결 시도 URL:', wsUrl)
+    console.log('[STOMP] isNative:', Capacitor.isNativePlatform(), 'platform:', Capacitor.getPlatform())
+
     const stompClient = createStompClient(
       {
-        wsUrl: buildWsUrl(),
+        wsUrl,
         accessToken,
         authMode: WS_AUTH_MODE,
       },
       {
-        onStatusChange: setStatus,
+        onStatusChange: (newStatus) => {
+          console.log('[STOMP] 상태 변경:', newStatus)
+          setStatus(newStatus)
+        },
         onStompError: (frame) => {
-          if (import.meta.env.DEV) {
-            console.error('[STOMP] 에러:', frame.headers.message ?? frame.body)
-          }
+          console.error('[STOMP] 에러:', frame.headers.message ?? frame.body)
         },
         onWebSocketError: (event) => {
-          if (import.meta.env.DEV) {
-            console.error('[STOMP] WebSocket 에러:', event)
-          }
+          console.error('[STOMP] WebSocket 에러:', event)
         },
       },
     )
