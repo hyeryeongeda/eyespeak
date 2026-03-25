@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import EyeTrackingRuntimeHost from '../../features/patient/input/components/EyeTrackingRuntimeHost'
+import GazeDebugOverlay from '../../features/patient/input/components/GazeDebugOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
 import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGazeClick'
@@ -291,6 +292,7 @@ function PatientLayoutShell() {
         </Suspense>
       ) : null}
       {!isCalibrationRoute ? <PatientTrackingGuardOverlay /> : null}
+      {import.meta.env.DEV && !isCalibrationRoute ? <GazeDebugOverlay /> : null}
 
       {!isCalibrationRoute && chat.shouldShowInterruptOverlay ? (
         <Suspense fallback={null}>

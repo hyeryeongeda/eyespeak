@@ -17,15 +17,20 @@ export default function SosAlertOverlay() {
 
     if (notification.callId) {
       setConfirming(true);
-      const accessToken = getActiveAuthSession()?.accessToken ?? null;
-      if (accessToken) {
-        await apiClient.patch(
-          `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/acknowledge`,
-          undefined,
-          { accessToken },
-        );
+      try {
+        const accessToken = getActiveAuthSession()?.accessToken ?? null;
+        if (accessToken) {
+          await apiClient.patch(
+            `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/acknowledge`,
+            undefined,
+            { accessToken },
+          );
+        }
+      } catch (error) {
+        console.error('[알림] SOS 확인 실패:', error);
+      } finally {
+        setConfirming(false);
       }
-      setConfirming(false);
     }
 
     clearNotification();

@@ -210,15 +210,23 @@ class HybridTracker:
             return out
 
         rx, ry, ear, is_blink = self.iris_normalizer(lm)
+        logger.debug(
+            "[DIAG] iris raw: rx=%s ry=%s ear=%.3f blink=%s",
+            f"{float(rx):.4f}" if rx is not None else "None",
+            f"{float(ry):.4f}" if ry is not None else "None",
+            ear,
+            is_blink,
+        )
         trig = self.trigger.update(ear, time.time())
         self._ear_samples.append(ear)
 
-        hy, hp = head_pose_from_landmarks(lm, w, h)
         yn: Optional[float] = None
         pn: Optional[float] = None
-        if hy is not None and hp is not None:
-            yn = max(0.0, min(1.0, (hy + self._grid_yaw) / (2.0 * self._grid_yaw)))
-            pn = max(0.0, min(1.0, (hp + self._grid_pitch) / (2.0 * self._grid_pitch)))
+        if self._w_head > 0:
+            hy, hp = head_pose_from_landmarks(lm, w, h)
+            if hy is not None and hp is not None:
+                yn = max(0.0, min(1.0, (hy + self._grid_yaw) / (2.0 * self._grid_yaw)))
+                pn = max(0.0, min(1.0, (hp + self._grid_pitch) / (2.0 * self._grid_pitch)))
 
         used_head_pose_fallback = False
         if rx is None or ry is None:
@@ -245,13 +253,13 @@ class HybridTracker:
             fused_rx, fused_ry = yn, pn
             used_head_pose_fallback = True
             logger.debug("HybridTracker: iris unavailable; using head-pose fallback gaze")
-        elif yn is not None and pn is not None:
+        elif self._w_head > 0 and yn is not None and pn is not None:
             fused_rx = self._w_iris * rx + self._w_head * yn
             fused_ry = self._w_iris * ry + self._w_head * pn
         else:
             fused_rx, fused_ry = rx, ry
 
-        if self._use_ai and self._gaze is not None:
+        if self._w_l2 > 0 and self._use_ai and self._gaze is not None:
             try:
                 roi = det.get("face_roi")
                 if roi and len(roi) >= 4:
@@ -270,9 +278,11 @@ class HybridTracker:
                 logger.warning("AI gaze fusion failed, using formula only: %s", exc)
 
         raw_rx, raw_ry = fused_rx, fused_ry
+        logger.debug("[DIAG] fused: rx=%.4f ry=%.4f", fused_rx, fused_ry)
         rx_s, ry_s = self._one_euro.update(fused_rx, fused_ry)
         if rx_s is None or ry_s is None:
             rx_s, ry_s = fused_rx, fused_ry
+        logger.debug("[DIAG] smoothed: rx=%.4f ry=%.4f", rx_s, ry_s)
 
         primary_space = "ratio"
         if self._calibrated and self._poly.is_fitted:
@@ -281,6 +291,12 @@ class HybridTracker:
             primary_space = "screen"
         else:
             primary_x, primary_y = float(rx_s), float(ry_s)
+        logger.debug(
+            "[DIAG] calibrated: px=%.4f py=%.4f (space=%s)",
+            primary_x,
+            primary_y,
+            primary_space,
+        )
 
         stabilized = self._screen_stabilizer.stabilize(
             primary_x,
@@ -330,6 +346,7 @@ class HybridTracker:
         )
         screen_x, screen_y = stabilized.x, stabilized.y
         cell = self._mapper.stabilize(raw_cell)
+        logger.debug("[DIAG] cell=%s stable=%s", cell, self._mapper.stable_cell)
 
         if not self._mark_valid_ready_frame():
             out.update(

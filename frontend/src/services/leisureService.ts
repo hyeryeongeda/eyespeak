@@ -261,6 +261,36 @@ function parseGeneratedContentId(contentId: string) {
   }
 }
 
+function parseNoCategoryContentId(contentId: string): string | null {
+  const match = contentId.match(/^youtube:([A-Za-z0-9_-]{11})$/)
+  return match?.[1] ?? null
+}
+
+async function fetchNoCategoryYouTubeContentDetail(
+  contentId: string,
+  videoId: string,
+): Promise<LeisureContent | null> {
+  const cached = generatedContentRegistry.get(contentId)
+  if (cached) return cached
+
+  if (!hasYouTubeApiKey()) return null
+
+  try {
+    const response = await fetchYouTubeApi<YouTubeVideoListResponse>('videos', {
+      part: 'snippet',
+      id: videoId,
+      hl: YOUTUBE_RELEVANCE_LANGUAGE,
+    })
+    const item = response.items?.[0]
+    if (!item?.id) return null
+    const content = mapYouTubeVideoToLeisureContent(null, item.id, item.snippet)
+    registerGeneratedContents([content])
+    return content
+  } catch {
+    return null
+  }
+}
+
 function getYouTubeThumbnailUrl(videoId: string, thumbnails?: YouTubeThumbnailSet) {
   return (
     thumbnails?.high?.url ??
@@ -375,15 +405,18 @@ function buildCategorySearchQueries(categoryId: LeisureCategoryId, queryHints: s
 }
 
 function mapYouTubeVideoToLeisureContent(
-  categoryId: LeisureCategoryId,
+  categoryId: LeisureCategoryId | null,
   videoId: string,
   snippet?: YouTubeSnippet,
 ): LeisureContent {
-  const category = categoryMap.get(categoryId) ?? null
+  const category = categoryId ? (categoryMap.get(categoryId) ?? null) : null
   const categoryLabel = category?.label ?? null
+  const id = categoryId
+    ? buildGeneratedContentId(categoryId, videoId)
+    : `${GENERATED_CONTENT_ID_PREFIX}:${videoId}`
 
   return {
-    id: buildGeneratedContentId(categoryId, videoId),
+    id,
     title: snippet?.title?.trim() || 'YouTube 콘텐츠',
     channelName: snippet?.channelTitle?.trim() || categoryLabel || 'YouTube',
     thumbnailUrl: getYouTubeThumbnailUrl(videoId, snippet?.thumbnails),
@@ -422,7 +455,7 @@ function buildFallbackGeneratedContent(
 }
 
 async function searchYouTubeContents(
-  categoryId: LeisureCategoryId,
+  categoryId: LeisureCategoryId | null,
   query: string,
   maxResults: number,
 ) {
@@ -756,6 +789,11 @@ export async function fetchLeisureMain(): Promise<LeisureMainPayload> {
     .filter((shortcut): shortcut is LeisureShortcut => Boolean(shortcut))
     .slice(0, LEISURE_SHORTCUT_SIZE)
 
+  const playableContents = response
+    .map(toPlayableLeisureItem)
+    .filter((content): content is LeisureContent => Boolean(content))
+  registerGeneratedContents(playableContents)
+
   return {
     shortcutCards,
   }
@@ -832,6 +870,12 @@ export async function fetchLeisureContentDetail(contentId: string) {
     return fetchGeneratedYouTubeContentDetail(contentId)
   }
 
+  const noCategoryVideoId = parseNoCategoryContentId(contentId)
+
+  if (noCategoryVideoId) {
+    return fetchNoCategoryYouTubeContentDetail(contentId, noCategoryVideoId)
+  }
+
   const contents = await getPlayableContents()
   return contents.find(content => content.id === contentId) ?? null
 }
@@ -849,7 +893,22 @@ export async function fetchRelatedLeisureContents(
   }
 
   if (!currentContent.categoryId) {
-    return []
+    if (!hasYouTubeApiKey()) {
+      return []
+    }
+
+    try {
+      const results = await searchYouTubeContents(
+        null,
+        currentContent.title,
+        LEISURE_RECOMMENDATION_SIZE + 1,
+      )
+      return results
+        .filter(content => content.videoId !== currentContent.videoId)
+        .slice(0, LEISURE_RECOMMENDATION_SIZE)
+    } catch {
+      return []
+    }
   }
 
   const categoryPayload = await fetchLeisureCategoryRecommendations(currentContent.categoryId)

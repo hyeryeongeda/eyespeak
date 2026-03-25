@@ -19,13 +19,6 @@ const listWrapStyle: CSSProperties = {
 const rowBaseStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '4px',
-}
-
-const metaStyle: CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 700,
-  color: '#7b8a9f',
 }
 
 const emptyStyle: CSSProperties = {
@@ -53,30 +46,6 @@ function getBubbleStyle(message: PatientChatMessage, isActive: boolean): CSSProp
     boxShadow: isActive ? '0 12px 28px rgba(101, 128, 174, 0.12)' : 'none',
     color: '#243246',
   }
-}
-
-function getStatusLabel(message: PatientChatMessage) {
-  if (message.sender === 'patient') {
-    return message.type === 'word_combination'
-      ? '단어 조합'
-      : message.type === 'manual_text'
-        ? '직접 입력'
-        : '빠른 응답'
-  }
-
-  if (message.status === 'unread') {
-    return '미응답'
-  }
-
-  if (message.status === 'pending_reply') {
-    return '응답 중'
-  }
-
-  if (message.status === 'replied') {
-    return '응답 완료'
-  }
-
-  return '수신됨'
 }
 
 export default function ChatMessageList({
@@ -107,10 +76,6 @@ export default function ChatMessageList({
               alignItems: isGuardian ? 'flex-start' : 'flex-end',
             }}
           >
-            <span style={metaStyle}>
-              {isGuardian ? '보호자' : '환자'} · {message.createdAt} · {getStatusLabel(message)}
-              {message.type === 'stt' ? ' · STT' : null}
-            </span>
             <div style={getBubbleStyle(message, isActive)}>
               <div
                 style={{
