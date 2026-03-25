@@ -139,9 +139,9 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.dev'
                             }
 
-                            // FCM 서비스 계정 키 복사 (Secret Text → 파일로 저장)
-                            withCredentials([string(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY')]) {
-                                sh 'printf "%s" "$FCM_KEY" > backend/src/main/resources/google-service.json'
+                            // FCM 서비스 계정 키 복사 (Secret File)
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY_FILE')]) {
+                                sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
                             }
 
                             // Makefile의 dev-app-up 실행
@@ -292,9 +292,9 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.prod'
                             }
 
-                            // FCM 서비스 계정 키 복사 (Secret Text → 파일로 저장)
-                            withCredentials([string(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY')]) {
-                                sh 'printf "%s" "$FCM_KEY" > backend/src/main/resources/google-service.json'
+                            // FCM 서비스 계정 키 복사 (Secret File)
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY_FILE')]) {
+                                sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
                             }
 
                             // Makefile의 prod-app-up 실행
