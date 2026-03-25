@@ -70,7 +70,9 @@ def api_calibrate():
     cal = data.get("calibration")
     if not cal or not isinstance(cal, list) or len(cal) < 6 or len(cal) > 12:
         return jsonify({"ok": False, "error": "need 6-12 calibration points"}), 400
+    log.info("api_calibrate: user_id=%s, points=%d", user_id, len(cal))
     _get_pipeline(user_id).set_calibration(cal)
+    log.info("api_calibrate: pipeline calibrated=%s", _get_pipeline(user_id).calibration)
     log.info("%d포인트 캘리 적용: %s", len(cal), cal)
     return jsonify({"ok": True})
 
@@ -92,7 +94,14 @@ def api_calibrate_save():
     user_id = data.get("user_id")
     if not user_id or not isinstance(user_id, str):
         return jsonify({"ok": False, "error": "need user_id"}), 400
+    log.info(
+        "api_calibrate_save: user_id=%s, pipeline_calibrated=%s, poly_fitted=%s",
+        user_id,
+        _get_pipeline(user_id)._calibrated,
+        _get_pipeline(user_id)._poly.is_fitted,
+    )
     ok = _get_pipeline(user_id).save_calibration(user_id)
+    log.info("api_calibrate_save: result ok=%s", ok)
     if ok:
         log.info("캘리 저장 완료: %s", user_id)
     return jsonify({"ok": ok})

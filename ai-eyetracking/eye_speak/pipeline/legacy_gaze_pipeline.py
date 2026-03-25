@@ -85,14 +85,21 @@ class GazePipeline(HybridTracker):
 
     def save_calibration(self, user_id: str) -> bool:
         if not self._calibrated or not self._poly.is_fitted:
+            logger.error(
+                "save_calibration BLOCKED: _calibrated=%s, poly_fitted=%s",
+                self._calibrated,
+                self._poly.is_fitted,
+            )
             return False
         if not user_id or "/" in user_id or "\\" in user_id or ".." in user_id:
+            logger.error("save_calibration BLOCKED: invalid user_id=%r", user_id)
             return False
         save_dir = Path(str(self._cfg["paths"]["calib_save_dir"]))
         save_dir.mkdir(parents=True, exist_ok=True)
         try:
             cx, cy = self._poly.export_coefficients()
         except RuntimeError:
+            logger.error("save_calibration BLOCKED: export_coefficients failed")
             return False
         bth_snap = float(
             self.iris_normalizer.blink_threshold
