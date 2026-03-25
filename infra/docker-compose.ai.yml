@@ -74,9 +74,24 @@ services:
         max-size: "50m"
         max-file: "3"
 
+  ai-eyetracking:
+    build:
+      context: ../ai-eyetracking
+      dockerfile: Dockerfile
+    container_name: eyespeak-ai-eyetracking
+    ports:
+      - "5000:5000"
+    volumes:
+      - eyetracking-calibration:/app/calibration_data
+    restart: unless-stopped
+    networks:
+      - dev-net
+      - prod-net
+
 volumes:
   tts-speaker-refs:
     name: tts-speaker-refs
+  eyetracking-calibration:
 
 networks:
   dev-net:
