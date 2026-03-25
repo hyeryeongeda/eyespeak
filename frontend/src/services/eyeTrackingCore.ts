@@ -115,7 +115,14 @@ function encodeVideoFrameAsBase64(
     throw new Error('Eye tracking frame canvas is unavailable.')
   }
 
+  // 캘리브레이션 UI(gaze_server_9grid.html)는 랜드마크에 (1 - p.x) X축 미러를 적용한다.
+  // Python 백엔드도 동일한 좌표 관례를 받아야 다항식이 올바르게 동작한다.
+  // → 프레임을 수평 반전해서 전송한다. (ai-eyetracking/시선_예시/runtime_embed.html 과 동일)
+  context.save()
+  context.scale(-1, 1)
+  context.translate(-targetWidth, 0)
   context.drawImage(videoElement, 0, 0, targetWidth, targetHeight)
+  context.restore()
 
   const dataUrl = canvasElement.toDataURL('image/jpeg', getEyeTrackingFrameJpegQuality())
   const [, imageBase64 = ''] = dataUrl.split(',', 2)
