@@ -1,4 +1,5 @@
 import { PushNotifications } from '@capacitor/push-notifications';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 import { useFcmStore } from '../stores/fcmStore';
 import { useNotificationStore } from '../shared/stores/notificationStore';
@@ -35,9 +36,7 @@ const sendTokenToServer = async (token: string): Promise<void> => {
   console.warn('[FCM] accessToken이 없어 토큰 서버 등록을 건너뜁니다.');
 };
 
-/**
- * 서버에서 FCM 토큰을 삭제합니다 (로그아웃 시 호출).
- */
+/* 서버에서 FCM 토큰 삭제 (로그아웃 시 호출) */
 export const removeTokenFromServer = async (): Promise<void> => {
   const accessToken = getAccessToken();
   if (accessToken) {
@@ -47,13 +46,47 @@ export const removeTokenFromServer = async (): Promise<void> => {
 };
 
 /**
- * FCM 푸시 알림을 초기화합니다.
- * - 권한 요청
- * - 토큰 발급 및 서버 전송
- * - 토큰 갱신 리스너 등록
- *
- * 네이티브 환경(Android)에서만 동작하며, 웹 브라우저에서는 스킵됩니다.
+ * 시스템 트레이에 로컬 알림을 표시합니다 (백그라운드 전용).
  */
+let notificationIdCounter = 0;
+
+async function showSystemNotification(type: FcmType, title: string, body: string): Promise<void> {
+  notificationIdCounter += 1;
+
+  await LocalNotifications.schedule({
+    notifications: [
+      {
+        id: notificationIdCounter,
+        title,
+        body,
+        channelId: type === 'SOS' ? 'sos-channel-v3' : 'default-channel-v3',
+        sound: type === 'SOS' ? 'sos_alert.mp3' : 'basic_alert.mp3',
+      },
+    ],
+  });
+}
+
+// 안드로이드 알림 채널 생성 (Android 8+ 필수)
+async function createNotificationChannels(): Promise<void> {
+  await LocalNotifications.createChannel({
+    id: 'default-channel-v3',
+    name: '일반 알림',
+    importance: 4,
+    sound: 'basic_alert.mp3',
+    vibration: true,
+  });
+
+  await LocalNotifications.createChannel({
+    id: 'sos-channel-v3',
+    name: '긴급 호출',
+    importance: 5,
+    sound: 'sos_alert.mp3',
+    vibration: true,
+  })
+}
+
+/* FCM 푸시 알림을 초기화 (권한 요청, 토큰 발급 및 서버 전송, 토큰 갱신 리스너 등록)
+  네이티브 환경(Android)에서만 동작하며, 웹 브라우저에서는 스킵됨 */
 export const initFcm = async (): Promise<void> => {
   // 웹 브라우저에서는 FCM 사용 불가 → 스킵
   if (!Capacitor.isNativePlatform()) {
@@ -64,6 +97,10 @@ export const initFcm = async (): Promise<void> => {
   try {
     // 기존 리스너 정리 (중복 등록 방지)
     await PushNotifications.removeAllListeners();
+    await LocalNotifications.removeAllListeners();
+
+    // 알림 채널 생성
+    await createNotificationChannels();
 
     // 1. 푸시 알림 권한 요청
     const permission = await PushNotifications.requestPermissions();
@@ -91,24 +128,30 @@ export const initFcm = async (): Promise<void> => {
       console.error('[FCM] 토큰 발급 실패:', error);
     });
 
-    // 앱 포그라운드 상태에서 알림 수신
+    // 알림 수신 (포그라운드 + 백그라운드 WebView 활성 시 모두 발동)
     PushNotifications.addListener('pushNotificationReceived', (notification) => {
       const data = notification.data;
-      console.log('[FCM] 포그라운드 알림 수신:', data);
+      console.log('[FCM] 알림 수신:', data);
 
       const type = data?.type as FcmType | undefined;
       if (type) {
-        playNotificationSound(type);
-        useNotificationStore.getState().pushNotification({
-          type,
-          title: data.title ?? '',
-          body: data.body ?? '',
-          matchingId: data.matchingId ? Number(data.matchingId) : undefined,
-          senderId: data.senderId,
-          senderRole: data.senderRole,
-          messageId: data.messageId,
-          callId: data.callId ? Number(data.callId) : undefined,
-        });
+        if (document.hidden) {
+          // 백그라운드: 시스템 트레이 알림 (채널 사운드로 알림음 재생)
+          showSystemNotification(type, data.title ?? '', data.body ?? '');
+        } else {
+          // 포그라운드: 인앱 UI + 사운드
+          playNotificationSound(type);
+          useNotificationStore.getState().pushNotification({
+            type,
+            title: data.title ?? '',
+            body: data.body ?? '',
+            matchingId: data.matchingId ? Number(data.matchingId) : undefined,
+            senderId: data.senderId,
+            senderRole: data.senderRole,
+            messageId: data.messageId,
+            callId: data.callId ? Number(data.callId) : undefined,
+          });
+        }
       }
     });
 
@@ -133,7 +176,12 @@ export const initFcm = async (): Promise<void> => {
       }
     });
 
-    // 4. 푸시 알림 등록 시작 (토큰 발급 요청)
+    // 로컬 알림 탭 시 앱 진입
+    LocalNotifications.addListener('localNotificationActionPerformed', (action) => {
+        console.log('[LocalNotification] 알림 탭:', action);
+      });
+
+    // 푸시 알림 등록 시작 (토큰 발급 요청)
     await PushNotifications.register();
   } catch (error) {
     console.error('[FCM] 초기화 실패 (google-services.json 누락 가능):', error);
