@@ -76,27 +76,29 @@ export default function InAppNotification() {
   };
 
   return (
-    <div className={`fixed top-4 left-4 right-4 z-50 ${bgColor} rounded-2xl p-4 shadow-lg`}>
-      {/* 알림 내용 */}
-      <div className="flex items-center gap-3">
-        <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-white">
-          {label}
-        </span>
-        <div className="flex-1 text-white">
-          <p className="text-sm font-bold">{notification.title}</p>
-          <p className="text-sm opacity-90">{notification.body}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className={`mx-4 w-full max-w-sm ${bgColor} rounded-2xl p-4 shadow-lg`}>
+        {/* 알림 내용 */}
+        <div className="flex items-center gap-3">
+          <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-white">
+            {label}
+          </span>
+          <div className="flex-1 text-white">
+            <p className="text-sm font-bold">{notification.title}</p>
+            <p className="text-sm opacity-90">{notification.body}</p>
+          </div>
         </div>
-      </div>
 
-      {/* 확인 버튼 (CALL, CHAT) */}
-      {needsConfirm && (
-        <button
-          onClick={handleConfirm}
-          className="mt-3 min-h-[44px] w-full rounded-xl bg-white/20 py-2 text-sm font-bold text-white active:scale-95"
-        >
-          확인
-        </button>
-      )}
+        {/* 확인 버튼 (CALL, CHAT) */}
+        {needsConfirm && (
+          <button
+            onClick={handleConfirm}
+            className="mt-3 min-h-[44px] w-full rounded-xl bg-white/20 py-2 text-sm font-bold text-white active:scale-95"
+          >
+            확인
+          </button>
+        )}
+      </div>
     </div>
   );
 }
