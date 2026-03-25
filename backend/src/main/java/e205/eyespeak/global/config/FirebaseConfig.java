@@ -26,7 +26,7 @@ import java.io.InputStream;
 @Configuration
 public class FirebaseConfig {
 
-    @Value("${firebase.config-path:google-service.json}")
+    @Value("${firebase.config-path:firebase-service-account.json}")
     private String firebaseConfigPath;
 
     @PostConstruct
