@@ -32,6 +32,7 @@ export function uploadTtsVoicesApi(files: File[]) {
 
   return apiClient.post<TtsSettingsResponse, FormData>(API_ENDPOINTS.TTS_VOICES, formData, {
     accessToken: getAccessToken(),
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 
