@@ -212,9 +212,10 @@ def _search_sentences(question: str, user_db: list, sentiment_filter: str | None
     for item in pool:
         vec = get_embedding(item["text"])
         sim = cosine_sim(q_vec, vec)
-        base_score = sim * item["weight"]
+        weight_bonus = 1.0 + 0.15 * (item["weight"] - 1.0)  # weight 영향 15%로 축소
+        base_score = sim * weight_bonus
         temporal_weight = _calculate_temporal_boost(item, now.hour, now.weekday())
-        intent_boost = 1.5 if (intent_filter and intent_filter in (item.get("categories") or [])) else 1.0
+        intent_boost = 1.3 if (intent_filter and intent_filter in (item.get("categories") or [])) else 1.0
         scored.append({"text": item["text"], "score": base_score * temporal_weight * intent_boost, "source": item["source"], "vec": vec})
     # 중복 제거
     seen, candidates = set(), []
@@ -667,7 +668,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
     print(f"[카테고리 생성] 키워드: {all_keywords[:20]}")
     print(f"[카테고리 생성] 힌트표현: {hint_texts}")
     # 닫힌 질문 자동 판단
-    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래"]
+    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "갈게", "올게", "나갈게", "해줄까", "볼까", "들을래", "할게", "갈까"]
     is_closed = any(p in question for p in closed_patterns)
 
     if is_closed:
@@ -790,6 +791,14 @@ def recommend():
     selected_category = data.get("selected_category") or None
     if not question:
         return jsonify({"error": "질문을 입력하세요"}), 400
+
+    # 동의어 매핑 — 보호자가 쓰는 호칭 → 환자 expressions에 있는 이름
+    SYNONYM_MAP = {"손녀딸": "예승이", "손녀": "예승이", "할아버지": "나"}
+    search_q = question
+    for synonym, replacement in SYNONYM_MAP.items():
+        if synonym in search_q:
+            search_q = search_q + " " + replacement
+
     user_data = _load_user_data_from_db(matching_id)
     if not user_data:
         return jsonify({"error": "matching not found"}), 404
@@ -798,15 +807,33 @@ def recommend():
     if selected_category:
         cat_result = _generate_categories(question, user_data["user_db"])
         intent_filter = (cat_result.get("intentMap") or {}).get(selected_category)
-        category_keyword = selected_category  # "어깨", "허리" 등 카테고리 라벨 자체
-    candidates = _search_sentences_mixed(question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=6)
-    # 카테고리 선택했으면 해당 키워드 포함 표현 우선 + 질문에 카테고리 반영
-    if category_keyword:
-        # 카테고리 키워드가 포함된 후보를 앞으로
+        category_keyword = selected_category
+
+    # 닫힌 질문 응답("응"/"아니") → 맥락에 맞는 검색어로 변환
+    search_question = search_q  # 동의어 매핑 적용된 질문
+    if category_keyword in ("응", "아니", "잘 모르겠어"):
+        if category_keyword == "응":
+            search_question = search_q
+            sentiment_filter = "긍정"
+        elif category_keyword == "아니":
+            search_question = search_q
+            sentiment_filter = "부정"
+        else:
+            search_question = search_q
+            sentiment_filter = "중립"
+
+    candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=6)
+    print(f"[recommend] 검색어: {search_question}")
+    print(f"[recommend] 후보: {[(c['text'], round(c['score'],3)) for c in candidates]}")
+
+    # 개방형 카테고리 선택 → 키워드 포함 표현 우선
+    if category_keyword and category_keyword not in ("응", "아니", "잘 모르겠어"):
         keyword_matched = [c for c in candidates if category_keyword in c["text"]]
         keyword_unmatched = [c for c in candidates if category_keyword not in c["text"]]
         candidates = (keyword_matched + keyword_unmatched)[:6]
-        # LLM에 카테고리 선택 맥락 전달
+
+    # LLM에 원래 질문 + 선택 맥락 전달
+    if category_keyword:
         question = f"{question} (환자가 '{category_keyword}'를 선택함)"
     sentences = _refine_recommend(question, candidates, sentiment_context=sentiment_filter)
     _recommend_stats["recommend_calls"] += 1
@@ -1006,12 +1033,19 @@ def recommend_replies():
     if not question:
         return jsonify({"error": "메시지 내용이 필요합니다"}), 400
 
+    # 동의어 매핑
+    SYNONYM_MAP = {"손녀딸": "예승이", "손녀": "예승이", "할아버지": "나"}
+    search_q = question
+    for synonym, replacement in SYNONYM_MAP.items():
+        if synonym in search_q:
+            search_q = search_q + " " + replacement
+
     user_data = _load_user_data_from_db(matching_id)
     if not user_data:
         return jsonify({"error": "matching not found"}), 404
 
     # 대화 이력이 있으면 컨텍스트에 추가
-    context = question
+    context = search_q
     if history:
         history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
         context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
