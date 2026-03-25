@@ -141,7 +141,7 @@ pipeline {
 
                             // FCM 서비스 계정 키 복사 (Secret Text → 파일로 저장)
                             withCredentials([string(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY')]) {
-                                sh 'echo "$FCM_KEY" > backend/src/main/resources/firebase-service-account.json'
+                                sh 'printf "%s" "$FCM_KEY" > backend/src/main/resources/firebase-service-account.json'
                             }
 
                             // Makefile의 dev-app-up 실행
@@ -294,7 +294,7 @@ pipeline {
 
                             // FCM 서비스 계정 키 복사 (Secret Text → 파일로 저장)
                             withCredentials([string(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY')]) {
-                                sh 'echo "$FCM_KEY" > backend/src/main/resources/firebase-service-account.json'
+                                sh 'printf "%s" "$FCM_KEY" > backend/src/main/resources/firebase-service-account.json'
                             }
 
                             // Makefile의 prod-app-up 실행
