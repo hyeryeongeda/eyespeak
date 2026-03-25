@@ -80,7 +80,7 @@ const buttonBaseStyle: CSSProperties = {
   appearance: 'none',
   width: '100%',
   minHeight: 0,
-  border: 'none',
+  border: '1px solid transparent',
   borderRadius: '28px',
   padding: 'clamp(24px, 2.4vw, 30px)',
   display: 'flex',
@@ -89,7 +89,8 @@ const buttonBaseStyle: CSSProperties = {
   justifyContent: 'space-between',
   boxSizing: 'border-box',
   textAlign: 'left',
-  transition: 'transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease',
+  transition:
+    'transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, background 0.16s ease, border-color 0.16s ease',
 }
 
 const labelStyle: CSSProperties = {
@@ -114,40 +115,110 @@ function formatSeconds(seconds: number) {
 
 function getMenuButtonStyle(args: {
   targetId: GlobalMenuTargetId
+  isHovered: boolean
   isPending: boolean
   disabled: boolean
 }): CSSProperties {
-  const { targetId, isPending, disabled } = args
+  const { targetId, isHovered, isPending, disabled } = args
 
-  const toneByTargetId: Record<GlobalMenuTargetId, CSSProperties> = {
+  const toneByTargetId: Record<
+    GlobalMenuTargetId,
+    {
+      background: string
+      hoverBackground: string
+      pendingBackground: string
+      color: string
+      borderColor: string
+      hoverBorderColor: string
+      pendingBorderColor: string
+      boxShadow: string
+      hoverBoxShadow: string
+      pendingBoxShadow: string
+    }
+  > = {
     yes: {
       background: 'linear-gradient(135deg, #eef9f1 0%, #dff2e5 100%)',
+      hoverBackground: 'linear-gradient(135deg, #e2f5e8 0%, #caead7 100%)',
+      pendingBackground: 'linear-gradient(135deg, #cfeeda 0%, #b7e2c8 100%)',
       color: '#1e5a39',
+      borderColor: 'rgba(81, 146, 112, 0.18)',
+      hoverBorderColor: 'rgba(81, 146, 112, 0.42)',
+      pendingBorderColor: 'rgba(55, 122, 88, 0.68)',
       boxShadow: '0 18px 34px rgba(67, 132, 98, 0.12)',
+      hoverBoxShadow:
+        '0 0 0 7px rgba(81, 146, 112, 0.16), 0 22px 38px rgba(67, 132, 98, 0.18)',
+      pendingBoxShadow:
+        '0 0 0 10px rgba(55, 122, 88, 0.2), 0 24px 42px rgba(48, 112, 81, 0.24)',
     },
     no: {
       background: 'linear-gradient(135deg, #edf2f8 0%, #e2eaf5 100%)',
+      hoverBackground: 'linear-gradient(135deg, #e3ebf6 0%, #d1ddec 100%)',
+      pendingBackground: 'linear-gradient(135deg, #d5e2f2 0%, #c0d1e6 100%)',
       color: '#304764',
+      borderColor: 'rgba(91, 118, 156, 0.18)',
+      hoverBorderColor: 'rgba(91, 118, 156, 0.42)',
+      pendingBorderColor: 'rgba(63, 93, 136, 0.68)',
       boxShadow: '0 18px 34px rgba(77, 101, 138, 0.12)',
+      hoverBoxShadow:
+        '0 0 0 7px rgba(91, 118, 156, 0.16), 0 22px 38px rgba(77, 101, 138, 0.18)',
+      pendingBoxShadow:
+        '0 0 0 10px rgba(63, 93, 136, 0.2), 0 24px 42px rgba(63, 93, 136, 0.24)',
     },
     sos: {
       background: 'linear-gradient(135deg, #fff1eb 0%, #ffdacc 100%)',
+      hoverBackground: 'linear-gradient(135deg, #ffe6de 0%, #ffc7b3 100%)',
+      pendingBackground: 'linear-gradient(135deg, #ffd9cc 0%, #ffb299 100%)',
       color: '#8c341d',
+      borderColor: 'rgba(198, 104, 73, 0.2)',
+      hoverBorderColor: 'rgba(198, 104, 73, 0.46)',
+      pendingBorderColor: 'rgba(177, 87, 54, 0.74)',
       boxShadow: '0 18px 34px rgba(177, 87, 54, 0.14)',
+      hoverBoxShadow:
+        '0 0 0 7px rgba(198, 104, 73, 0.16), 0 22px 38px rgba(177, 87, 54, 0.2)',
+      pendingBoxShadow:
+        '0 0 0 10px rgba(177, 87, 54, 0.2), 0 24px 42px rgba(177, 87, 54, 0.26)',
     },
     home: {
       background: 'linear-gradient(135deg, #edf4ff 0%, #dce9ff 100%)',
+      hoverBackground: 'linear-gradient(135deg, #e2ecff 0%, #c9dcff 100%)',
+      pendingBackground: 'linear-gradient(135deg, #d6e5ff 0%, #b4ccff 100%)',
       color: '#214c86',
+      borderColor: 'rgba(79, 122, 191, 0.18)',
+      hoverBorderColor: 'rgba(79, 122, 191, 0.42)',
+      pendingBorderColor: 'rgba(50, 93, 163, 0.68)',
       boxShadow: '0 18px 34px rgba(66, 108, 170, 0.14)',
+      hoverBoxShadow:
+        '0 0 0 7px rgba(79, 122, 191, 0.16), 0 22px 38px rgba(66, 108, 170, 0.2)',
+      pendingBoxShadow:
+        '0 0 0 10px rgba(50, 93, 163, 0.2), 0 24px 42px rgba(50, 93, 163, 0.26)',
     },
   }
 
+  const tone = toneByTargetId[targetId]
+  const isEmphasized = isHovered || isPending
+
   return {
     ...buttonBaseStyle,
-    ...toneByTargetId[targetId],
+    background: isPending
+      ? tone.pendingBackground
+      : isHovered
+        ? tone.hoverBackground
+        : tone.background,
+    color: tone.color,
+    borderColor: isPending
+      ? tone.pendingBorderColor
+      : isHovered
+        ? tone.hoverBorderColor
+        : tone.borderColor,
+    boxShadow: isPending
+      ? tone.pendingBoxShadow
+      : isHovered
+        ? tone.hoverBoxShadow
+        : tone.boxShadow,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.54 : 1,
-    transform: isPending ? 'scale(0.985)' : 'scale(1)',
+    transform: isPending ? 'scale(0.985)' : isHovered ? 'scale(1.01)' : 'scale(1)',
+    filter: isEmphasized ? 'saturate(1.04)' : 'none',
   }
 }
 
@@ -173,6 +244,8 @@ export default function GlobalMenuOverlay() {
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
   })
   const isGazeSelectionActive = inputSource === 'gaze'
+  const gazeHighlightedTargetId =
+    isGazeSelectionActive && pendingTargetId === null ? hoveredTargetId : null
 
   useDwell<GlobalMenuTargetId>({
     hoveredTargetId: isGazeSelectionActive ? hoveredTargetId : null,
@@ -463,6 +536,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('yes')}
               style={getMenuButtonStyle({
                 targetId: 'yes',
+                isHovered: gazeHighlightedTargetId === 'yes',
                 isPending: pendingTargetId === 'yes',
                 disabled: pendingTargetId !== null,
               })}
@@ -479,6 +553,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('no')}
               style={getMenuButtonStyle({
                 targetId: 'no',
+                isHovered: gazeHighlightedTargetId === 'no',
                 isPending: pendingTargetId === 'no',
                 disabled: pendingTargetId !== null,
               })}
@@ -495,6 +570,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('sos')}
               style={getMenuButtonStyle({
                 targetId: 'sos',
+                isHovered: gazeHighlightedTargetId === 'sos',
                 isPending: pendingTargetId === 'sos',
                 disabled: isSosDisabled || pendingTargetId !== null,
               })}
@@ -515,6 +591,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('home')}
               style={getMenuButtonStyle({
                 targetId: 'home',
+                isHovered: gazeHighlightedTargetId === 'home',
                 isPending: pendingTargetId === 'home',
                 disabled: pendingTargetId !== null,
               })}

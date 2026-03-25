@@ -10,6 +10,7 @@ export interface ApiRequestOptions<TBody = unknown> {
   url: string
   data?: TBody
   accessToken?: string | null
+  skipAuthInvalidation?: boolean
   params?: Record<string, string | number | boolean | null | undefined>
   headers?: Record<string, string>
   responseType?: AxiosRequestConfig['responseType']

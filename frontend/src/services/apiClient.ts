@@ -2,6 +2,7 @@ import axios from 'axios'
 import type { AxiosError } from 'axios'
 import { getApiBaseUrl, getApiWithCredentials } from '../config/env'
 import { ApiError, type ApiRequestOptions } from '../types/api'
+import { applyActiveAuthSession, getActiveAuthSession } from './authSessionRegistry'
 
 const DEFAULT_WITH_CREDENTIALS = getApiWithCredentials()
 
@@ -16,6 +17,21 @@ const axiosInstance = axios.create({
 })
 
 type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody>
+
+function shouldInvalidateActiveSession(
+  error: ApiError,
+  options: InternalRequestOptions,
+) {
+  if (options.skipAuthInvalidation) {
+    return false
+  }
+
+  if (error.statusCode !== 401) {
+    return false
+  }
+
+  return getActiveAuthSession() !== null
+}
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
   if (!value || typeof value !== 'object') {
@@ -112,7 +128,13 @@ async function callTransport<TResponse, TBody = unknown>(
 
     return unwrapApiEnvelope<TResponse>(response.data)
   } catch (error) {
-    throw toApiError(error)
+    const apiError = toApiError(error)
+
+    if (shouldInvalidateActiveSession(apiError, options)) {
+      applyActiveAuthSession(null)
+    }
+
+    throw apiError
   }
 }
 
