@@ -1,16 +1,7 @@
-export type EyeTrackingApiMode = 'real' | 'disabled'
+export type EyeTrackingApiMode = 'real' | 'mock' | 'disabled'
 
 function normalizeTextValue(value: string | undefined) {
   return value?.trim() ?? ''
-}
-
-function joinBasePath(basePath: string | undefined, suffix: string) {
-  const normalizedBasePath = normalizeTextValue(basePath).replace(/\/+$/, '')
-  const normalizedSuffix = suffix.startsWith('/') ? suffix : `/${suffix}`
-
-  return normalizedBasePath && normalizedBasePath !== '/'
-    ? `${normalizedBasePath}${normalizedSuffix}`
-    : normalizedSuffix
 }
 
 function normalizeModeValue(value: string | undefined) {
@@ -19,6 +10,10 @@ function normalizeModeValue(value: string | undefined) {
 
 function resolveEyeTrackingApiMode(value: string | undefined): EyeTrackingApiMode {
   const normalizedValue = normalizeModeValue(value)
+
+  if (normalizedValue === 'real') {
+    return 'real'
+  }
 
   if (
     normalizedValue === 'disabled' ||
@@ -29,7 +24,7 @@ function resolveEyeTrackingApiMode(value: string | undefined): EyeTrackingApiMod
     return 'disabled'
   }
 
-  return 'real'
+  return 'mock'
 }
 
 function getPositiveNumber(value: string | undefined, fallback: number) {
@@ -46,21 +41,49 @@ const RAW_EYE_TRACKING_API_MODE = import.meta.env.VITE_EYE_TRACKING_API_MODE
 const NORMALIZED_EYE_TRACKING_API_MODE = normalizeModeValue(RAW_EYE_TRACKING_API_MODE)
 const EYE_TRACKING_API_MODE = resolveEyeTrackingApiMode(RAW_EYE_TRACKING_API_MODE)
 const EYE_TRACKING_DIAGNOSTICS_ENABLED = Boolean(import.meta.env.DEV)
-const DEFAULT_EYE_TRACKING_PROXY_PATH = joinBasePath(import.meta.env.BASE_URL, '/eye-tracking-api')
 
 const EYE_TRACKING_API_BASE_URL =
   normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_API_BASE_URL) ||
-  (import.meta.env.DEV ? DEFAULT_EYE_TRACKING_PROXY_PATH : '')
+  (import.meta.env.DEV ? '/eye-tracking-api' : '')
 
 const EYE_TRACKING_UI_URL =
   normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_UI_URL) ||
-  (import.meta.env.DEV ? DEFAULT_EYE_TRACKING_PROXY_PATH : '') ||
   normalizeTextValue(import.meta.env.VITE_EYE_TRACKING_PROXY_TARGET) ||
   ''
 
 const EYE_TRACKING_REQUEST_TIMEOUT_MS = getPositiveNumber(
   import.meta.env.VITE_EYE_TRACKING_REQUEST_TIMEOUT_MS,
-  3000,
+  5000,
+)
+
+const EYE_TRACKING_RUNTIME_POLL_INTERVAL_MS = getPositiveNumber(
+  import.meta.env.VITE_EYE_TRACKING_RUNTIME_POLL_INTERVAL_MS,
+  250,
+)
+
+const EYE_TRACKING_CAPTURE_SAMPLE_INTERVAL_MS = getPositiveNumber(
+  import.meta.env.VITE_EYE_TRACKING_CAPTURE_SAMPLE_INTERVAL_MS,
+  120,
+)
+
+const EYE_TRACKING_READY_STREAK = Math.max(
+  1,
+  Math.round(getPositiveNumber(import.meta.env.VITE_EYE_TRACKING_READY_STREAK, 2)),
+)
+
+const EYE_TRACKING_FRAME_MAX_WIDTH = Math.max(
+  160,
+  Math.round(getPositiveNumber(import.meta.env.VITE_EYE_TRACKING_FRAME_MAX_WIDTH, 480)),
+)
+
+const EYE_TRACKING_FRAME_JPEG_QUALITY = Math.min(
+  0.95,
+  Math.max(
+    0.3,
+    Number.isFinite(Number(import.meta.env.VITE_EYE_TRACKING_FRAME_JPEG_QUALITY))
+      ? Number(import.meta.env.VITE_EYE_TRACKING_FRAME_JPEG_QUALITY)
+      : 0.72,
+  ),
 )
 
 export function getActiveEyeTrackingApiMode() {
@@ -96,4 +119,24 @@ export function getEyeTrackingUiUrl() {
 
 export function getEyeTrackingRequestTimeoutMs() {
   return EYE_TRACKING_REQUEST_TIMEOUT_MS
+}
+
+export function getEyeTrackingRuntimePollIntervalMs() {
+  return EYE_TRACKING_RUNTIME_POLL_INTERVAL_MS
+}
+
+export function getEyeTrackingCaptureSampleIntervalMs() {
+  return EYE_TRACKING_CAPTURE_SAMPLE_INTERVAL_MS
+}
+
+export function getEyeTrackingReadyStreak() {
+  return EYE_TRACKING_READY_STREAK
+}
+
+export function getEyeTrackingFrameMaxWidth() {
+  return EYE_TRACKING_FRAME_MAX_WIDTH
+}
+
+export function getEyeTrackingFrameJpegQuality() {
+  return EYE_TRACKING_FRAME_JPEG_QUALITY
 }
