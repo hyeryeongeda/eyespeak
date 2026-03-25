@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import {
+  emitPatientDoubleBlink,
   PATIENT_DOUBLE_BLINK_EVENT,
   PATIENT_TRACKING_STATUS_EVENT,
   isCalibrationTrackingStatus,
@@ -10,6 +11,20 @@ import { usePatientModeStore } from '../stores/patientModeStore'
 
 interface UsePatientTrackingBridgeOptions {
   enabled?: boolean
+}
+
+function isEditableEventTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target.getAttribute('role') === 'textbox'
+  )
 }
 
 export function usePatientTrackingBridge({
@@ -65,11 +80,29 @@ export function usePatientTrackingBridge({
       usePatientModeStore.getState().setTrackingStatus(status)
     }
 
+    const handleKeyboardShortcut = (event: KeyboardEvent) => {
+      if (
+        !event.ctrlKey ||
+        event.altKey ||
+        event.shiftKey ||
+        event.metaKey ||
+        event.repeat ||
+        event.code !== 'KeyC' ||
+        isEditableEventTarget(event.target)
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      emitPatientDoubleBlink('keyboard-shortcut')
+    }
+
     window.addEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink)
     window.addEventListener(
       PATIENT_TRACKING_STATUS_EVENT,
       handleTrackingStatusChange as EventListener,
     )
+    window.addEventListener('keydown', handleKeyboardShortcut)
 
     return () => {
       window.removeEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink)
@@ -77,6 +110,7 @@ export function usePatientTrackingBridge({
         PATIENT_TRACKING_STATUS_EVENT,
         handleTrackingStatusChange as EventListener,
       )
+      window.removeEventListener('keydown', handleKeyboardShortcut)
       usePatientModeStore.getState().resetPatientModeState()
     }
   }, [enabled])

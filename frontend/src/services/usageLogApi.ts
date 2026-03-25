@@ -8,5 +8,6 @@ export function createUsageLogApi(
 ) {
   return apiClient.post<void, UsageLogCreateRequestDto>(API_ENDPOINTS.USAGE_LOGS, request, {
     accessToken,
+    skipAuthInvalidation: true,
   })
 }

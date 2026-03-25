@@ -329,7 +329,7 @@ export default function LeisurePlayerPage() {
     [content],
   )
   const relatedOverlayTone = currentCategory?.tone ?? 'mint'
-  const relatedOverlayCategoryLabel = content?.categoryLabel ?? currentCategory?.label ?? '관련 콘텐츠'
+  const relatedOverlayCategoryLabel = content?.categoryLabel ?? currentCategory?.label ?? '연관 영상'
 
   const capturePlaybackSnapshot = useCallback((): LeisurePlaybackSnapshot => {
     const player = playerRef.current
@@ -731,52 +731,9 @@ export default function LeisurePlayerPage() {
       contextLabel="YouTube 재생"
       hideHeader
     >
-      <section className="leisure-player-grid" style={playerPanelStyle}>
-        <div style={playerVisualPanelStyle}>
-          <div style={videoOuterWrapStyle}>
-            <div style={videoInnerWrapStyle}>
-              {chat.state.isMediaPausedByInterrupt ? (
-                <div style={pausedBadgeStyle}>채팅 인터럽트로 일시정지</div>
-              ) : null}
-              <iframe
-                ref={iframeRef}
-                title={content.title}
-                src={playerSrc}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-                style={iframeWrapStyle}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="leisure-player-side-actions" style={sideActionWrapStyle}>
-          <LeisureActionCard
-            title="연관 영상"
-            description="관련된 다른 영상을 확인합니다."
-            badge="추천 이동"
-            variant="hero"
-            tone="mint"
-            disabled={isRelatedOverlayOpen}
-            slotId="player-related"
-            onSelect={handleOpenRelatedContents}
-          />
-          <LeisureActionCard
-            title="뒤로가기"
-            description="이전 화면으로 돌아갑니다."
-            badge="메인 이동"
-            variant="hero"
-            tone="slate"
-            slotId="player-back"
-            onSelect={handleBack}
-          />
-        </div>
-      </section>
-
       {isRelatedOverlayOpen ? (
         <RelatedContentOverlay
-          title="관련 영상"
+          title="연관 영상"
           categoryLabel={relatedOverlayCategoryLabel}
           tone={relatedOverlayTone}
           status={relatedStatus}
@@ -786,7 +743,50 @@ export default function LeisurePlayerPage() {
           onRefresh={handleRefreshRelatedContents}
           onClose={handleCloseRelatedContents}
         />
-      ) : null}
+      ) : (
+        <section className="leisure-player-grid" style={playerPanelStyle}>
+          <div style={playerVisualPanelStyle}>
+            <div style={videoOuterWrapStyle}>
+              <div style={videoInnerWrapStyle}>
+                {chat.state.isMediaPausedByInterrupt ? (
+                  <div style={pausedBadgeStyle}>채팅 인터럽트로 일시정지</div>
+                ) : null}
+                <iframe
+                  ref={iframeRef}
+                  title={content.title}
+                  src={playerSrc}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  style={iframeWrapStyle}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="leisure-player-side-actions" style={sideActionWrapStyle}>
+            <LeisureActionCard
+              title="연관 영상"
+              description="연관된 다른 영상을 확인합니다."
+              badge="추천 이동"
+              variant="hero"
+              tone="mint"
+              disabled={isRelatedOverlayOpen}
+              slotId="player-related"
+              onSelect={handleOpenRelatedContents}
+            />
+            <LeisureActionCard
+              title="뒤로가기"
+              description="이전 화면으로 돌아갑니다."
+              badge="메인 이동"
+              variant="hero"
+              tone="slate"
+              slotId="player-back"
+              onSelect={handleBack}
+            />
+          </div>
+        </section>
+      )}
     </LeisureLayout>
   )
 }

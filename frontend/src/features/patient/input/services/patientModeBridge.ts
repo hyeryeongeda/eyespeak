@@ -5,9 +5,10 @@ export const PATIENT_TRACKING_STATUS_EVENT = 'patient-tracking:status-change'
 export const PATIENT_GLOBAL_MENU_ACTION_EVENT = 'patient-global-menu:action'
 
 export type PatientGlobalMenuActionId = 'yes' | 'no' | 'sos' | 'home'
+export type PatientDoubleBlinkSource = 'runtime' | 'keyboard-shortcut'
 
 export interface PatientDoubleBlinkDetail {
-  source: 'runtime'
+  source: PatientDoubleBlinkSource
 }
 
 export interface PatientTrackingStatusChangeDetail {
@@ -32,7 +33,7 @@ export function isCalibrationTrackingStatus(value: unknown): value is Calibratio
   )
 }
 
-export function emitPatientDoubleBlink() {
+export function emitPatientDoubleBlink(source: PatientDoubleBlinkSource = 'runtime') {
   if (typeof window === 'undefined') {
     return
   }
@@ -41,7 +42,7 @@ export function emitPatientDoubleBlink() {
     new CustomEvent<PatientDoubleBlinkDetail>(PATIENT_DOUBLE_BLINK_EVENT, {
       cancelable: true,
       detail: {
-        source: 'runtime',
+        source,
       },
     }),
   )
