@@ -70,10 +70,10 @@
 
         let mediaStream = null;
         let runtimeConfig = {
-          poll_interval_ms: 100,
+          poll_interval_ms: 50,
           frame_max_width: 480,
           jpeg_quality: 0.72,
-          lerp_factor: 0.15,
+          lerp_factor: 0.45,
         };
         let pollingAbort = false;
         let animationFrameId = 0;
@@ -82,6 +82,31 @@
         let currentPoint = null;
         let lastEmitAt = 0;
         let lastDoubleBlinkAt = 0;
+        // --- 아웃라이어 필터 ---
+        const JUMP_THRESHOLD = 0.55;
+        let prevTargetScreenX = null;
+        let prevTargetScreenY = null;
+        let outlierStreak = 0;
+
+        function isOutlierJump(newX, newY) {
+          if (prevTargetScreenX === null || prevTargetScreenY === null) {
+            outlierStreak = 0;
+            return false;
+          }
+          const dx = Math.abs(newX - prevTargetScreenX);
+          const dy = Math.abs(newY - prevTargetScreenY);
+          if (dx > JUMP_THRESHOLD || dy > JUMP_THRESHOLD) {
+            outlierStreak++;
+            // 2연속 같은 방향이면 실제 이동으로 판단 → 허용
+            if (outlierStreak >= 2) {
+              outlierStreak = 0;
+              return false;
+            }
+            return true;
+          }
+          outlierStreak = 0;
+          return false;
+        }
 
         function postMessage(type, payload) {
           if (window.parent === window) {
@@ -202,6 +227,9 @@
         function clearRuntimePoint(status) {
           targetPoint = null;
           currentPoint = null;
+          prevTargetScreenX = null;
+          prevTargetScreenY = null;
+          outlierStreak = 0;
           setStatus(status);
         }
 
@@ -224,9 +252,20 @@
             return;
           }
 
+          const newScreenX = Number(frame.screen_x);
+          const newScreenY = Number(frame.screen_y);
+
+          if (isOutlierJump(newScreenX, newScreenY)) {
+            setStatus('ready');
+            return;
+          }
+
+          prevTargetScreenX = newScreenX;
+          prevTargetScreenY = newScreenY;
+
           targetPoint = {
-            screenX: Number(frame.screen_x),
-            screenY: Number(frame.screen_y),
+            screenX: newScreenX,
+            screenY: newScreenY,
             cell: Number.isInteger(frame.cell) ? frame.cell : null,
             trigger:
               frame.trigger === 'select' ||
@@ -290,11 +329,15 @@
               currentPoint = { ...targetPoint };
             } else {
               const lerpFactor = Math.min(1, Math.max(0.01, runtimeConfig.lerp_factor));
+              const dx = targetPoint.screenX - currentPoint.screenX;
+              const dy = targetPoint.screenY - currentPoint.screenY;
+              const newScreenX =
+                Math.abs(dx) < 0.003 ? targetPoint.screenX : currentPoint.screenX + dx * lerpFactor;
+              const newScreenY =
+                Math.abs(dy) < 0.003 ? targetPoint.screenY : currentPoint.screenY + dy * lerpFactor;
               currentPoint = {
-                screenX:
-                  currentPoint.screenX + (targetPoint.screenX - currentPoint.screenX) * lerpFactor,
-                screenY:
-                  currentPoint.screenY + (targetPoint.screenY - currentPoint.screenY) * lerpFactor,
+                screenX: newScreenX,
+                screenY: newScreenY,
                 cell: targetPoint.cell,
                 trigger: targetPoint.trigger,
               };
