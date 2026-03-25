@@ -535,6 +535,503 @@ INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (189, '좋아�
 INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (190, '시간');
 INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (190, '빠르다');
 
+-- 추가 EXPRESSIONS: 닫힌 질문 응답형 + 가족 방문 응답
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (191, 1, '응 불러줘', 'POSITIVE', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (192, 1, '빨리 왔으면 좋겠어', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (193, 1, '보고 싶다고 전해줘', 'POSITIVE', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (194, 1, '예승이 데리고 와', 'POSITIVE', '가족', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (195, 1, '오면 야구 같이 보자', 'POSITIVE', '가족', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (196, 1, '영상통화라도 하자', 'NEUTRAL', '가족', '2026-03-23T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (197, 1, '기다리고 있을게', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (198, 1, '사랑한다고 전해줘', 'POSITIVE', '가족', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (199, 1, '아니 나중에', 'NEGATIVE', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (200, 1, '지금은 좀 힘들어서', 'NEGATIVE', '일상', '2026-03-24T20:00:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS (191~200)
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (191, '부르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (192, '빨리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (192, '오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (193, '보고 싶다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (193, '전하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (194, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (194, '데리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (195, '야구');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (195, '보다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (196, '영상통화');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (197, '기다리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (198, '사랑하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (198, '전하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (199, '나중');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (200, '힘들다');
+
+-- ===== 대량 추가: 응답형 expressions 200개 (id 201~400) =====
+
+-- 닫힌 질문 응답 — "응" 계열 (201~225)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (201, 1, '응 불러줘', 'POSITIVE', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (202, 1, '응 해줘', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (203, 1, '응 먹을게', 'POSITIVE', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (204, 1, '응 마실게', 'POSITIVE', '음식', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (205, 1, '응 보고 싶어', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (206, 1, '그래 부탁해', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (207, 1, '빨리 해줘', 'NEUTRAL', '요청', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (208, 1, '당연하지', 'POSITIVE', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (209, 1, '좋지', 'POSITIVE', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (210, 1, '그럼 그럼', 'POSITIVE', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (211, 1, '응 기다릴게', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (212, 1, '빨리 오라고 해', 'NEUTRAL', '가족', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (213, 1, '빨리 왔으면', 'POSITIVE', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (214, 1, '물론이지', 'POSITIVE', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (215, 1, '고마워 잘 먹을게', 'POSITIVE', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (216, 1, '그거 먹고 싶었어', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (217, 1, '오렌지 주스가 좋아', 'POSITIVE', '음식', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (218, 1, '계란죽이 좋아', 'POSITIVE', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (219, 1, '응 듣고 싶어', 'POSITIVE', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (220, 1, '응 보자', 'POSITIVE', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (221, 1, '응 괜찮아', 'POSITIVE', '기분', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (222, 1, '응 나아졌어', 'POSITIVE', '통증', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (223, 1, '그래 알겠어', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (224, 1, '응 할게', 'POSITIVE', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (225, 1, '응 가고 싶어', 'POSITIVE', '일상', '2026-03-24T14:00:00', NOW());
+
+-- 닫힌 질문 응답 — "아니" 계열 (226~245)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (226, 1, '아니 됐어', 'NEGATIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (227, 1, '아니 괜찮아', 'NEGATIVE', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (228, 1, '지금은 싫어', 'NEGATIVE', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (229, 1, '안 먹을래', 'NEGATIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (230, 1, '안 마실래', 'NEGATIVE', '음식', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (231, 1, '나중에 하자', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (232, 1, '다음에 하자', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (233, 1, '좀 이따가', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (234, 1, '힘들어서 안 돼', 'NEGATIVE', '일상', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (235, 1, '오늘은 그만', 'NEGATIVE', '일상', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (236, 1, '그건 좀 그래', 'NEGATIVE', '일상', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (237, 1, '필요 없어', 'NEGATIVE', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (238, 1, '귀찮아', 'NEGATIVE', '일상', '2026-03-22T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (239, 1, '그거 말고', 'NEGATIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (240, 1, '몸이 안 좋아서', 'NEGATIVE', '통증', '2026-03-25T08:00:00', NOW());
+
+-- 야구 응답형 (241~270)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (241, 1, '진짜? 이겼어?', 'POSITIVE', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (242, 1, '좋다! 몇 대 몇?', 'POSITIVE', '여가', '2026-03-25T15:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (243, 1, '전준우 쳤어?', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (244, 1, '김원중 던졌어?', 'NEUTRAL', '여가', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (245, 1, '홈런 나왔어?', 'NEUTRAL', '여가', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (246, 1, '역전이야?', 'POSITIVE', '여가', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (247, 1, '에이 졌어?', 'NEGATIVE', '여가', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (248, 1, '아깝다', 'NEGATIVE', '여가', '2026-03-22T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (249, 1, '그래도 잘 싸웠어', 'POSITIVE', '여가', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (250, 1, '내일은 이기자', 'POSITIVE', '여가', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (251, 1, '야구 보니까 좋다', 'POSITIVE', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (252, 1, '롯데 화이팅', 'POSITIVE', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (253, 1, '올해는 기대된다', 'POSITIVE', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (254, 1, '순위 몇 위야?', 'NEUTRAL', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (255, 1, '예승이랑 야구 보고 싶어', 'POSITIVE', '가족', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (256, 1, '하이라이트 보여줘', 'NEUTRAL', '여가', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (257, 1, '중계 다시 보여줘', 'NEUTRAL', '여가', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (258, 1, '내일도 경기 있어?', 'NEUTRAL', '여가', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (259, 1, '같이 보고 싶다', 'POSITIVE', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (260, 1, '오늘 응원했어', 'POSITIVE', '여가', '2026-03-25T20:00:00', NOW());
+
+-- 트로트/음악 응답형 (261~280)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (261, 1, '나훈아 틀어줘', 'NEUTRAL', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (262, 1, '임영웅 틀어줘', 'NEUTRAL', '여가', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (263, 1, '한 번 더 틀어줘', 'NEUTRAL', '여가', '2026-03-25T07:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (264, 1, '좋은 노래다', 'POSITIVE', '여가', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (265, 1, '옛날 생각나', 'NEUTRAL', '감정', '2026-03-23T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (266, 1, '소리 좀 키워줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (267, 1, '다른 노래 틀어줘', 'NEUTRAL', '여가', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (268, 1, '테스형 틀어줘', 'POSITIVE', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (269, 1, '기분 전환됐어', 'POSITIVE', '기분', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (270, 1, '노래 고마워', 'POSITIVE', '감정', '2026-03-25T08:00:00', NOW());
+
+-- 통증 응답형 (271~300)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (271, 1, '응 좀 아파', 'NEGATIVE', '통증', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (272, 1, '많이 아파', 'NEGATIVE', '통증', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (273, 1, '어제보다 나아', 'POSITIVE', '통증', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (274, 1, '약 먹으면 좀 나아', 'NEUTRAL', '통증', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (275, 1, '아침에 더 아파', 'NEGATIVE', '통증', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (276, 1, '밤에 더 아파', 'NEGATIVE', '통증', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (277, 1, '가만히 있으면 괜찮아', 'NEUTRAL', '통증', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (278, 1, '움직이면 아파', 'NEGATIVE', '통증', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (279, 1, '찜질하면 좀 나아', 'NEUTRAL', '통증', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (280, 1, '걱정 마 괜찮아', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (281, 1, '그냥 좀 아픈 거야', 'NEUTRAL', '통증', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (282, 1, '좀 있으면 나아지겠지', 'POSITIVE', '통증', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (283, 1, '약 효과 있어', 'POSITIVE', '통증', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (284, 1, '약 효과 없어', 'NEGATIVE', '통증', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (285, 1, '숨쉬기 좀 힘들어', 'NEGATIVE', '의료', '2026-03-25T06:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (286, 1, '가래 좀 빼줘', 'NEUTRAL', '의료', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (287, 1, '숨쉬기 편해졌어', 'POSITIVE', '의료', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (288, 1, '체위 변경 해줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (289, 1, '왼쪽 어깨 좀 봐줘', 'NEUTRAL', '통증', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (290, 1, '오른쪽 다리 좀 봐줘', 'NEUTRAL', '통증', '2026-03-24T16:00:00', NOW());
+
+-- 보호자 행동 반응형 (291~320)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (291, 1, '고생했어', 'POSITIVE', '감정', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (292, 1, '수고했어', 'POSITIVE', '감정', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (293, 1, '뭐 사왔어?', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (294, 1, '맛있는 거 사왔어?', 'NEUTRAL', '음식', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (295, 1, '기다렸어', 'NEUTRAL', '감정', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (296, 1, '혼자 있으니까 심심했어', 'NEUTRAL', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (297, 1, '걱정했어', 'NEUTRAL', '감정', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (298, 1, '빨리 왔네', 'POSITIVE', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (299, 1, '늦었네', 'NEUTRAL', '일상', '2026-03-23T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (300, 1, '나는 여기서 쉬고 있었어', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (301, 1, '트로트 듣고 있었어', 'NEUTRAL', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (302, 1, '야구 보고 있었어', 'NEUTRAL', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (303, 1, '낮잠 잤어', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (304, 1, '약 먹었어', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (305, 1, '간호사 왔다 갔어', 'NEUTRAL', '일정', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (306, 1, '딸이 전화했어', 'NEUTRAL', '가족', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (307, 1, '예승이가 전화했어', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (308, 1, '괜찮았어', 'POSITIVE', '기분', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (309, 1, '별일 없었어', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (310, 1, '어깨가 좀 아팠어', 'NEGATIVE', '통증', '2026-03-25T09:00:00', NOW());
+
+-- 기분/감정 응답형 (311~340)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (311, 1, '오늘 기분 좋아', 'POSITIVE', '기분', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (312, 1, '좀 우울해', 'NEGATIVE', '기분', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (313, 1, '좋은 편이야', 'POSITIVE', '기분', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (314, 1, '나쁘지 않아', 'POSITIVE', '기분', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (315, 1, '힘들긴 한데 괜찮아', 'NEUTRAL', '기분', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (316, 1, '그래도 살만해', 'POSITIVE', '기분', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (317, 1, '예승이 생각하면 좋아', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (318, 1, '야구 보면 기분 나아져', 'POSITIVE', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (319, 1, '트로트 들으면 좋아져', 'POSITIVE', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (320, 1, '좀 외로워', 'NEGATIVE', '감정', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (321, 1, '잠이 안 와서 힘들어', 'NEGATIVE', '상태', '2026-03-24T23:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (322, 1, '빨리 낫고 싶어', 'NEUTRAL', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (323, 1, '걷고 싶어', 'NEUTRAL', '감정', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (324, 1, '밖에 나가고 싶어', 'NEUTRAL', '감정', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (325, 1, '가족이 있어서 버텨', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (326, 1, '포기하지 않을 거야', 'POSITIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (327, 1, '오늘도 힘내자', 'POSITIVE', '기분', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (328, 1, '내일은 나을 거야', 'POSITIVE', '기분', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (329, 1, '살아있어서 좋다', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (330, 1, '고마운 하루야', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+
+-- 소식/뉴스 반응형 (331~350)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (331, 1, '진짜?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (332, 1, '그래?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (333, 1, '몰랐어', 'NEUTRAL', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (334, 1, '언제?', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (335, 1, '어떻게 됐어?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (336, 1, '잘 됐다', 'POSITIVE', '감정', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (337, 1, '좋은 소식이네', 'POSITIVE', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (338, 1, '에이 아쉽다', 'NEGATIVE', '감정', '2026-03-23T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (339, 1, '속상하겠다', 'NEGATIVE', '감정', '2026-03-22T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (340, 1, '괜찮아질 거야', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (341, 1, '힘내', 'POSITIVE', '감정', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (342, 1, '어쩔 수 없지', 'NEUTRAL', '일상', '2026-03-23T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (343, 1, '다음에 잘 되겠지', 'POSITIVE', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (344, 1, '너무 걱정하지 마', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (345, 1, '기쁘다', 'POSITIVE', '감정', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (346, 1, '나도 기쁘다', 'POSITIVE', '감정', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (347, 1, '정말 다행이야', 'POSITIVE', '감정', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (348, 1, '기분 좋겠다', 'POSITIVE', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (349, 1, '대단하다', 'POSITIVE', '감정', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (350, 1, '자세히 말해줘', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+
+-- 감사/사과/위로 응답형 (351~370)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (351, 1, '항상 고마워', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (352, 1, '걱정 끼쳐서 미안해', 'NEGATIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (353, 1, '신경 써줘서 고마워', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (354, 1, '덕분에 좋아졌어', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (355, 1, '네가 있어서 좋다', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (356, 1, '돌봐줘서 고마워', 'POSITIVE', '감정', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (357, 1, '내가 미안하지', 'NEGATIVE', '감정', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (358, 1, '고생시켜서 미안해', 'NEGATIVE', '감정', '2026-03-22T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (359, 1, '옆에 있어줘서 고마워', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (360, 1, '같이 있어줘서 좋다', 'POSITIVE', '감정', '2026-03-24T20:00:00', NOW());
+
+-- 음식 응답형 추가 (361~380)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (361, 1, '맛있다', 'POSITIVE', '음식', '2026-03-25T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (362, 1, '잘 먹었어', 'POSITIVE', '음식', '2026-03-25T12:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (363, 1, '더 줘', 'NEUTRAL', '음식', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (364, 1, '따뜻한 거 줘', 'NEUTRAL', '음식', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (365, 1, '시원한 거 줘', 'NEUTRAL', '음식', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (366, 1, '물 먼저 줘', 'NEUTRAL', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (367, 1, '배고프긴 해', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (368, 1, '좀 있다가 먹을게', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (369, 1, '국물이 좋다', 'POSITIVE', '음식', '2026-03-25T12:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (370, 1, '부드러운 거 줘', 'NEUTRAL', '음식', '2026-03-24T08:00:00', NOW());
+
+-- 일상/시간대 응답형 (371~400)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (371, 1, '벌써 아침이야', 'NEUTRAL', '일상', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (372, 1, '점심 때 됐어', 'NEUTRAL', '일상', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (373, 1, '저녁 시간이네', 'NEUTRAL', '일상', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (374, 1, '이제 잘 시간이야', 'NEUTRAL', '일상', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (375, 1, '시간 빠르다', 'NEUTRAL', '일상', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (376, 1, '오늘 하루 빨랐다', 'NEUTRAL', '일상', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (377, 1, '날씨 좋다', 'POSITIVE', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (378, 1, '비 오네', 'NEUTRAL', '환경', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (379, 1, '따뜻해졌다', 'POSITIVE', '환경', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (380, 1, '오늘 뭐 해', 'NEUTRAL', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (381, 1, '심심해', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (382, 1, '뭐 재밌는 거 없어', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (383, 1, '얘기 좀 해줘', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (384, 1, '생각해볼게', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (385, 1, '나중에 말할게', 'NEUTRAL', '일상', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (386, 1, '그건 좋은데', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (387, 1, '한번 해보자', 'POSITIVE', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (388, 1, '잘 모르겠어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (389, 1, '글쎄', 'NEUTRAL', '일상', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (390, 1, '그럴 수도 있지', 'NEUTRAL', '일상', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (391, 1, '맞아', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (392, 1, '그렇지', 'POSITIVE', '일상', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (393, 1, '나도 그래', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (394, 1, '크게 말해줘', 'NEUTRAL', '요청', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (395, 1, '천천히 말해줘', 'NEUTRAL', '요청', '2026-03-23T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (396, 1, '다시 말해줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (397, 1, '뭐라고?', 'NEUTRAL', '일상', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (398, 1, '잘 안 들려', 'NEUTRAL', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (399, 1, '아까 뭐라고 했어', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (400, 1, '오늘도 감사해', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+
+-- ===== 상황별 응답형 200개 (id 401~600) =====
+
+-- 보호자 자리 비움 응답 (401~420)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (401, 1, '응 알겠어', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (402, 1, '필요하면 부를게', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (403, 1, '빨리 와', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (404, 1, '가지 마', 'NEGATIVE', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (405, 1, '옆에 있어줘', 'NEUTRAL', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (406, 1, '혼자 있기 싫어', 'NEGATIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (407, 1, '금방 올 거지?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (408, 1, '뭐 하러 가?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (409, 1, '주방에서 할 거 있어?', 'NEUTRAL', '일상', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (410, 1, '오래 걸려?', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (411, 1, '조심해', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (412, 1, '나 괜찮아 갔다 와', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (413, 1, '물 좀 갖다 줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (414, 1, '가기 전에 이것만', 'NEUTRAL', '요청', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (415, 1, '문 열어놓고 가', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (416, 1, '나중에 같이 밥 먹자', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (417, 1, '천천히 해', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (418, 1, '서두르지 마', 'NEUTRAL', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (419, 1, '어디 가는 거야?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (420, 1, '언제 돌아와?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+
+-- 치료/검진 관련 응답 (421~445)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (421, 1, '응 받을게', 'POSITIVE', '의료', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (422, 1, '아니 오늘은 안 할래', 'NEGATIVE', '의료', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (423, 1, '좀 이따가 할래', 'NEUTRAL', '의료', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (424, 1, '힘들어서 못 하겠어', 'NEGATIVE', '의료', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (425, 1, '오늘 물리치료 있어?', 'NEUTRAL', '일정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (426, 1, '선생님 언제 와?', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (427, 1, '오늘 약 먹었어?', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (428, 1, '약 시간 됐어', 'NEUTRAL', '일정', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (429, 1, '경관식 할 시간이야', 'NEUTRAL', '의료', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (430, 1, '석션 좀 해줘', 'NEUTRAL', '의료', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (431, 1, '산소 확인해줘', 'NEUTRAL', '의료', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (432, 1, '호흡기 좀 봐줘', 'NEUTRAL', '의료', '2026-03-24T06:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (433, 1, '위루관 좀 봐줘', 'NEUTRAL', '의료', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (434, 1, '물리치료 효과 있어', 'POSITIVE', '의료', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (435, 1, '오늘 치료 힘들었어', 'NEGATIVE', '의료', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (436, 1, '좀 쉬고 하자', 'NEUTRAL', '의료', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (437, 1, '천천히 해줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (438, 1, '살살 해줘', 'NEUTRAL', '요청', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (439, 1, '좀 세게 해줘', 'NEUTRAL', '요청', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (440, 1, '거기 아파', 'NEGATIVE', '통증', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (441, 1, '거기 좋아', 'POSITIVE', '통증', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (442, 1, '거기 말고', 'NEUTRAL', '통증', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (443, 1, '좀 더 해줘', 'NEUTRAL', '요청', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (444, 1, '됐어 그만', 'NEUTRAL', '요청', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (445, 1, '고마워 시원하다', 'POSITIVE', '감정', '2026-03-25T15:00:00', NOW());
+
+-- 잠/수면 관련 (446~465)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (446, 1, '잘 잤어', 'POSITIVE', '상태', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (447, 1, '못 잤어', 'NEGATIVE', '상태', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (448, 1, '새벽에 깼어', 'NEGATIVE', '상태', '2026-03-23T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (449, 1, '계속 뒤척였어', 'NEGATIVE', '상태', '2026-03-22T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (450, 1, '졸려', 'NEUTRAL', '상태', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (451, 1, '낮잠 잘래', 'NEUTRAL', '상태', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (452, 1, '잠이 안 와', 'NEGATIVE', '상태', '2026-03-24T23:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (453, 1, '불 꺼줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (454, 1, '이불 덮어줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (455, 1, '조용히 해줘', 'NEUTRAL', '요청', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (456, 1, '좀 더 잘게', 'NEUTRAL', '상태', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (457, 1, '깨워줘서 고마워', 'POSITIVE', '감정', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (458, 1, '아직 졸려', 'NEUTRAL', '상태', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (459, 1, '일어날게', 'NEUTRAL', '일상', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (460, 1, '꿈 꿨어', 'NEUTRAL', '일상', '2026-03-24T07:00:00', NOW());
+
+-- 환경/온도 응답형 (461~480)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (461, 1, '응 더워', 'NEGATIVE', '환경', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (462, 1, '응 추워', 'NEGATIVE', '환경', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (463, 1, '아니 괜찮아', 'POSITIVE', '환경', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (464, 1, '에어컨 켜줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (465, 1, '히터 켜줘', 'NEUTRAL', '요청', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (466, 1, '창문 좀 열어줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (467, 1, '창문 닫아줘', 'NEUTRAL', '요청', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (468, 1, '바람 들어와', 'NEUTRAL', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (469, 1, '공기 좋다', 'POSITIVE', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (470, 1, '환기 좀 해줘', 'NEUTRAL', '요청', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (471, 1, '이불 벗겨줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (472, 1, '땀 닦아줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (473, 1, '손발이 차가워', 'NEGATIVE', '통증', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (474, 1, '몸이 뜨거워', 'NEGATIVE', '통증', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (475, 1, '열 나는 것 같아', 'NEGATIVE', '통증', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (476, 1, '시원해졌어', 'POSITIVE', '환경', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (477, 1, '따뜻해졌어', 'POSITIVE', '환경', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (478, 1, '딱 좋아', 'POSITIVE', '환경', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (479, 1, '아직 추워', 'NEGATIVE', '환경', '2026-03-23T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (480, 1, '아직 더워', 'NEGATIVE', '환경', '2026-03-23T14:00:00', NOW());
+
+-- 위생/세면 응답형 (481~500)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (481, 1, '응 씻겨줘', 'NEUTRAL', '요청', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (482, 1, '양치해줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (483, 1, '세수해줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (484, 1, '입 좀 적셔줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (485, 1, '입술 발라줘', 'NEUTRAL', '요청', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (486, 1, '눈 닦아줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (487, 1, '코 풀어줘', 'NEUTRAL', '요청', '2026-03-24T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (488, 1, '머리 감겨줘', 'NEUTRAL', '요청', '2026-03-23T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (489, 1, '옷 갈아입혀줘', 'NEUTRAL', '요청', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (490, 1, '상쾌하다', 'POSITIVE', '기분', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (491, 1, '개운해졌어', 'POSITIVE', '기분', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (492, 1, '나중에 씻을래', 'NEUTRAL', '일상', '2026-03-23T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (493, 1, '물티슈 줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (494, 1, '수건 줘', 'NEUTRAL', '요청', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (495, 1, '가려워', 'NEGATIVE', '통증', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (496, 1, '긁어줘', 'NEUTRAL', '요청', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (497, 1, '거기 가려워', 'NEGATIVE', '통증', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (498, 1, '시원하다', 'POSITIVE', '기분', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (499, 1, '깨끗해졌어', 'POSITIVE', '기분', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (500, 1, '고마워 씻겨줘서', 'POSITIVE', '감정', '2026-03-25T08:00:00', NOW());
+
+-- 예승이 상황별 응답 (501~525)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (501, 1, '예승이 보고 싶다', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (502, 1, '예승이 얼굴 보고 싶어', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (503, 1, '예승이 뭐 한대?', 'NEUTRAL', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (504, 1, '예승이 잘 먹어?', 'NEUTRAL', '가족', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (505, 1, '예승이 선물 사줘', 'POSITIVE', '가족', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (506, 1, '예승이한테 사탕 줘', 'POSITIVE', '가족', '2026-03-22T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (507, 1, '예승이 크면 뭐 될까', 'NEUTRAL', '가족', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (508, 1, '예승이 닮았어', 'POSITIVE', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (509, 1, '예승이 영상 보여줘', 'NEUTRAL', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (510, 1, '예승이가 보낸 거야?', 'NEUTRAL', '가족', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (511, 1, '예승이 목소리 듣고 싶어', 'POSITIVE', '가족', '2026-03-25T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (512, 1, '예승이가 보고싶대?', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (513, 1, '나도 보고 싶어', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (514, 1, '예승이 데리고 와줘', 'NEUTRAL', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (515, 1, '예승이랑 통화하고 싶어', 'POSITIVE', '가족', '2026-03-25T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (516, 1, '예승이가 그렸어?', 'POSITIVE', '가족', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (517, 1, '예승이 잘 컸다', 'POSITIVE', '가족', '2026-03-23T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (518, 1, '예승이가 자랑스러워', 'POSITIVE', '가족', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (519, 1, '예승이 건강하지?', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (520, 1, '예승이한테 할아버지 사랑한다고 해', 'POSITIVE', '가족', '2026-03-25T21:00:00', NOW());
+
+-- 롯데 상황별 응답 (521~545)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (521, 1, '오늘 경기 몇 시야?', 'NEUTRAL', '여가', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (522, 1, '스코어 알려줘', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (523, 1, '누가 이기고 있어?', 'NEUTRAL', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (524, 1, '몇 회야?', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (525, 1, '오늘 누가 던져?', 'NEUTRAL', '여가', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (526, 1, '타순 어떻게 돼?', 'NEUTRAL', '여가', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (527, 1, '전준우 오늘 어때?', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (528, 1, '김원중 오늘 던져?', 'NEUTRAL', '여가', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (529, 1, '좋다 이겼어', 'POSITIVE', '여가', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (530, 1, '에이 졌네', 'NEGATIVE', '여가', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (531, 1, '아깝다 다음에 이기자', 'POSITIVE', '여가', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (532, 1, '오늘은 재밌었어', 'POSITIVE', '여가', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (533, 1, '야구 없는 날은 심심해', 'NEUTRAL', '여가', '2026-03-22T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (534, 1, '내년에는 우승하자', 'POSITIVE', '여가', '2026-03-21T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (535, 1, '최동원 때가 좋았어', 'NEUTRAL', '여가', '2026-03-20T15:00:00', NOW());
+
+-- 음식 상황별 응답 (536~560)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (536, 1, '오렌지 주스 줘', 'NEUTRAL', '음식', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (537, 1, '초코우유 줘', 'NEUTRAL', '음식', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (538, 1, '계란죽 해줘', 'NEUTRAL', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (539, 1, '뜨거운 거 줘', 'NEUTRAL', '음식', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (540, 1, '찬 거 줘', 'NEUTRAL', '음식', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (541, 1, '국물 있는 거 먹고 싶어', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (542, 1, '부드러운 거 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (543, 1, '그거 맛있었어', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (544, 1, '그거 별로였어', 'NEGATIVE', '음식', '2026-03-23T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (545, 1, '다른 거 먹고 싶어', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (546, 1, '이거 뭐야?', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (547, 1, '오늘 뭐 먹어?', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (548, 1, '간식 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (549, 1, '물 좀 줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (550, 1, '따뜻한 물 줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+
+-- 가족 일반 응답형 (551~575)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (551, 1, '딸 잘 지내?', 'NEUTRAL', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (552, 1, '아들 뭐 하고 있어?', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (553, 1, '집사람 밥은 먹었어?', 'NEUTRAL', '가족', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (554, 1, '가족 사진 보여줘', 'NEUTRAL', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (555, 1, '다들 건강하지?', 'NEUTRAL', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (556, 1, '가족이 제일이야', 'POSITIVE', '가족', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (557, 1, '다 같이 모이고 싶다', 'POSITIVE', '가족', '2026-03-24T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (558, 1, '집에 가고 싶어', 'NEUTRAL', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (559, 1, '걱정하지 말라고 전해줘', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (560, 1, '잘 지내고 있다고 전해줘', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+
+-- 기타 상황별 응답 (561~600)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (561, 1, '뉴스에 뭐 나와?', 'NEUTRAL', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (562, 1, '오늘 몇 일이야?', 'NEUTRAL', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (563, 1, '밖에 뭐 보여?', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (564, 1, '오늘 뭐 입었어?', 'NEUTRAL', '일상', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (565, 1, '핸드폰 보여줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (566, 1, '거울 보여줘', 'NEUTRAL', '요청', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (567, 1, '리모컨 줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (568, 1, '채널 돌려줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (569, 1, '안경 줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (570, 1, '전등 좀 밝게 해줘', 'NEUTRAL', '요청', '2026-03-25T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (571, 1, '전등 좀 어둡게 해줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (572, 1, '커튼 쳐줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (573, 1, '커튼 열어줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (574, 1, '뭐 좀 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (575, 1, '배 안 고파', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (576, 1, '얘기 좀 해줘', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (577, 1, '조용히 있고 싶어', 'NEUTRAL', '일상', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (578, 1, '뭐 하고 있었어?', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (579, 1, '오늘 좀 지루해', 'NEUTRAL', '기분', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (580, 1, '할 게 없어', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (581, 1, '산책하고 싶어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (582, 1, '햇빛 쬐고 싶어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (583, 1, '밖에 나가고 싶어', 'NEUTRAL', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (584, 1, '예전처럼 되고 싶어', 'NEUTRAL', '감정', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (585, 1, '웃어야지', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (586, 1, '뭐라고?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (587, 1, '잘 안 들려', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (588, 1, '다시 말해줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (589, 1, '크게 말해줘', 'NEUTRAL', '요청', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (590, 1, '천천히 말해줘', 'NEUTRAL', '요청', '2026-03-23T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (591, 1, '그래서?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (592, 1, '그 다음에?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (593, 1, '정말?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (594, 1, '대단하다', 'POSITIVE', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (595, 1, '그건 아니야', 'NEGATIVE', '일상', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (596, 1, '맞아 맞아', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (597, 1, '그렇지', 'POSITIVE', '일상', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (598, 1, '나도 그 생각이야', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (599, 1, '글쎄다', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (600, 1, '잘 모르겠어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+
+-- 추가 USAGE_LOG (191~200)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 191, 4, '2026-03-25T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 192, 4, '2026-03-25T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 193, 5, '2026-03-24T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 194, 4, '2026-03-25T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 195, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 196, 5, '2026-03-23T19:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 197, 4, '2026-03-25T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 198, 5, '2026-03-24T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 199, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 200, 5, '2026-03-24T20:00:00');
+
 -- 추가 USAGE_LOG (173~190)
 INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 173, 4, '2026-03-25T15:00:00');
 INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 174, 4, '2026-03-25T16:00:00');
