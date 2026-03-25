@@ -66,7 +66,7 @@ llm_client = OpenAI(
 
 # ====== 임베딩 모델 ======
 print("[초기화] 임베딩 모델 로딩 중...")
-embed_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 print("[초기화] 임베딩 모델 로딩 완료")
 
 # ====== 임베딩 캐시 ======
@@ -483,11 +483,13 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
 {chr(10).join(f"- {t}" for t in texts)}
 
 위 표현들을 참고해서 질문에 어울리는 자연스러운 환자 답변을 정확히 3개 만드세요.
+- 보호자가 말한 내용에 대한 **환자의 반응/대답**을 만드세요
 - 보호자 질문 시제/맥락에 맞게 (과거 질문→과거형, 현재→현재형)
 - 반말 구어체, 15자 이내
 - {diversity_rule}
 - 각 답변은 하나의 주제만 담기 (여러 주제 섞지 마세요)
 - 질문과 관련 없는 내용 넣지 마세요
+- 질문과 모순되는 내용 넣지 마세요 (이겼다고 했으면 졌다고 하지 마세요)
 - 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
@@ -983,8 +985,9 @@ def recommend_replies():
         history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
         context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
 
-    # replies: 유사도 최소 기준 + 그 안에서 가중치 (관련 없는 것 필터링)
-    MIN_SIM = 0.3  # 유사도 0.3 미만은 관련 없는 것으로 탈락
+    # replies: 유사도 중심 (weight 영향 최소화)
+    MIN_SIM = 0.3
+    WEIGHT_FACTOR = 0.1  # weight 영향을 10%로 축소
     q_vec = get_embedding(question)
     now = datetime.now()
     scored = []
@@ -992,10 +995,10 @@ def recommend_replies():
         vec = get_embedding(item["text"])
         sim = cosine_sim(q_vec, vec)
         if sim < MIN_SIM:
-            continue  # 관련 없는 것 탈락
-        base_score = sim * item["weight"]
-        temporal_weight = _calculate_temporal_boost(item, now.hour, now.weekday())
-        scored.append({"text": item["text"], "score": base_score * temporal_weight, "source": item["source"]})
+            continue
+        # 유사도 90% + weight 10%
+        weight_bonus = 1.0 + WEIGHT_FACTOR * (item["weight"] - 1.0)
+        scored.append({"text": item["text"], "score": sim * weight_bonus, "source": item["source"]})
     for item in general_db:
         vec = get_embedding(item["text"])
         sim = cosine_sim(q_vec, vec)
@@ -1012,7 +1015,7 @@ def recommend_replies():
             candidates.append(r)
         if len(candidates) >= 6:
             break
-    print(f"[replies] 후보: {[c['text'] for c in candidates]}")
+    print(f"[replies] 후보: {[(c['text'], round(c['score'],3)) for c in candidates]}")
     sentences = _refine_recommend(context, candidates, sentiment_context=None)
 
     # 각 문장에 intent 분류 + 메타정보 추가
