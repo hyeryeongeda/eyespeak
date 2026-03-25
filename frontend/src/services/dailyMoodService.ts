@@ -119,6 +119,14 @@ export async function getTodayDailyMood(
       error,
       '오늘의 기분을 불러오지 못했습니다.',
     )
+    if (failure.statusCode === 404) {
+      return {
+        success: true,
+        source: resolveApiSource(apiMode),
+        data: null,
+      }
+    }
+
     logServiceFailure('daily-mood.get-today', error, failure)
     return failure
   }
