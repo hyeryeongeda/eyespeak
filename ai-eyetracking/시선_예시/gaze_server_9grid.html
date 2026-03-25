@@ -380,6 +380,7 @@
   const EMBED_MODE = searchParams.get('embed') === '1';
   const AUTO_START = searchParams.get('autostart') === '1';
   const EMBED_USER_ID = (searchParams.get('userId') || '').trim();
+  console.info('[calib-debug] EMBED_USER_ID=%s, EMBED_API_BASE_URL=%s', EMBED_USER_ID, new URL('./', window.location.href).toString());
   const EMBED_PROFILE_ID = (searchParams.get('profileId') || EMBED_USER_ID).trim();
   const RETURN_URL = (searchParams.get('returnUrl') || '').trim();
   const RETURN_REQUEST_ID = (searchParams.get('requestId') || '').trim();
@@ -852,12 +853,22 @@
     try {
       statusEl.textContent = EMBED_USER_ID ? 'Saving calibration...' : 'Syncing calibration...';
 
+      console.info('[calib-debug] POST /api/calibrate', {
+        user_id: EMBED_USER_ID,
+        pointCount: calibrationPayload.length,
+        url: buildApiUrl('api/calibrate')
+      });
       const calibrateResponse = await fetch(buildApiUrl('api/calibrate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ calibration: calibrationPayload, user_id: EMBED_USER_ID || undefined })
       });
       const calibrateResult = await calibrateResponse.json().catch(() => ({}));
+      console.info('[calib-debug] calibrate response', {
+        status: calibrateResponse.status,
+        ok: calibrateResult.ok,
+        error: calibrateResult.error
+      });
 
       if (!calibrateResponse.ok || !calibrateResult.ok) {
         throw new Error(calibrateResult.error || 'Calibration sync failed.');
@@ -870,6 +881,11 @@
           body: JSON.stringify({ user_id: EMBED_USER_ID })
         });
         const saveResult = await saveResponse.json().catch(() => ({}));
+        console.info('[calib-debug] save response', {
+          status: saveResponse.status,
+          ok: saveResult.ok,
+          error: saveResult.error
+        });
 
         if (!saveResponse.ok || !saveResult.ok) {
           throw new Error(saveResult.error || 'Calibration save failed.');
@@ -886,6 +902,7 @@
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Calibration sync failed.';
+      console.error('[calib-debug] FAILED', { message, EMBED_USER_ID, EMBED_API_BASE_URL: EMBED_API_BASE_URL.toString() });
       console.warn(message, error);
       reportCalibrationError(message);
     }
