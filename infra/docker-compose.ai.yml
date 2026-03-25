@@ -45,7 +45,7 @@ services:
         max-file: "3"
 
   ai-caregiver:
-    build: ../caregiver_partner_package
+    build: ../ai-recommend
     container_name: eyespeak-ai-caregiver
     restart: unless-stopped
     expose:
