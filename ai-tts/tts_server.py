@@ -47,11 +47,9 @@ from pydantic import BaseModel
 # 경로 설정
 # ---------------------------------------------------------------------------
 AI_TTS_DIR = Path(__file__).resolve().parent
-REPO_ROOT = AI_TTS_DIR.parent
-os.chdir(REPO_ROOT)
 
-SHARED_MODEL_DIR = REPO_ROOT / "checkpoints" / "shared"
-SPEAKER_REFS_DIR = REPO_ROOT / "speaker_refs"
+SHARED_MODEL_DIR = AI_TTS_DIR / "checkpoints" / "shared"
+SPEAKER_REFS_DIR = AI_TTS_DIR / "speaker_refs"
 SPEAKER_REFS_DIR.mkdir(parents=True, exist_ok=True)
 
 OUTPUT_SAMPLE_RATE = 24000
@@ -99,10 +97,10 @@ def _load_shared_model():
     from TTS.tts.models.xtts import Xtts
 
     config_path = SHARED_MODEL_DIR / "config.json"
-    ckpt_path = SHARED_MODEL_DIR / "best_model.pth"
+    ckpt_path = SHARED_MODEL_DIR / "model.pth"
     vocab_path = SHARED_MODEL_DIR / "vocab.json"
 
-    for p, name in [(config_path, "config.json"), (ckpt_path, "best_model.pth"), (vocab_path, "vocab.json")]:
+    for p, name in [(config_path, "config.json"), (ckpt_path, "model.pth"), (vocab_path, "vocab.json")]:
         if not p.exists():
             raise FileNotFoundError(f"공유 모델 파일이 없습니다: {p}\ncheckpoints/shared/{name}을 확인하세요.")
 
