@@ -26,6 +26,7 @@ services:
       - VITE_EYE_TRACKING_API_BASE_URL=/dev/eye-tracking-api
       - VITE_EYE_TRACKING_UI_URL=/dev/eye-tracking-api
       - VITE_EYE_TRACKING_PROXY_TARGET=http://host.docker.internal:5000
+      - VITE_YOUTUBE_API_KEY=${VITE_YOUTUBE_API_KEY}
     networks:
       - dev-net
     healthcheck:
