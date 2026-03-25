@@ -139,6 +139,11 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.dev'
                             }
 
+                            // FCM 서비스 계정 키 복사
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY')]) {
+                                sh 'cp $FCM_KEY backend/src/main/resources/firebase-service-account.json'
+                            }
+
                             // Makefile의 dev-app-up 실행
                             sh "make dev-app-up"
                         }
@@ -285,6 +290,11 @@ pipeline {
                             // Jenkins에 저장된 .env 파일을 backend 폴더로 복사
                             withCredentials([file(credentialsId: 'env-backend-prod', variable: 'ENV_FILE')]) {
                                 sh 'cp $ENV_FILE backend/.env.prod'
+                            }
+
+                            // FCM 서비스 계정 키 복사
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY')]) {
+                                sh 'cp $FCM_KEY backend/src/main/resources/firebase-service-account.json'
                             }
 
                             // Makefile의 prod-app-up 실행
