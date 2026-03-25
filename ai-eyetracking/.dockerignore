@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+.git
+.env
+calibration_data/
+checkpoints/
+data/
+docs/
+*.md
+.pytest_cache
