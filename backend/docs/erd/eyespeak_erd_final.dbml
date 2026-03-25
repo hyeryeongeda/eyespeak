@@ -41,9 +41,7 @@ Enum call_status {
 
 Enum tts_status {
   NONE
-  TRAINING
   READY
-  FAILED
 }
 
 Enum mood_type {

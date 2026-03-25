@@ -939,4 +939,4 @@ def debug_mlflow_log():
 if __name__ == "__main__":
     precompute_embeddings()
     print("\n[DB 버전] 서버 시작: http://localhost:5003\n")
-    app.run(debug=False, port=5003)
+    app.run(host="0.0.0.0", debug=False, port=5003)
