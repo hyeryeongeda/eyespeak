@@ -24,7 +24,7 @@ from metrics import measure_time, record_api_time, get_timing_summary, reset_tim
 load_dotenv()
 
 # ====== BE API 설정 ======
-BE_API_URL = os.getenv("BE_API_URL", "http://eyespeak-backend:8080/api/v1")
+BE_API_URL = os.getenv("BE_API_URL", "http://eyespeak-was-dev:8080/api/v1")
 AI_API_KEY = os.getenv("AI_INTERNAL_API_KEY", "eyespeak-ai-internal-2026-s14e205")
 
 def _be_headers():
@@ -934,6 +934,11 @@ def debug_mlflow_log():
     run_name = request.json.get("run_name", "auto") if request.is_json else "auto"
     log_to_mlflow(_recommend_stats, run_name=run_name)
     return jsonify({"ok": True, "message": f"logged to mlflow as '{run_name}'"})
+
+
+@app.route("/")
+def health_check():
+    return "ok", 200
 
 
 if __name__ == "__main__":
