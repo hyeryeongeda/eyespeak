@@ -5,7 +5,7 @@ WORKDIR /app
 # OpenCV가 필요로 하는 시스템 라이브러리
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libgl1-mesa-glx \
+        libgl1 \
         libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 

@@ -160,39 +160,6 @@ pipeline {
                     }
                 }
 
-                // ── AI 서버 배포 (변경 시에만) ─────────────────
-                stage('Deploy AI (Dev)') {
-                    steps {
-                        script {
-                            def aiChanged = sh(
-                                script: "git diff HEAD~1 --name-only -- ai-tts/ ai-recommend/ ai-eyetracking/ infra/docker-compose.ai.yml | head -1",
-                                returnStdout: true
-                            ).trim()
-
-                            if (aiChanged) {
-                                echo "AI 서버 변경 감지: ${aiChanged}"
-                                sendNotification("🤖 **[Dev]** AI 서버 변경 감지, 재빌드 중...", '#439FE0')
-
-                                // AI 서버 환경변수 복사
-                                withCredentials([file(credentialsId: 'env-ai', variable: 'ENV_AI')]) {
-                                    sh 'cp $ENV_AI infra/.env.ai'
-                                }
-
-                                sh "make ai-down && make ai-up"
-                            } else {
-                                echo "AI 서버 변경 없음, 스킵"
-                            }
-                        }
-                    }
-                    post {
-                        failure {
-                            script {
-                                sendNotification("❌ **[Dev]** AI 서버 배포 실패!", '#FF0000')
-                            }
-                        }
-                    }
-                }
-
                 // ── Dev 헬스체크 ─────────────────────────────
                 stage('Health Check (Dev)') {
                     steps {
@@ -341,39 +308,6 @@ pipeline {
                                     "❌ **[Prod]** 배포 실패!\n- 대상: ${deployTarget}\n- 로그: ${env.BUILD_URL}console",
                                     '#FF0000'
                                 )
-                            }
-                        }
-                    }
-                }
-
-                // ── AI 서버 배포 (변경 시에만) ─────────────────
-                stage('Deploy AI (Prod)') {
-                    steps {
-                        script {
-                            def aiChanged = sh(
-                                script: "git diff HEAD~1 --name-only -- ai-tts/ ai-recommend/ ai-eyetracking/ infra/docker-compose.ai.yml | head -1",
-                                returnStdout: true
-                            ).trim()
-
-                            if (aiChanged) {
-                                echo "AI 서버 변경 감지: ${aiChanged}"
-                                sendNotification("🤖 **[Prod]** AI 서버 변경 감지, 재빌드 중...", '#439FE0')
-
-                                // AI 서버 환경변수 복사
-                                withCredentials([file(credentialsId: 'env-ai', variable: 'ENV_AI')]) {
-                                    sh 'cp $ENV_AI infra/.env.ai'
-                                }
-
-                                sh "make ai-down && make ai-up"
-                            } else {
-                                echo "AI 서버 변경 없음, 스킵"
-                            }
-                        }
-                    }
-                    post {
-                        failure {
-                            script {
-                                sendNotification("❌ **[Prod]** AI 서버 배포 실패!", '#FF0000')
                             }
                         }
                     }
