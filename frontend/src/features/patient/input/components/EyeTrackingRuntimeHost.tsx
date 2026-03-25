@@ -13,12 +13,15 @@ interface EyeTrackingRuntimeHostProps {
   eyeTrackingProfileId: string | null
 }
 
+const EDGE_MARGIN = 0.02
+
 function clampToViewport(value: number, size: number) {
   if (!Number.isFinite(value) || size <= 0) {
-    return 0
+    return size * 0.5
   }
 
-  return Math.min(Math.max(0, value), 1) * size
+  const clamped = Math.min(Math.max(EDGE_MARGIN, value), 1 - EDGE_MARGIN)
+  return clamped * size
 }
 
 export default function EyeTrackingRuntimeHost({

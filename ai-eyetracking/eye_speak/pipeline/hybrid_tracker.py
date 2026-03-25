@@ -17,6 +17,7 @@ from eye_speak.iris_model.augmentation import preprocess_frame_cv
 from eye_speak.iris_model.inference import GazeEstimator
 from eye_speak.iris_tracker.blink_detector import TriggerDetector
 from eye_speak.iris_tracker.calibration import PolynomialCalibrator
+from eye_speak.iris_tracker.calibration import CalibrationRefiner
 from eye_speak.iris_tracker.detector import MediaPipeDetector
 from eye_speak.iris_tracker.grid_mapper import GridMapper
 from eye_speak.iris_tracker.head_pose import head_pose_from_landmarks
@@ -69,6 +70,12 @@ class HybridTracker:
         self._one_euro = OneEuroRefiner()
         self._screen_stabilizer = ScreenStabilizer()
         self._poly = PolynomialCalibrator()
+        self._cal_refiner = CalibrationRefiner()
+        self._recent_screen: deque = deque(maxlen=90)
+        self._drift_baseline_x: Optional[float] = None
+        self._drift_baseline_y: Optional[float] = None
+        self._drift_offset_x: float = 0.0
+        self._drift_offset_y: float = 0.0
         self._mapper = GridMapper(
             int(gr["rows"]),
             int(gr["cols"]),
@@ -122,6 +129,9 @@ class HybridTracker:
         if reset_trigger:
             self.trigger.reset()
             self._ear_samples.clear()
+        self._recent_screen.clear()
+        self._drift_offset_x = 0.0
+        self._drift_offset_y = 0.0
 
     def _maybe_hold_last_output(
         self,
@@ -170,6 +180,17 @@ class HybridTracker:
         ]
         tgt_pts = [(trx[i], try_[i]) for i in range(n)]
         self._poly.fit(raw_pts, tgt_pts)
+        self._cal_refiner.clear()
+        for i in range(n):
+            raw_rx = float(points[i].get("rx", 0.5))
+            raw_ry = float(points[i].get("ry", 0.5))
+            self._cal_refiner.add_sample(raw_rx, raw_ry, float(trx[i]), float(try_[i]))
+        self._cal_refiner.fit()
+
+        if self._recent_screen:
+            n_screen = len(self._recent_screen)
+            self._drift_baseline_x = sum(p[0] for p in self._recent_screen) / n_screen
+            self._drift_baseline_y = sum(p[1] for p in self._recent_screen) / n_screen
         self._calibrated = True
         self._reset_runtime_state()
         logger.info("HybridTracker: calibration fitted (%s points)", n)
@@ -345,6 +366,26 @@ class HybridTracker:
             from_screen_normalized=stabilized.space == "screen",
         )
         screen_x, screen_y = stabilized.x, stabilized.y
+        # CalibrationRefiner 후보정
+        if self._cal_refiner.is_fitted:
+            screen_x, screen_y = self._cal_refiner.correct(screen_x, screen_y)
+            screen_x = max(0.0, min(1.0, screen_x))
+            screen_y = max(0.0, min(1.0, screen_y))
+
+        # 드리프트 보정
+        self._recent_screen.append((screen_x, screen_y))
+        if self._drift_baseline_x is not None and self._recent_screen:
+            n = len(self._recent_screen)
+            moving_avg_x = sum(p[0] for p in self._recent_screen) / n
+            moving_avg_y = sum(p[1] for p in self._recent_screen) / n
+            if (
+                abs(moving_avg_x - self._drift_baseline_x) >= 0.05
+                or abs(moving_avg_y - self._drift_baseline_y) >= 0.05
+            ):
+                self._drift_offset_x = moving_avg_x - self._drift_baseline_x
+                self._drift_offset_y = moving_avg_y - self._drift_baseline_y
+                screen_x = max(0.0, min(1.0, screen_x - self._drift_offset_x))
+                screen_y = max(0.0, min(1.0, screen_y - self._drift_offset_y))
         cell = self._mapper.stabilize(raw_cell)
         logger.debug("[DIAG] cell=%s stable=%s", cell, self._mapper.stable_cell)
 

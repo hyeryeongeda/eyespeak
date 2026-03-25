@@ -25,10 +25,10 @@ smoothing:
   # "ema" | "one_euro"
   refiner_type: one_euro
   gaze_refiner_alpha: 0.3
-  one_euro_min_cutoff_x: 0.8
-  one_euro_beta_x: 0.07
-  one_euro_min_cutoff_y: 0.5
-  one_euro_beta_y: 0.02
+  one_euro_min_cutoff_x: 1.2
+  one_euro_beta_x: 0.15
+  one_euro_min_cutoff_y: 0.8
+  one_euro_beta_y: 0.05
   # Hold the last stable screen point briefly when iris tracking drops.
   screen_hold_ms: 400
   screen_outlier_distance: 0.35
@@ -37,8 +37,8 @@ smoothing:
   blink_ear_threshold: 0.18
 
 weights:
-  head_pose_weight: 0.0
-  iris_gaze_weight: 1.0
+  head_pose_weight: 0.35
+  iris_gaze_weight: 0.65
   l2cs_weight: 0.0
 
 calibration:
@@ -84,8 +84,8 @@ paths:
   calib_save_dir: calibration_data
 
 runtime:
-  poll_interval_ms: 100
+  poll_interval_ms: 50
   frame_max_width: 480
   frame_jpeg_quality: 0.72
   # Consumed by runtime_embed.html for the client-side interpolation loop.
-  lerp_factor: 0.15
+  lerp_factor: 0.45
