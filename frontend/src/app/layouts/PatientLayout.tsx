@@ -81,6 +81,7 @@ function PatientLayoutShell() {
   const patchResumeContext = usePatientLeisureResumeStore(state => state.patchResumeContext)
   const clearResumeContext = usePatientLeisureResumeStore(state => state.clearResumeContext)
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
+  const isPatientMainRoute = location.pathname === ROUTE_PATHS.PATIENT_MAIN
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
@@ -112,7 +113,7 @@ function PatientLayoutShell() {
       return
     }
 
-    if (isCalibrationRoute) {
+    if (isCalibrationRoute || !isPatientMainRoute) {
       setIsDailyMoodOverlayVisible(false)
       setIsDailyMoodSubmitting(false)
       setDailyMoodErrorMessage(null)
@@ -141,7 +142,7 @@ function PatientLayoutShell() {
     return () => {
       isMounted = false
     }
-  }, [isCalibrationRoute, user?.accessToken, user?.id, user?.role])
+  }, [isCalibrationRoute, isPatientMainRoute, user?.accessToken, user?.id, user?.role])
 
   useEffect(() => {
     if (!isTrackingBlocked) {
@@ -413,7 +414,7 @@ function PatientLayoutShell() {
         </Suspense>
       ) : null}
 
-      {!isCalibrationRoute && isDailyMoodOverlayVisible ? (
+      {isPatientMainRoute && isDailyMoodOverlayVisible ? (
         <PatientDailyMoodOverlay
           visible={isDailyMoodOverlayVisible}
           submitting={isDailyMoodSubmitting}
