@@ -1279,4 +1279,4 @@ VALUES (1,
 
 -- 7. DAILY_MOOD
 INSERT IGNORE INTO daily_mood (matching_id, mood_date, mood_type, mood_level, created_at)
-VALUES (1, CURDATE(), 'CALM', 3, NOW());
+VALUES (1, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'CALM', 3, NOW());

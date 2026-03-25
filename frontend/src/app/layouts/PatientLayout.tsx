@@ -72,10 +72,13 @@ function PatientLayoutShell() {
   const previousPathnameRef = useRef(location.pathname)
   const promptedResumeAtRef = useRef<number | null>(null)
   const isResumeNavigationInFlightRef = useRef(false)
+  const pendingReplyAfterTalkNavigationRef = useRef(false)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const resumeContext = usePatientLeisureResumeStore(state => state.resumeContext)
+  const setResumeContext = usePatientLeisureResumeStore(state => state.setResumeContext)
+  const patchResumeContext = usePatientLeisureResumeStore(state => state.patchResumeContext)
   const clearResumeContext = usePatientLeisureResumeStore(state => state.clearResumeContext)
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
@@ -191,6 +194,19 @@ function PatientLayoutShell() {
   }, [resumeContext?.fromLeisure])
 
   useEffect(() => {
+    if (!pendingReplyAfterTalkNavigationRef.current) {
+      return
+    }
+
+    if (location.pathname !== ROUTE_PATHS.PATIENT_TALK_MAIN) {
+      return
+    }
+
+    pendingReplyAfterTalkNavigationRef.current = false
+    chat.enterReplyMode()
+  }, [chat, location.pathname])
+
+  useEffect(() => {
     if (!resumeContext?.fromLeisure) {
       return
     }
@@ -214,7 +230,48 @@ function PatientLayoutShell() {
   const handleReplyNow = () => {
     setIsReturnToLeisureOverlayVisible(false)
     promptedResumeAtRef.current = null
-    chat.enterReplyMode()
+
+    if (isLeisureRouteKind(currentRouteKind)) {
+      const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
+
+      if (resumeContext) {
+        patchResumeContext({
+          fromLeisure: true,
+          interruptedMessageId,
+        })
+      } else {
+        setResumeContext({
+          routeKind: 'browse',
+          resumePath: `${location.pathname}${location.search}`,
+          fallbackPath: ROUTE_PATHS.PATIENT_LEISURE,
+          contentId: null,
+          categoryId: null,
+          routeState: null,
+          playbackPositionSec: null,
+          wasPlaying: false,
+          canResumePlayback: false,
+          fromLeisure: true,
+          interruptedMessageId,
+          savedAt: Date.now(),
+        })
+      }
+    }
+
+    if (currentRouteKind === 'talk') {
+      chat.enterReplyMode()
+      return
+    }
+
+    pendingReplyAfterTalkNavigationRef.current = true
+    navigate(
+      {
+        pathname: ROUTE_PATHS.PATIENT_TALK_MAIN,
+        search: location.search,
+      },
+      {
+        replace: false,
+      },
+    )
   }
 
   const handleInterruptLater = () => {
