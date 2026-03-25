@@ -123,45 +123,6 @@ const layoutCss = `
     outline-offset: 3px;
   }
 
-  @media (max-width: 1200px) {
-    .custom-talk-entry-layout {
-      min-height: auto !important;
-      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      grid-template-rows: repeat(4, minmax(180px, auto)) !important;
-      grid-template-areas:
-        "top-left top-center"
-        "top-right bottom-left"
-        "center center"
-        "bottom-center bottom-right" !important;
-    }
-  }
-
-  @media (max-width: 760px) {
-    .custom-talk-entry-page {
-      padding: 12px !important;
-    }
-
-    .custom-talk-entry-layout {
-      min-height: auto !important;
-      grid-template-columns: 1fr !important;
-      grid-template-rows: repeat(7, minmax(132px, auto)) !important;
-      grid-template-areas:
-        "top-left"
-        "top-center"
-        "top-right"
-        "center"
-        "bottom-left"
-        "bottom-center"
-        "bottom-right" !important;
-      gap: 12px !important;
-    }
-
-    .custom-talk-entry-card {
-      min-height: 132px;
-      padding: 22px 18px !important;
-      border-radius: 24px !important;
-    }
-  }
 `
 
 function ActionCard({
