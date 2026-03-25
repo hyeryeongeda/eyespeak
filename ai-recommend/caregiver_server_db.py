@@ -200,7 +200,7 @@ def _calculate_temporal_boost(item: dict, current_hour: int, current_weekday: in
 
 
 @measure_time
-def _search_sentences(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k: int = 5) -> list:
+def _search_sentences(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k: int = 5, mmr_lambda: float = 0.85) -> list:
     pool = user_db
     if sentiment_filter:
         filtered = [item for item in user_db if item["sentiment"] == sentiment_filter]
@@ -208,22 +208,39 @@ def _search_sentences(question: str, user_db: list, sentiment_filter: str | None
             pool = filtered
     now = datetime.now()
     q_vec = get_embedding(question)
-    results = []
+    scored = []
     for item in pool:
-        sim = cosine_sim(q_vec, get_embedding(item["text"]))
+        vec = get_embedding(item["text"])
+        sim = cosine_sim(q_vec, vec)
         base_score = sim * item["weight"]
         temporal_weight = _calculate_temporal_boost(item, now.hour, now.weekday())
         intent_boost = 1.5 if (intent_filter and intent_filter in (item.get("categories") or [])) else 1.0
-        results.append({"text": item["text"], "score": base_score * temporal_weight * intent_boost, "source": item["source"]})
-    seen, deduped = set(), []
-    for r in sorted(results, key=lambda x: x["score"], reverse=True):
+        scored.append({"text": item["text"], "score": base_score * temporal_weight * intent_boost, "source": item["source"], "vec": vec})
+    # 중복 제거
+    seen, candidates = set(), []
+    for r in sorted(scored, key=lambda x: x["score"], reverse=True):
         if r["text"] not in seen:
             seen.add(r["text"])
-            deduped.append(r)
-    return deduped[:k]
+            candidates.append(r)
+    # MMR: 관련성 높으면서 서로 다양한 후보 선택
+    if not candidates:
+        return []
+    selected = [candidates[0]]
+    remaining = candidates[1:]
+    while len(selected) < k and remaining:
+        best_idx, best_mmr = -1, -float("inf")
+        for i, cand in enumerate(remaining):
+            relevance = cand["score"]
+            max_sim_to_selected = max(cosine_sim(cand["vec"], s["vec"]) for s in selected)
+            mmr_score = mmr_lambda * relevance - (1 - mmr_lambda) * max_sim_to_selected
+            if mmr_score > best_mmr:
+                best_mmr = mmr_score
+                best_idx = i
+        selected.append(remaining.pop(best_idx))
+    return [{"text": s["text"], "score": s["score"], "source": s["source"]} for s in selected]
 
 
-def _search_general(question: str, k: int = 3, sentiment_filter: str | None = None) -> list:
+def _search_general(question: str, k: int = 3, sentiment_filter: str | None = None, mmr_lambda: float = 0.85) -> list:
     if not general_db:
         return []
     pool = general_db
@@ -232,33 +249,56 @@ def _search_general(question: str, k: int = 3, sentiment_filter: str | None = No
         if not pool:
             return []
     q_vec = get_embedding(question)
-    results = []
+    scored = []
     for item in pool:
-        sim = cosine_sim(q_vec, get_embedding(item["text"]))
-        results.append({"text": item["text"], "score": sim * item["weight"], "source": item["source"]})
-    seen, deduped = set(), []
-    for r in sorted(results, key=lambda x: x["score"], reverse=True):
+        vec = get_embedding(item["text"])
+        sim = cosine_sim(q_vec, vec)
+        scored.append({"text": item["text"], "score": sim * item["weight"], "source": item["source"], "vec": vec})
+    # 중복 제거
+    seen, candidates = set(), []
+    for r in sorted(scored, key=lambda x: x["score"], reverse=True):
         if r["text"] not in seen:
             seen.add(r["text"])
-            deduped.append(r)
-    return deduped[:k]
+            candidates.append(r)
+    # MMR
+    if not candidates:
+        return []
+    selected = [candidates[0]]
+    remaining = candidates[1:]
+    while len(selected) < k and remaining:
+        best_idx, best_mmr = -1, -float("inf")
+        for i, cand in enumerate(remaining):
+            relevance = cand["score"]
+            max_sim_to_selected = max(cosine_sim(cand["vec"], s["vec"]) for s in selected)
+            mmr_score = mmr_lambda * relevance - (1 - mmr_lambda) * max_sim_to_selected
+            if mmr_score > best_mmr:
+                best_mmr = mmr_score
+                best_idx = i
+        selected.append(remaining.pop(best_idx))
+    return [{"text": s["text"], "score": s["score"], "source": s["source"]} for s in selected]
 
 
 @measure_time
-def _search_sentences_mixed(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k_total: int = 6) -> list:
+def _search_sentences_mixed(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k_total: int = 6, no_mmr: bool = False) -> list:
+    # 콜드스타트: user_db가 비어있으면 general_corpus에서 전부 가져옴
+    is_cold_start = len(user_db) == 0
+    mmr_lambda = 1.0 if no_mmr else 0.85  # no_mmr이면 유사도 순으로만
+    if is_cold_start:
+        return _search_general(question, k=k_total, sentiment_filter=sentiment_filter, mmr_lambda=mmr_lambda)
+    # user 5 : general 1 비율 (general 비중 낮춤 — 엉뚱한 문장 방지)
     if sentiment_filter is not None:
         general_has_sentiment = general_db and "sentiment" in general_db[0]
         if general_has_sentiment:
-            k_user = (k_total + 1) // 2
-            k_general = k_total - k_user
-            user_candidates = _search_sentences(question, user_db, sentiment_filter, intent_filter=intent_filter, k=k_user)
-            general_candidates = _search_general(question, k=k_general, sentiment_filter=sentiment_filter)
+            k_user = k_total - 1
+            k_general = 1
+            user_candidates = _search_sentences(question, user_db, sentiment_filter, intent_filter=intent_filter, k=k_user, mmr_lambda=mmr_lambda)
+            general_candidates = _search_general(question, k=k_general, sentiment_filter=sentiment_filter, mmr_lambda=mmr_lambda)
             return (user_candidates + general_candidates)[:k_total]
-        return _search_sentences(question, user_db, sentiment_filter, intent_filter=intent_filter, k=k_total)
-    k_user = (k_total + 1) // 2
-    k_general = k_total - k_user
-    user_candidates = _search_sentences(question, user_db, None, intent_filter=intent_filter, k=k_user)
-    general_candidates = _search_general(question, k=k_general)
+        return _search_sentences(question, user_db, sentiment_filter, intent_filter=intent_filter, k=k_total, mmr_lambda=mmr_lambda)
+    k_user = k_total - 1
+    k_general = 1
+    user_candidates = _search_sentences(question, user_db, None, intent_filter=intent_filter, k=k_user, mmr_lambda=mmr_lambda)
+    general_candidates = _search_general(question, k=k_general, mmr_lambda=mmr_lambda)
     return (user_candidates + general_candidates)[:k_total]
 
 
@@ -421,7 +461,10 @@ def _search_words(question: str, category: str, word_lists: dict, word_usage_fre
     return pool[:k]
 
 
-# ====== LLM 후처리 (caregiver_server.py와 동일) ======
+# ====== 환자 페르소나 ======
+PATIENT_PERSONA = "67세 남성 ALS환자. 차분하고 담백한 말투. 손녀딸과 롯데(야구)를 좋아하고 트로트 듣는 걸 좋아함. '~엉','~징' 같은 귀여운 말투 사용 금지."
+
+# ====== LLM 후처리 ======
 _refine_cache: dict = {}
 
 @measure_time
@@ -435,17 +478,25 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
         if sentiment_context
         else "긍정 1개, 부정/중립 2개로 다양하게"
     )
-    prompt = f"""질문:"{question}"
-참고표현:{','.join(texts)}
-반말구어체,15자이내,3개,줄바꿈구분,{diversity_rule}"""
+    prompt = f"""보호자 질문: "{question}"
+환자가 과거에 자주 쓴 표현:
+{chr(10).join(f"- {t}" for t in texts)}
+
+위 표현들을 참고해서 질문에 어울리는 자연스러운 환자 답변을 정확히 3개 만드세요.
+- 보호자 질문 시제/맥락에 맞게 (과거 질문→과거형, 현재→현재형)
+- 반말 구어체, 15자 이내
+- {diversity_rule}
+- 각 답변은 하나의 주제만 담기 (여러 주제 섞지 마세요)
+- 질문과 관련 없는 내용 넣지 마세요
+- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
             model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "ALS환자답변생성.시제맞춤.번호없이줄바꿈만."},
+                {"role": "system", "content": f"{PATIENT_PERSONA} ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=60, temperature=0.7,
+            max_tokens=100, temperature=0.7,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -462,18 +513,23 @@ def _generate_from_words(words: list, question: str) -> list:
     punct_set = {".", "!", "?"}
     punct = "".join(w for w in words if w in punct_set)
     content_words = [w for w in words if w not in punct_set and w != "없음"]
-    prompt = f"""질문:"{question}"
-단어:{','.join(content_words)}
-부호:{punct if punct else '없음'}
-반말구어체,15자이내,3개,줄바꿈구분,부호로끝내기"""
+    prompt = f"""보호자 질문: "{question}"
+선택된 단어: {', '.join(content_words)}
+문장 끝 부호: {punct if punct else '없음'}
+
+위 단어들로 환자가 답할 법한 자연스러운 한국어 문장을 정확히 3개 만드세요.
+- 보호자 질문 시제에 맞게 (과거형/현재형)
+- 반말 구어체, 15자 이내
+- 지정된 문장 부호로 끝내기
+- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
             model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "ALS환자답변생성.시제맞춤.번호없이줄바꿈만."},
+                {"role": "system", "content": f"{PATIENT_PERSONA} ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=60, temperature=0.8,
+            max_tokens=120, temperature=0.8,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -603,26 +659,46 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
                         seen.add(kw)
                         all_keywords.append(kw)
         hint_texts = [s["text"] for s in similar[:6]]
-    prompt = f"""질문:"{question}"
-키워드:{json.dumps(all_keywords[:10], ensure_ascii=False)}
-표현:{json.dumps(hint_texts[:4], ensure_ascii=False)}
-닫힌질문→[예,아니오]등 고정선택지. 개방형→키워드참고 구체선택지+마지막"잘모르겠어".
-라벨4자이내,2~{max_categories}개,sentiment(긍정/부정/중립),intent지정.
-JSON만:{{"categories":[],"sentimentMap":{{}},"intentMap":{{}}}}"""
+    print(f"[카테고리 생성] 질문: {question}")
+    print(f"[카테고리 생성] 키워드: {all_keywords[:20]}")
+    print(f"[카테고리 생성] 힌트표현: {hint_texts}")
+    prompt = f"""보호자 질문: "{question}"
+
+이 질문이 **닫힌 질문**(예/아니오, 좋아/싫어 등으로 답하는지)인지 **개방형 질문**(무엇/어디/어떤 등으로 구체적 답을 구하는지) 스스로 판단한 뒤, 적절한 답변 카테고리를 2~{max_categories}개 생성하세요.
+
+[환자 과거 데이터 참고]
+관련 키워드: {json.dumps(all_keywords[:20], ensure_ascii=False)}
+관련 표현: {json.dumps(hint_texts, ensure_ascii=False)}
+
+[카테고리 생성 규칙]
+- **닫힌 질문**: [응, 아니, 잘 모르겠어], [좋아, 싫어, 그저그래] 등 질문에 맞는 고정 선택지
+  - 예: "주스 줄까?" → ["응", "아니", "다른 거"]
+  - 예: "아파?" → ["아파", "안 아파", "좀 아파"]
+  - 예: "밥 먹었어?" → ["응", "아직", "배 안 고파"]
+- **개방형 질문**: 환자 키워드/표현에서 **구체적인 단어**를 뽑아서 선택지로 제공. 마지막에 "잘 모르겠어" 또는 "다른 거" 1개 포함
+  - 예: "뭐 먹고 싶어?" → ["계란죽", "국밥", "주스", "잘 모르겠어"] (추상적인 "음식" 금지, 구체적 음식명)
+  - 예: "뭐 듣고 싶어?" → ["트로트", "나훈아", "임영웅", "다른 거"]
+  - 예: "어디 아파?" → ["어깨", "다리", "허리", "잘 모르겠어"]
+- **중요: "음식", "욕구", "일상", "감정" 같은 추상적인 단어를 카테고리로 쓰지 마세요. 환자가 직접 선택할 수 있는 구체적인 단어만 사용하세요.**
+- 공통: 카테고리 라벨은 짧게(4글자 이내 권장). 각 카테고리에 sentiment(긍정/부정/중립)와 intent(의도) 지정
+- intent 예시: 통증, 욕구, 감정, 음식, 요청, 일상, 기타 (해당 카테고리가 어떤 의도인지 한 단어로)
+
+반드시 이 JSON 형식만 출력:
+{{"categories": ["카테고리1", "카테고리2", ...], "sentimentMap": {{"카테고리1": "긍정", "카테고리2": "중립"}}, "intentMap": {{"카테고리1": "통증", "카테고리2": "욕구"}}}}"""
     fallback_result = {
         "categories": ["좋아", "싫어", "그저그래"],
         "sentimentMap": {"좋아": "긍정", "싫어": "부정", "그저그래": "중립"},
         "intentMap": {"좋아": "감정", "싫어": "감정", "그저그래": "감정"}
     }
-    for attempt in range(1):
+    for attempt in range(3):
         try:
             resp = llm_client.chat.completions.create(
-                model="gpt-4.1-nano",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "JSON만 출력하세요. 다른 텍스트 없이."},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=150, temperature=0.3,
+                max_tokens=200, temperature=0.3,
             )
             raw = (resp.choices[0].message.content or "").strip()
             for prefix in ("```json", "```"):
@@ -630,6 +706,19 @@ JSON만:{{"categories":[],"sentimentMap":{{}},"intentMap":{{}}}}"""
                     raw = raw[len(prefix):].strip()
             if raw.endswith("```"):
                 raw = raw[:-3].strip()
+            # JSON 뒤에 불필요한 텍스트 제거
+            brace_count = 0
+            json_end = 0
+            for i, ch in enumerate(raw):
+                if ch == '{':
+                    brace_count += 1
+                elif ch == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        json_end = i + 1
+                        break
+            if json_end > 0:
+                raw = raw[:json_end]
             result = json.loads(raw)
             if "categories" not in result or "sentimentMap" not in result:
                 raise ValueError("Invalid format")
@@ -672,10 +761,20 @@ def recommend():
     if not user_data:
         return jsonify({"error": "matching not found"}), 404
     intent_filter = None
+    category_keyword = None
     if selected_category:
         cat_result = _generate_categories(question, user_data["user_db"])
         intent_filter = (cat_result.get("intentMap") or {}).get(selected_category)
+        category_keyword = selected_category  # "어깨", "허리" 등 카테고리 라벨 자체
     candidates = _search_sentences_mixed(question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=6)
+    # 카테고리 선택했으면 해당 키워드 포함 표현 우선 + 질문에 카테고리 반영
+    if category_keyword:
+        # 카테고리 키워드가 포함된 후보를 앞으로
+        keyword_matched = [c for c in candidates if category_keyword in c["text"]]
+        keyword_unmatched = [c for c in candidates if category_keyword not in c["text"]]
+        candidates = (keyword_matched + keyword_unmatched)[:6]
+        # LLM에 카테고리 선택 맥락 전달
+        question = f"{question} (환자가 '{category_keyword}'를 선택함)"
     sentences = _refine_recommend(question, candidates, sentiment_context=sentiment_filter)
     _recommend_stats["recommend_calls"] += 1
     _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
@@ -884,8 +983,36 @@ def recommend_replies():
         history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
         context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
 
-    # 기존 추천 로직 재활용
-    candidates = _search_sentences_mixed(context, user_data["user_db"], sentiment_filter=None, intent_filter=None, k_total=6)
+    # replies: 유사도 최소 기준 + 그 안에서 가중치 (관련 없는 것 필터링)
+    MIN_SIM = 0.3  # 유사도 0.3 미만은 관련 없는 것으로 탈락
+    q_vec = get_embedding(question)
+    now = datetime.now()
+    scored = []
+    for item in user_data["user_db"]:
+        vec = get_embedding(item["text"])
+        sim = cosine_sim(q_vec, vec)
+        if sim < MIN_SIM:
+            continue  # 관련 없는 것 탈락
+        base_score = sim * item["weight"]
+        temporal_weight = _calculate_temporal_boost(item, now.hour, now.weekday())
+        scored.append({"text": item["text"], "score": base_score * temporal_weight, "source": item["source"]})
+    for item in general_db:
+        vec = get_embedding(item["text"])
+        sim = cosine_sim(q_vec, vec)
+        if sim < MIN_SIM:
+            continue
+        scored.append({"text": item["text"], "score": sim * item["weight"], "source": item["source"]})
+    scored.sort(key=lambda x: x["score"], reverse=True)
+    # 중복 제거 + 상위 6개
+    seen = set()
+    candidates = []
+    for r in scored:
+        if r["text"] not in seen:
+            seen.add(r["text"])
+            candidates.append(r)
+        if len(candidates) >= 6:
+            break
+    print(f"[replies] 후보: {[c['text'] for c in candidates]}")
     sentences = _refine_recommend(context, candidates, sentiment_context=None)
 
     # 각 문장에 intent 분류 + 메타정보 추가
