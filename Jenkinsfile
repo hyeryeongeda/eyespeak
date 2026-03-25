@@ -144,8 +144,10 @@ pipeline {
                                 sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
                             }
 
-                            // Makefile의 dev-app-up 실행
-                            sh "make dev-app-up"
+                            // YouTube API 키 주입 후 dev-app-up 실행
+                            withCredentials([string(credentialsId: 'vite-youtube-api-key', variable: 'VITE_YOUTUBE_API_KEY')]) {
+                                sh 'export VITE_YOUTUBE_API_KEY=$VITE_YOUTUBE_API_KEY && make dev-app-up'
+                            }
                         }
                     }
                     post {
@@ -297,8 +299,10 @@ pipeline {
                                 sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
                             }
 
-                            // Makefile의 prod-app-up 실행
-                            sh "make prod-app-up"
+                            // YouTube API 키 주입 후 prod-app-up 실행
+                            withCredentials([string(credentialsId: 'vite-youtube-api-key', variable: 'VITE_YOUTUBE_API_KEY')]) {
+                                sh 'export VITE_YOUTUBE_API_KEY=$VITE_YOUTUBE_API_KEY && make prod-app-up'
+                            }
                         }
                     }
                     post {
