@@ -172,6 +172,12 @@ pipeline {
                             if (aiChanged) {
                                 echo "AI 서버 변경 감지: ${aiChanged}"
                                 sendNotification("🤖 **[Dev]** AI 서버 변경 감지, 재빌드 중...", '#439FE0')
+
+                                // AI 서버 환경변수 복사
+                                withCredentials([file(credentialsId: 'env-ai', variable: 'ENV_AI')]) {
+                                    sh 'cp $ENV_AI infra/.env.ai'
+                                }
+
                                 sh "make ai-down && make ai-up"
                             } else {
                                 echo "AI 서버 변경 없음, 스킵"
@@ -352,6 +358,12 @@ pipeline {
                             if (aiChanged) {
                                 echo "AI 서버 변경 감지: ${aiChanged}"
                                 sendNotification("🤖 **[Prod]** AI 서버 변경 감지, 재빌드 중...", '#439FE0')
+
+                                // AI 서버 환경변수 복사
+                                withCredentials([file(credentialsId: 'env-ai', variable: 'ENV_AI')]) {
+                                    sh 'cp $ENV_AI infra/.env.ai'
+                                }
+
                                 sh "make ai-down && make ai-up"
                             } else {
                                 echo "AI 서버 변경 없음, 스킵"
