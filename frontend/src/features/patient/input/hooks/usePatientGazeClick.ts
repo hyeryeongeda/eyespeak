@@ -28,8 +28,14 @@ interface UsePatientGazeClickOptions {
 }
 
 const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
+<<<<<<< HEAD
 const GAZE_TARGET_SWITCH_GRACE_MS = 140
 const SELECTION_CONFIRM_FEEDBACK_MS = 900
+=======
+const GAZE_TARGET_SWITCH_GRACE_MS = 300
+const SELECTION_CONFIRM_FEEDBACK_MS = 3000
+const SELECTION_COMMIT_DELAY_MS = 280
+>>>>>>> f8d9b99 (fix(client): 환자모드 시선 선택 강조 피드백을 조정한다)
 const TARGET_RESELECTION_COOLDOWN_MS = 3000
 
 interface GazeTarget {
@@ -292,6 +298,7 @@ export function usePatientGazeClick({
   const highlightedElementRef = useRef<HTMLElement | null>(null)
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
+  const commitDelayTimerRef = useRef<number | null>(null)
   const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
   const [stableGazeTarget, setStableGazeTarget] = useState<GazeTarget | null>(null)
 
@@ -299,6 +306,13 @@ export function usePatientGazeClick({
     if (confirmedTimerRef.current !== null) {
       window.clearTimeout(confirmedTimerRef.current)
       confirmedTimerRef.current = null
+    }
+  }
+
+  const clearCommitDelayTimer = () => {
+    if (commitDelayTimerRef.current !== null) {
+      window.clearTimeout(commitDelayTimerRef.current)
+      commitDelayTimerRef.current = null
     }
   }
 
@@ -488,6 +502,18 @@ export function usePatientGazeClick({
       return false
     }
 
+    if (commitDelayTimerRef.current !== null) {
+      if (import.meta.env.DEV) {
+        console.info('[patient-input] selection-commit-blocked', {
+          source,
+          reason: 'pending-commit',
+          trackingStatus,
+        })
+      }
+
+      return false
+    }
+
     const resolvedTarget = resolveCurrentGazeTarget()
 
     if (!resolvedTarget) {
@@ -555,7 +581,10 @@ export function usePatientGazeClick({
     submitActiveEyeTrackingSelectionFeedback()
     markSelectionConfirmed(resolvedTarget.element)
     startSelectionCooldown(resolvedTarget.key, resolvedTarget.element)
-    resolvedTarget.element.click()
+    commitDelayTimerRef.current = window.setTimeout(() => {
+      commitDelayTimerRef.current = null
+      resolvedTarget.element.click()
+    }, SELECTION_COMMIT_DELAY_MS)
 
     if (import.meta.env.DEV) {
       console.info('[patient-input] selection-commit-success', {
@@ -642,6 +671,7 @@ export function usePatientGazeClick({
 
   useEffect(() => {
     return () => {
+      clearCommitDelayTimer()
       clearConfirmedSelection()
 
       for (const targetKey of selectionCooldownsRef.current.keys()) {
