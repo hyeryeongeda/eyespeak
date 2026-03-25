@@ -4,6 +4,7 @@ import type { FcmType } from '../../shared/stores/notificationStore';
 import { apiClient } from '../../services/apiClient';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { getActiveAuthSession } from '../../services/authSessionRegistry';
+import { stopNotificationSound } from '../../utils/notificationSound';
 
 /** VOICE_READY만 자동 사라짐 (확인 동작이 필요 없음) */
 const AUTO_DISMISS_MS = 4000;
@@ -72,6 +73,7 @@ export default function InAppNotification() {
       }
     }
 
+    stopNotificationSound();
     clearNotification();
   };
 
