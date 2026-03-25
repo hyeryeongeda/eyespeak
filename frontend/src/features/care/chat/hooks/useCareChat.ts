@@ -55,7 +55,7 @@ export function useCareChat(): UseCareChatReturn {
   const isMock = getActiveApiMode() === 'mock'
   const { client, status } = useStompClient(!isMock)
   const user = useAuthStore(state => state.user)
-  const showNotification = useNotificationStore(state => state.showNotification)
+  const pushNotification = useNotificationStore(state => state.pushNotification)
 
   const [realtimeMessages, setRealtimeMessages] = useState<ChatMessage[]>([])
   const knownIdsRef = useRef<Set<string>>(new Set())
@@ -144,7 +144,7 @@ export function useCareChat(): UseCareChatReturn {
           return
         }
 
-        showNotification({
+        pushNotification({
           type: parsed.callType === 'SOS' ? 'SOS' : 'CALL',
           title: parsed.callType === 'SOS' ? 'SOS 확인' : '호출 확인',
           body: parsed.body,
@@ -159,7 +159,7 @@ export function useCareChat(): UseCareChatReturn {
     return () => {
       unsubscribe()
     }
-  }, [isMock, client, connected, showNotification])
+  }, [isMock, client, connected, pushNotification])
 
   // 메시지 발행
   const sendMessage = useCallback(

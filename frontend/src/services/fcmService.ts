@@ -14,12 +14,25 @@ function getAccessToken(): string | null {
 
 /**
  * FCM 토큰을 서버에 등록합니다.
+ * accessToken이 아직 없으면 최대 3회 재시도합니다.
  */
 const sendTokenToServer = async (token: string): Promise<void> => {
-  const accessToken = getAccessToken();
-  if (!accessToken) return;
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 1000;
 
-  await apiClient.post(API_ENDPOINTS.FCM_TOKEN, { token }, { accessToken });
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      await apiClient.post(API_ENDPOINTS.FCM_TOKEN, { token }, { accessToken });
+      return;
+    }
+
+    if (attempt < MAX_RETRIES - 1) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    }
+  }
+
+  console.warn('[FCM] accessToken이 없어 토큰 서버 등록을 건너뜁니다.');
 };
 
 /**
@@ -49,6 +62,9 @@ export const initFcm = async (): Promise<void> => {
   }
 
   try {
+    // 기존 리스너 정리 (중복 등록 방지)
+    await PushNotifications.removeAllListeners();
+
     // 1. 푸시 알림 권한 요청
     const permission = await PushNotifications.requestPermissions();
     if (permission.receive !== 'granted') {
@@ -83,7 +99,7 @@ export const initFcm = async (): Promise<void> => {
       const type = data?.type as FcmType | undefined;
       if (type) {
         playNotificationSound(type);
-        useNotificationStore.getState().showNotification({
+        useNotificationStore.getState().pushNotification({
           type,
           title: data.title ?? '',
           body: data.body ?? '',
@@ -104,7 +120,7 @@ export const initFcm = async (): Promise<void> => {
       const type = data?.type as FcmType | undefined;
       if (type) {
         // 백그라운드 알림 탭 시 인앱 알림 UI를 표시하여 보호자가 확인 버튼을 누를 수 있게 함
-        useNotificationStore.getState().showNotification({
+        useNotificationStore.getState().pushNotification({
           type,
           title: data.title ?? '',
           body: data.body ?? '',
