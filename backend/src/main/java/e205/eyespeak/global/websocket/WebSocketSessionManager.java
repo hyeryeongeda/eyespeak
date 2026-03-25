@@ -22,12 +22,28 @@ public class WebSocketSessionManager {
     // key: userId(String), value: StompPrincipal(userId, role)
     private final ConcurrentHashMap<String, StompPrincipal> sessions = new ConcurrentHashMap<>();
 
-    public void addSession(String userId, StompPrincipal principal) {
+    // sessionId → userId 역방향 매핑
+    // DISCONNECT 이벤트에서 Principal이 null일 때 sessionId로 userId를 역추적하기 위함
+    private final ConcurrentHashMap<String, String> sessionIdToUserId = new ConcurrentHashMap<>();
+
+    public void addSession(String userId, String sessionId, StompPrincipal principal) {
         sessions.put(userId, principal);
+        sessionIdToUserId.put(sessionId, userId);
     }
 
     public void removeSession(String userId) {
         sessions.remove(userId);
+    }
+
+    /**
+     * sessionId로 세션 제거 — DISCONNECT 이벤트에서 항상 사용.
+     * sessionId는 Principal과 달리 DISCONNECT 이벤트에 항상 존재한다.
+     */
+    public void removeSessionBySessionId(String sessionId) {
+        String userId = sessionIdToUserId.remove(sessionId);
+        if (userId != null) {
+            sessions.remove(userId);
+        }
     }
 
     /**
