@@ -37,38 +37,39 @@ smoothing:
   blink_ear_threshold: 0.18
 
 weights:
-  head_pose_weight: 0.35
-  iris_gaze_weight: 0.65
-  l2cs_weight: 0.20
+  head_pose_weight: 0.0
+  iris_gaze_weight: 1.0
+  l2cs_weight: 0.0
 
 calibration:
   points: 12
+  # 프론트 calibrationConstants (6x2, safe margin 5%) DEFAULT_CALIBRATION_TARGETS 와 동일 순서
   target_rx:
-    - 0.03
-    - 0.20
-    - 0.40
-    - 0.60
-    - 0.80
-    - 0.97
-    - 0.03
-    - 0.20
-    - 0.40
-    - 0.60
-    - 0.80
-    - 0.97
+    - 0.05
+    - 0.23
+    - 0.41
+    - 0.59
+    - 0.77
+    - 0.95
+    - 0.05
+    - 0.23
+    - 0.41
+    - 0.59
+    - 0.77
+    - 0.95
   target_ry:
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.97
-    - 0.97
-    - 0.97
-    - 0.97
-    - 0.97
-    - 0.97
+    - 0.05
+    - 0.05
+    - 0.05
+    - 0.05
+    - 0.05
+    - 0.05
+    - 0.95
+    - 0.95
+    - 0.95
+    - 0.95
+    - 0.95
+    - 0.95
 
 trigger:
   dwell_time_sec: 1.5

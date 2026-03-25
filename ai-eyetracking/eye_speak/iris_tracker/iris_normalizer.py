@@ -110,6 +110,13 @@ def compute_iris_position(
         깜빡임이거나 유효 눈 폭이 없으면 ``ratio_x``, ``ratio_y``는 ``None``.
         ``ratio_*``는 각각 ``0``~``1``로 클램프된다.
     """
+    # 좌표 규약 (Coordinate Convention):
+    # - 입력 landmarks: 미러된 프레임 기준 (카메라 좌우반전 상태)
+    # - rx = 0.0: 프레임 좌측 (사용자 우측)
+    # - rx = 1.0: 프레임 우측 (사용자 좌측)
+    # - ry = 0.0: 프레임 상단
+    # - ry = 1.0: 프레임 하단
+    # - 캘리브레이션과 런타임 모두 미러된 프레임을 입력으로 받아야 함
     if blink_threshold is None:
         blink_threshold = _blink_ear_threshold_from_config()
 
