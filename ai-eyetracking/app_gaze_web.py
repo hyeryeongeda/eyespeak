@@ -140,8 +140,8 @@ def api_health():
 
 @app.route("/api/runtime-config", methods=["GET"])
 def api_runtime_config():
-    runtime = dict(pipe._cfg.get("runtime", {}))
-    trigger = dict(pipe._cfg.get("trigger", {}))
+    runtime = dict(_get_pipeline("default")._cfg.get("runtime", {}))
+    trigger = dict(_get_pipeline("default")._cfg.get("trigger", {}))
     return jsonify(
         {
             "poll_interval_ms": int(runtime.get("poll_interval_ms", 100)),

@@ -855,7 +855,7 @@
       const calibrateResponse = await fetch(buildApiUrl('api/calibrate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ calibration: calibrationPayload })
+        body: JSON.stringify({ calibration: calibrationPayload, user_id: EMBED_USER_ID || undefined })
       });
       const calibrateResult = await calibrateResponse.json().catch(() => ({}));
 
