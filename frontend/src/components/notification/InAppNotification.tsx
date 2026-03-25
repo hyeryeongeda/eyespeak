@@ -56,15 +56,20 @@ export default function InAppNotification() {
 
     if (notification.type === 'CALL' && notification.callId) {
       setConfirming(true);
-      const accessToken = getActiveAuthSession()?.accessToken ?? null;
-      if (accessToken) {
-        await apiClient.patch(
-          `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/acknowledge`,
-          undefined,
-          { accessToken },
-        );
+      try {
+        const accessToken = getActiveAuthSession()?.accessToken ?? null;
+        if (accessToken) {
+          await apiClient.patch(
+            `${API_ENDPOINTS.CALL_CONFIRM}/${notification.callId}/acknowledge`,
+            undefined,
+            { accessToken },
+          );
+        }
+      } catch (error) {
+        console.error('[알림] 호출 확인 실패:', error);
+      } finally {
+        setConfirming(false);
       }
-      setConfirming(false);
     }
 
     clearNotification();
