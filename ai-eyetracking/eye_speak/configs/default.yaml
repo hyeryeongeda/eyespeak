@@ -17,20 +17,20 @@ grid:
   # Conservative tuning for cell confirmation only.
   # Goal: reduce frequent gazeCell flips near grid boundaries.
   # Tradeoff: stable cell switching can become slightly slower.
-  cell_stability_count: 4
-  hysteresis_threshold: 0.08
+  cell_stability_count: 5
+  hysteresis_threshold: 0.12
 
 smoothing:
   use_gaze_refiner: true
   # "ema" | "one_euro"
   refiner_type: one_euro
   gaze_refiner_alpha: 0.3
-  one_euro_min_cutoff_x: 1.2
-  one_euro_beta_x: 0.15
-  one_euro_min_cutoff_y: 0.8
-  one_euro_beta_y: 0.05
+  one_euro_min_cutoff_x: 0.8
+  one_euro_beta_x: 0.07
+  one_euro_min_cutoff_y: 0.5
+  one_euro_beta_y: 0.02
   # Hold the last stable screen point briefly when iris tracking drops.
-  screen_hold_ms: 280
+  screen_hold_ms: 400
   screen_outlier_distance: 0.35
   screen_fallback_jump_margin: 0.08
   readiness_valid_streak: 2
@@ -43,33 +43,33 @@ weights:
 
 calibration:
   points: 12
-  # 프론트 calibrationConstants (6x2, safe margin 5%) DEFAULT_CALIBRATION_TARGETS 와 동일 순서
+  # 프론트 calibrationConstants (6x2, safe margin 2%) DEFAULT_CALIBRATION_TARGETS 와 동일 순서
   target_rx:
-    - 0.05
-    - 0.23
-    - 0.41
-    - 0.59
-    - 0.77
-    - 0.95
-    - 0.05
-    - 0.23
-    - 0.41
-    - 0.59
-    - 0.77
-    - 0.95
+    - 0.02
+    - 0.21
+    - 0.40
+    - 0.60
+    - 0.79
+    - 0.98
+    - 0.02
+    - 0.21
+    - 0.40
+    - 0.60
+    - 0.79
+    - 0.98
   target_ry:
-    - 0.05
-    - 0.05
-    - 0.05
-    - 0.05
-    - 0.05
-    - 0.05
-    - 0.95
-    - 0.95
-    - 0.95
-    - 0.95
-    - 0.95
-    - 0.95
+    - 0.02
+    - 0.02
+    - 0.02
+    - 0.02
+    - 0.02
+    - 0.02
+    - 0.98
+    - 0.98
+    - 0.98
+    - 0.98
+    - 0.98
+    - 0.98
 
 trigger:
   dwell_time_sec: 1.5

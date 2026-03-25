@@ -179,7 +179,7 @@ class RealPatientRuntimeTrackingService implements PatientRuntimeTrackingService
 
       let lastDoubleBlinkAt = 0
       let lastBlinkDetected = false
-      const unstableFrameHoldMs = 320
+      const unstableFrameHoldMs = 500
 
       while (!signal?.aborted && !this.disposed) {
         try {

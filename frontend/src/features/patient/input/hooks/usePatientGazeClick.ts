@@ -28,9 +28,9 @@ interface UsePatientGazeClickOptions {
 }
 
 const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
-const GAZE_TARGET_SWITCH_GRACE_MS = 300
+const GAZE_TARGET_SWITCH_GRACE_MS = 500
 const SELECTION_CONFIRM_FEEDBACK_MS = 900
-const TARGET_RESELECTION_COOLDOWN_MS = 3000
+const TARGET_RESELECTION_COOLDOWN_MS = 2000
 
 interface GazeTarget {
   element: HTMLElement
@@ -455,13 +455,11 @@ export function usePatientGazeClick({
     }
 
     if (isGlobalMenuOpen) {
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] selection-commit-blocked', {
-          source,
-          reason: 'global-menu-open',
-          trackingStatus,
-        })
-      }
+      console.info('[patient-input] selection-commit-blocked', {
+        source,
+        reason: 'global-menu-open',
+        trackingStatus,
+      })
 
       return false
     }
@@ -471,13 +469,11 @@ export function usePatientGazeClick({
     if (!resolvedTarget) {
       activeElementRef.current = null
 
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] selection-commit-blocked', {
-          source,
-          reason: 'no-active-target',
-          trackingStatus,
-        })
-      }
+      console.info('[patient-input] selection-commit-blocked', {
+        source,
+        reason: 'no-active-target',
+        trackingStatus,
+      })
 
       return false
     }
@@ -485,14 +481,12 @@ export function usePatientGazeClick({
     activeElementRef.current = resolvedTarget.element
 
     if (isTargetCoolingDown(resolvedTarget.key)) {
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] selection-commit-blocked', {
-          source,
-          reason: 'cooldown',
-          targetKey: resolvedTarget.key,
-          trackingStatus,
-        })
-      }
+      console.info('[patient-input] selection-commit-blocked', {
+        source,
+        reason: 'cooldown',
+        targetKey: resolvedTarget.key,
+        trackingStatus,
+      })
 
       return false
     }
@@ -500,16 +494,14 @@ export function usePatientGazeClick({
     const blockReason = getInteractiveElementBlockReason(resolvedTarget.element)
 
     if (blockReason) {
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] selection-commit-blocked', {
-          source,
-          reason: blockReason,
-          targetKey: resolvedTarget.key,
-          targetSource: resolvedTarget.source,
-          targetCell: resolvedTarget.cell,
-          trackingStatus,
-        })
-      }
+      console.info('[patient-input] selection-commit-blocked', {
+        source,
+        reason: blockReason,
+        targetKey: resolvedTarget.key,
+        targetSource: resolvedTarget.source,
+        targetCell: resolvedTarget.cell,
+        trackingStatus,
+      })
 
       return false
     }
@@ -535,16 +527,14 @@ export function usePatientGazeClick({
     startSelectionCooldown(resolvedTarget.key, resolvedTarget.element)
     resolvedTarget.element.click()
 
-    if (import.meta.env.DEV) {
-      console.info('[patient-input] selection-commit-success', {
-        source,
-        targetKey: resolvedTarget.key,
-        trackingId: resolvedTarget.element.dataset.trackingId ?? null,
-        tagName: resolvedTarget.element.tagName,
-        pointerEvents: computedStyle.pointerEvents,
-        trackingStatus,
-      })
-    }
+    console.info('[patient-input] selection-commit-success', {
+      source,
+      targetKey: resolvedTarget.key,
+      trackingId: resolvedTarget.element.dataset.trackingId ?? null,
+      tagName: resolvedTarget.element.tagName,
+      pointerEvents: computedStyle.pointerEvents,
+      trackingStatus,
+    })
 
     return true
   }
@@ -836,32 +826,26 @@ export function usePatientGazeClick({
       const now = Date.now()
 
       if (now - lastDoubleBlinkAtRef.current <= DOUBLE_BLINK_COMMIT_GUARD_MS) {
-        if (import.meta.env.DEV) {
-          console.info('[patient-input] skipped dwell commit because a double blink just fired', {
-            targetKey: stableGazeTarget?.key ?? null,
-          })
-        }
+        console.info('[patient-input] skipped dwell commit because a double blink just fired', {
+          targetKey: stableGazeTarget?.key ?? null,
+        })
 
         return
       }
 
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
-        if (import.meta.env.DEV) {
-          console.info('[patient-input] skipped dwell commit because the global menu is open', {
-            targetKey: stableGazeTarget?.key ?? null,
-          })
-        }
+        console.info('[patient-input] skipped dwell commit because the global menu is open', {
+          targetKey: stableGazeTarget?.key ?? null,
+        })
 
         return
       }
 
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] dwell commit', {
-          targetKey: stableGazeTarget?.key ?? null,
-          dwellDurationMs,
-          activationDelayMs,
-        })
-      }
+      console.info('[patient-input] dwell commit', {
+        targetKey: stableGazeTarget?.key ?? null,
+        dwellDurationMs,
+        activationDelayMs,
+      })
 
       commitSelection('dwell')
     },
