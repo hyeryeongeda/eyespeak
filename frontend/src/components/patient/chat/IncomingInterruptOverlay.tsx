@@ -77,8 +77,8 @@ const noLabelStyle: CSSProperties = {
 }
 
 const centerPanelWrapStyle: CSSProperties = {
-  flex: '0 1 370px',
-  maxWidth: '370px',
+  flex: '1 1 0',
+  minWidth: 'clamp(140px, 20vw, 220px)',
   width: '100%',
   display: 'flex',
   alignItems: 'stretch',
