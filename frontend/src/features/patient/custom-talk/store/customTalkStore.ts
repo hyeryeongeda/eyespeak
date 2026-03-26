@@ -142,6 +142,20 @@ function getRootKeyboardState() {
   }
 }
 
+function getRootKeyboardStateWithEntrySource(
+  entrySource?: CustomTalkState['keyboardNavigation']['entrySource'],
+) {
+  const rootKeyboardState = getRootKeyboardState()
+
+  return {
+    ...rootKeyboardState,
+    keyboardNavigation: {
+      ...rootKeyboardState.keyboardNavigation,
+      entrySource,
+    },
+  }
+}
+
 function appendConversationLog(
   logs: CustomTalkConversationLogItem[],
   sender: CustomTalkConversationLogItem['sender'],
@@ -820,11 +834,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       })
 
       set(currentState => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: currentState.keyboardNavigation.entrySource,
-        },
+        ...getRootKeyboardStateWithEntrySource(currentState.keyboardNavigation.entrySource),
         mockFlags: {
           ...currentState.mockFlags,
           failKeyboardInitOnce: false,
@@ -921,27 +931,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardChar: value => {
-    const { keyboardNavigation } = get()
-
     set(state => ({
       draft: {
         ...state.draft,
         manualInput: `${state.draft.manualInput}${value}`,
       },
-      keyboardStatus: 'typing',
+      ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
       keyboardErrorMessage: null,
     }))
-
-    if (keyboardNavigation.currentRootMenu === 'ending') {
-      // TODO: 끝표시 입력 후 루트 복귀 / 직전 상태 유지 정책 확정
-      set(state => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: state.keyboardNavigation.entrySource,
-        },
-      }))
-    }
   },
 
   goKeyboardNextPage: () => {
@@ -1013,11 +1010,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
     if (keyboardNavigation.currentRootMenu) {
       set(state => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: state.keyboardNavigation.entrySource,
-        },
+        ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
       }))
       return { shouldExit: false }
     }

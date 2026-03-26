@@ -11,8 +11,6 @@ import {
 } from '../../../features/patient/input/hooks/useDwellFeedback'
 import { requestPatientRecalibration } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
-  getPatientCallCooldownSeconds,
-  getRemainingPatientCallCooldownMs,
   requestMockPatientCall,
 } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
@@ -282,7 +280,6 @@ export default function PatientMainPage() {
     enabled: true,
   })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
-  const [cooldownSeconds, setCooldownSeconds] = useState(0)
 
   const patientMainCellMapping = useMemo(() => ({
     0: 'talk',
@@ -295,9 +292,7 @@ export default function PatientMainPage() {
 
   useCellMapping(patientMainCellMapping)
 
-  const patientId = user?.id ?? 'patient-guest'
-  const isOverlayVisible =
-    callStatus === 'requesting' || callStatus === 'success' || callStatus === 'cooldown'
+  const isOverlayVisible = callStatus === 'requesting' || callStatus === 'success'
   const overlayStatus = isOverlayVisible ? callStatus : null
 
   const trackingStatusText = useMemo(() => {
@@ -343,32 +338,16 @@ export default function PatientMainPage() {
     void handleLogout()
   }
 
-  function closeCallOverlay() {
-    setCallStatus('idle')
-    setCooldownSeconds(0)
-  }
-
   async function requestPatientCall() {
-    const result = await requestMockPatientCall(patientId, user!.matchingId!, user!.accessToken)
-
-    if (!result.success) {
-      setCooldownSeconds(Math.ceil(result.remainingMs / 1000))
-      setCallStatus('cooldown')
-      return
+    try {
+      await requestMockPatientCall(user!.matchingId!, user!.accessToken)
+      setCallStatus('success')
+    } catch {
+      setCallStatus('idle')
     }
-
-    setCallStatus('success')
   }
 
   function handleSelectCall() {
-    const remainingMs = getRemainingPatientCallCooldownMs(patientId)
-
-    if (remainingMs > 0) {
-      setCooldownSeconds(getPatientCallCooldownSeconds(patientId))
-      setCallStatus('cooldown')
-      return
-    }
-
     setCallStatus('requesting')
 
     window.setTimeout(() => {
@@ -391,39 +370,12 @@ export default function PatientMainPage() {
   }
 
   useEffect(() => {
-    if (callStatus !== 'cooldown') {
-      return
-    }
-
-    const syncCooldown = () => {
-      const nextCooldownSeconds = getPatientCallCooldownSeconds(patientId)
-
-      if (nextCooldownSeconds <= 0) {
-        setCallStatus('idle')
-        setCooldownSeconds(0)
-        return
-      }
-
-      setCooldownSeconds(nextCooldownSeconds)
-    }
-
-    syncCooldown()
-
-    const timerId = window.setInterval(syncCooldown, 500)
-
-    return () => {
-      window.clearInterval(timerId)
-    }
-  }, [callStatus, patientId])
-
-  useEffect(() => {
     if (callStatus !== 'success') {
       return
     }
 
     const timerId = window.setTimeout(() => {
       setCallStatus('idle')
-      setCooldownSeconds(0)
     }, 2500)
 
     return () => {
@@ -532,8 +484,6 @@ export default function PatientMainPage() {
         <PatientCallOverlay
           status={overlayStatus}
           message="보호자에게 호출 신호를 전송했습니다."
-          cooldownSeconds={cooldownSeconds}
-          onClose={closeCallOverlay}
         />
       ) : null}
     </>
