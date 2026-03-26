@@ -76,7 +76,7 @@ export default function CustomTalkGeneratedPage() {
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
-  const previewText = buildCustomTalkDraftPreview(draft)
+  const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
 
   useEffect(() => {
     if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {

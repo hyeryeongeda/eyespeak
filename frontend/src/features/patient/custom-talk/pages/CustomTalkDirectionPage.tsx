@@ -7,7 +7,6 @@ import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import {
   getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
@@ -96,7 +95,6 @@ export default function CustomTalkDirectionPage() {
   const visibleCategories = useCustomTalkStore(state => state.visibleCategories)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
-  const completionMessage = useCustomTalkStore(state => state.completionMessage)
   const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
@@ -187,7 +185,7 @@ export default function CustomTalkDirectionPage() {
             mode="entry"
           />
 
-          {status === 'loading' || status === 'refreshing' || errorMessage || completionMessage ? (
+          {status === 'loading' || status === 'refreshing' || errorMessage ? (
             <div style={noticeStackStyle}>
               {status === 'loading' || status === 'refreshing' ? (
                 <div style={customTalkLoadingNoticeStyle}>
@@ -196,9 +194,6 @@ export default function CustomTalkDirectionPage() {
               ) : null}
               {errorMessage ? (
                 <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-              ) : null}
-              {completionMessage ? (
-                <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
               ) : null}
             </div>
           ) : null}
