@@ -19,7 +19,6 @@ import {
   requestPasswordResetMockApi,
   withdrawMockApi,
 } from './mockAuthApi'
-import { logAuthSuccessSilently } from './usageLogService'
 
 function mapLoginValuesToRequest(values: LoginFormValues): LoginRequestDto {
   return {
@@ -68,8 +67,6 @@ export async function login(values: LoginFormValues): Promise<ServiceResult<Auth
         : await loginApi(mapLoginValuesToRequest(values))
 
     const session = mapAuthResponseToSession(response, authMode)
-
-    logAuthSuccessSilently(session, 'login')
 
     return {
       success: true,

@@ -1,5 +1,4 @@
 import { getActiveApiMode, resolveApiSource } from '../config/env'
-import type { AuthSession } from '../types/auth'
 import type { ServiceResult } from '../types/api'
 import type { UsageLogCreateRequestDto } from '../types/usageLog'
 import { createServiceFailure, logServiceFailure } from '../utils/errorMapper'
@@ -65,22 +64,6 @@ export function createUsageLogSilently(
   accessToken?: string | null,
 ) {
   void createUsageLog(request, accessToken)
-}
-
-export function logAuthSuccessSilently(
-  session: Pick<AuthSession, 'accessToken' | 'authMode' | 'role'>,
-  action: 'signup' | 'login',
-) {
-  if (session.authMode !== 'real') {
-    return
-  }
-
-  createUsageLogSilently(
-    {
-      content: `auth:${action}:success:${session.role}`,
-    },
-    session.accessToken,
-  )
 }
 
 export function logPhraseUsageSilently(phraseId: number, accessToken?: string | null) {

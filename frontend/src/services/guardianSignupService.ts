@@ -13,7 +13,6 @@ import { mapAuthResponseToSession } from './authSessionMapper'
 import { signUpGuardianMockApi } from './mockAuthApi'
 import { mapPatientInfoInputToRequest, registerPatientInfo } from './patientService'
 import { createPatientRoutines, mapPatientRoutinesToRequest } from './routineService'
-import { logAuthSuccessSilently } from './usageLogService'
 
 export type GuardianSignupStage = 'guardian-account' | 'patient-profile' | 'patient-routines'
 
@@ -336,8 +335,6 @@ export async function signUpGuardian(
       patientRegistration,
     })
   }
-
-  logAuthSuccessSilently(guardianSession, 'signup')
 
   return {
     success: true,

@@ -12,7 +12,6 @@ import { normalizeTeamCode } from './authStorage'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import { findMockTeamCode, signUpPatientMockApi } from './mockAuthApi'
 import { signUpPatientApi } from './patientApi'
-import { logAuthSuccessSilently } from './usageLogService'
 
 export interface PatientSignupInput {
   teamCode: string
@@ -96,8 +95,6 @@ export async function signUpPatient(
         ? await signUpPatientMockApi(request)
         : await signUpPatientApi(request)
     const session = mapAuthResponseToSession(response, apiMode)
-
-    logAuthSuccessSilently(session, 'signup')
 
     return {
       success: true,
