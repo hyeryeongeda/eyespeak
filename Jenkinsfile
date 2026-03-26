@@ -162,30 +162,6 @@ pipeline {
                     }
                 }
 
-                // ── Eye Tracking 동기화 + 재시작 ─────────────
-                stage('Deploy EyeTracking (Dev)') {
-                    steps {
-                        script {
-                            sh """
-                                cp -r ai-eyetracking/* /home/ubuntu/eyespeak/ai-eyetracking/
-                                kill \$(lsof -t -i:5000) 2>/dev/null || true
-                                cd /home/ubuntu/eyespeak/ai-eyetracking
-                                . .venv/bin/activate
-                                nohup python app_gaze_web.py > eyetracking.log 2>&1 &
-                                sleep 5
-                                curl -sf http://localhost:5000/api/health || echo 'Eye Tracking 헬스체크 실패'
-                            """
-                        }
-                    }
-                    post {
-                        failure {
-                            script {
-                                sendNotification("❌ **[Dev]** Eye Tracking 재시작 실패!", '#FF0000')
-                            }
-                        }
-                    }
-                }
-
                 // ── Dev 헬스체크 ─────────────────────────────
                 stage('Health Check (Dev)') {
                     steps {
