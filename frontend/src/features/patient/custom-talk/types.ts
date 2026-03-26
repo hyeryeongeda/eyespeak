@@ -4,6 +4,12 @@ export type ComposeStep = 'subject' | 'object' | 'predicate' | 'punctuation'
 
 export type KeyboardRootMenu = 'consonant' | 'vowel' | 'ending' | 'number'
 
+export type KeyboardCompositionStage =
+  | 'idle'
+  | 'initial_consonant'
+  | 'vowel'
+  | 'final_consonant'
+
 export type KeyboardStatus =
   | 'idle'
   | 'loading'
@@ -56,6 +62,12 @@ export interface KeyboardNavigationState {
   currentGroupId?: string
   currentPage: number
   canGoNext: boolean
+}
+
+export interface KeyboardCompositionState {
+  stage: KeyboardCompositionStage
+  initialConsonant: string | null
+  vowel: string | null
 }
 
 export interface CustomTalkCategoryOption {
@@ -119,6 +131,7 @@ export interface CustomTalkState {
   generatedSentences: string[]
   keyboardStatus: KeyboardStatus
   keyboardNavigation: KeyboardNavigationState
+  keyboardComposition: KeyboardCompositionState
   keyboardOptions: CustomTalkKeyboardOption[]
   status: CustomTalkStatus
   errorMessage: string | null
@@ -142,6 +155,7 @@ export interface CustomTalkState {
   selectKeyboardRootMenu: (menu: KeyboardRootMenu) => void
   selectKeyboardGroup: (groupId: string) => void
   selectKeyboardChar: (value: string) => void
+  skipKeyboardFinalConsonant: () => void
   goKeyboardNextPage: () => void
   goKeyboardBack: () => { shouldExit: boolean; entrySource?: KeyboardEntrySource }
   deleteLastManualChar: () => void
