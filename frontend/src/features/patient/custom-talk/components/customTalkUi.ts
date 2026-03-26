@@ -64,3 +64,20 @@ export const customTalkLoadingNoticeStyle: CSSProperties = {
   border: '1px solid #dce6ed',
   color: '#607389',
 }
+
+export const customTalkQuietNoticeStyle: CSSProperties = {
+  ...customTalkNoticeStyle,
+  backgroundColor: '#f6f9fc',
+  border: '1px solid #dce6ed',
+  color: '#607389',
+}
+
+const quietNoticeMessages = new Set([
+  '지금은 바로 반영되지 않았습니다. 잠시 후 다시 시도해 주세요.',
+])
+
+export function getCustomTalkNoticeStyle(message: string) {
+  return quietNoticeMessages.has(message)
+    ? customTalkQuietNoticeStyle
+    : customTalkErrorNoticeStyle
+}

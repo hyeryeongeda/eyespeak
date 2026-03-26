@@ -4,7 +4,7 @@ import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
-  customTalkErrorNoticeStyle,
+  getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
@@ -163,7 +163,9 @@ export default function CustomTalkRecommendPage() {
                   추천 문장을 불러오는 중입니다.
                 </div>
               ) : null}
-              {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
+              {errorMessage ? (
+                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
+              ) : null}
               {completionMessage ? (
                 <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
               ) : null}

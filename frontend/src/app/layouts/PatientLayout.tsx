@@ -16,7 +16,10 @@ import {
 } from '../../features/patient/input/stores/patientModeStore'
 import PatientDailyMoodOverlay from '../../features/patient/daily-mood/components/PatientDailyMoodOverlay'
 import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
-import { usePatientIncomingChat } from '../../hooks/patientIncomingChatContext'
+import {
+  usePatientIncomingChat,
+  type PatientIncomingChatContextValue,
+} from '../../hooks/patientIncomingChatContext'
 import { createDailyMood, getTodayDailyMood } from '../../services/dailyMoodService'
 import { usePatientLeisureResumeStore } from '../../stores/patientLeisureResumeStore'
 import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'
@@ -60,6 +63,15 @@ function isChatRouteKind(kind: string | null | undefined) {
   return kind === 'talk' || kind === 'custom_talk'
 }
 
+type PatientChatDebugWindow = Window & {
+  __patientChatDebug?: {
+    presets: string[]
+    triggerIncomingPreset: PatientIncomingChatContextValue['triggerIncomingPreset']
+    triggerDuplicateMessage: () => void
+    openLatestPendingReply: () => void
+  }
+}
+
 function PatientLayoutShell() {
   const navigate = useNavigate()
   const chat = usePatientIncomingChat()
@@ -72,12 +84,16 @@ function PatientLayoutShell() {
   const previousPathnameRef = useRef(location.pathname)
   const promptedResumeAtRef = useRef<number | null>(null)
   const isResumeNavigationInFlightRef = useRef(false)
+  const pendingReplyAfterTalkNavigationRef = useRef(false)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const resumeContext = usePatientLeisureResumeStore(state => state.resumeContext)
+  const setResumeContext = usePatientLeisureResumeStore(state => state.setResumeContext)
+  const patchResumeContext = usePatientLeisureResumeStore(state => state.patchResumeContext)
   const clearResumeContext = usePatientLeisureResumeStore(state => state.clearResumeContext)
   const isCalibrationRoute = location.pathname === ROUTE_PATHS.PATIENT_CALIBRATION
+  const isPatientMainRoute = location.pathname === ROUTE_PATHS.PATIENT_MAIN
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
@@ -109,7 +125,7 @@ function PatientLayoutShell() {
       return
     }
 
-    if (isCalibrationRoute) {
+    if (isCalibrationRoute || !isPatientMainRoute) {
       setIsDailyMoodOverlayVisible(false)
       setIsDailyMoodSubmitting(false)
       setDailyMoodErrorMessage(null)
@@ -138,7 +154,7 @@ function PatientLayoutShell() {
     return () => {
       isMounted = false
     }
-  }, [isCalibrationRoute, user?.accessToken, user?.id, user?.role])
+  }, [isCalibrationRoute, isPatientMainRoute, user?.accessToken, user?.id, user?.role])
 
   useEffect(() => {
     if (!isTrackingBlocked) {
@@ -191,6 +207,40 @@ function PatientLayoutShell() {
   }, [resumeContext?.fromLeisure])
 
   useEffect(() => {
+    if (!pendingReplyAfterTalkNavigationRef.current) {
+      return
+    }
+
+    if (location.pathname !== ROUTE_PATHS.PATIENT_TALK_MAIN) {
+      return
+    }
+
+    pendingReplyAfterTalkNavigationRef.current = false
+    chat.enterReplyMode()
+  }, [chat, location.pathname])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const debugWindow = window as PatientChatDebugWindow
+
+    debugWindow.__patientChatDebug = {
+      presets: chat.availablePresets.map(preset => preset.key),
+      triggerIncomingPreset: presetKey => {
+        chat.triggerIncomingPreset(presetKey as (typeof chat.availablePresets)[number]['key'])
+      },
+      triggerDuplicateMessage: chat.triggerDuplicateMessage,
+      openLatestPendingReply: chat.openLatestPendingReply,
+    }
+
+    return () => {
+      delete debugWindow.__patientChatDebug
+    }
+  }, [chat])
+
+  useEffect(() => {
     if (!resumeContext?.fromLeisure) {
       return
     }
@@ -214,7 +264,48 @@ function PatientLayoutShell() {
   const handleReplyNow = () => {
     setIsReturnToLeisureOverlayVisible(false)
     promptedResumeAtRef.current = null
-    chat.enterReplyMode()
+
+    if (isLeisureRouteKind(currentRouteKind)) {
+      const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
+
+      if (resumeContext) {
+        patchResumeContext({
+          fromLeisure: true,
+          interruptedMessageId,
+        })
+      } else {
+        setResumeContext({
+          routeKind: 'browse',
+          resumePath: `${location.pathname}${location.search}`,
+          fallbackPath: ROUTE_PATHS.PATIENT_LEISURE,
+          contentId: null,
+          categoryId: null,
+          routeState: null,
+          playbackPositionSec: null,
+          wasPlaying: false,
+          canResumePlayback: false,
+          fromLeisure: true,
+          interruptedMessageId,
+          savedAt: Date.now(),
+        })
+      }
+    }
+
+    if (currentRouteKind === 'talk') {
+      chat.enterReplyMode()
+      return
+    }
+
+    pendingReplyAfterTalkNavigationRef.current = true
+    navigate(
+      {
+        pathname: ROUTE_PATHS.PATIENT_TALK_MAIN,
+        search: location.search,
+      },
+      {
+        replace: false,
+      },
+    )
   }
 
   const handleInterruptLater = () => {
@@ -356,7 +447,7 @@ function PatientLayoutShell() {
         </Suspense>
       ) : null}
 
-      {!isCalibrationRoute && isDailyMoodOverlayVisible ? (
+      {isPatientMainRoute && isDailyMoodOverlayVisible ? (
         <PatientDailyMoodOverlay
           visible={isDailyMoodOverlayVisible}
           submitting={isDailyMoodSubmitting}

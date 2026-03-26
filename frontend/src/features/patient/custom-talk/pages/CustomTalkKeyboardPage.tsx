@@ -5,7 +5,7 @@ import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
 import {
-  customTalkErrorNoticeStyle,
+  getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
@@ -23,8 +23,18 @@ const centerStackStyle: CSSProperties = {
   gap: '12px',
   minHeight: 0,
   height: '100%',
-  padding: '18px',
+  padding: '16px',
   boxSizing: 'border-box',
+}
+
+const contextSlotStyle: CSSProperties = {
+  minHeight: 0,
+  overflow: 'hidden',
+}
+
+const sentenceSlotStyle: CSSProperties = {
+  minHeight: 0,
+  overflow: 'hidden',
 }
 
 type CustomTalkKeyboardTrackingId =
@@ -104,14 +114,6 @@ export default function CustomTalkKeyboardPage() {
     !mockFlags.keyboardTrackingStable ||
     mockFlags.keyboardUpperInterrupt ||
     hasGlobalInterrupt
-
-  const helperText = !mockFlags.keyboardFaceDetected
-    ? '얼굴이 감지되지 않아 입력이 잠시 멈춰 있습니다.'
-    : !mockFlags.keyboardTrackingStable
-      ? '시선 추적이 불안정해 입력이 잠시 멈췄습니다.'
-      : mockFlags.keyboardUpperInterrupt || hasGlobalInterrupt
-        ? '상위 인터럽트가 표시되어 입력이 일시 중단되었습니다.'
-        : '큰 버튼 4개에서 글자나 그룹을 고르고, 아래 가운데 버튼으로 다음 또는 완료를 진행합니다.'
 
   const handleSelectOption = (option: CustomTalkKeyboardOption) => {
     if (isInputBlocked || !option.value) {
@@ -298,16 +300,20 @@ export default function CustomTalkKeyboardPage() {
       dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <CustomTalkContextPanel
-            context={context}
-            conversationLog={conversationLog}
-            mode="entry"
-          />
+          <div style={contextSlotStyle}>
+            <CustomTalkContextPanel
+              context={context}
+              conversationLog={conversationLog}
+              mode="entry"
+            />
+          </div>
 
-          <KeyboardSentenceDisplay
-            sentence={draft.manualInput}
-            helperText={helperText}
-          />
+          <div style={sentenceSlotStyle}>
+            <KeyboardSentenceDisplay
+              sentence={draft.manualInput}
+              helperText=""
+            />
+          </div>
 
           {keyboardStatus === 'loading' ? (
             <div style={customTalkLoadingNoticeStyle}>
@@ -315,7 +321,9 @@ export default function CustomTalkKeyboardPage() {
             </div>
           ) : null}
           {keyboardErrorMessage ? (
-            <div style={customTalkErrorNoticeStyle}>{keyboardErrorMessage}</div>
+            <div style={getCustomTalkNoticeStyle(keyboardErrorMessage)}>
+              {keyboardErrorMessage}
+            </div>
           ) : null}
           {completionMessage ? (
             <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>

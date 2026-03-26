@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
-import { breathingOptionPages } from './bodyMindMock'
+import { postureOptionPages } from './bodyMindMock'
 import { submitBodyMindSelection } from './bodyMindSubmission'
 import BodyMindPagedMenuPage from './components/BodyMindPagedMenuPage'
 
-export default function BodyMindBreathingPage() {
+export default function BodyMindPosturePage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
@@ -15,19 +15,19 @@ export default function BodyMindBreathingPage() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
   const [feedbackText, setFeedbackText] = useState(
-    '호흡과 기기 관련 불편을 선택해 전달합니다.',
+    '원하는 자세 조절 요청을 선택해 전달합니다.',
   )
 
   const handleSelectOption = async ({
     key,
     label,
-  }: (typeof breathingOptionPages)[number]['options'][number]) => {
+  }: (typeof postureOptionPages)[number]['options'][number]) => {
     setStatus('selecting')
 
     const result = await submitBodyMindSelection({
       patientId,
       text: label,
-      type: 'breathing',
+      type: 'posture',
       optionKey: key,
     })
 
@@ -55,11 +55,11 @@ export default function BodyMindBreathingPage() {
 
   return (
     <BodyMindPagedMenuPage
-      code="PAT-BM-003"
-      title="숨 답답해"
-      description="호흡 상태와 호흡기 관련 요청을 전달합니다."
+      code="PAT-BM-003A"
+      title="자세 바꿔줘"
+      description="머리, 등, 팔, 다리 자세 조절 요청을 전달합니다."
       status={status}
-      pages={breathingOptionPages}
+      pages={postureOptionPages}
       pageIndex={pageIndex}
       feedbackText={feedbackText}
       selectedKey={selectedKey}

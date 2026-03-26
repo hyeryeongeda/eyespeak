@@ -132,7 +132,7 @@ export default function CustomTalkContextPanel({
                   <div style={getBubbleStyle(item.sender, false)}>
                     <div
                       style={{
-                        fontSize: isEntryMode ? '22px' : '19px',
+                        fontSize: isEntryMode ? '36px' : '19px',
                         fontWeight: 800,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',

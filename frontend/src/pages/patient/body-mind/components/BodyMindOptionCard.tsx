@@ -44,7 +44,7 @@ const baseStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.35rem, 2.35vw, 1.95rem)',
+  fontSize: 'clamp(3.5rem, 6vw, 4.75rem)',
   fontWeight: 800,
   lineHeight: 1.25,
   color: '#203042',

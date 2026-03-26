@@ -80,14 +80,13 @@ input, textarea, select {
 button[data-gaze-active='true'],
 a[data-gaze-active='true'],
 [role='button'][data-gaze-active='true'] {
-  outline: 4px solid rgba(88, 145, 255, 0.9);
-  outline-offset: 4px;
+  outline: 2px solid rgba(125, 155, 246, 0.5);
+  outline-offset: 3px;
   box-shadow:
-    0 0 0 10px rgba(88, 145, 255, 0.18),
-    inset 0 0 0 1px rgba(88, 145, 255, 0.22),
-    0 18px 34px rgba(49, 87, 142, 0.18);
-  transform: translateY(-2px);
-  filter: saturate(1.03);
+    0 0 0 6px rgba(125, 155, 246, 0.08),
+    0 14px 28px rgba(49, 87, 142, 0.1);
+  transform: translateY(-1px);
+  filter: saturate(1.01);
   transition:
     outline-color 120ms ease,
     box-shadow 120ms ease,
