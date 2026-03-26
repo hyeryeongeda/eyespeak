@@ -28,12 +28,10 @@ export function usePatientSignup() {
   const [patientAccount, setPatientAccount] =
     useState<PatientAccountFormValues>(INITIAL_PATIENT_ACCOUNT)
   const [errorMessage, setErrorMessage] = useState('')
-  const [infoMessage, setInfoMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
   const handleVerifyTeamCode = async () => {
     setErrorMessage('')
-    setInfoMessage('')
     setIsLoading(true)
 
     const result = await verifyTeamCode(teamCode)
@@ -53,11 +51,6 @@ export function usePatientSignup() {
       name: prev.name || result.data.patientName || '',
     }))
     storeVerifiedTeamCode(result.data.teamCode)
-    setInfoMessage(
-      result.data.verificationMode === 'provisional'
-        ? '팀코드를 저장했습니다. 실제 유효성은 회원가입 요청 시 백엔드에서 확인됩니다.'
-        : '팀코드 확인이 완료되었습니다.',
-    )
   }
 
   const handleResetTeamCode = () => {
@@ -65,12 +58,10 @@ export function usePatientSignup() {
     setVerifiedTeamCode(null)
     setTeamCode('')
     setErrorMessage('')
-    setInfoMessage('')
   }
 
   const handleSubmit = async () => {
     setErrorMessage('')
-    setInfoMessage('')
 
     if (!verifiedTeamCode) {
       setErrorMessage('팀코드 확인을 먼저 완료해 주세요.')
@@ -133,7 +124,6 @@ export function usePatientSignup() {
     verifiedTeamCode,
     patientAccount,
     errorMessage,
-    infoMessage,
     isLoading,
     setTeamCode,
     setPatientAccount,

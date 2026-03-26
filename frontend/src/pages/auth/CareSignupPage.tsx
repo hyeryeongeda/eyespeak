@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { TouchEvent, WheelEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
@@ -91,8 +92,8 @@ export default function CareSignupPage() {
     currentSignupStage,
     guardianAccount,
     normalizedGuardianEmail,
-    isEmailConfirmed,
-    emailMismatchMessage,
+    isGuardianEmailChecked,
+    guardianEmailCheckMessage,
     patientProfile,
     patientRoutines,
     errorMessage: stepErrorMessage,
@@ -104,25 +105,102 @@ export default function CareSignupPage() {
     canGoToPreviousStep,
     submitButtonLabel,
     isSubmitting,
-    setIsEmailConfirmTouched,
+    isCheckingGuardianEmail,
     setGuardianAccount,
     setPatientProfile,
+    checkGuardianEmail,
     goToNextStep,
     goToPreviousStep,
     toggleRoutineTag,
+    cycleRoutineTag,
     submitGuardianSignup,
     copyTeamCode,
     finishGuardianSignup,
   } = useGuardianSignupFlow()
+  const routineWheelDeltaRef = useRef<Record<number, number>>({})
+  const routineWheelActionAtRef = useRef<Record<number, number>>({})
+  const routineTouchStartYRef = useRef<Record<number, number | null>>({})
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] = useState(false)
 
   const selectedRoutineCount = GUARDIAN_SIGNUP_ROUTINE_SLOTS.filter(
     slot => typeof patientRoutines[slot.id] === 'number',
   ).length
+  const routineSelectionHint =
+    '카드 위에서 스크롤하거나 위아래로 쓸어 선택지를 바꿀 수 있습니다.'
+  const ROUTINE_WHEEL_THRESHOLD = 40
+  const ROUTINE_WHEEL_COOLDOWN_MS = 140
+  const ROUTINE_TOUCH_THRESHOLD = 28
+  const guardianStepSummaryStyle = { ...summaryBox, marginBottom: '26px' }
+  const guardianFormStyle = { ...formStack, gap: '14px' }
+  const inlineFieldStyle = { display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center' }
+  const inlineFieldInputStyle = { ...input, minWidth: 0 }
+  const passwordFieldWrapStyle = { position: 'relative' as const }
+  const passwordInputStyle = { ...input, paddingRight: '58px' }
+  const togglePasswordButtonStyle = {
+    position: 'absolute' as const,
+    top: '50%',
+    right: '12px',
+    transform: 'translateY(-50%)',
+    border: 'none',
+    background: 'transparent',
+    color: '#6f8090',
+    fontSize: '12px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    padding: 0,
+  }
 
   useEffect(() => {
     setStoredRole('guardian')
     setStoredEntryMode('signup')
   }, [])
+
+  const handleRoutineWheel = (slotId: number) => (event: WheelEvent<HTMLDivElement>) => {
+    event.preventDefault()
+
+    const accumulatedDelta = (routineWheelDeltaRef.current[slotId] ?? 0) + event.deltaY
+
+    if (Math.abs(accumulatedDelta) < ROUTINE_WHEEL_THRESHOLD) {
+      routineWheelDeltaRef.current[slotId] = accumulatedDelta
+      return
+    }
+
+    const lastActionAt = routineWheelActionAtRef.current[slotId] ?? 0
+    const now = Date.now()
+
+    routineWheelDeltaRef.current[slotId] = 0
+
+    if (now - lastActionAt < ROUTINE_WHEEL_COOLDOWN_MS) {
+      return
+    }
+
+    routineWheelActionAtRef.current[slotId] = now
+    cycleRoutineTag(slotId, accumulatedDelta > 0 ? 1 : -1)
+  }
+
+  const handleRoutineTouchStart = (slotId: number) => (event: TouchEvent<HTMLDivElement>) => {
+    routineTouchStartYRef.current[slotId] = event.touches[0]?.clientY ?? null
+  }
+
+  const handleRoutineTouchEnd = (slotId: number) => (event: TouchEvent<HTMLDivElement>) => {
+    const startY = routineTouchStartYRef.current[slotId]
+    const endY = event.changedTouches[0]?.clientY
+
+    routineTouchStartYRef.current[slotId] = null
+
+    if (startY == null || endY == null) {
+      return
+    }
+
+    const deltaY = startY - endY
+
+    if (Math.abs(deltaY) < ROUTINE_TOUCH_THRESHOLD) {
+      return
+    }
+
+    cycleRoutineTag(slotId, deltaY > 0 ? 1 : -1)
+  }
 
   const progressIndex =
     currentStep === 'completed'
@@ -184,7 +262,7 @@ export default function CareSignupPage() {
           })}
         </div>
 
-        <div style={summaryBox}>
+        <div style={guardianStepSummaryStyle}>
           <p style={{ margin: '0 0 12px', color: '#203042', fontSize: '14px', fontWeight: 700 }}>
             가입 단계 상태
           </p>
@@ -328,33 +406,9 @@ export default function CareSignupPage() {
         {currentStep === 'guardian-account' ? (
           <>
             <h2 style={sectionTitle}>1단계. 보호자 계정 정보 입력</h2>
-            <p style={sectionDesc}>이메일, 보호자 이름, 비밀번호를 먼저 입력해주세요.</p>
+            <p style={sectionDesc}>보호자 이름, 이메일, 비밀번호를 순서대로 입력해주세요.</p>
 
-            <div style={formStack}>
-              <input
-                type="email"
-                placeholder="이메일"
-                style={input}
-                value={guardianAccount.email}
-                onChange={event =>
-                  setGuardianAccount(prev => ({ ...prev, email: event.target.value }))
-                }
-              />
-              <input
-                type="email"
-                placeholder="이메일 확인"
-                style={input}
-                value={guardianAccount.emailConfirm}
-                onChange={event =>
-                  setGuardianAccount(prev => ({ ...prev, emailConfirm: event.target.value }))
-                }
-                onBlur={() => setIsEmailConfirmTouched(true)}
-              />
-              {emailMismatchMessage ? (
-                <p style={errorMessageStyle}>{emailMismatchMessage}</p>
-              ) : isEmailConfirmed ? (
-                <p style={successMessage}>이메일 확인이 완료되었습니다.</p>
-              ) : null}
+            <div style={guardianFormStyle}>
               <input
                 type="text"
                 placeholder="보호자 이름"
@@ -364,27 +418,73 @@ export default function CareSignupPage() {
                   setGuardianAccount(prev => ({ ...prev, name: event.target.value }))
                 }
               />
-              <input
-                type="password"
-                placeholder="비밀번호"
-                style={input}
-                value={guardianAccount.password}
-                onChange={event =>
-                  setGuardianAccount(prev => ({ ...prev, password: event.target.value }))
-                }
-              />
-              <input
-                type="password"
-                placeholder="비밀번호 확인"
-                style={input}
-                value={guardianAccount.passwordConfirm}
-                onChange={event =>
-                  setGuardianAccount(prev => ({
-                    ...prev,
-                    passwordConfirm: event.target.value,
-                  }))
-                }
-              />
+              <div style={inlineFieldStyle}>
+                <input
+                  type="email"
+                  placeholder="이메일"
+                  style={inlineFieldInputStyle}
+                  value={guardianAccount.email}
+                  onChange={event =>
+                    setGuardianAccount(prev => ({ ...prev, email: event.target.value }))
+                  }
+                />
+                <button
+                  type="button"
+                  style={
+                    isCheckingGuardianEmail
+                      ? { ...secondaryButton, width: '112px', height: '52px', opacity: 0.7 }
+                      : { ...secondaryButton, width: '112px', height: '52px' }
+                  }
+                  onClick={() => void checkGuardianEmail()}
+                  disabled={isCheckingGuardianEmail}
+                >
+                  {isCheckingGuardianEmail ? '확인 중...' : '중복 확인'}
+                </button>
+              </div>
+              {guardianEmailCheckMessage ? (
+                <p style={successMessage}>{guardianEmailCheckMessage}</p>
+              ) : isGuardianEmailChecked ? (
+                <p style={successMessage}>사용 가능한 이메일입니다.</p>
+              ) : null}
+              <div style={passwordFieldWrapStyle}>
+                <input
+                  type={isPasswordVisible ? 'text' : 'password'}
+                  placeholder="비밀번호"
+                  style={passwordInputStyle}
+                  value={guardianAccount.password}
+                  onChange={event =>
+                    setGuardianAccount(prev => ({ ...prev, password: event.target.value }))
+                  }
+                />
+                <button
+                  type="button"
+                  style={togglePasswordButtonStyle}
+                  onClick={() => setIsPasswordVisible(prev => !prev)}
+                >
+                  {isPasswordVisible ? '숨기기' : '보기'}
+                </button>
+              </div>
+              <div style={passwordFieldWrapStyle}>
+                <input
+                  type={isPasswordConfirmVisible ? 'text' : 'password'}
+                  placeholder="비밀번호 확인"
+                  style={passwordInputStyle}
+                  value={guardianAccount.passwordConfirm}
+                  onChange={event =>
+                    setGuardianAccount(prev => ({
+                      ...prev,
+                      passwordConfirm: event.target.value,
+                    }))
+                  }
+                />
+                <button
+                  type="button"
+                  style={togglePasswordButtonStyle}
+                  onClick={() => setIsPasswordConfirmVisible(prev => !prev)}
+                >
+                  {isPasswordConfirmVisible ? '숨기기' : '보기'}
+                </button>
+              </div>
 
               {stepErrorMessage ? <p style={errorMessageStyle}>{stepErrorMessage}</p> : null}
 
@@ -479,9 +579,19 @@ export default function CareSignupPage() {
               시간대 입력이 필요합니다.
             </p>
 
+            <p style={{ ...sectionDesc, marginTop: '-4px', marginBottom: '14px', color: '#4f708d' }}>
+              {routineSelectionHint}
+            </p>
+
             <div style={formStack}>
               {GUARDIAN_SIGNUP_ROUTINE_SLOTS.map(slot => (
-                <div key={slot.id} style={routineSection}>
+                <div
+                  key={slot.id}
+                  style={routineSection}
+                  onWheel={handleRoutineWheel(slot.id)}
+                  onTouchStart={handleRoutineTouchStart(slot.id)}
+                  onTouchEnd={handleRoutineTouchEnd(slot.id)}
+                >
                   <p style={{ margin: '0 0 4px', color: '#203042', fontSize: '15px', fontWeight: 700 }}>
                     {slot.label}
                   </p>

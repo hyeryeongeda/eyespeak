@@ -5,6 +5,7 @@ import {
   createInitialPatientRoutines,
   GUARDIAN_SIGNUP_ROUTINE_SLOTS,
 } from '../guardianRoutineSurvey'
+import { checkEmailAvailability } from '../../../services/authService'
 import { signUpGuardian } from '../../../services/guardianSignupService'
 import { setStoredEntryMode, setStoredRole } from '../../../services/authStorage'
 import type { GuardianAccountFormValues } from '../../../types/auth'
@@ -74,6 +75,32 @@ function toggleSelectedTag(
   return {
     ...currentSelections,
     [slotId]: tagId,
+  }
+}
+
+function cycleSelectedTag(
+  currentSelections: PatientRoutinesFormValues,
+  slotId: number,
+  direction: 1 | -1,
+) {
+  const slot = GUARDIAN_SIGNUP_ROUTINE_SLOTS.find(item => item.id === slotId)
+
+  if (!slot || slot.tags.length === 0) {
+    return currentSelections
+  }
+
+  const currentTagId = currentSelections[slotId]
+  const currentIndex = slot.tags.findIndex(tag => tag.id === currentTagId)
+  const nextIndex =
+    currentIndex === -1
+      ? direction > 0
+        ? 0
+        : slot.tags.length - 1
+      : (currentIndex + direction + slot.tags.length) % slot.tags.length
+
+  return {
+    ...currentSelections,
+    [slotId]: slot.tags[nextIndex]?.id ?? null,
   }
 }
 
@@ -265,7 +292,9 @@ export function useGuardianSignupFlow() {
   const [retryActionType, setRetryActionType] = useState<GuardianSignupRetryActionType | null>(null)
   const [resumeContext, setResumeContext] = useState<GuardianSignupResumeContext | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isEmailConfirmTouched, setIsEmailConfirmTouched] = useState(false)
+  const [isCheckingGuardianEmail, setIsCheckingGuardianEmail] = useState(false)
+  const [checkedGuardianEmail, setCheckedGuardianEmail] = useState('')
+  const [guardianEmailCheckMessage, setGuardianEmailCheckMessage] = useState('')
   const isMountedRef = useRef(true)
   const isSubmittingRef = useRef(false)
   const activeSubmissionIdRef = useRef(0)
@@ -297,38 +326,21 @@ export function useGuardianSignupFlow() {
   }
 
   const normalizedGuardianEmail = normalizeEmailAddress(guardianAccount.email)
-  const normalizedGuardianEmailConfirm = normalizeEmailAddress(guardianAccount.emailConfirm)
   const hasValidGuardianEmail = isValidEmail(guardianAccount.email)
-  const hasValidGuardianEmailConfirm = isValidEmail(guardianAccount.emailConfirm)
-  const emailMismatchMessage =
-    normalizedGuardianEmail &&
-    normalizedGuardianEmailConfirm &&
-    normalizedGuardianEmail !== normalizedGuardianEmailConfirm
-      ? '이메일 확인이 일치하지 않습니다.'
-      : ''
-  const isEmailConfirmed =
-    hasValidGuardianEmail &&
-    hasValidGuardianEmailConfirm &&
-    !emailMismatchMessage
-  const shouldShowEmailMismatchMessage =
-    Boolean(emailMismatchMessage) &&
-    (isEmailConfirmTouched || guardianAccount.emailConfirm.trim().length > 0)
+  const isGuardianEmailChecked =
+    normalizedGuardianEmail.length > 0 && checkedGuardianEmail === normalizedGuardianEmail
 
   const validateGuardianAccountStep = () => {
-    if (!guardianAccount.email.trim() || !guardianAccount.name.trim()) {
-      return '이메일과 보호자 이름을 입력해주세요.'
+    if (!guardianAccount.name.trim() || !guardianAccount.email.trim()) {
+      return '보호자 이름과 이메일을 입력해주세요.'
     }
 
     if (!isValidEmail(guardianAccount.email)) {
       return '올바른 이메일 형식을 입력해주세요.'
     }
 
-    if (!guardianAccount.emailConfirm.trim()) {
-      return '이메일 확인을 입력해주세요.'
-    }
-
-    if (emailMismatchMessage) {
-      return '이메일과 이메일 확인이 일치하지 않습니다.'
+    if (!isGuardianEmailChecked) {
+      return '이메일 중복확인을 완료해주세요.'
     }
 
     const passwordMessage = validatePassword(guardianAccount.password)
@@ -550,7 +562,53 @@ export function useGuardianSignupFlow() {
       | ((previousState: GuardianAccountFormValues) => GuardianAccountFormValues),
   ) => {
     clearFormErrorState()
-    setGuardianAccount(nextState)
+    setGuardianAccount(previousState => {
+      const resolvedState =
+        typeof nextState === 'function'
+          ? nextState(previousState)
+          : nextState
+      const normalizedNextEmail = normalizeEmailAddress(resolvedState.email)
+
+      if (normalizedNextEmail !== checkedGuardianEmail) {
+        setCheckedGuardianEmail('')
+        setGuardianEmailCheckMessage('')
+      }
+
+      return resolvedState
+    })
+  }
+
+  const checkGuardianEmail = async () => {
+    clearFormErrorState()
+
+    if (!guardianAccount.email.trim()) {
+      setErrorMessage('이메일을 입력해주세요.')
+      return
+    }
+
+    if (!hasValidGuardianEmail) {
+      setErrorMessage('올바른 이메일 형식을 입력해주세요.')
+      return
+    }
+
+    setIsCheckingGuardianEmail(true)
+    const result = await checkEmailAvailability(normalizedGuardianEmail)
+
+    if (!isMountedRef.current) {
+      return
+    }
+
+    setIsCheckingGuardianEmail(false)
+
+    if (!result.success) {
+      setCheckedGuardianEmail('')
+      setGuardianEmailCheckMessage('')
+      setErrorMessage(result.message)
+      return
+    }
+
+    setCheckedGuardianEmail(normalizedGuardianEmail)
+    setGuardianEmailCheckMessage('사용 가능한 이메일입니다.')
   }
 
   const setPatientProfileValues = (
@@ -589,8 +647,8 @@ export function useGuardianSignupFlow() {
     stepIndex,
     guardianAccount,
     normalizedGuardianEmail,
-    isEmailConfirmed,
-    emailMismatchMessage: shouldShowEmailMismatchMessage ? emailMismatchMessage : '',
+    isGuardianEmailChecked,
+    guardianEmailCheckMessage,
     patientProfile,
     patientRoutines,
     errorMessage,
@@ -602,15 +660,20 @@ export function useGuardianSignupFlow() {
     canGoToPreviousStep,
     submitButtonLabel,
     isSubmitting,
-    setIsEmailConfirmTouched,
+    isCheckingGuardianEmail,
     setGuardianAccount: setGuardianAccountValues,
     setPatientProfile: setPatientProfileValues,
     setPatientRoutines: setPatientRoutineValues,
+    checkGuardianEmail,
     goToNextStep,
     goToPreviousStep,
     toggleRoutineTag: (slotId: number, tagId: number) => {
       clearFormErrorState()
       setPatientRoutines(prev => toggleSelectedTag(prev, slotId, tagId))
+    },
+    cycleRoutineTag: (slotId: number, direction: 1 | -1) => {
+      clearFormErrorState()
+      setPatientRoutines(prev => cycleSelectedTag(prev, slotId, direction))
     },
     submitGuardianSignup,
     copyTeamCode,
