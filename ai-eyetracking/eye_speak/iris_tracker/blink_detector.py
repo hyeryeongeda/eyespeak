@@ -74,6 +74,14 @@ class TriggerDetector:
         ttl = float(self._cfg.get("blink_history_ttl_sec", 5.0))
         self._cleanup_history(timestamp, ttl)
         is_closed = ear < self._threshold
+        logger.debug(
+            "[BLINK] ear=%.3f threshold=%.3f closed=%s eyes_were_closed=%s history=%d",
+            ear,
+            self._threshold,
+            is_closed,
+            self._eyes_closed,
+            len(self._blink_history),
+        )
 
         long_close = float(self._cfg["long_close_sec"])
 
@@ -119,6 +127,11 @@ class TriggerDetector:
         Returns:
             ``\"select\"`` | ``\"start\"`` | ``\"sos\"``.
         """
+        logger.debug(
+            "[BLINK-MULTI] history_count=%d recent_ts=%s",
+            len(self._blink_history),
+            [(round(t, 1), round(d, 2)) for t, d in self._blink_history[-5:]],
+        )
         triple_w = float(self._cfg["triple_blink_window_sec"])
         double_w = float(self._cfg["double_blink_window_sec"])
 

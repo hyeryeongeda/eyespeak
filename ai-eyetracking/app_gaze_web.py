@@ -68,8 +68,8 @@ def api_calibrate():
     if not isinstance(user_id, str):
         user_id = "default"
     cal = data.get("calibration")
-    if not cal or not isinstance(cal, list) or len(cal) < 6 or len(cal) > 12:
-        return jsonify({"ok": False, "error": "need 6-12 calibration points"}), 400
+    if not cal or not isinstance(cal, list) or len(cal) < 6 or len(cal) > 25:
+        return jsonify({"ok": False, "error": "need 6-25 calibration points"}), 400
     log.info("api_calibrate: user_id=%s, points=%d", user_id, len(cal))
     _get_pipeline(user_id).set_calibration(cal)
     log.info("api_calibrate: pipeline calibrated=%s", _get_pipeline(user_id).calibration)

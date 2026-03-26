@@ -409,10 +409,10 @@
   })();
 
   // ===== 설정 =====
-  const CALIB_N        = 12;      // 12포인트 캘리브레이션
+  const CALIB_N        = 18;      // 18포인트 캘리브레이션 (3×6, 센터-퍼스트)
   const CALIB_COLLECT_MS = 2000;  // 점당 2초 수집
   const CALIB_COUNTDOWN_SEC = 3;  // 각 점 수집 전 카운트다운
-  const INERTIA_HOLD_MS = 260;    // 관성 전환 홀드
+  const INERTIA_HOLD_MS = 180;    // 관성 전환 홀드 (기존 260 → 180: 더 빠른 셀 전환)
 
   // ===== 랜드마크 인덱스 =====
   const L_IRIS = [468,469,470,471,472];
@@ -430,6 +430,53 @@
 
   function buildApiUrl(path) {
     return new URL(path.replace(/^\/+/, ''), EMBED_API_BASE_URL).toString();
+  }
+
+  const calibGazeCanvas = document.createElement('canvas');
+  let calibGazeInFlight = false;
+
+  function encodeCalibVideoFrameToBase64() {
+    const sourceWidth = videoEl.videoWidth;
+    const sourceHeight = videoEl.videoHeight;
+    if (!sourceWidth || !sourceHeight) {
+      throw new Error('calib gaze: video is not ready');
+    }
+    const targetWidth = Math.min(sourceWidth, Math.max(160, 480));
+    const targetHeight = Math.max(1, Math.round((sourceHeight / sourceWidth) * targetWidth));
+    calibGazeCanvas.width = targetWidth;
+    calibGazeCanvas.height = targetHeight;
+    const context = calibGazeCanvas.getContext('2d', { alpha: false });
+    if (!context) {
+      throw new Error('calib gaze: canvas unavailable');
+    }
+    context.save();
+    context.scale(-1, 1);
+    context.translate(-targetWidth, 0);
+    context.drawImage(videoEl, 0, 0, targetWidth, targetHeight);
+    context.restore();
+    const dataUrl = calibGazeCanvas.toDataURL('image/jpeg', 0.72);
+    const parts = dataUrl.split(',', 2);
+    if (!parts[1]) {
+      throw new Error('calib gaze: encoding failed');
+    }
+    return parts[1];
+  }
+
+  async function fetchGazeJsonFromServer() {
+    const image = encodeCalibVideoFrameToBase64();
+    const response = await fetch(buildApiUrl('api/gaze'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image, user_id: EMBED_USER_ID || 'default' }),
+    });
+    const frame = await response.json().catch(() => null);
+    if (!response.ok || !frame || typeof frame !== 'object') {
+      return null;
+    }
+    if (frame.trigger && frame.trigger !== 'none') {
+      console.log('[TRIGGER-FRONTEND] received:', frame.trigger, 'ear:', frame.ear);
+    }
+    return frame;
   }
 
   function notifyParent(type, detail = {}) {
@@ -826,6 +873,7 @@
     coef = null;
     lastSelectionAt = 0;
     inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
+    calibGazeInFlight = false;
     resetGazeSelectionState(true);
     cells.forEach(c => { c.classList.remove('hot', 'selected'); c.querySelector('.progress').style.width = '0%'; });
 
@@ -996,6 +1044,12 @@
         const remaining = Math.max(0, CALIB_COUNTDOWN_SEC - elapsed);
         const count = Math.ceil(remaining);
 
+        const ptRatio = CalibrationRegion.getCalibPoints(CALIB_N)[calibIdx];
+        const isCenterCalibPoint =
+          ptRatio &&
+          Math.abs(ptRatio.x - 0.5) < 0.25 &&
+          Math.abs(ptRatio.y - 0.5) < 0.25;
+
         if (count > 0) {
           // 큰 숫자 표시
           const newText = String(count);
@@ -1005,16 +1059,26 @@
             void countdownBig.offsetWidth;
             countdownBig.classList.add('show');
           }
-          // 화살표: 중앙→calibDot 방향 75% 지점(도트 가까이), 도트 방향으로 회전
-          const pt0 = getCalibPx();
-          const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-          const midX = cx + (pt0.x - cx) * 0.75, midY = cy + (pt0.y - cy) * 0.75;
-          const angle = Math.atan2(pt0.y - cy, pt0.x - cx);
-          calibArrow.style.left = (midX - 40) + 'px';
-          calibArrow.style.top = (midY - 40) + 'px';
-          calibArrow.style.setProperty('--arrow-angle', (angle + Math.PI / 2) + 'rad');
-          calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
-          calibArrow.classList.add('show');
+          // 카운트다운 숫자: 중앙 포인트일 때 위쪽으로 이동 (도트와 겹침 완화)
+          if (isCenterCalibPoint) {
+            countdownBig.style.top = '25%';
+          } else {
+            countdownBig.style.top = '50%';
+          }
+          // 화살표: 화면 중앙 근처 포인트에서는 숨김
+          if (isCenterCalibPoint) {
+            calibArrow.classList.remove('show');
+          } else {
+            const pt0 = getCalibPx();
+            const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+            const midX = cx + (pt0.x - cx) * 0.75, midY = cy + (pt0.y - cy) * 0.75;
+            const angle = Math.atan2(pt0.y - cy, pt0.x - cx);
+            calibArrow.style.left = (midX - 40) + 'px';
+            calibArrow.style.top = (midY - 40) + 'px';
+            calibArrow.style.setProperty('--arrow-angle', (angle + Math.PI / 2) + 'rad');
+            calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
+            calibArrow.classList.add('show');
+          }
           calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N + ' — ' + count + '...';
         } else {
           // 카운트다운 끝 → "바라보세요!" + 화살표
@@ -1023,15 +1087,24 @@
           void countdownBig.offsetWidth;
           countdownBig.classList.add('show');
 
-          const pt = getCalibPx();
-          const cx2 = window.innerWidth / 2, cy2 = window.innerHeight / 2;
-          const midX2 = cx2 + (pt.x - cx2) * 0.75, midY2 = cy2 + (pt.y - cy2) * 0.75;
-          const angle2 = Math.atan2(pt.y - cy2, pt.x - cx2);
-          calibArrow.style.left = (midX2 - 40) + 'px';
-          calibArrow.style.top = (midY2 - 40) + 'px';
-          calibArrow.style.setProperty('--arrow-angle', (angle2 + Math.PI / 2) + 'rad');
-          calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
-          calibArrow.classList.add('show');
+          if (isCenterCalibPoint) {
+            countdownBig.style.top = '25%';
+          } else {
+            countdownBig.style.top = '50%';
+          }
+          if (isCenterCalibPoint) {
+            calibArrow.classList.remove('show');
+          } else {
+            const pt = getCalibPx();
+            const cx2 = window.innerWidth / 2, cy2 = window.innerHeight / 2;
+            const midX2 = cx2 + (pt.x - cx2) * 0.75, midY2 = cy2 + (pt.y - cy2) * 0.75;
+            const angle2 = Math.atan2(pt.y - cy2, pt.x - cx2);
+            calibArrow.style.left = (midX2 - 40) + 'px';
+            calibArrow.style.top = (midY2 - 40) + 'px';
+            calibArrow.style.setProperty('--arrow-angle', (angle2 + Math.PI / 2) + 'rad');
+            calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
+            calibArrow.classList.add('show');
+          }
 
           calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N + ' — 여기를 보세요!';
         }
@@ -1056,8 +1129,33 @@
       debugEl.textContent = '얼굴 OK — 데이터 수집 중';
 
       if (now - lastCalibCollect >= CALIB_COLLECT_MS) {
+        if (calibGazeInFlight) {
+          return;
+        }
+        calibGazeInFlight = true;
         const g = getGazeNorm(lm);
-        collectCalibSample(g.xNorm, g.yNorm);
+        void (async () => {
+          try {
+            const payload = await fetchGazeJsonFromServer();
+            const rawRx =
+              payload != null &&
+              payload.raw_iris_rx != null &&
+              Number.isFinite(Number(payload.raw_iris_rx))
+                ? Number(payload.raw_iris_rx)
+                : g.xNorm;
+            const rawRy =
+              payload != null &&
+              payload.raw_iris_ry != null &&
+              Number.isFinite(Number(payload.raw_iris_ry))
+                ? Number(payload.raw_iris_ry)
+                : g.yNorm;
+            collectCalibSample(rawRx, rawRy);
+          } catch (_err) {
+            collectCalibSample(g.xNorm, g.yNorm);
+          } finally {
+            calibGazeInFlight = false;
+          }
+        })();
       }
       return;
     }
