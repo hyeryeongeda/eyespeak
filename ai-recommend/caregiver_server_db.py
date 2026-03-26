@@ -843,6 +843,23 @@ def recommend():
             sentiment_filter = "중립"
 
     candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=10)
+
+    # 닫힌 질문 "응/아니" → 고정 응답 풀에서 1개 강제 포함
+    if category_keyword == "응":
+        yes_pool = ["응 불러줘", "응 해줘", "응 좋아", "빨리 해줘", "그래 부탁해", "응 먹을게", "응 마실게", "응 듣고 싶어", "응 보자"]
+        # 질문 맥락에 맞는 것을 pool에서 선택 (임베딩 유사도)
+        q_vec = get_embedding(question)
+        best_yes = max(yes_pool, key=lambda t: cosine_sim(q_vec, get_embedding(t)))
+        # 후보 맨 앞에 강제 삽입
+        candidates.insert(0, {"text": best_yes, "score": 99.0, "source": "yes_pool"})
+        candidates = candidates[:10]
+    elif category_keyword == "아니":
+        no_pool = ["아니 됐어", "가지 마", "옆에 있어줘", "지금은 싫어", "안 할래", "나중에 하자", "힘들어서 안 돼"]
+        q_vec = get_embedding(question)
+        best_no = max(no_pool, key=lambda t: cosine_sim(q_vec, get_embedding(t)))
+        candidates.insert(0, {"text": best_no, "score": 99.0, "source": "no_pool"})
+        candidates = candidates[:10]
+
     print(f"[recommend] 검색어: {search_question}")
     print(f"[recommend] 후보: {[(c['text'], round(c['score'],3)) for c in candidates]}")
 
@@ -856,6 +873,13 @@ def recommend():
     if category_keyword:
         question = f"{question} (환자가 '{category_keyword}'를 선택함)"
     sentences = _refine_recommend(question, candidates, sentiment_context=sentiment_filter)
+
+    # 닫힌 질문 후처리: 초대/방문 질문에서 "기다려" → "불러줘"로 교체
+    invite_keywords = ["오라고", "부를까", "초대", "놀러"]
+    is_invite = any(kw in question for kw in invite_keywords)
+    if is_invite and category_keyword == "응":
+        sentences = [s.replace("기다려", "불러줘") for s in sentences]
+
     _recommend_stats["recommend_calls"] += 1
     _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
     return jsonify({"sentences": sentences})
