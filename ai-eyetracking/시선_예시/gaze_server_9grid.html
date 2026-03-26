@@ -277,6 +277,19 @@
         filter: drop-shadow(0 0 24px rgba(255,0,0,0.7));
       }
     }
+
+    #calibPointCounter {
+      position: fixed;
+      transform: translateY(-50%);
+      margin-left: 36px;
+      font-size: 18px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 0 12px rgba(0,0,0,0.9), 0 2px 4px #000;
+      z-index: 206;
+      pointer-events: none;
+      white-space: nowrap;
+    }
   </style>
   <script src="calibration_6_to_9.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -305,6 +318,7 @@
 
   <div id="calib">
     <div id="calibDot"></div>
+    <div id="calibPointCounter"></div>
     <div id="calibText"></div>
     <div id="countdownBig"></div>
     <div id="countdownSub"></div>
@@ -339,6 +353,16 @@
   </div>
 
   <div id="toast"></div>
+  <div id="gaze-cursor-overlay" style="
+    position: fixed;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    display: none;
+  "></div>
   <div id="camWrap">
     <video id="cam" autoplay playsinline muted></video>
     <svg id="faceGuide" viewBox="0 0 120 160" style="position:absolute;top:0;left:0;width:100%;height:100%;display:none;pointer-events:none;">
@@ -370,10 +394,13 @@
   const calibArrow = document.getElementById('calibArrow');
   const faceGuideOverlay = document.getElementById('faceGuideOverlay');
   const guideCountdownEl = faceGuideOverlay.querySelector('.guide-countdown');
+  const guideStatusEl = faceGuideOverlay.querySelector('.guide-status');
   const guideCam = document.getElementById('guideCam');
   const meshCanvas = document.getElementById('meshCanvas');
   const meshCtx = meshCanvas.getContext('2d');
   const videoEl   = document.getElementById('cam');
+  const gazeCursorEl = document.getElementById('gaze-cursor-overlay');
+  const calibPointCounterEl = document.getElementById('calibPointCounter');
   const cells     = Array.from(document.querySelectorAll('#grid .cell'));
   const toastEl   = document.getElementById('toast');
   const searchParams = new URLSearchParams(window.location.search);
@@ -394,6 +421,8 @@
   const EMBED_LOG_PREFIX = '[eye-tracking-embed]';
   const DEFAULT_DWELL_TIME_SEC = 1.5;
   const SELECTION_COOLDOWN_MS = 500;
+  const CALIB_CONFIRM_HINT =
+    '이 점을 바라보세요. 3초 후 자동으로 확정됩니다 (R: 다시하기)';
   const EMBED_API_BASE_URL = new URL('./', window.location.href);
   const PARENT_TARGET_ORIGIN = (() => {
     if (!document.referrer) {
@@ -410,8 +439,6 @@
 
   // ===== 설정 =====
   const CALIB_N        = 18;      // 18포인트 캘리브레이션 (3×6, 센터-퍼스트)
-  const CALIB_COLLECT_MS = 2000;  // 점당 2초 수집
-  const CALIB_COUNTDOWN_SEC = 3;  // 각 점 수집 전 카운트다운
   const INERTIA_HOLD_MS = 180;    // 관성 전환 홀드 (기존 260 → 180: 더 빠른 셀 전환)
 
   // ===== 랜드마크 인덱스 =====
@@ -433,7 +460,13 @@
   }
 
   const calibGazeCanvas = document.createElement('canvas');
-  let calibGazeInFlight = false;
+  let gazePollTimer = null;
+  let gazePollInFlight = false;
+  let lastMirroredLm = null;
+  let calibUserConfirmPhase = false;
+  let calibSubmitCooldown = false;
+  let calibAutoTimer = false;
+  let calibAutoStartTime = 0;
 
   function encodeCalibVideoFrameToBase64() {
     const sourceWidth = videoEl.videoWidth;
@@ -477,6 +510,52 @@
       console.log('[TRIGGER-FRONTEND] received:', frame.trigger, 'ear:', frame.ear);
     }
     return frame;
+  }
+
+  function startGazeCursorPolling() {
+    if (gazePollTimer != null) {
+      return;
+    }
+    gazeCursorEl.style.display = 'none';
+    gazePollTimer = setInterval(() => {
+      if (!videoEl.videoWidth || !videoEl.videoHeight) {
+        return;
+      }
+      if (gazePollInFlight) {
+        return;
+      }
+      gazePollInFlight = true;
+      void (async () => {
+        try {
+          const frame = await fetchGazeJsonFromServer();
+          if (
+            frame &&
+            typeof frame.screen_x === 'number' &&
+            typeof frame.screen_y === 'number'
+          ) {
+            const sx = Number(frame.screen_x);
+            const sy = Number(frame.screen_y);
+            if (Number.isFinite(sx) && Number.isFinite(sy)) {
+              gazeCursorEl.style.left = (sx * window.innerWidth) + 'px';
+              gazeCursorEl.style.top = (sy * window.innerHeight) + 'px';
+              // 진단 정보 화면 표시
+              const debugEl = document.getElementById('debug');
+              if (debugEl && frame) {
+                debugEl.textContent =
+                  `iris=(${frame.diag_iris_rx ?? '?'},${frame.diag_iris_ry ?? '?'}) ` +
+                  `screen=(${sx?.toFixed(3) ?? '?'},${sy?.toFixed(3) ?? '?'}) ` +
+                  `gain_y=${frame.diag_gain_y ?? '?'} ` +
+                  `ear=${frame.ear ?? '?'} cell=${frame.cell ?? '?'}`;
+              }
+            }
+          }
+        } catch (_err) {
+          /* 폴링 실패는 무시 */
+        } finally {
+          gazePollInFlight = false;
+        }
+      })();
+    }, 50);
   }
 
   function notifyParent(type, detail = {}) {
@@ -753,10 +832,9 @@
   let systemState = 'IDLE';  // 'IDLE' | 'ACTIVE' | 'CALIBRATING'
   let coef = null;  // 캘리 다항식 계수
   let earSamples = [];
-  let calibCountdownStart = 0;
-  let calibCounting = true;  // true=카운트다운 중, false=수집 중
   let faceGuidePhase = false;   // true = 얼굴 가이드 표시 중
   let faceGuideStart = 0;
+  let faceGuideAutoTimer = null; // 조건 충족 후 자동 시작용 타임스탬프 (ms)
   const FACE_GUIDE_SEC = 5;     // 얼굴 가이드 표시 시간 (5초)
   let gazeIdx = -1, gazeSince = 0;
   let dwellLockedIdx = -1;
@@ -764,7 +842,7 @@
   let dwellTimeSec = DEFAULT_DWELL_TIME_SEC;
   let gazeProgressMaxMs = DEFAULT_DWELL_TIME_SEC * 1000;
   let inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
-  let calibIdx = 0, calibData = [], lastCalibCollect = 0;
+  let calibIdx = 0, calibData = [];
   let cam = null;
   let autoStartRequested = false;
   cells.forEach(c => c.classList.add('dimmed'));
@@ -862,18 +940,52 @@
     return CalibrationRegion.getCalibPointsPx(CALIB_N, window.innerWidth, window.innerHeight)[calibIdx];
   }
 
+  function refreshCalibInstruction() {
+    calibPointCounterEl.textContent = (calibIdx + 1) + '/' + CALIB_N;
+    calibText.textContent = CALIB_CONFIRM_HINT;
+  }
+
+  function updateCalibDotAndCounter() {
+    const pt = getCalibPx();
+    calibDot.style.left = pt.x + 'px';
+    calibDot.style.top = pt.y + 'px';
+    calibPointCounterEl.style.left = pt.x + 'px';
+    calibPointCounterEl.style.top = pt.y + 'px';
+  }
+
+  function syncCalibArrow() {
+    const ptRatio = CalibrationRegion.getCalibPoints(CALIB_N)[calibIdx];
+    const isCenterCalibPoint =
+      ptRatio &&
+      Math.abs(ptRatio.x - 0.5) < 0.25 &&
+      Math.abs(ptRatio.y - 0.5) < 0.25;
+    if (isCenterCalibPoint) {
+      calibArrow.classList.remove('show');
+    } else {
+      const pt0 = getCalibPx();
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const midX = cx + (pt0.x - cx) * 0.75;
+      const midY = cy + (pt0.y - cy) * 0.75;
+      const angle = Math.atan2(pt0.y - cy, pt0.x - cx);
+      calibArrow.style.left = (midX - 40) + 'px';
+      calibArrow.style.top = (midY - 40) + 'px';
+      calibArrow.style.setProperty('--arrow-angle', (angle + Math.PI / 2) + 'rad');
+      calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
+      calibArrow.classList.add('show');
+    }
+  }
+
   function startCalibration() {
     systemState = 'CALIBRATING';
     document.getElementById('camWrap').classList.add('guiding');
     calibIdx = 0;
     calibData = [];
-    calibCounting = false;
-    calibCountdownStart = 0;
+    calibUserConfirmPhase = false;
     earSamples = [];
     coef = null;
     lastSelectionAt = 0;
     inertiaState = { lastIdx: -1, candidateIdx: -1, candidateSince: 0 };
-    calibGazeInFlight = false;
     resetGazeSelectionState(true);
     cells.forEach(c => { c.classList.remove('hot', 'selected'); c.querySelector('.progress').style.width = '0%'; });
 
@@ -885,6 +997,7 @@
     // ★ 얼굴 가이드 페이즈(5초) 먼저 표시
     faceGuidePhase = true;
     faceGuideStart = Date.now();
+    faceGuideAutoTimer = null;
     faceGuideOverlay.classList.add('show');
     // ★ 웹캠 스트림을 guideCam에 연결 (MediaPipe #cam은 그대로 사용)
     if (videoEl.srcObject) {
@@ -892,6 +1005,7 @@
     }
     calibDot.style.display = 'none';
     calibText.style.display = 'none';
+    calibPointCounterEl.style.display = 'none';
     document.getElementById('btnCal').disabled = true;
   }
 
@@ -963,6 +1077,7 @@
 
     if (calibIdx >= CALIB_N) {
       // 다항식 피팅
+      calibUserConfirmPhase = false;
       coef = CalibrationRegion.fitPolynomialCalibration(calibData);
       if (earSamples.length > 0) {
         const mean = earSamples.reduce((a, b) => a + b, 0) / earSamples.length;
@@ -972,6 +1087,7 @@
       calibEl.classList.remove('show');
       countdownBig.classList.remove('show');
       calibArrow.classList.remove('show');
+      calibPointCounterEl.style.display = 'none';
       document.getElementById('camWrap').classList.remove('guiding');
       document.getElementById('btnCal').disabled = false;
       statusEl.textContent = '캘리브레이션 완료! 바로 선택할 수 있습니다.';
@@ -982,12 +1098,68 @@
       return;
     }
 
-    calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N + ' — 다음 점을 응시하세요';
-    const next = CalibrationRegion.getCalibPointsPx(CALIB_N, window.innerWidth, window.innerHeight)[calibIdx];
-    calibDot.style.left = next.x + 'px';
-    calibDot.style.top = next.y + 'px';
-    calibCounting = true;
-    calibCountdownStart = Date.now();
+    refreshCalibInstruction();
+    updateCalibDotAndCounter();
+    syncCalibArrow();
+  }
+
+  function redoLastCalibSample() {
+    if (!calibUserConfirmPhase || calibData.length === 0) {
+      return;
+    }
+    calibAutoTimer = false;
+    calibData.pop();
+    calibIdx = calibData.length;
+    refreshCalibInstruction();
+    updateCalibDotAndCounter();
+    syncCalibArrow();
+    showToast('이전 점을 다시 수집합니다');
+  }
+
+  function submitCalibSample() {
+    if (!calibEl.classList.contains('show') || faceGuidePhase || !calibUserConfirmPhase) {
+      return;
+    }
+    if (calibSubmitCooldown) {
+      return;
+    }
+    calibSubmitCooldown = true;
+    calibAutoTimer = false;
+    gazeCursorEl.style.background = 'rgba(0, 255, 100, 0.55)';
+
+    const payloadPromise = fetchGazeJsonFromServer().catch(() => null);
+
+    window.setTimeout(() => {
+      void (async () => {
+        try {
+          gazeCursorEl.style.background = 'rgba(255, 0, 0, 0.5)';
+          const payload = await payloadPromise;
+          let g = { xNorm: 0.5, yNorm: 0.5 };
+          if (lastMirroredLm) {
+            g = getGazeNorm(lastMirroredLm);
+          }
+          let rawRx = g.xNorm;
+          let rawRy = g.yNorm;
+          if (payload != null) {
+            if (
+              payload.raw_iris_rx != null &&
+              Number.isFinite(Number(payload.raw_iris_rx))
+            ) {
+              rawRx = Number(payload.raw_iris_rx);
+            }
+            if (
+              payload.raw_iris_ry != null &&
+              Number.isFinite(Number(payload.raw_iris_ry))
+            ) {
+              rawRy = Number(payload.raw_iris_ry);
+            }
+          }
+          collectCalibSample(rawRx, rawRy);
+        } finally {
+          calibSubmitCooldown = false;
+        }
+      })();
+    }, 500);
   }
 
   // ===== MediaPipe 결과 콜백 =====
@@ -996,6 +1168,7 @@
 
     if (!hasFace) {
       resetGazeSelectionState(true);
+      lastMirroredLm = null;
       debugEl.textContent = '얼굴 없음 — 카메라를 정면으로 봐주세요';
       if (calibEl.classList.contains('show')) {
         calibText.textContent = '⚠ 얼굴을 인식할 수 없습니다 — 카메라를 봐주세요';
@@ -1013,149 +1186,85 @@
       // ★ 얼굴 가이드 페이즈(첫 캘리 포인트 전)
       if (faceGuidePhase) {
         const elapsed = (now - faceGuideStart) / 1000;
-        const remaining = Math.ceil(FACE_GUIDE_SEC - elapsed);
-        guideCountdownEl.textContent = remaining > 0 ? remaining + '초 후 시작…' : '시작!';
-        debugEl.textContent = '얼굴 스캐닝 — ' + remaining + '초 남음';
+        // 얼굴 크기 = 왼눈 외곽~오른눈 외곽 (미러된 lm 기준)
+        const lEye = lm[33];
+        const rEye = lm[263];
+        const faceWidth = Math.abs(lEye.x - rEye.x);
+        const faceWidthOk = faceWidth > 0.15 && faceWidth < 0.45;
+        const noseTip = lm[1];
+        const centerOk = Math.abs(noseTip.x - 0.5) < 0.15 && Math.abs(noseTip.y - 0.5) < 0.25;
+        const statusParts = [];
+        statusParts.push(faceWidthOk ? '✅ 거리 적정' : '❌ ' + (faceWidth < 0.15 ? '더 가까이' : '더 멀리'));
+        statusParts.push(centerOk ? '✅ 위치 적정' : '❌ 얼굴을 중앙으로');
+        const allOk = faceWidthOk && centerOk;
+        let autoElapsed = 0;
+        if (allOk) {
+          if (!faceGuideAutoTimer) {
+            faceGuideAutoTimer = Date.now();
+          }
+          autoElapsed = (Date.now() - faceGuideAutoTimer) / 1000;
+          const autoRemaining = Math.max(0, 3 - autoElapsed);
+          guideCountdownEl.textContent = Math.ceil(autoRemaining) + '초 후 시작…';
+        } else {
+          faceGuideAutoTimer = null;
+          guideCountdownEl.textContent = '조건을 맞춰주세요';
+        }
+        if (guideStatusEl) {
+          guideStatusEl.textContent =
+            statusParts.join(' | ') +
+            ' · 눈간 ' + (faceWidth * 100).toFixed(0) + '% (15~45%) · 코 x' +
+            (noseTip.x * 100).toFixed(0) + '% y' + (noseTip.y * 100).toFixed(0) + '%';
+        }
+        debugEl.textContent = allOk
+          ? '얼굴 스캐닝 — 조건 충족 · ' + Math.ceil(Math.max(0, 3 - autoElapsed)) + '초 후 시작'
+          : '얼굴 스캐닝 — 거리·위치를 맞춰주세요 · 경과 ' + elapsed.toFixed(0) + '초 / ' + (FACE_GUIDE_SEC + 10) + '초 시 강제 시작';
 
         // ★ 얼굴 메시 와이어프레임 그리기 (원본 lm 사용 — 미러링은 drawFaceMesh 내부에서)
         drawFaceMesh(results.multiFaceLandmarks[0]);
 
-        if (elapsed >= FACE_GUIDE_SEC) {
-          // 가이드 종료 → 첫 번째 캘리 포인트 시작
+        if ((allOk && autoElapsed >= 3) || elapsed >= FACE_GUIDE_SEC + 10) {
+          // 가이드 종료 → 첫 번째 캘리 포인트 — 사용자 확인 대기
           faceGuidePhase = false;
+          faceGuideAutoTimer = null;
           faceGuideOverlay.classList.remove('show');
           guideCam.srcObject = null;  // 스트림 연결 해제
           meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
           calibDot.style.display = '';
           calibText.style.display = '';
-          calibCounting = true;
-          calibCountdownStart = Date.now();
-          calibText.textContent = '포인트 1 / ' + CALIB_N + ' — ' + CALIB_COUNTDOWN_SEC + '...';
-          const pt = getCalibPx();
-          calibDot.style.left = pt.x + 'px';
-          calibDot.style.top = pt.y + 'px';
+          calibPointCounterEl.style.display = '';
+          calibUserConfirmPhase = true;
+          countdownBig.classList.remove('show');
+          refreshCalibInstruction();
+          updateCalibDotAndCounter();
+          syncCalibArrow();
           statusEl.textContent = '캘리브레이션 중…';
         }
         return;
       }
 
-      if (calibCounting) {
-        const elapsed = (now - calibCountdownStart) / 1000;
-        const remaining = Math.max(0, CALIB_COUNTDOWN_SEC - elapsed);
-        const count = Math.ceil(remaining);
-
-        const ptRatio = CalibrationRegion.getCalibPoints(CALIB_N)[calibIdx];
-        const isCenterCalibPoint =
-          ptRatio &&
-          Math.abs(ptRatio.x - 0.5) < 0.25 &&
-          Math.abs(ptRatio.y - 0.5) < 0.25;
-
-        if (count > 0) {
-          // 큰 숫자 표시
-          const newText = String(count);
-          if (countdownBig.textContent !== newText) {
-            countdownBig.textContent = newText;
-            countdownBig.classList.remove('show');
-            void countdownBig.offsetWidth;
-            countdownBig.classList.add('show');
-          }
-          // 카운트다운 숫자: 중앙 포인트일 때 위쪽으로 이동 (도트와 겹침 완화)
-          if (isCenterCalibPoint) {
-            countdownBig.style.top = '25%';
-          } else {
-            countdownBig.style.top = '50%';
-          }
-          // 화살표: 화면 중앙 근처 포인트에서는 숨김
-          if (isCenterCalibPoint) {
-            calibArrow.classList.remove('show');
-          } else {
-            const pt0 = getCalibPx();
-            const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-            const midX = cx + (pt0.x - cx) * 0.75, midY = cy + (pt0.y - cy) * 0.75;
-            const angle = Math.atan2(pt0.y - cy, pt0.x - cx);
-            calibArrow.style.left = (midX - 40) + 'px';
-            calibArrow.style.top = (midY - 40) + 'px';
-            calibArrow.style.setProperty('--arrow-angle', (angle + Math.PI / 2) + 'rad');
-            calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
-            calibArrow.classList.add('show');
-          }
-          calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N + ' — ' + count + '...';
-        } else {
-          // 카운트다운 끝 → "바라보세요!" + 화살표
-          countdownBig.textContent = '';
-          countdownBig.classList.remove('show');
-          void countdownBig.offsetWidth;
-          countdownBig.classList.add('show');
-
-          if (isCenterCalibPoint) {
-            countdownBig.style.top = '25%';
-          } else {
-            countdownBig.style.top = '50%';
-          }
-          if (isCenterCalibPoint) {
-            calibArrow.classList.remove('show');
-          } else {
-            const pt = getCalibPx();
-            const cx2 = window.innerWidth / 2, cy2 = window.innerHeight / 2;
-            const midX2 = cx2 + (pt.x - cx2) * 0.75, midY2 = cy2 + (pt.y - cy2) * 0.75;
-            const angle2 = Math.atan2(pt.y - cy2, pt.x - cx2);
-            calibArrow.style.left = (midX2 - 40) + 'px';
-            calibArrow.style.top = (midY2 - 40) + 'px';
-            calibArrow.style.setProperty('--arrow-angle', (angle2 + Math.PI / 2) + 'rad');
-            calibArrow.style.animation = 'arrowFloat 1.2s ease-in-out infinite';
-            calibArrow.classList.add('show');
-          }
-
-          calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N + ' — 여기를 보세요!';
-        }
-
-        debugEl.textContent = '얼굴 OK — 카운트다운 ' + count;
-
-        if (elapsed >= CALIB_COUNTDOWN_SEC) {
-          calibCounting = false;
-          lastCalibCollect = Date.now();
-          countdownBig.classList.remove('show');
-          calibArrow.classList.remove('show');
-        }
-        return;
-      }
-
-      // 수집 단계
+      // 자동 확정: 얼굴 감지 시 3초 카운트다운 → 자동 제출
+      lastMirroredLm = lm;
+      refreshCalibInstruction();
       const ear = getEAR(lm);
       earSamples.push(ear);
-      const remaining = Math.max(0, CALIB_COLLECT_MS - (now - lastCalibCollect));
-      calibText.textContent = '포인트 ' + (calibIdx + 1) + ' / ' + CALIB_N +
-        ' — 여기를 보세요! (' + Math.ceil(remaining / 1000) + '초)';
-      debugEl.textContent = '얼굴 OK — 데이터 수집 중';
+      syncCalibArrow();
 
-      if (now - lastCalibCollect >= CALIB_COLLECT_MS) {
-        if (calibGazeInFlight) {
-          return;
-        }
-        calibGazeInFlight = true;
-        const g = getGazeNorm(lm);
-        void (async () => {
-          try {
-            const payload = await fetchGazeJsonFromServer();
-            const rawRx =
-              payload != null &&
-              payload.raw_iris_rx != null &&
-              Number.isFinite(Number(payload.raw_iris_rx))
-                ? Number(payload.raw_iris_rx)
-                : g.xNorm;
-            const rawRy =
-              payload != null &&
-              payload.raw_iris_ry != null &&
-              Number.isFinite(Number(payload.raw_iris_ry))
-                ? Number(payload.raw_iris_ry)
-                : g.yNorm;
-            collectCalibSample(rawRx, rawRy);
-          } catch (_err) {
-            collectCalibSample(g.xNorm, g.yNorm);
-          } finally {
-            calibGazeInFlight = false;
-          }
-        })();
+      if (!calibAutoTimer) {
+        calibAutoStartTime = performance.now();
+        calibAutoTimer = true;
+      }
+      const autoElapsedSec = (performance.now() - calibAutoStartTime) / 1000;
+      const remaining = Math.ceil(3 - autoElapsedSec);
+
+      if (remaining > 0) {
+        debugEl.textContent =
+          `${remaining}초 후 자동 확정… (R: 다시하기) · ` +
+          (calibIdx + 1) + '/' + CALIB_N;
+      }
+
+      if (autoElapsedSec >= 3) {
+        calibAutoTimer = false;
+        submitCalibSample();
       }
       return;
     }
@@ -1231,6 +1340,32 @@
   }
 
   // ===== 버튼 이벤트 =====
+  document.addEventListener('keydown', (e) => {
+    if (!calibEl.classList.contains('show') || faceGuidePhase || !calibUserConfirmPhase) {
+      return;
+    }
+    if (e.code === 'Space') {
+      if (e.repeat) {
+        return;
+      }
+      e.preventDefault();
+      submitCalibSample();
+    } else if (e.code === 'KeyR') {
+      e.preventDefault();
+      redoLastCalibSample();
+    }
+  });
+
+  document.addEventListener('click', () => {
+    if (!calibEl.classList.contains('show') || faceGuidePhase || !calibUserConfirmPhase) {
+      return;
+    }
+    if (calibSubmitCooldown) {
+      return;
+    }
+    submitCalibSample();
+  });
+
   document.getElementById('btnCal').addEventListener('click', () => {
     if (!cam || !faceMesh) { showToast('카메라/MediaPipe 로딩 중… 잠시 기다려주세요'); return; }
     startCalibration();
@@ -1287,8 +1422,10 @@
   document.getElementById('btnReset').addEventListener('click', () => {
     trigger.reset();
     earSamples = [];
+    calibUserConfirmPhase = false;
     setSystemState('IDLE');
     faceGuidePhase = false;
+    faceGuideAutoTimer = null;
     faceGuideOverlay.classList.remove('show');
     guideCam.srcObject = null;
     meshCtx.clearRect(0, 0, meshCanvas.width, meshCanvas.height);
@@ -1337,6 +1474,7 @@
       console.info(EMBED_LOG_PREFIX, 'camera init success');
       console.info(EMBED_LOG_PREFIX, 'detector init success');
       notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_READY);
+      startGazeCursorPolling();
       if (AUTO_START && !autoStartRequested) {
         autoStartRequested = true;
         startCalibration();

@@ -21,20 +21,20 @@ smoothing:
   use_gaze_refiner: true
   refiner_type: one_euro
   gaze_refiner_alpha: 0.3
-  one_euro_min_cutoff_x: 0.8
-  one_euro_beta_x: 0.25
-  one_euro_min_cutoff_y: 0.5
+  one_euro_min_cutoff_x: 0.5
+  one_euro_beta_x: 0.2
+  one_euro_min_cutoff_y: 0.25
   one_euro_beta_y: 0.15
   screen_hold_ms: 500
-  screen_outlier_distance: 0.4
+  screen_outlier_distance: 0.5
   screen_fallback_jump_margin: 0.10
   readiness_valid_streak: 2
-  blink_ear_threshold: 0.18
+  blink_ear_threshold: 0.19
 
 weights:
   head_pose_weight: 0.0
-  iris_gaze_weight: 1.0
-  l2cs_weight: 0.0
+  iris_gaze_weight: 0.7
+  l2cs_weight: 0.3
 
 calibration:
   points: 18
@@ -80,9 +80,9 @@ calibration:
 
 trigger:
   dwell_time_sec: 1.5
-  blink_select_min_sec: 0.3
+  blink_select_min_sec: 0.15
   blink_select_max_sec: 1.0
-  double_blink_window_sec: 2.0
+  double_blink_window_sec: 3.0
   long_close_sec: 3.0
   triple_blink_window_sec: 3.0
   blink_history_ttl_sec: 5.0

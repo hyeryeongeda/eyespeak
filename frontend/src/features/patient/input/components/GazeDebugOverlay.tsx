@@ -14,6 +14,9 @@ import { useGazeInputStore } from '../stores/gazeInputStore'
  *   (gaze 업데이트 다음 프레임부터 적용됨)
  */
 export default function GazeDebugOverlay() {
+  // 빨간 디버그 커서 비활성화 — 환자 UI에서 불필요
+  return null
+
   const point = useGazeInputStore(state => state.point)
   const cell = useGazeInputStore(state => state.cell)
 

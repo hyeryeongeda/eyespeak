@@ -8,7 +8,7 @@ from typing import Tuple
 
 import torch
 import torch.nn as nn
-from torchvision.models import resnet18
+from torchvision.models import resnet18, resnet50
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +23,21 @@ class L2CSNet(nn.Module):
     90-bin softmax 기대값으로 연속 각도(라디안)를 산출한다.
     """
 
-    def __init__(self, num_bins: int = 90) -> None:
+    def __init__(self, num_bins: int = 90, arch: str = "ResNet18") -> None:
         super().__init__()
-        resnet = resnet18(weights=None)
-        self.backbone = nn.Sequential(*list(resnet.children())[:-1])
-        self.fc_yaw = nn.Linear(512, num_bins)
-        self.fc_pitch = nn.Linear(512, num_bins)
+        arch_norm = str(arch).strip().lower()
+        if arch_norm == "resnet50":
+            resnet = resnet50(weights=None)
+            feat_dim = 2048
+        else:
+            resnet = resnet18(weights=None)
+            feat_dim = 512
+
+        # backbone의 fc를 제거하고 feature extractor로 사용
+        resnet.fc = nn.Identity()
+        self.backbone = resnet
+        self.fc_yaw = nn.Linear(feat_dim, num_bins)
+        self.fc_pitch = nn.Linear(feat_dim, num_bins)
         self.num_bins = num_bins
         bin_centers_deg = [-99.0 + i * (198.0 / (num_bins - 1)) for i in range(num_bins)]
         bin_centers_rad = torch.tensor(
@@ -43,7 +52,9 @@ class L2CSNet(nn.Module):
         Returns:
             ``yaw_rad``, ``pitch_rad`` 각각 ``(B,)``.
         """
-        feat = self.backbone(x).view(x.size(0), -1)
+        feat = self.backbone(x)
+        if feat.ndim > 2:
+            feat = feat.view(x.size(0), -1)
         yaw_logits = self.fc_yaw(feat)
         pitch_logits = self.fc_pitch(feat)
         yaw_rad = (torch.softmax(yaw_logits, dim=1) * self.bin_centers_rad).sum(dim=1)

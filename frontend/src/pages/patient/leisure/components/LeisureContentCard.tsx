@@ -79,6 +79,7 @@ export default function LeisureContentCard({
       className="leisure-interactive"
       onClick={onSelect}
       data-leisure-slot={slotId}
+      data-tracking-id={slotId}
       data-patient-target={slotId}
       style={{
         ...leisureCardBaseStyle,

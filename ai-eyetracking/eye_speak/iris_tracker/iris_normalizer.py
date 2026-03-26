@@ -18,12 +18,14 @@ from eye_speak.iris_tracker.landmarks import (
     L_EYE_LOWER,
     L_EYE_OUTER,
     L_EYE_UPPER,
+    L_EYEBROW,
     L_IRIS,
     R_EAR,
     R_EYE_INNER,
     R_EYE_LOWER,
     R_EYE_OUTER,
     R_EYE_UPPER,
+    R_EYEBROW,
     R_IRIS,
 )
 
@@ -105,7 +107,7 @@ def compute_iris_position(
     Args:
         landmarks_px: 픽셀 좌표 리스트(최소 478점). 비어 있거나 부족하면 신뢰 불가.
         blink_threshold: EAR 임계값. ``None``이면 YAML ``blink_ear_threshold`` 사용.
-        y_gain: Y축 amplification gain. ``None``이면 Y는 ``4.0`` (X와 동일 기본).
+        y_gain: Y축 amplification gain. ``None``이면 기본 ``7.0``.
 
     Returns:
         ``(ratio_x, ratio_y, ear_avg, is_blinking)``.
@@ -141,9 +143,9 @@ def compute_iris_position(
     ratios_y: List[float] = []
     conf_list: List[float] = []
 
-    for outer, inner, iris_idxs, upper_indices, lower_indices, ear_per_eye in (
-        (R_EYE_OUTER, R_EYE_INNER, R_IRIS, R_EYE_UPPER, R_EYE_LOWER, ear_r),
-        (L_EYE_INNER, L_EYE_OUTER, L_IRIS, L_EYE_UPPER, L_EYE_LOWER, ear_l),
+    for outer, inner, iris_idxs, eyebrow_indices, upper_indices, lower_indices, ear_per_eye in (
+        (R_EYE_OUTER, R_EYE_INNER, R_IRIS, R_EYEBROW, R_EYE_UPPER, R_EYE_LOWER, ear_r),
+        (L_EYE_INNER, L_EYE_OUTER, L_IRIS, L_EYEBROW, L_EYE_UPPER, L_EYE_LOWER, ear_l),
     ):
         lx, ly = landmarks_px[outer]
         rx, ry = landmarks_px[inner]
@@ -154,20 +156,50 @@ def compute_iris_position(
         if eye_w < _EPS:
             continue
 
+        # 랜드마크 Y좌표 수집
+        eyebrow_ys = [landmarks_px[i][1] for i in eyebrow_indices]
         upper_ys = [landmarks_px[i][1] for i in upper_indices]
         lower_ys = [landmarks_px[i][1] for i in lower_indices]
-        ty_median = statistics.median(upper_ys)
+        eyebrow_y = statistics.median(eyebrow_ys)
+        upper_lid_y = statistics.median(upper_ys)
         by_median = statistics.median(lower_ys)
-        eye_h = abs(by_median - ty_median)
+        vert_span = abs(by_median - eyebrow_y)
 
         n_iris = max(len(iris_idxs), 1)
         iris_x = sum(landmarks_px[i][0] for i in iris_idxs) / float(n_iris)
         iris_y = sum(landmarks_px[i][1] for i in iris_idxs) / float(n_iris)
 
+        # --- X축: eye corner 기준 (변경 없음) ---
         rx_ratio = (iris_x - lx) / eye_w
         rx_ratio = max(0.0, min(1.0, rx_ratio))
-        denom_y = eye_h + _EPS
-        ry_ratio = (iris_y - ty_median) / denom_y
+
+        # --- Y축: 다중 특징 복합 점수 ---
+        # 특징 1: 홍채 Y 위치 (눈썹 기준, 약한 신호)
+        ry_iris = (iris_y - eyebrow_y) / (vert_span + _EPS)
+        ry_iris = max(0.0, min(1.0, ry_iris))
+
+        # 특징 2: 공막 비율 (위를 보면 아래 공막↑ → ratio↓, 아래를 보면 위 공막↑ → ratio↑)
+        upper_sclera = max(0.0, iris_y - upper_lid_y)
+        lower_sclera = max(0.0, by_median - iris_y)
+        sclera_sum = upper_sclera + lower_sclera + _EPS
+        sclera_ratio = upper_sclera / sclera_sum
+        sclera_ratio = max(0.0, min(1.0, sclera_ratio))
+
+        # 특징 3: 눈꺼풀-홍채 비대칭 (위를 보면 upper↓lower↑ → ratio↓)
+        lid_asymmetry = upper_sclera / (lower_sclera + _EPS)
+        lid_asym_norm = max(0.0, min(1.0, lid_asymmetry / 3.0))
+
+        # 특징 4: EAR 역방향 (눈이 크게 떠짐=위를 봄=screen_y 낮아야 함)
+        ear_norm = max(0.0, min(1.0, (ear_per_eye - 0.15) / 0.25))
+        ear_y_component = 1.0 - ear_norm
+
+        # 가중 복합 (리서치 기반 가중치)
+        ry_ratio = (
+            0.2 * ry_iris
+            + 0.4 * ear_y_component
+            + 0.2 * sclera_ratio
+            + 0.2 * lid_asym_norm
+        )
         ry_ratio = max(0.0, min(1.0, ry_ratio))
 
         confidence = eye_w * ear_per_eye
@@ -190,7 +222,10 @@ def compute_iris_position(
     # --- Iris ratio amplification ---
     _CENTER = 0.5
     _GAIN_X = 4.0
-    _GAIN_Y = y_gain if y_gain is not None else 10.0
+    _GAIN_Y = y_gain if y_gain is not None else 7.0
+
+    logger.debug("[PRE-GAIN] raw_ratio_x=%.4f raw_ratio_y=%.4f", ratio_x, ratio_y)
+
     ratio_x = max(0.0, min(1.0, _CENTER + (ratio_x - _CENTER) * _GAIN_X))
     ratio_y = max(0.0, min(1.0, _CENTER + (ratio_y - _CENTER) * _GAIN_Y))
 
@@ -206,11 +241,23 @@ class IrisNormalizer:
         """
         self.blink_threshold: Optional[float] = blink_threshold
         self._y_gain: Optional[float] = None
+        # 자동 센터 오프셋: 첫 60프레임의 Y 중앙값으로 보정
+        self._y_offset: float = 0.0
+        self._center_samples: List[float] = []
+        self._center_locked: bool = False
+        self._AUTO_CENTER_FRAMES: int = 60
 
     def set_y_gain(self, gain: float) -> None:
         """캘리브레이션에서 계산된 Y축 전용 gain을 설정한다."""
         self._y_gain = float(gain)
         logger.info("IrisNormalizer: Y gain set to %.2f", self._y_gain)
+
+    def reset_center(self) -> None:
+        """자동 센터 오프셋을 초기화한다 (재캘리브레이션 시 호출)."""
+        self._y_offset = 0.0
+        self._center_samples.clear()
+        self._center_locked = False
+        logger.info("IrisNormalizer: auto-center reset")
 
     @property
     def y_gain(self) -> Optional[float]:
@@ -219,5 +266,31 @@ class IrisNormalizer:
     def __call__(
         self, landmarks_px: Optional[LandmarksPx]
     ) -> Tuple[Optional[float], Optional[float], float, bool]:
-        """랜드마크에서 비율 좌표와 EAR을 반환한다."""
-        return compute_iris_position(landmarks_px, self.blink_threshold, self._y_gain)
+        """랜드마크에서 비율 좌표와 EAR을 반환한다.
+
+        첫 60프레임 동안 Y축 중앙값을 수집하여 자동 센터 오프셋을 계산한다.
+        """
+        rx, ry, ear, blink = compute_iris_position(
+            landmarks_px, self.blink_threshold, self._y_gain
+        )
+
+        if rx is not None and ry is not None and not blink:
+            # 자동 센터: 첫 N프레임 수집 → 중앙값으로 오프셋 계산
+            if not self._center_locked:
+                self._center_samples.append(ry)
+                if len(self._center_samples) >= self._AUTO_CENTER_FRAMES:
+                    median_y = statistics.median(self._center_samples)
+                    self._y_offset = 0.5 - median_y
+                    self._center_locked = True
+                    logger.info(
+                        "Auto-center Y: offset=%.4f (median=%.4f, samples=%d)",
+                        self._y_offset,
+                        median_y,
+                        len(self._center_samples),
+                    )
+
+            # 오프셋 적용
+            if self._center_locked:
+                ry = max(0.0, min(1.0, ry + self._y_offset))
+
+        return (rx, ry, ear, blink)
