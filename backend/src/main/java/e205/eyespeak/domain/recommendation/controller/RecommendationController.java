@@ -88,6 +88,48 @@ public class RecommendationController {
     }
 
     // =========================================================================
+    // 1-1. POST /recommendations/reply-categories — 보호자 메시지 기반 카테고리 조회
+    // =========================================================================
+
+    @Operation(summary = "보호자 메시지 기반 카테고리 조회",
+            description = "보호자 메시지를 분석하여 환자가 선택할 카테고리 3개를 생성합니다. (닫힌 질문: 응/아니/잘 모르겠어, 통보형: 알겠어/조심해/빨리 와, 열린 질문: AI 생성)")
+    @ApiResponses({
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "메시지 내용 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"COMMON-101\",\"message\":\"입력값이 올바르지 않습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "매칭 정보 없음",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"MATCHING-803\",\"message\":\"매칭 정보를 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}"))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "AI 카테고리 생성 실패",
+                    content = @Content(examples = @ExampleObject(value = "{\"code\":\"AI-701\",\"message\":\"AI 추천 생성에 실패하였습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
+    })
+    @PostMapping("/reply-categories")
+    public ApiResponse<ReplyCategoriesResponse> getReplyCategories(
+            @RequestBody ReplyCategoriesRequest request,
+            Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
+        Matching matching = recommendationService.getMatchingByUserId(userId);
+
+        if (request.getMessage() == null || request.getMessage().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("question", request.getMessage());
+        body.put("matching_id", matching.getId());
+
+        try {
+            Map result = restTemplate.postForObject(
+                    aiServerUrl + "/categories", buildRequest(body), Map.class);
+            List<String> categories = (List<String>) result.get("categories");
+            Map<String, String> sentimentMap = (Map<String, String>) result.get("sentimentMap");
+            Map<String, String> intentMap = (Map<String, String>) result.get("intentMap");
+            return ApiResponse.ok(new ReplyCategoriesResponse(categories, sentimentMap, intentMap));
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+        }
+    }
+
+    // =========================================================================
     // 2. POST /recommendations/sentences — 카테고리 기반 추천 문장 조회
     // =========================================================================
 
@@ -386,6 +428,34 @@ public class RecommendationController {
 
         SentencesResponse(List<String> sentences) {
             this.sentences = sentences;
+        }
+    }
+
+    // --- /reply-categories 요청/응답 ---
+    @Getter
+    @NoArgsConstructor
+    @Schema(description = "보호자 메시지 기반 카테고리 요청")
+    public static class ReplyCategoriesRequest {
+        @Schema(description = "보호자 메시지", example = "오렌지 주스 마실래?")
+        private String message;
+    }
+
+    @Getter
+    @Schema(description = "보호자 메시지 기반 카테고리 응답")
+    public static class ReplyCategoriesResponse {
+        @Schema(description = "카테고리 목록 (3개)", example = "[\"응\", \"아니\", \"잘 모르겠어\"]")
+        private final List<String> categories;
+
+        @Schema(description = "카테고리별 감정", example = "{\"응\": \"긍정\", \"아니\": \"부정\", \"잘 모르겠어\": \"중립\"}")
+        private final Map<String, String> sentimentMap;
+
+        @Schema(description = "카테고리별 의도", example = "{\"응\": \"감정\", \"아니\": \"감정\", \"잘 모르겠어\": \"기타\"}")
+        private final Map<String, String> intentMap;
+
+        ReplyCategoriesResponse(List<String> categories, Map<String, String> sentimentMap, Map<String, String> intentMap) {
+            this.categories = categories;
+            this.sentimentMap = sentimentMap;
+            this.intentMap = intentMap;
         }
     }
 
