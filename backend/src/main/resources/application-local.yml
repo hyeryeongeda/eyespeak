@@ -25,10 +25,10 @@ spring:
 server:
   port: 8080
 
-# AI 서버 (로컬 Docker: eyespeak-ai-caregiver:5003, eyespeak-ai-tts:8000)
+# AI 서버 (RunPod GPU)
 ai:
   server:
-    url: ${AI_SERVER_URL:http://eyespeak-ai-caregiver:5003}
+    url: ${AI_SERVER_URL:https://5c2phf6m1owinh-5003.proxy.runpod.net}
   tts:
     url: ${AI_TTS_URL:https://5c2phf6m1owinh-8000.proxy.runpod.net}
   internal:
