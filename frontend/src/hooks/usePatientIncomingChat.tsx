@@ -322,7 +322,7 @@ function patientChatReducer(
         messages: mergePatientMessages(state.messages, [action.message]),
         previousRoute: action.previousRoute,
         activeMessageId:
-          state.activeMessageId ?? (action.message.sender === 'guardian' ? action.message.id : null),
+          action.message.sender === 'guardian' ? action.message.id : state.activeMessageId,
         lastEventLabel: '보호자 선발화를 수신했습니다.',
       }
 
