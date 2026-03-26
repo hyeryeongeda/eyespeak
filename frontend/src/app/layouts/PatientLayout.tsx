@@ -16,7 +16,10 @@ import {
 } from '../../features/patient/input/stores/patientModeStore'
 import PatientDailyMoodOverlay from '../../features/patient/daily-mood/components/PatientDailyMoodOverlay'
 import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
-import { usePatientIncomingChat } from '../../hooks/patientIncomingChatContext'
+import {
+  usePatientIncomingChat,
+  type PatientIncomingChatContextValue,
+} from '../../hooks/patientIncomingChatContext'
 import { createDailyMood, getTodayDailyMood } from '../../services/dailyMoodService'
 import { usePatientLeisureResumeStore } from '../../stores/patientLeisureResumeStore'
 import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'
@@ -58,6 +61,15 @@ function isLeisureRouteKind(kind: string | null | undefined) {
 
 function isChatRouteKind(kind: string | null | undefined) {
   return kind === 'talk' || kind === 'custom_talk'
+}
+
+type PatientChatDebugWindow = Window & {
+  __patientChatDebug?: {
+    presets: string[]
+    triggerIncomingPreset: PatientIncomingChatContextValue['triggerIncomingPreset']
+    triggerDuplicateMessage: () => void
+    openLatestPendingReply: () => void
+  }
 }
 
 function PatientLayoutShell() {
@@ -206,6 +218,27 @@ function PatientLayoutShell() {
     pendingReplyAfterTalkNavigationRef.current = false
     chat.enterReplyMode()
   }, [chat, location.pathname])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const debugWindow = window as PatientChatDebugWindow
+
+    debugWindow.__patientChatDebug = {
+      presets: chat.availablePresets.map(preset => preset.key),
+      triggerIncomingPreset: presetKey => {
+        chat.triggerIncomingPreset(presetKey as (typeof chat.availablePresets)[number]['key'])
+      },
+      triggerDuplicateMessage: chat.triggerDuplicateMessage,
+      openLatestPendingReply: chat.openLatestPendingReply,
+    }
+
+    return () => {
+      delete debugWindow.__patientChatDebug
+    }
+  }, [chat])
 
   useEffect(() => {
     if (!resumeContext?.fromLeisure) {

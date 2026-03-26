@@ -81,13 +81,14 @@ const centerPanelWrapStyle: CSSProperties = {
   maxWidth: '370px',
   width: '100%',
   display: 'flex',
-  alignItems: 'center',
+  alignItems: 'stretch',
   justifyContent: 'center',
 }
 
 const centerPanelStyle: CSSProperties = {
   width: '100%',
-  minHeight: '440px',
+  height: '100%',
+  minHeight: 0,
   borderRadius: '22px',
   border: '1px solid rgba(205, 217, 232, 0.96)',
   backgroundColor: 'rgba(255, 255, 255, 0.97)',
@@ -129,6 +130,11 @@ const leisureHeadlineStyle: CSSProperties = {
   textAlign: 'center',
   fontWeight: 900,
   letterSpacing: '-0.03em',
+  wordBreak: 'keep-all',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '8px',
 }
 
 const messagePreviewWrapStyle: CSSProperties = {
@@ -290,9 +296,8 @@ function renderIncomingInterrupt({
 
             <div style={centerPanelBodyStyle}>
               <p style={leisureHeadlineStyle}>
-                보호자에게서 문자가 왔습니다!
-                <br />
-                채팅으로 이동할까요?
+                <span>보호자에게서 문자가 왔습니다!</span>
+                <span>채팅으로 이동할까요?</span>
               </p>
 
               <div style={messagePreviewWrapStyle}>
