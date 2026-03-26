@@ -13,10 +13,13 @@ import { leisurePanelSurfaceStyle } from './leisureTheme'
 
 const rootStyle: CSSProperties = {
   flex: 1,
+  width: '100%',
+  height: '100%',
   minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 2.45fr) minmax(220px, 0.95fr)',
   gap: '16px',
+  overflow: 'hidden',
 }
 
 const contentPanelStyle: CSSProperties = {

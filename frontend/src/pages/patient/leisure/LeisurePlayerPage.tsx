@@ -44,6 +44,7 @@ function getPlayerStatusText(status: LeisurePlayerStatus) {
 
 const playerPanelStyle: CSSProperties = {
   flex: 1,
+  width: '100%',
   minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 2.45fr) minmax(220px, 0.95fr)',
