@@ -2,6 +2,7 @@ import type {
   CustomTalkKeyboardGroup,
   CustomTalkKeyboardOption,
   CustomTalkKeyboardPageResult,
+  KeyboardCompositionState,
   KeyboardRootMenu,
 } from '../types'
 import {
@@ -26,6 +27,16 @@ function toGroupOption(group: CustomTalkKeyboardGroup): CustomTalkKeyboardOption
   }
 }
 
+function getConsonantSelectionMode(
+  composition?: KeyboardCompositionState,
+): ConsonantSelectionMode {
+  return composition?.stage === 'final_consonant' &&
+    Boolean(composition.initialConsonant) &&
+    Boolean(composition.medialVowel)
+    ? 'final'
+    : 'initial'
+}
+
 function getGroupValues(
   group: CustomTalkKeyboardGroup,
   consonantMode: ConsonantSelectionMode = 'initial',
@@ -37,15 +48,27 @@ function getGroupValues(
   return group.values.filter(isValidHangulFinalConsonant)
 }
 
+function getCharacterDescription(group: CustomTalkKeyboardGroup) {
+  if (group.rootMenu === 'vowel') {
+    return '\ubaa8\uc74c\uc744 \uc120\ud0dd\ud574 \uc74c\uc808\uc744 \uc870\ud569\ud569\ub2c8\ub2e4.'
+  }
+
+  if (group.rootMenu === 'consonant') {
+    return '\uc790\uc74c\uc744 \uc120\ud0dd\ud574 \uc74c\uc808\uc744 \uc870\ud569\ud569\ub2c8\ub2e4.'
+  }
+
+  return '\ubb38\uc790\ub97c \ubc14\ub85c \uc785\ub825\ud569\ub2c8\ub2e4.'
+}
+
 function toCharOptions(
   group: CustomTalkKeyboardGroup,
   consonantMode: ConsonantSelectionMode = 'initial',
 ) {
   return getGroupValues(group, consonantMode).map((value, index) => ({
     id: `${group.id}-${index + 1}`,
-    label: value === ' ' ? '띄어쓰기' : value,
+    label: value === ' ' ? '\ub744\uc5b4\uc4f0\uae30' : value,
     value,
-    description: '문장에 바로 입력',
+    description: getCharacterDescription(group),
     kind: 'char' as const,
   }))
 }
@@ -72,10 +95,10 @@ export function getKeyboardGroupPage(
   rootMenu: Exclude<KeyboardRootMenu, 'ending'>,
   page: number,
   options?: {
-    consonantMode?: ConsonantSelectionMode
+    composition?: KeyboardCompositionState
   },
 ) {
-  const consonantMode = options?.consonantMode ?? 'initial'
+  const consonantMode = getConsonantSelectionMode(options?.composition)
   const groups = CUSTOM_TALK_KEYBOARD_GROUPS.filter(group => group.rootMenu === rootMenu)
     .filter(group => getGroupValues(group, consonantMode).length > 0)
     .map(toGroupOption)
@@ -88,7 +111,7 @@ export function getKeyboardCharPage(
   groupId: string | undefined,
   page: number,
   options?: {
-    consonantMode?: ConsonantSelectionMode
+    composition?: KeyboardCompositionState
   },
 ) {
   if (rootMenu === 'ending') {
@@ -101,7 +124,7 @@ export function getKeyboardCharPage(
     return null
   }
 
-  const consonantMode = options?.consonantMode ?? 'initial'
+  const consonantMode = getConsonantSelectionMode(options?.composition)
   const nextOptions = toCharOptions(group, consonantMode)
 
   if (nextOptions.length === 0) {
