@@ -97,28 +97,77 @@ function logCustomTalkTtsFailure(scope: 'recommended' | 'generated' | 'manual', 
   console.warn(`[custom-talk] ${scope} tts failed after successful submit`, error)
 }
 
+function normalizeContextMessage(value?: string | null) {
+  const content = value?.trim()
+  return content ? content : null
+}
+
+function parseContextConversationMessage(message: string) {
+  const trimmedMessage = normalizeContextMessage(message)
+
+  if (!trimmedMessage) {
+    return null
+  }
+
+  const guardianMatch = trimmedMessage.match(/^guardian\s*:\s*(.+)$/i)
+  if (guardianMatch) {
+    return {
+      sender: 'guardian' as const,
+      content: guardianMatch[1].trim(),
+    }
+  }
+
+  const patientMatch = trimmedMessage.match(/^patient\s*:\s*(.+)$/i)
+  if (patientMatch) {
+    return {
+      sender: 'patient' as const,
+      content: patientMatch[1].trim(),
+    }
+  }
+
+  return {
+    sender: 'system' as const,
+    content: trimmedMessage,
+  }
+}
+
 function buildConversationLog(context: CustomTalkContextSummary) {
   const logs: CustomTalkConversationLogItem[] = []
 
-  if (context.guardianMessage) {
-    logs.push({
-      id: 'custom-guardian-current',
-      sender: 'guardian',
-      content: context.guardianMessage,
-      kind: 'context',
-      createdAt: timestampFormatter.format(new Date()),
-    })
-  }
-
   context.recentMessages.forEach((message, index) => {
+    const parsedMessage = parseContextConversationMessage(message)
+
+    if (!parsedMessage) {
+      return
+    }
+
     logs.push({
       id: `custom-context-${index + 1}`,
-      sender: message.startsWith('환자') ? 'patient' : 'guardian',
-      content: message,
+      sender: parsedMessage.sender,
+      content: parsedMessage.content,
       kind: 'context',
       createdAt: timestampFormatter.format(new Date()),
     })
   })
+
+  const guardianMessage = normalizeContextMessage(context.guardianMessage)
+  const latestContextLog = logs[logs.length - 1]
+
+  if (
+    guardianMessage &&
+    !(
+      latestContextLog?.sender === 'guardian' &&
+      latestContextLog.content === guardianMessage
+    )
+  ) {
+    logs.push({
+      id: 'custom-guardian-current',
+      sender: 'guardian',
+      content: guardianMessage,
+      kind: 'context',
+      createdAt: timestampFormatter.format(new Date()),
+    })
+  }
 
   return logs
 }
@@ -413,10 +462,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     set({
       isInitialized: true,
       context: mergedContext,
-      conversationLog:
-        state.conversationLog.length > 0
-          ? state.conversationLog
-          : buildConversationLog(mergedContext),
+      conversationLog: buildConversationLog(mergedContext),
       visibleCategories,
       status: 'visible',
       errorMessage: null,

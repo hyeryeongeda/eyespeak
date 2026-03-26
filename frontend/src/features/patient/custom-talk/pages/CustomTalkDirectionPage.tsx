@@ -11,6 +11,7 @@ import {
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
+import type { PatientChatMessage } from '../../../../types/chat'
 
 const centerStackStyle: CSSProperties = {
   display: 'flex',
@@ -48,6 +49,33 @@ type CategoryCardModel = {
     | 'custom-talk-direction-recommendation-3'
     | 'custom-talk-direction-recommendation-4'
   category: CustomTalkCategoryOption | null
+}
+
+const CUSTOM_TALK_RECENT_MESSAGE_LIMIT = 4
+
+function getLatestGuardianMessage(messages: PatientChatMessage[]) {
+  return [...messages].reverse().find(message => message.sender === 'guardian') ?? null
+}
+
+function formatRecentMessage(message: PatientChatMessage) {
+  const content = message.content.trim()
+
+  if (!content) {
+    return null
+  }
+
+  return `${message.sender}: ${content}`
+}
+
+function buildRecentMessages(
+  messages: PatientChatMessage[],
+  currentGuardianMessageId: string | null,
+) {
+  return messages
+    .filter(message => message.id !== currentGuardianMessageId)
+    .slice(-CUSTOM_TALK_RECENT_MESSAGE_LIMIT)
+    .map(formatRecentMessage)
+    .filter((message): message is string => Boolean(message))
 }
 
 function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): CategoryCardModel[] {
@@ -98,16 +126,26 @@ export default function CustomTalkDirectionPage() {
   const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
+  const currentGuardianMessage =
+    chat.latestUnresolvedMessage ??
+    (chat.activeMessage?.sender === 'guardian' ? chat.activeMessage : null) ??
+    getLatestGuardianMessage(chat.state.messages)
+  const guardianMessage = currentGuardianMessage?.content.trim() ?? ''
+  const recentMessages = buildRecentMessages(
+    chat.state.messages,
+    currentGuardianMessage?.id ?? null,
+  )
+  const recentMessagesSignature = recentMessages.join('\n')
 
   useEffect(() => {
     void initializeCustomTalk({
-      guardianMessage:
-        chat.latestUnresolvedMessage?.content ?? chat.activeMessage?.content ?? undefined,
+      guardianMessage,
+      recentMessages,
     })
   }, [
-    chat.activeMessage?.content,
-    chat.latestUnresolvedMessage?.content,
+    guardianMessage,
     initializeCustomTalk,
+    recentMessagesSignature,
   ])
 
   const categoryCards = buildCategoryCards(visibleCategories)

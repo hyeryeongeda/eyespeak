@@ -37,6 +37,13 @@ function nextMockId(prefix: string) {
   return `${prefix}-${mockSequence}`
 }
 
+function hasOwnProperty<Value extends object>(
+  value: Value,
+  key: keyof CustomTalkContextSummary,
+) {
+  return Object.prototype.hasOwnProperty.call(value, key)
+}
+
 export async function fetchCustomTalkContext(
   override?: Partial<CustomTalkContextSummary>,
 ): Promise<CustomTalkContextSummary> {
@@ -45,7 +52,14 @@ export async function fetchCustomTalkContext(
   return {
     ...CUSTOM_TALK_CONTEXT_MOCK,
     ...override,
-    recentMessages: override?.recentMessages ?? CUSTOM_TALK_CONTEXT_MOCK.recentMessages,
+    guardianMessage:
+      override && hasOwnProperty(override, 'guardianMessage')
+        ? override.guardianMessage
+        : CUSTOM_TALK_CONTEXT_MOCK.guardianMessage,
+    recentMessages:
+      override && hasOwnProperty(override, 'recentMessages')
+        ? override.recentMessages ?? []
+        : CUSTOM_TALK_CONTEXT_MOCK.recentMessages,
     frequentExpressions:
       override?.frequentExpressions ?? CUSTOM_TALK_CONTEXT_MOCK.frequentExpressions,
     recentUsedExpressions:
