@@ -4,7 +4,7 @@ export const PATIENT_DOUBLE_BLINK_EVENT = 'patient-tracking:double-blink'
 export const PATIENT_TRACKING_STATUS_EVENT = 'patient-tracking:status-change'
 export const PATIENT_GLOBAL_MENU_ACTION_EVENT = 'patient-global-menu:action'
 
-export type PatientGlobalMenuActionId = 'yes' | 'no' | 'home'
+export type PatientGlobalMenuActionId = 'yes' | 'no' | 'sos' | 'home'
 export type PatientDoubleBlinkSource = 'runtime' | 'keyboard-shortcut'
 
 export interface PatientDoubleBlinkDetail {

@@ -1,17 +1,25 @@
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
 import { useDwell } from '../hooks/useDwell'
 import { useTracking } from '../hooks/useTracking'
 import {
   emitPatientGlobalMenuAction,
+  type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
+import {
+  getRemainingPatientSosCooldownMs,
+  requestPatientCall as requestPatientSosCall,
+} from '../../../../services/patientSosService'
+import { useCallStatusStore } from '../../../../stores/callStatusStore'
 import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
 
-type GlobalMenuTargetId = 'yes' | 'no' | 'home'
+type GlobalMenuTargetId = PatientGlobalMenuActionId
 
 const ACTION_FEEDBACK_DELAY_MS = 180
+const SOS_COOLDOWN_SYNC_INTERVAL_MS = 250
 
 const responsiveStyle = `
   @media (max-width: 768px) {
@@ -99,6 +107,10 @@ const helperTextStyle: CSSProperties = {
   opacity: 0.86,
 }
 
+function formatSeconds(seconds: number) {
+  return `${Math.max(1, seconds)}초`
+}
+
 function getMenuButtonStyle(args: {
   targetId: GlobalMenuTargetId
   isHovered: boolean
@@ -150,6 +162,20 @@ function getMenuButtonStyle(args: {
       pendingBoxShadow:
         '0 0 0 10px rgba(63, 93, 136, 0.2), 0 24px 42px rgba(63, 93, 136, 0.24)',
     },
+    sos: {
+      background: 'linear-gradient(135deg, #fff1eb 0%, #ffdacc 100%)',
+      hoverBackground: 'linear-gradient(135deg, #ffe6de 0%, #ffc7b3 100%)',
+      pendingBackground: 'linear-gradient(135deg, #ffd9cc 0%, #ffb299 100%)',
+      color: '#8c341d',
+      borderColor: 'rgba(198, 104, 73, 0.2)',
+      hoverBorderColor: 'rgba(198, 104, 73, 0.46)',
+      pendingBorderColor: 'rgba(177, 87, 54, 0.74)',
+      boxShadow: '0 18px 34px rgba(177, 87, 54, 0.14)',
+      hoverBoxShadow:
+        '0 0 0 7px rgba(198, 104, 73, 0.16), 0 22px 38px rgba(177, 87, 54, 0.2)',
+      pendingBoxShadow:
+        '0 0 0 10px rgba(177, 87, 54, 0.2), 0 24px 42px rgba(177, 87, 54, 0.26)',
+    },
     home: {
       background: 'linear-gradient(135deg, #edf4ff 0%, #dce9ff 100%)',
       hoverBackground: 'linear-gradient(135deg, #e2ecff 0%, #c9dcff 100%)',
@@ -196,6 +222,7 @@ function getMenuButtonStyle(args: {
 
 export default function GlobalMenuOverlay() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const gridRef = useRef<HTMLDivElement | null>(null)
   const actionTimerRef = useRef<number | null>(null)
   const isOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
@@ -203,8 +230,13 @@ export default function GlobalMenuOverlay() {
   const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
+  const [sosRemainingMs, setSosRemainingMs] = useState(0)
 
+  const patientId = user?.id ?? 'patient-guest'
   const isTrackingReady = isPatientTrackingAvailable(trackingStatus)
+  const isSosDisabled = sosRemainingMs > 0
+  const sosCooldownSeconds = Math.ceil(sosRemainingMs / 1000)
+
   const { hoveredTargetId, inputSource } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
@@ -221,6 +253,24 @@ export default function GlobalMenuOverlay() {
       queueAction(targetId, 'gaze')
     },
   })
+
+  useEffect(() => {
+    const syncSosCooldown = () => {
+      setSosRemainingMs(getRemainingPatientSosCooldownMs(patientId))
+    }
+
+    syncSosCooldown()
+
+    if (!isOpen) {
+      return
+    }
+
+    const timerId = window.setInterval(syncSosCooldown, SOS_COOLDOWN_SYNC_INTERVAL_MS)
+
+    return () => {
+      window.clearInterval(timerId)
+    }
+  }, [isOpen, patientId])
 
   useEffect(() => {
     return () => {
@@ -251,6 +301,10 @@ export default function GlobalMenuOverlay() {
       return
     }
 
+    if (targetId === 'sos' && isSosDisabled) {
+      return
+    }
+
     if (source === 'gaze') {
       submitActiveEyeTrackingSelectionFeedback()
     }
@@ -274,6 +328,18 @@ export default function GlobalMenuOverlay() {
     }
 
     try {
+      if (targetId === 'yes') {
+        emitPatientGlobalMenuAction('yes')
+        closeGlobalMenu()
+        return
+      }
+
+      if (targetId === 'no') {
+        emitPatientGlobalMenuAction('no')
+        closeGlobalMenu()
+        return
+      }
+
       if (targetId === 'home') {
         emitPatientGlobalMenuAction('home')
         closeGlobalMenu()
@@ -281,7 +347,23 @@ export default function GlobalMenuOverlay() {
         return
       }
 
-      emitPatientGlobalMenuAction(targetId)
+      const matchingId = user?.matchingId ?? null
+      if (matchingId == null) {
+        return
+      }
+
+      const result = await requestPatientSosCall(matchingId, 'SOS', user)
+      setSosRemainingMs(getRemainingPatientSosCooldownMs(patientId))
+
+      if (!result.success) {
+        return
+      }
+
+      useCallStatusStore
+        .getState()
+        .setPending('sos', '보호자에게 SOS 호출 신호가 전송되었습니다.')
+
+      emitPatientGlobalMenuAction('sos')
       closeGlobalMenu()
     } finally {
       setPendingTargetId(null)
@@ -317,8 +399,8 @@ export default function GlobalMenuOverlay() {
                 disabled: pendingTargetId !== null,
               })}
             >
-              <p style={labelStyle}>예</p>
-              <p style={helperTextStyle}>공통 positive action 진입</p>
+              <p style={labelStyle}>네</p>
+              <p style={helperTextStyle}>공통 positive action 진입점</p>
             </button>
 
             <button
@@ -334,8 +416,29 @@ export default function GlobalMenuOverlay() {
                 disabled: pendingTargetId !== null,
               })}
             >
-              <p style={labelStyle}>아니오</p>
-              <p style={helperTextStyle}>공통 negative action 진입</p>
+              <p style={labelStyle}>아니요</p>
+              <p style={helperTextStyle}>공통 negative action 진입점</p>
+            </button>
+
+            <button
+              type="button"
+              data-tracking-id={isSosDisabled || pendingTargetId !== null ? undefined : 'sos'}
+              data-gaze-selection="local"
+              disabled={isSosDisabled || pendingTargetId !== null}
+              onClick={() => queueAction('sos')}
+              style={getMenuButtonStyle({
+                targetId: 'sos',
+                isHovered: gazeHighlightedTargetId === 'sos',
+                isPending: pendingTargetId === 'sos',
+                disabled: isSosDisabled || pendingTargetId !== null,
+              })}
+            >
+              <p style={labelStyle}>SOS</p>
+              <p style={helperTextStyle}>
+                {isSosDisabled
+                  ? `${formatSeconds(sosCooldownSeconds)} 후 다시 선택 가능`
+                  : '사이렌 재생 후 30초 쿨다운'}
+              </p>
             </button>
 
             <button
@@ -344,15 +447,12 @@ export default function GlobalMenuOverlay() {
               data-gaze-selection="local"
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('home')}
-              style={{
-                ...getMenuButtonStyle({
-                  targetId: 'home',
-                  isHovered: gazeHighlightedTargetId === 'home',
-                  isPending: pendingTargetId === 'home',
-                  disabled: pendingTargetId !== null,
-                }),
-                gridColumn: '1 / -1',
-              }}
+              style={getMenuButtonStyle({
+                targetId: 'home',
+                isHovered: gazeHighlightedTargetId === 'home',
+                isPending: pendingTargetId === 'home',
+                disabled: pendingTargetId !== null,
+              })}
             >
               <p style={labelStyle}>홈</p>
               <p style={helperTextStyle}>환자 메인 화면으로 이동</p>
