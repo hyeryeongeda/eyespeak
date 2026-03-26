@@ -9,7 +9,7 @@ const STATUS_MESSAGES: Record<number, string> = {
 }
 
 const CODE_MESSAGES: Record<string, string> = {
-  'AUTH-204': '?ëŒ€? åª›Â€?ë‚…ë§‚ ?ëŒ€ì°“?ì‡±ì—¯?ëˆë–Ž.',
+  'AUTH-204': '이미 등록된 이메일입니다.',
   AUTH_INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다.',
   GUARDIAN_EMAIL_DUPLICATED: '이미 가입된 이메일입니다.',
   INITIAL_SURVEY_ALREADY_COMPLETED:

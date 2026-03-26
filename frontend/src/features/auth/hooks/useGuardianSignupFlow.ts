@@ -295,6 +295,9 @@ export function useGuardianSignupFlow() {
   const [isCheckingGuardianEmail, setIsCheckingGuardianEmail] = useState(false)
   const [checkedGuardianEmail, setCheckedGuardianEmail] = useState('')
   const [guardianEmailCheckMessage, setGuardianEmailCheckMessage] = useState('')
+  const [guardianEmailCheckMessageType, setGuardianEmailCheckMessageType] = useState<
+    'success' | 'error' | null
+  >(null)
   const isMountedRef = useRef(true)
   const isSubmittingRef = useRef(false)
   const activeSubmissionIdRef = useRef(0)
@@ -572,6 +575,7 @@ export function useGuardianSignupFlow() {
       if (normalizedNextEmail !== checkedGuardianEmail) {
         setCheckedGuardianEmail('')
         setGuardianEmailCheckMessage('')
+        setGuardianEmailCheckMessageType(null)
       }
 
       return resolvedState
@@ -602,13 +606,22 @@ export function useGuardianSignupFlow() {
 
     if (!result.success) {
       setCheckedGuardianEmail('')
+      if (result.code === 'AUTH-204' || result.code === 'GUARDIAN_EMAIL_DUPLICATED') {
+        setGuardianEmailCheckMessage('이미 등록된 이메일입니다.')
+        setGuardianEmailCheckMessageType('error')
+        setErrorMessage('')
+        return
+      }
+
       setGuardianEmailCheckMessage('')
+      setGuardianEmailCheckMessageType(null)
       setErrorMessage(result.message)
       return
     }
 
     setCheckedGuardianEmail(normalizedGuardianEmail)
     setGuardianEmailCheckMessage('사용 가능한 이메일입니다.')
+    setGuardianEmailCheckMessageType('success')
   }
 
   const setPatientProfileValues = (
@@ -649,6 +662,7 @@ export function useGuardianSignupFlow() {
     normalizedGuardianEmail,
     isGuardianEmailChecked,
     guardianEmailCheckMessage,
+    guardianEmailCheckMessageType,
     patientProfile,
     patientRoutines,
     errorMessage,
