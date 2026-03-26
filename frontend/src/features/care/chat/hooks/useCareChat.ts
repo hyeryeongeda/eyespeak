@@ -9,7 +9,7 @@
 // - mock 모드에서는 STOMP 없이도 메시지 전송/수신을 로컬로 처리한다.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useStompClient } from '../../../../hooks/useStompClient'
+import { useCareStompContext } from '../../context/CareStompContext'
 import { useAuthStore } from '../../../../stores/authStore'
 import { useNotificationStore } from '../../../../shared/stores/notificationStore'
 import { getActiveApiMode } from '../../../../config/env'
@@ -53,14 +53,12 @@ export interface UseCareChatReturn {
 
 export function useCareChat(): UseCareChatReturn {
   const isMock = getActiveApiMode() === 'mock'
-  const { client, status } = useStompClient(!isMock)
+  const { client, connected } = useCareStompContext()
   const user = useAuthStore(state => state.user)
   const pushNotification = useNotificationStore(state => state.pushNotification)
 
   const [realtimeMessages, setRealtimeMessages] = useState<ChatMessage[]>([])
   const knownIdsRef = useRef<Set<string>>(new Set())
-
-  const connected = isMock || status === 'connected'
 
   // REST 히스토리
   const {
@@ -68,6 +66,7 @@ export function useCareChat(): UseCareChatReturn {
     isLoading,
     hasMore,
     loadInitial,
+    reload,
     loadMore,
   } = useChatHistory()
 
@@ -75,6 +74,18 @@ export function useCareChat(): UseCareChatReturn {
   useEffect(() => {
     loadInitial()
   }, [loadInitial])
+
+  // 재연결 시 히스토리 재로드 (연결 끊긴 사이 유실된 메시지 복구)
+  const prevConnectedRef = useRef(false)
+
+  useEffect(() => {
+    if (connected && !prevConnectedRef.current) {
+      setRealtimeMessages([])
+      knownIdsRef.current.clear()
+      reload()
+    }
+    prevConnectedRef.current = connected
+  }, [connected, reload])
 
   // 히스토리 메시지 ID를 knownIds에 등록 (중복 방지)
   useEffect(() => {
