@@ -83,8 +83,8 @@ function stopActiveCustomTalkAudioPlayback() {
   activeCustomTalkAudioPlayback = null
 }
 
-function toErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback
+function logCustomTalkTtsFailure(scope: 'recommended' | 'generated' | 'manual', error: unknown) {
+  console.warn(`[custom-talk] ${scope} tts failed after successful submit`, error)
 }
 
 function buildConversationLog(context: CustomTalkContextSummary) {
@@ -449,17 +449,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failSubmitOnce,
       })
 
-      let ttsErrorMessage: string | null = null
-
       try {
         activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
           text: normalizedText,
         })
       } catch (error) {
-        ttsErrorMessage = toErrorMessage(
-          error,
-          '문장 전송은 완료됐지만 음성 재생에 실패했습니다.',
-        )
+        logCustomTalkTtsFailure('recommended', error)
       }
 
       set(currentState => ({
@@ -474,8 +469,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           'utterance',
         ),
         status: 'completed',
-        errorMessage: ttsErrorMessage,
-        completionMessage: `추천 문장 발화를 반영했습니다: ${text}`,
+        errorMessage: null,
+        completionMessage: `추천 문장을 발화했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
           failSubmitOnce: false,
@@ -750,17 +745,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failSubmitOnce,
       })
 
-      let ttsErrorMessage: string | null = null
-
       try {
         activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
           text: normalizedText,
         })
       } catch (error) {
-        ttsErrorMessage = toErrorMessage(
-          error,
-          '문장 전송은 완료됐지만 음성 재생에 실패했습니다.',
-        )
+        logCustomTalkTtsFailure('generated', error)
       }
 
       set(currentState => ({
@@ -775,8 +765,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           'utterance',
         ),
         status: 'completed',
-        errorMessage: ttsErrorMessage,
-        completionMessage: `생성 문장 발화를 반영했습니다: ${text}`,
+        errorMessage: null,
+        completionMessage: `생성 문장을 발화했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
           failSubmitOnce: false,
@@ -1103,17 +1093,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: mockFlags.failSubmitOnce,
       })
 
-      let ttsErrorMessage: string | null = null
-
       try {
         activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
           text,
         })
       } catch (error) {
-        ttsErrorMessage = toErrorMessage(
-          error,
-          '문장 전송은 완료됐지만 음성 재생에 실패했습니다.',
-        )
+        logCustomTalkTtsFailure('manual', error)
       }
 
       set(currentState => ({
@@ -1124,8 +1109,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           'utterance',
         ),
         keyboardStatus: 'completed',
-        keyboardErrorMessage: ttsErrorMessage,
-        completionMessage: `직접 입력 발화를 반영했습니다: ${text}`,
+        keyboardErrorMessage: null,
+        completionMessage: `직접 입력 문장을 발화했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
           failSubmitOnce: false,

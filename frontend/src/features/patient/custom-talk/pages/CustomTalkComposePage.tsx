@@ -5,7 +5,6 @@ import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
   getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import type { ComposeStep } from '../types'
 import { useCustomTalkStore } from '../store/customTalkStore'
@@ -87,7 +86,6 @@ export default function CustomTalkComposePage() {
   const composeOptions = useCustomTalkStore(state => state.composeOptions)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
-  const completionMessage = useCustomTalkStore(state => state.completionMessage)
   const refreshComposeStep = useCustomTalkStore(state => state.refreshComposeStep)
   const selectComposeWord = useCustomTalkStore(state => state.selectComposeWord)
   const skipComposeStep = useCustomTalkStore(state => state.skipComposeStep)
@@ -219,9 +217,6 @@ export default function CustomTalkComposePage() {
           ) : null}
           {errorMessage ? (
             <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-          ) : null}
-          {completionMessage ? (
-            <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
           ) : null}
         </div>
       }
