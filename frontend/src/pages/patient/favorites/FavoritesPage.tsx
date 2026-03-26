@@ -32,19 +32,24 @@ import FavoritesSplitState from './components/FavoritesSplitState'
 const PAGE_CODE = 'PAT-FAV-001'
 
 const pageWrapStyle: CSSProperties = {
-  minHeight: '100dvh',
-  width: '100%',
-  padding: '16px',
+  minHeight: 'calc(100dvh + var(--sat, 0px) + var(--sab, 0px))',
+  width: 'calc(100% + var(--sal, 0px) + var(--sar, 0px))',
+  marginTop: 'calc(var(--sat, 0px) * -1)',
+  marginRight: 'calc(var(--sar, 0px) * -1)',
+  marginBottom: 'calc(var(--sab, 0px) * -1)',
+  marginLeft: 'calc(var(--sal, 0px) * -1)',
+  padding: 0,
   background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  position: 'relative',
 }
 
 const headerStyle: CSSProperties = {
   flexShrink: 0,
-  marginBottom: '12px',
+  margin: '16px 16px 12px',
   padding: '12px 16px',
   borderRadius: '18px',
   backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -64,7 +69,7 @@ const gridStyle: CSSProperties = {
     "slot-1 slot-2 pagination"
     "slot-3 slot-4 back"
   `,
-  gap: '14px',
+  gap: 0,
 }
 
 const slotWrapStyle: CSSProperties = {
@@ -86,6 +91,7 @@ const bottomBarStyle: CSSProperties = {
   alignItems: 'stretch',
   gap: '12px',
   marginTop: '12px',
+  padding: '0 16px 16px',
 }
 
 const backBtnStyle: CSSProperties = {
@@ -297,7 +303,6 @@ export default function FavoritesPage() {
           dwellFeedback.containerRef.current = element
         }}
       >
-        <div style={headerStyle}>{getStatusLabel('loading')}</div>
         <div style={loadingMessageStyle}>잠시만 기다려 주세요.</div>
         <div style={bottomBarStyle}>
           <button
@@ -329,7 +334,6 @@ export default function FavoritesPage() {
           dwellFeedback.containerRef.current = element
         }}
       >
-        <div style={headerStyle}>{getStatusLabel('empty')}</div>
         <FavoritesSplitState
           title="등록된 즐겨찾기가 없어요"
           description="보호자가 즐겨찾기를 등록하면 여기에서 바로 선택할 수 있어요."
@@ -354,7 +358,6 @@ export default function FavoritesPage() {
           dwellFeedback.containerRef.current = element
         }}
       >
-        <div style={headerStyle}>{getStatusLabel('error')}</div>
         <FavoritesSplitState
           title="즐겨찾기를 불러올 수 없어요"
           description={errorMessage}
@@ -383,6 +386,7 @@ export default function FavoritesPage() {
         {PAGE_CODE} · {getStatusLabel(status)}
         {feedbackText ? ` · ${feedbackText}` : ''}
         {showPagination ? ` · ${pageIndex + 1}/${totalPages}` : ''}
+
       </div>
 
       {status === 'error' && errorKind === 'submit' ? (
