@@ -9,9 +9,9 @@ import {
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
 import {
+  FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
   fetchFavorites,
   submitFavoriteSelection,
-  FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
 } from '../../../services/favoritesService'
 import {
   playPatientUtteranceTts,
@@ -25,9 +25,9 @@ import type {
 } from '../../../types/favorites'
 import FavoriteCard from './components/FavoriteCard'
 import FavoritesActionCard from './components/FavoritesActionCard'
-import FavoritesEmptyState from './components/FavoritesEmptyState'
 import FavoritesErrorState from './components/FavoritesErrorState'
 import FavoritesPaginationCard from './components/FavoritesPaginationCard'
+import FavoritesSplitState from './components/FavoritesSplitState'
 
 const PAGE_CODE = 'PAT-FAV-001'
 
@@ -128,17 +128,17 @@ function getStatusLabel(status: FavoritesStatus): string {
     case 'loading':
       return '즐겨찾기를 불러오는 중입니다'
     case 'visible':
-      return '항목을 선택하세요'
+      return '문구를 선택해 주세요'
     case 'selecting':
-      return '선택 반영 중'
+      return '선택을 전송하는 중입니다'
     case 'completed':
       return '선택했어요'
     case 'empty':
       return '등록된 즐겨찾기가 없어요'
     case 'transitioning':
-      return '화면 이동 중'
+      return '화면을 이동하는 중입니다'
     case 'error':
-      return '오류가 발생했어요'
+      return '문제가 발생했어요'
     default:
       return '즐겨찾기'
   }
@@ -261,7 +261,7 @@ export default function FavoritesPage() {
         handleAfterSelection(item, true)
       } catch {
         setErrorKind('submit')
-        setErrorMessage('선택을 반영하지 못했어요. 다시 선택해 주세요.')
+        setErrorMessage('선택 내용을 반영하지 못했어요. 다시 선택해 주세요.')
         setStatus('error')
       }
     },
@@ -313,7 +313,7 @@ export default function FavoritesPage() {
                 remainingMs={dwellFeedback.remainingMs}
               />
             ) : null}
-            대화하기로 돌아가기
+            메인으로 돌아가기
           </button>
         </div>
       </main>
@@ -330,24 +330,17 @@ export default function FavoritesPage() {
         }}
       >
         <div style={headerStyle}>{getStatusLabel('empty')}</div>
-        <FavoritesEmptyState />
-        <div style={bottomBarStyle}>
-          <button
-            type="button"
-            style={backBtnStyle}
-            onClick={handleBack}
-            data-tracking-id={TRACKING_BACK_BUTTON}
-          >
-            {isBackButtonDwellActive ? (
-              <DwellFeedbackBadge
-                phase={dwellFeedback.phase}
-                progress={dwellFeedback.progress}
-                remainingMs={dwellFeedback.remainingMs}
-              />
-            ) : null}
-            대화하기로 돌아가기
-          </button>
-        </div>
+        <FavoritesSplitState
+          title="등록된 즐겨찾기가 없어요"
+          description="보호자가 즐겨찾기를 등록하면 여기에서 바로 선택할 수 있어요."
+          leftLabel="새로고침"
+          rightLabel="뒤로가기"
+          onLeftAction={loadFavorites}
+          onRightAction={handleBack}
+          leftTrackingId={TRACKING_RETRY_FETCH}
+          rightTrackingId={TRACKING_BACK_BUTTON}
+          dwellFeedback={dwellFeedback}
+        />
       </main>
     )
   }
@@ -362,31 +355,18 @@ export default function FavoritesPage() {
         }}
       >
         <div style={headerStyle}>{getStatusLabel('error')}</div>
-        <FavoritesErrorState
+        <FavoritesSplitState
           title="즐겨찾기를 불러올 수 없어요"
           description={errorMessage}
-          onRetry={loadFavorites}
-          retryLabel="다시 불러오기"
-          retryTrackingId={TRACKING_RETRY_FETCH}
+          leftLabel="새로고침"
+          rightLabel="뒤로가기"
+          onLeftAction={loadFavorites}
+          onRightAction={handleBack}
+          leftTrackingId={TRACKING_RETRY_FETCH}
+          rightTrackingId={TRACKING_BACK_BUTTON}
           dwellFeedback={dwellFeedback}
+          centerAriaRole="alert"
         />
-        <div style={bottomBarStyle}>
-          <button
-            type="button"
-            style={backBtnStyle}
-            onClick={handleBack}
-            data-tracking-id={TRACKING_BACK_BUTTON}
-          >
-            {isBackButtonDwellActive ? (
-              <DwellFeedbackBadge
-                phase={dwellFeedback.phase}
-                progress={dwellFeedback.progress}
-                remainingMs={dwellFeedback.remainingMs}
-              />
-            ) : null}
-            대화하기로 돌아가기
-          </button>
-        </div>
       </main>
     )
   }
@@ -408,7 +388,7 @@ export default function FavoritesPage() {
       {status === 'error' && errorKind === 'submit' ? (
         <>
           <FavoritesErrorState
-            title="선택을 반영하지 못했어요"
+            title="선택 내용을 반영하지 못했어요"
             description={errorMessage}
             onRetry={() => setStatus('visible')}
             retryLabel="다시 선택하기"
@@ -429,7 +409,7 @@ export default function FavoritesPage() {
                   remainingMs={dwellFeedback.remainingMs}
                 />
               ) : null}
-              대화하기로 돌아가기
+              메인으로 돌아가기
             </button>
           </div>
         </>

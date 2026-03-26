@@ -35,7 +35,7 @@ function getCellStyle(): CSSProperties {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.4rem, 2.35vw, 1.95rem)',
+  fontSize: 'clamp(3.5rem, 6vw, 4.75rem)',
   fontWeight: 900,
 }
 

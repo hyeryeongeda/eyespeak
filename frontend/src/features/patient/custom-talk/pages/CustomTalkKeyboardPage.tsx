@@ -18,14 +18,13 @@ import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 
 const centerStackStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateRows: 'minmax(96px, 0.72fr) minmax(132px, 1fr) auto',
-  gap: '10px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px',
   minHeight: 0,
   height: '100%',
-  padding: '14px 18px',
+  padding: '16px',
   boxSizing: 'border-box',
-  overflow: 'hidden',
 }
 
 const contextSlotStyle: CSSProperties = {
@@ -115,14 +114,6 @@ export default function CustomTalkKeyboardPage() {
     !mockFlags.keyboardTrackingStable ||
     mockFlags.keyboardUpperInterrupt ||
     hasGlobalInterrupt
-
-  const helperText = !mockFlags.keyboardFaceDetected
-    ? '얼굴이 감지되지 않아 입력이 잠시 멈춰 있습니다.'
-    : !mockFlags.keyboardTrackingStable
-      ? '시선 추적이 불안정해 입력이 잠시 멈췄습니다.'
-      : mockFlags.keyboardUpperInterrupt || hasGlobalInterrupt
-        ? '상위 인터럽트가 표시되어 입력이 일시 중단되었습니다.'
-        : '큰 버튼 4개에서 글자나 그룹을 고르고, 아래 가운데 버튼으로 다음 또는 완료를 진행합니다.'
 
   const handleSelectOption = (option: CustomTalkKeyboardOption) => {
     if (isInputBlocked || !option.value) {
@@ -261,7 +252,6 @@ export default function CustomTalkKeyboardPage() {
 
   return (
     <CustomTalkEntryLayout
-      gridTemplateRows="minmax(180px, 1fr) minmax(220px, 0.82fr) minmax(180px, 1fr)"
       title="직접말해요"
       topLeft={{
         title: visibleCards[0].title,
@@ -321,7 +311,7 @@ export default function CustomTalkKeyboardPage() {
           <div style={sentenceSlotStyle}>
             <KeyboardSentenceDisplay
               sentence={draft.manualInput}
-              helperText={helperText}
+              helperText=""
             />
           </div>
 

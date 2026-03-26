@@ -85,7 +85,7 @@ function getCardStyle(
 const cardTitleStyle: CSSProperties = {
   margin: 0,
   color: '#1f3047',
-  fontSize: 'clamp(1.2rem, 1.75vw, 1.9rem)',
+  fontSize: 'clamp(3.5rem, 6vw, 4.75rem)',
   fontWeight: 900,
   lineHeight: 1.28,
 }

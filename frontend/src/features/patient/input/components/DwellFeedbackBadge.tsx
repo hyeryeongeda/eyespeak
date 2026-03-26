@@ -11,82 +11,90 @@ interface DwellFeedbackBadgeProps {
 
 const shellStyle: CSSProperties = {
   position: 'absolute',
-  top: '10px',
-  right: '10px',
-  width: '50px',
-  height: '50px',
-  borderRadius: '999px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+  inset: '1px',
   pointerEvents: 'none',
-  zIndex: 3,
+  zIndex: 4,
 }
 
-const ringStyle: CSSProperties = {
+const svgStyle: CSSProperties = {
   width: '100%',
   height: '100%',
-  borderRadius: '999px',
-  padding: '4px',
-  boxSizing: 'border-box',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  boxShadow: '0 8px 18px rgba(35, 67, 109, 0.26)',
-}
-
-const labelStyle: CSSProperties = {
-  width: '100%',
-  height: '100%',
-  borderRadius: '999px',
-  backgroundColor: 'rgba(255, 255, 255, 0.94)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  color: '#28476a',
-  fontSize: '11px',
-  fontWeight: 900,
-  letterSpacing: '-0.01em',
+  overflow: 'visible',
+  filter: 'drop-shadow(0 0 8px rgba(130, 149, 238, 0.16))',
 }
 
 export default function DwellFeedbackBadge({
   phase,
   progress,
-  remainingMs,
-  size = 50,
+  remainingMs: _remainingMs,
+  size = 5,
 }: DwellFeedbackBadgeProps) {
   if (!isDwellFeedbackVisible(phase)) {
     return null
   }
 
-  const normalizedProgress = phase === 'locking' ? 0 : Math.min(1, Math.max(0, progress))
-  const sweep = Math.round(normalizedProgress * 360)
-  const ringBackground =
-    phase === 'locking'
-      ? 'conic-gradient(from -90deg, #92a8c7 0deg, #92a8c7 360deg)'
-      : `conic-gradient(from -90deg, #5d8ec7 ${sweep}deg, rgba(149, 170, 200, 0.22) ${sweep}deg 360deg)`
-  const label =
-    phase === 'locking'
-      ? `${Math.max(0, Math.ceil(remainingMs / 1000))}s`
-      : `${Math.round(normalizedProgress * 100)}%`
+  const normalizedProgress = Math.min(1, Math.max(0, progress))
+  const outlineProgress = phase === 'dwelling' ? 1 : normalizedProgress
+  const strokeWidth = Math.min(5.2, Math.max(3.2, size * 0.62))
+  const glowWidth = strokeWidth + 2.6
+  const rectInset = 4.5
+  const rectSize = 1000 - rectInset * 2
+  const radius = 48
+  const guideColor = 'rgba(165, 181, 229, 0.55)'
+  const glowColor =
+    phase === 'dwelling' ? 'rgba(113, 133, 238, 0.24)' : 'rgba(134, 154, 244, 0.14)'
+  const strokeColor = phase === 'dwelling' ? '#6f82ef' : '#8ea0f7'
 
   return (
-    <span
-      aria-hidden
-      style={{
-        ...shellStyle,
-        width: `${size}px`,
-        height: `${size}px`,
-      }}
-    >
-      <span
-        style={{
-          ...ringStyle,
-          background: ringBackground,
-        }}
+    <span aria-hidden style={shellStyle}>
+      <svg
+        viewBox="0 0 1000 1000"
+        preserveAspectRatio="none"
+        style={svgStyle}
       >
-        <span style={labelStyle}>{label}</span>
-      </span>
+        <rect
+          x={rectInset}
+          y={rectInset}
+          width={rectSize}
+          height={rectSize}
+          rx={radius}
+          ry={radius}
+          fill="none"
+          stroke={guideColor}
+          strokeWidth={1.4}
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          x={rectInset}
+          y={rectInset}
+          width={rectSize}
+          height={rectSize}
+          rx={radius}
+          ry={radius}
+          fill="none"
+          stroke={glowColor}
+          strokeWidth={glowWidth}
+          opacity={phase === 'dwelling' ? 0.95 : 0.85}
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          x={rectInset}
+          y={rectInset}
+          width={rectSize}
+          height={rectSize}
+          rx={radius}
+          ry={radius}
+          fill="none"
+          stroke={strokeColor}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          pathLength={1000}
+          strokeDasharray={`${outlineProgress * 1000} 1000`}
+          transform="rotate(-90 500 500)"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
     </span>
   )
 }

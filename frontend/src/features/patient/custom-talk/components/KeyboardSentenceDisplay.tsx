@@ -44,7 +44,7 @@ export default function KeyboardSentenceDisplay({
 }: KeyboardSentenceDisplayProps) {
   return (
     <div style={wrapStyle}>
-      <p style={helperStyle}>{helperText}</p>
+      {helperText ? <p style={helperStyle}>{helperText}</p> : null}
       <p style={sentenceStyle}>{sentence || '입력한 문장이 여기에 표시됩니다.'}</p>
     </div>
   )
