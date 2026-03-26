@@ -271,6 +271,7 @@ export default function PatientSignupPage() {
               </div>
               {patientEmailCheckMessage ? (
                 <p
+                  aria-live="polite"
                   style={
                     patientEmailCheckMessageType === 'error'
                       ? errorMessage

@@ -584,6 +584,9 @@ export function useGuardianSignupFlow() {
 
   const checkGuardianEmail = async () => {
     clearFormErrorState()
+    setGuardianEmailCheckMessage('')
+    setGuardianEmailCheckMessageType(null)
+    setCheckedGuardianEmail('')
 
     if (!guardianAccount.email.trim()) {
       setErrorMessage('이메일을 입력해주세요.')
@@ -611,7 +614,6 @@ export function useGuardianSignupFlow() {
     }
 
     if (!result.success) {
-      setCheckedGuardianEmail('')
       if (result.code === 'AUTH-204' || result.code === 'GUARDIAN_EMAIL_DUPLICATED') {
         setGuardianEmailCheckMessage('이미 등록된 이메일입니다.')
         setGuardianEmailCheckMessageType('error')
@@ -619,9 +621,9 @@ export function useGuardianSignupFlow() {
         return
       }
 
-      setGuardianEmailCheckMessage('')
-      setGuardianEmailCheckMessageType(null)
-      setErrorMessage(result.message)
+      setGuardianEmailCheckMessage(result.message)
+      setGuardianEmailCheckMessageType('error')
+      setErrorMessage('')
       return
     }
 

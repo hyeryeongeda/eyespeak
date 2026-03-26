@@ -111,6 +111,9 @@ export function usePatientSignup() {
 
   const handleCheckPatientEmail = async () => {
     setErrorMessage('')
+    setPatientEmailCheckMessage('')
+    setPatientEmailCheckMessageType(null)
+    setCheckedPatientEmail('')
 
     if (!patientAccount.loginId.trim()) {
       setErrorMessage('로그인 이메일을 입력해 주세요.')
@@ -133,8 +136,6 @@ export function usePatientSignup() {
     }
 
     if (!result.success) {
-      setCheckedPatientEmail('')
-
       if (
         result.code === 'AUTH-204' ||
         result.code === 'GUARDIAN_EMAIL_DUPLICATED' ||
@@ -146,9 +147,9 @@ export function usePatientSignup() {
         return
       }
 
-      setPatientEmailCheckMessage('')
-      setPatientEmailCheckMessageType(null)
-      setErrorMessage(result.message)
+      setPatientEmailCheckMessage(result.message)
+      setPatientEmailCheckMessageType('error')
+      setErrorMessage('')
       return
     }
 
