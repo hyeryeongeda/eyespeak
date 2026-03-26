@@ -144,6 +144,24 @@ function normalizeUtteranceText(text: string) {
   return text.trim()
 }
 
+const QUIET_PATIENT_CHAT_SEND_ERROR =
+  '지금은 바로 반영되지 않았습니다. 잠시 후 다시 시도해 주세요.'
+
+function normalizePatientChatDispatchError(error?: string) {
+  if (!error) {
+    return QUIET_PATIENT_CHAT_SEND_ERROR
+  }
+
+  if (
+    error.includes('실시간 채팅 연결이 아직 준비되지 않았습니다') ||
+    error.includes('실시간 채팅 전송에 실패했습니다')
+  ) {
+    return QUIET_PATIENT_CHAT_SEND_ERROR
+  }
+
+  return error
+}
+
 function mapCustomTalkSourceToMessageType(
   source: 'recommended' | 'generated' | 'manual',
 ): 'text' | 'manual_text' | 'word_combination' {
@@ -184,6 +202,10 @@ async function sendPatientChatNow(input: {
     phraseId: input.phraseId,
     exprId: input.exprId,
   })
+
+  if (!result.success || !result.message) {
+    throw new Error(normalizePatientChatDispatchError(result.error))
+  }
 
   if (!result.success || !result.message) {
     throw new Error(result.error ?? '실시간 채팅 전송에 실패했습니다.')

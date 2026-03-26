@@ -6,6 +6,8 @@ interface KeyboardSentenceDisplayProps {
 }
 
 const wrapStyle: CSSProperties = {
+  minHeight: 0,
+  height: '100%',
   padding: '18px 20px',
   borderRadius: '24px',
   backgroundColor: '#ffffff',
@@ -13,7 +15,9 @@ const wrapStyle: CSSProperties = {
   boxShadow: '0 18px 40px rgba(63, 86, 111, 0.08)',
   display: 'flex',
   flexDirection: 'column',
+  justifyContent: 'center',
   gap: '10px',
+  overflow: 'hidden',
 }
 
 const helperStyle: CSSProperties = {
@@ -31,6 +35,7 @@ const sentenceStyle: CSSProperties = {
   fontWeight: 900,
   lineHeight: 1.55,
   whiteSpace: 'pre-wrap',
+  overflow: 'auto',
 }
 
 export default function KeyboardSentenceDisplay({

@@ -5,7 +5,7 @@ import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import {
-  customTalkErrorNoticeStyle,
+  getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
@@ -194,7 +194,9 @@ export default function CustomTalkDirectionPage() {
                   맞춤대화 카테고리를 불러오는 중입니다.
                 </div>
               ) : null}
-              {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
+              {errorMessage ? (
+                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
+              ) : null}
               {completionMessage ? (
                 <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
               ) : null}

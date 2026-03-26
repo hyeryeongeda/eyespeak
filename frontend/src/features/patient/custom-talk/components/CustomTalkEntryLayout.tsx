@@ -20,6 +20,7 @@ interface CustomTalkEntryLayoutProps {
   bottomCenter: CustomTalkEntryActionCard
   bottomRight: CustomTalkEntryActionCard
   dwellFeedback?: UseDwellFeedbackResult<string>
+  gridTemplateRows?: CSSProperties['gridTemplateRows']
 }
 
 const pageWrap: CSSProperties = {
@@ -173,13 +174,17 @@ export default function CustomTalkEntryLayout({
   bottomCenter,
   bottomRight,
   dwellFeedback,
+  gridTemplateRows,
 }: CustomTalkEntryLayoutProps) {
   return (
     <main className="custom-talk-entry-page" style={pageWrap} aria-label={title}>
       <style>{layoutCss}</style>
       <div
         className="custom-talk-entry-layout"
-        style={gridStyle}
+        style={{
+          ...gridStyle,
+          gridTemplateRows: gridTemplateRows ?? gridStyle.gridTemplateRows,
+        }}
         ref={element => {
           if (dwellFeedback) {
             dwellFeedback.containerRef.current = element

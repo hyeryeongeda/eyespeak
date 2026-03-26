@@ -5,7 +5,7 @@ import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
 import {
-  customTalkErrorNoticeStyle,
+  getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
@@ -18,13 +18,24 @@ import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 
 const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
+  display: 'grid',
+  gridTemplateRows: 'minmax(96px, 0.72fr) minmax(132px, 1fr) auto',
+  gap: '10px',
   minHeight: 0,
   height: '100%',
-  padding: '18px',
+  padding: '14px 18px',
   boxSizing: 'border-box',
+  overflow: 'hidden',
+}
+
+const contextSlotStyle: CSSProperties = {
+  minHeight: 0,
+  overflow: 'hidden',
+}
+
+const sentenceSlotStyle: CSSProperties = {
+  minHeight: 0,
+  overflow: 'hidden',
 }
 
 type CustomTalkKeyboardTrackingId =
@@ -250,6 +261,7 @@ export default function CustomTalkKeyboardPage() {
 
   return (
     <CustomTalkEntryLayout
+      gridTemplateRows="minmax(180px, 1fr) minmax(220px, 0.82fr) minmax(180px, 1fr)"
       title="직접말해요"
       topLeft={{
         title: visibleCards[0].title,
@@ -298,16 +310,20 @@ export default function CustomTalkKeyboardPage() {
       dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <CustomTalkContextPanel
-            context={context}
-            conversationLog={conversationLog}
-            mode="entry"
-          />
+          <div style={contextSlotStyle}>
+            <CustomTalkContextPanel
+              context={context}
+              conversationLog={conversationLog}
+              mode="entry"
+            />
+          </div>
 
-          <KeyboardSentenceDisplay
-            sentence={draft.manualInput}
-            helperText={helperText}
-          />
+          <div style={sentenceSlotStyle}>
+            <KeyboardSentenceDisplay
+              sentence={draft.manualInput}
+              helperText={helperText}
+            />
+          </div>
 
           {keyboardStatus === 'loading' ? (
             <div style={customTalkLoadingNoticeStyle}>
@@ -315,7 +331,9 @@ export default function CustomTalkKeyboardPage() {
             </div>
           ) : null}
           {keyboardErrorMessage ? (
-            <div style={customTalkErrorNoticeStyle}>{keyboardErrorMessage}</div>
+            <div style={getCustomTalkNoticeStyle(keyboardErrorMessage)}>
+              {keyboardErrorMessage}
+            </div>
           ) : null}
           {completionMessage ? (
             <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
