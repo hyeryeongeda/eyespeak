@@ -100,8 +100,6 @@ const initialState: PatientChatSessionState = {
 
 const LOCAL_OUTGOING_MATCH_WINDOW_MS = 60_000
 const OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS = 15_000
-const SERVER_DUPLICATE_MATCH_WINDOW_MS = 2_000
-
 function normalizeTimestampForCompare(value: string) {
   return value.includes('T') ? value : value.replace(' ', 'T')
 }
@@ -162,19 +160,6 @@ function mergeMessagePair(
           ? currentMessage.meta?.isOptimistic ?? false
           : false),
     },
-  }
-}
-
-function mergeEquivalentMessagePair(
-  currentMessage: PatientChatMessage,
-  nextMessage: PatientChatMessage,
-): PatientChatMessage {
-  const mergedMessage = mergeMessagePair(currentMessage, nextMessage)
-
-  return {
-    ...mergedMessage,
-    id: currentMessage.id,
-    createdAt: currentMessage.createdAt,
   }
 }
 
@@ -256,48 +241,6 @@ function shouldIgnoreLateOptimisticMessage(
   return isSamePatientMessage(currentMessage, nextMessage)
 }
 
-function shouldCollapseDuplicateServerMessage(
-  currentMessage: PatientChatMessage,
-  nextMessage: PatientChatMessage,
-) {
-  if (currentMessage.meta?.isOptimistic || nextMessage.meta?.isOptimistic) {
-    return false
-  }
-
-  if (currentMessage.sender !== nextMessage.sender) {
-    return false
-  }
-
-  if (currentMessage.content !== nextMessage.content) {
-    return false
-  }
-
-  if ((currentMessage.replyToId ?? null) !== (nextMessage.replyToId ?? null)) {
-    return false
-  }
-
-  if (getMessageContentType(currentMessage) !== getMessageContentType(nextMessage)) {
-    return false
-  }
-
-  if ((currentMessage.meta?.phraseId ?? null) !== (nextMessage.meta?.phraseId ?? null)) {
-    return false
-  }
-
-  if ((currentMessage.meta?.exprId ?? null) !== (nextMessage.meta?.exprId ?? null)) {
-    return false
-  }
-
-  const currentTimestamp = getMessageTimestamp(currentMessage)
-  const nextTimestamp = getMessageTimestamp(nextMessage)
-
-  if (currentTimestamp === 0 || nextTimestamp === 0) {
-    return false
-  }
-
-  return Math.abs(currentTimestamp - nextTimestamp) <= SERVER_DUPLICATE_MATCH_WINDOW_MS
-}
-
 function sortPatientMessages(messages: PatientChatMessage[]) {
   return messages
     .map((message, index) => ({ message, index }))
@@ -348,18 +291,6 @@ function mergePatientMessages(
     )
 
     if (staleOptimisticIndex >= 0) {
-      return
-    }
-
-    const duplicateServerIndex = mergedMessages.findIndex(message =>
-      shouldCollapseDuplicateServerMessage(message, nextMessage),
-    )
-
-    if (duplicateServerIndex >= 0) {
-      mergedMessages[duplicateServerIndex] = mergeEquivalentMessagePair(
-        mergedMessages[duplicateServerIndex],
-        nextMessage,
-      )
       return
     }
 
@@ -978,8 +909,11 @@ export function PatientIncomingChatProvider({
       }
 
       if (!alreadyHandling) {
-        void enterReplyModeInternal(messageId, incomingMessage, {
+        dispatch({
+          type: 'OPEN_INTERRUPT',
+          messageId,
           pauseMedia: route.shouldPauseMediaOnInterrupt,
+          focusMessageId: messageId,
         })
       }
     },
@@ -1200,8 +1134,11 @@ export function PatientIncomingChatProvider({
     }
 
     if (!alreadyHandlingConversation) {
-      void enterReplyModeInternal(incomingMessage.id, incomingMessage, {
+      dispatch({
+        type: 'OPEN_INTERRUPT',
+        messageId: incomingMessage.id,
         pauseMedia: route.shouldPauseMediaOnInterrupt,
+        focusMessageId: incomingMessage.id,
       })
     }
   }
