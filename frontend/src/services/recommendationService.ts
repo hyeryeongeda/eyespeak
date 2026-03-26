@@ -13,7 +13,11 @@ import type {
   CustomTalkContextSummary,
   CustomTalkDraft,
 } from '../features/patient/custom-talk/types'
-import type { PatientChatMessage, PatientSuggestedResponse } from '../types/chat'
+import type {
+  PatientChatMessage,
+  PatientRecommendationCategory,
+  PatientSuggestedResponse,
+} from '../types/chat'
 import type { AudioPlaybackHandle } from '../types/tts'
 import type {
   RecommendationCategoryKey,
@@ -89,6 +93,90 @@ function mapRecommendedReplies(replies: RecommendationReplyDto[]): PatientSugges
     source: mapReplySource(reply.source),
     rank: reply.rank,
   }))
+}
+
+function mapRecommendationCategories(
+  input: Array<{
+    key: string
+    title?: string
+    description?: string
+    hint?: string | null
+  }>,
+): PatientRecommendationCategory[] {
+  return input.reduce<PatientRecommendationCategory[]>((categories, category) => {
+      const key = category.key as CustomCategoryKey
+
+      if (!knownCategoryKeys.has(key)) {
+        return categories
+      }
+
+      const fallback = customTalkCategoryMap.get(key)
+
+      if (!fallback) {
+        return categories
+      }
+
+      categories.push({
+        key,
+        title: category.title?.trim() || fallback.title,
+        description: category.description?.trim() || fallback.description,
+        hint: category.hint?.trim() || fallback.hint,
+      })
+
+      return categories
+    }, [])
+}
+
+function mapRecommendationCategoryFromPool(
+  category: CustomTalkCategoryOption,
+): PatientRecommendationCategory {
+  return {
+    key: category.key,
+    title: category.title,
+    description: category.description,
+    hint: category.hint,
+  }
+}
+
+function mapRecentConversation(messages: PatientChatMessage[], activeMessageId?: string) {
+  const recentMessages = messages
+    .filter(message => message.id !== activeMessageId)
+    .slice(-6)
+    .map(message => {
+      const content = message.content.trim()
+
+      return content ? `${message.sender}: ${content}` : ''
+    })
+    .filter(Boolean)
+
+  return recentMessages.length > 0 ? recentMessages : undefined
+}
+
+function mapRecommendedSentences(
+  messageId: string,
+  categoryKey: RecommendationCategoryKey,
+  sentences: string[],
+): PatientSuggestedResponse[] {
+  const seenLabels = new Set<string>()
+
+  return sentences
+    .map(sentence => sentence.trim())
+    .filter(label => {
+      if (!label || seenLabels.has(label)) {
+        return false
+      }
+
+      seenLabels.add(label)
+      return true
+    })
+    .slice(0, 4)
+    .map((label, index) => ({
+      id: `${messageId}-${categoryKey}-${index + 1}`,
+      label,
+      intentKey: categoryKey,
+      source: 'category' as const,
+      rank: index + 1,
+    }))
 }
 
 function mapVisibleCategories(
@@ -316,6 +404,54 @@ export async function fetchComposeWords(input: {
   )
 
   return response.words
+}
+
+export async function fetchSuggestedReplyCategories(input: {
+  message: PatientChatMessage
+  history: PatientChatMessage[]
+}) {
+  void input.message
+  void input.history
+
+  if (getActiveAiApiMode() !== 'real') {
+    return CUSTOM_TALK_CATEGORY_POOL.map(mapRecommendationCategoryFromPool)
+  }
+
+  const response = await getRecommendationCategoriesApi(getAccessToken())
+
+  return mapRecommendationCategories(response.categories)
+}
+
+export async function fetchSuggestedSentences(input: {
+  categoryKey: RecommendationCategoryKey
+  message: PatientChatMessage
+  history: PatientChatMessage[]
+}) {
+  if (getActiveAiApiMode() !== 'real') {
+    if (input.message.meta?.suggestionMode === 'failure') {
+      throw new Error('추천 문장을 불러오지 못했습니다. 다시 시도해 주세요.')
+    }
+
+    if (input.message.meta?.suggestionMode === 'empty') {
+      return []
+    }
+
+    const sentences = await fetchRecommendedCustomSentencesMock({
+      categoryKey: input.categoryKey as CustomCategoryKey,
+    })
+
+    return mapRecommendedSentences(input.message.id, input.categoryKey, sentences)
+  }
+
+  const recentMessages = mapRecentConversation(input.history, input.message.id)
+  const request = {
+    categoryKey: input.categoryKey,
+    guardianMessage: normalizeOptionalText(input.message.content),
+    recentMessages,
+  }
+  const response = await getRecommendationSentencesApi(request, getAccessToken())
+
+  return mapRecommendedSentences(input.message.id, input.categoryKey, response.sentences)
 }
 
 export async function fetchGeneratedCustomSentences(input: {

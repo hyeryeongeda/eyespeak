@@ -9,7 +9,9 @@ import {
   buildManualWordBank,
 } from '../services/mockSuggestionService'
 import {
+  fetchSuggestedReplyCategories,
   fetchSuggestedReplies,
+  fetchSuggestedSentences,
   playPatientUtteranceTts,
   sendPatientReply,
 } from '../services/recommendationService'
@@ -30,11 +32,13 @@ import type { StompChatInbound } from '../services/websocket'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
+  PatientRecommendationCategory,
   PatientChatRouteContext,
   PatientChatSendOutcome,
   PatientChatSessionState,
   PatientSuggestedResponse,
 } from '../types/chat'
+import type { RecommendationCategoryKey } from '../types/recommendation'
 
 type PatientChatAction =
   | { type: 'SET_ROUTE_CONTEXT'; route: PatientChatRouteContext }
@@ -50,7 +54,10 @@ type PatientChatAction =
       focusMessageId: string
     }
   | { type: 'ENTER_REPLY_MODE'; messageId: string; pauseMedia: boolean }
-  | { type: 'SUGGESTION_LOADING'; messageId: string }
+  | { type: 'CATEGORY_LOADING'; messageId: string }
+  | { type: 'CATEGORY_READY'; categories: PatientRecommendationCategory[] }
+  | { type: 'SET_CATEGORY_PAGE'; page: number }
+  | { type: 'SUGGESTION_LOADING'; messageId: string; categoryKey?: RecommendationCategoryKey | null }
   | { type: 'SUGGESTION_READY'; suggestions: PatientSuggestedResponse[] }
   | { type: 'SUGGESTION_FAILED'; error: string }
   | { type: 'OPEN_MANUAL_INPUT_SELECT' }
@@ -77,13 +84,18 @@ const initialState: PatientChatSessionState = {
   status: 'idle',
   interruptState: 'none',
   fallbackState: 'none',
+  recommendationMode: 'category',
+  categoryState: 'idle',
   suggestionState: 'idle',
   messages: [],
+  categories: [],
   suggestions: [],
   currentRoute: null,
   previousRoute: null,
   activeMessageId: null,
   activeReplyMessageId: null,
+  selectedCategoryKey: null,
+  categoryPage: 0,
   manualInputMode: null,
   manualDraft: '',
   suggestionError: null,
@@ -455,10 +467,15 @@ function patientChatReducer(
         status: 'reply_mode',
         interruptState: 'reply_mode',
         fallbackState: 'none',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         suggestionState: 'idle',
         activeMessageId: action.messageId,
         activeReplyMessageId: action.messageId,
+        categories: [],
         suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
         suggestionError: null,
         sendError: null,
         selectedSuggestionId: null,
@@ -473,12 +490,54 @@ function patientChatReducer(
         lastEventLabel: '응답 모드로 전환했습니다.',
       }
 
+    case 'CATEGORY_LOADING':
+      return {
+        ...state,
+        status: 'category_loading',
+        recommendationMode: 'category',
+        categoryState: 'loading',
+        suggestionState: 'idle',
+        categories: [],
+        suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
+        suggestionError: null,
+        sendError: null,
+        fallbackState: 'none',
+        lastEventLabel: '카테고리를 불러오고 있습니다.',
+      }
+
+    case 'CATEGORY_READY':
+      return {
+        ...state,
+        status: 'category_ready',
+        recommendationMode: 'category',
+        categoryState: 'ready',
+        suggestionState: 'idle',
+        categories: action.categories,
+        suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
+        suggestionError: null,
+        sendError: null,
+        fallbackState: 'none',
+        lastEventLabel: '추천 카테고리를 준비했습니다.',
+      }
+
+    case 'SET_CATEGORY_PAGE':
+      return {
+        ...state,
+        categoryPage: Math.max(0, action.page),
+      }
+
     case 'SUGGESTION_LOADING':
       return {
         ...state,
         status: 'suggestion_loading',
+        recommendationMode: 'sentence',
         suggestionState: 'loading',
         suggestions: [],
+        selectedCategoryKey: action.categoryKey ?? null,
         suggestionError: null,
         fallbackState: 'none',
         suggestionAttempts: {
@@ -492,6 +551,7 @@ function patientChatReducer(
       return {
         ...state,
         status: 'suggestion_ready',
+        recommendationMode: 'sentence',
         suggestionState: 'ready',
         suggestions: action.suggestions,
         suggestionError: null,
@@ -503,6 +563,7 @@ function patientChatReducer(
       return {
         ...state,
         status: 'suggestion_failed',
+        recommendationMode: 'sentence',
         suggestionState: 'failed',
         suggestions: [],
         suggestionError: action.error,
@@ -575,14 +636,19 @@ function patientChatReducer(
         ...state,
         status: 'sent',
         interruptState: 'none',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         messages: mergedMessages,
         activeMessageId: nextActiveMessage?.id ?? null,
         activeReplyMessageId: null,
+        categories: [],
         sendError: null,
         suggestionError: null,
         selectedSuggestionId: null,
         suggestionState: 'idle',
         suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -640,10 +706,15 @@ function patientChatReducer(
         ...state,
         status: 'timeout',
         interruptState: 'restoring',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         activeReplyMessageId: null,
         activeMessageId: action.messageId,
+        categories: [],
         suggestions: [],
         suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -658,9 +729,14 @@ function patientChatReducer(
         ...state,
         status: 'deferred',
         interruptState: 'deferred',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         activeReplyMessageId: null,
+        categories: [],
         suggestions: [],
         suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -678,9 +754,14 @@ function patientChatReducer(
         ...state,
         status: 'restoring',
         interruptState: 'restoring',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         activeReplyMessageId: null,
+        categories: [],
         suggestions: [],
         suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -1212,6 +1293,100 @@ export function PatientIncomingChatProvider({
     triggerIncomingPreset('water', { messageId: duplicateId })
   }
 
+  async function loadSuggestionChoices(
+    messageId: string,
+    message: PatientChatMessage,
+    options?: { categoryKey?: RecommendationCategoryKey | null },
+  ) {
+    const currentAttempts = stateRef.current.suggestionAttempts[messageId] ?? 0
+
+    if (currentAttempts >= MAX_SUGGESTION_RETRIES) {
+      dispatch({
+        type: 'SUGGESTION_FAILED',
+        error: '추천 재시도 횟수를 초과했습니다. 직접 입력으로 전환해 주세요.',
+      })
+      return
+    }
+
+    dispatch({
+      type: 'SUGGESTION_LOADING',
+      messageId,
+      categoryKey: options?.categoryKey ?? null,
+    })
+
+    try {
+      let suggestions: PatientSuggestedResponse[] = []
+
+      if (options?.categoryKey) {
+        try {
+          suggestions = await fetchSuggestedSentences({
+            categoryKey: options.categoryKey,
+            message,
+            history: stateRef.current.messages,
+          })
+        } catch (error) {
+          console.warn('Category sentence suggestion failed, falling back to replies.', error)
+        }
+
+        if (suggestions.length === 0) {
+          suggestions = await fetchSuggestedReplies({
+            message,
+            history: stateRef.current.messages,
+          })
+        }
+      } else {
+        suggestions = await fetchSuggestedReplies({
+          message,
+          history: stateRef.current.messages,
+        })
+      }
+
+      if (suggestions.length === 0) {
+        dispatch({
+          type: 'SUGGESTION_FAILED',
+          error: '추천 결과가 비어 있습니다. 직접 입력으로 답변해 주세요.',
+        })
+        return
+      }
+
+      dispatch({ type: 'SUGGESTION_READY', suggestions })
+    } catch (error) {
+      const messageText =
+        error instanceof Error
+          ? error.message
+          : '추천 응답을 불러오지 못했습니다. 다시 시도해 주세요.'
+
+      dispatch({
+        type: 'SUGGESTION_FAILED',
+        error: messageText,
+      })
+    }
+  }
+
+  async function loadRecommendationCategories(
+    messageId: string,
+    message: PatientChatMessage,
+  ) {
+    dispatch({ type: 'CATEGORY_LOADING', messageId })
+
+    try {
+      const categories = await fetchSuggestedReplyCategories({
+        message,
+        history: stateRef.current.messages,
+      })
+
+      if (categories.length === 0) {
+        await loadSuggestionChoices(messageId, message)
+        return
+      }
+
+      dispatch({ type: 'CATEGORY_READY', categories })
+    } catch (error) {
+      console.warn('Recommendation categories failed, falling back to replies.', error)
+      await loadSuggestionChoices(messageId, message)
+    }
+  }
+
   async function enterReplyModeInternal(
     messageId: string,
     knownMessage?: PatientChatMessage,
@@ -1230,6 +1405,10 @@ export function PatientIncomingChatProvider({
       messageId,
       pauseMedia: options?.pauseMedia ?? currentState.isMediaPausedByInterrupt,
     })
+
+    await loadRecommendationCategories(messageId, message)
+    return
+    /*
 
     const nextState = stateRef.current
     const attempts = nextState.suggestionAttempts[messageId] ?? 0
@@ -1270,6 +1449,9 @@ export function PatientIncomingChatProvider({
         error: messageText,
       })
     }
+  }
+
+    */
   }
 
   function enterReplyMode(messageId?: string) {
@@ -1316,7 +1498,42 @@ export function PatientIncomingChatProvider({
       return
     }
 
-    void enterReplyModeInternal(targetMessageId)
+    const message = getMessageById(stateRef.current.messages, targetMessageId)
+
+    if (!message) {
+      return
+    }
+
+    if (stateRef.current.recommendationMode === 'category') {
+      void loadRecommendationCategories(targetMessageId, message)
+      return
+    }
+
+    void loadSuggestionChoices(targetMessageId, message, {
+      categoryKey: stateRef.current.selectedCategoryKey,
+    })
+  }
+
+  async function selectRecommendationCategory(categoryKey: RecommendationCategoryKey) {
+    const targetMessageId =
+      stateRef.current.activeReplyMessageId ?? stateRef.current.activeMessageId
+
+    if (!targetMessageId) {
+      return
+    }
+
+    const message = getMessageById(stateRef.current.messages, targetMessageId)
+
+    if (!message) {
+      return
+    }
+
+    clearTimeoutState()
+    await loadSuggestionChoices(targetMessageId, message, { categoryKey })
+  }
+
+  function setRecommendationCategoryPage(page: number) {
+    dispatch({ type: 'SET_CATEGORY_PAGE', page })
   }
 
   function openManualInputSelect() {
@@ -1465,6 +1682,8 @@ export function PatientIncomingChatProvider({
     openLatestPendingReply,
     enterReplyMode,
     retrySuggestions,
+    selectRecommendationCategory,
+    setRecommendationCategoryPage,
     openManualInputSelect,
     setManualInputMode,
     updateManualDraft,
