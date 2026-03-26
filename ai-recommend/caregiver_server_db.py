@@ -66,7 +66,7 @@ llm_client = OpenAI(
 
 # ====== 임베딩 모델 ======
 print("[초기화] 임베딩 모델 로딩 중...")
-embed_model = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
+embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 print("[초기화] 임베딩 모델 로딩 완료")
 
 # ====== 임베딩 캐시 ======
@@ -212,9 +212,10 @@ def _search_sentences(question: str, user_db: list, sentiment_filter: str | None
     for item in pool:
         vec = get_embedding(item["text"])
         sim = cosine_sim(q_vec, vec)
-        base_score = sim * item["weight"]
+        weight_bonus = 1.0 + 0.15 * (item["weight"] - 1.0)  # weight 영향 15%로 축소
+        base_score = sim * weight_bonus
         temporal_weight = _calculate_temporal_boost(item, now.hour, now.weekday())
-        intent_boost = 1.5 if (intent_filter and intent_filter in (item.get("categories") or [])) else 1.0
+        intent_boost = 1.3 if (intent_filter and intent_filter in (item.get("categories") or [])) else 1.0
         scored.append({"text": item["text"], "score": base_score * temporal_weight * intent_boost, "source": item["source"], "vec": vec})
     # 중복 제거
     seen, candidates = set(), []
@@ -285,18 +286,18 @@ def _search_sentences_mixed(question: str, user_db: list, sentiment_filter: str 
     mmr_lambda = 1.0 if no_mmr else 0.85  # no_mmr이면 유사도 순으로만
     if is_cold_start:
         return _search_general(question, k=k_total, sentiment_filter=sentiment_filter, mmr_lambda=mmr_lambda)
-    # user 5 : general 1 비율 (general 비중 낮춤 — 엉뚱한 문장 방지)
+    # user 2 : general 1 비율 (general_corpus 깨끗해져서 비중 올림)
     if sentiment_filter is not None:
         general_has_sentiment = general_db and "sentiment" in general_db[0]
         if general_has_sentiment:
-            k_user = k_total - 1
-            k_general = 1
+            k_user = (k_total * 2 + 2) // 3  # 6개면 4개
+            k_general = k_total - k_user       # 6개면 2개
             user_candidates = _search_sentences(question, user_db, sentiment_filter, intent_filter=intent_filter, k=k_user, mmr_lambda=mmr_lambda)
             general_candidates = _search_general(question, k=k_general, sentiment_filter=sentiment_filter, mmr_lambda=mmr_lambda)
             return (user_candidates + general_candidates)[:k_total]
         return _search_sentences(question, user_db, sentiment_filter, intent_filter=intent_filter, k=k_total, mmr_lambda=mmr_lambda)
-    k_user = k_total - 1
-    k_general = 1
+    k_user = (k_total * 2 + 2) // 3  # 6개면 4개
+    k_general = k_total - k_user       # 6개면 2개
     user_candidates = _search_sentences(question, user_db, None, intent_filter=intent_filter, k=k_user, mmr_lambda=mmr_lambda)
     general_candidates = _search_general(question, k=k_general, mmr_lambda=mmr_lambda)
     return (user_candidates + general_candidates)[:k_total]
@@ -386,7 +387,7 @@ def _llm_filter_words(question: str, candidates: list, category: str) -> list:
 {category_desc} 골라서 JSON배열만 출력.부사/어미/조사제외."""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": "JSON 배열만 출력하세요."},
                 {"role": "user", "content": prompt},
@@ -482,16 +483,20 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
 환자가 과거에 자주 쓴 표현:
 {chr(10).join(f"- {t}" for t in texts)}
 
-위 표현들을 참고해서 질문에 어울리는 자연스러운 환자 답변을 정확히 3개 만드세요.
-- 보호자 질문 시제/맥락에 맞게 (과거 질문→과거형, 현재→현재형)
-- 반말 구어체, 15자 이내
-- {diversity_rule}
-- 각 답변은 하나의 주제만 담기 (여러 주제 섞지 마세요)
-- 질문과 관련 없는 내용 넣지 마세요
-- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
+당신은 67세 남성 ALS 환자입니다. 보호자가 위와 같이 말했습니다.
+
+[절대 규칙]
+1. 위 표현 목록에서 질문의 답변으로 가장 자연스러운 3개를 고르세요.
+2. 고른 표현을 환자 말투(차분한 반말)에 맞게 살짝만 다듬으세요.
+3. 목록에 없는 새로운 문장을 만들지 마세요. 반드시 위 목록에서 고르세요.
+4. 10자 이내, 반말
+5. {diversity_rule}
+6. 질문과 모순되는 답변 금지
+7. 여러 주제를 한 문장에 섞지 마세요
+8. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": f"{PATIENT_PERSONA} ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
                 {"role": "user", "content": prompt},
@@ -524,7 +529,7 @@ def _generate_from_words(words: list, question: str) -> list:
 - 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model="gpt-4.1-mini",
             messages=[
                 {"role": "system", "content": f"{PATIENT_PERSONA} ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
                 {"role": "user", "content": prompt},
@@ -590,7 +595,7 @@ def _classify_sentence_llm(text: str) -> tuple[str, str]:
 JSON만 출력: {{"sentiment": "부정", "intent": "감정"}}"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model="gpt-4.1-mini",
             messages=[{"role": "system", "content": "JSON만 출력하세요."}, {"role": "user", "content": prompt}],
             max_tokens=50, temperature=0.1,
         )
@@ -662,24 +667,53 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
     print(f"[카테고리 생성] 질문: {question}")
     print(f"[카테고리 생성] 키워드: {all_keywords[:20]}")
     print(f"[카테고리 생성] 힌트표현: {hint_texts}")
+    # 닫힌 질문 자동 판단
+    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "갈게", "올게", "나갈게", "해줄까", "볼까", "들을래", "할게", "갈까"]
+    is_closed = any(p in question for p in closed_patterns)
+
+    if is_closed:
+        # 닫힌 질문이면 LLM 없이 바로 선택지 생성
+        result = {
+            "categories": ["응", "아니", "잘 모르겠어"],
+            "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"},
+            "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}
+        }
+        category_cache[cache_key] = result
+        print(f"[카테고리 생성] 닫힌 질문 감지 → 자동 선택지")
+        return result
+
     prompt = f"""보호자 질문: "{question}"
 
-이 질문이 **닫힌 질문**(예/아니오, 좋아/싫어 등으로 답하는지)인지 **개방형 질문**(무엇/어디/어떤 등으로 구체적 답을 구하는지) 스스로 판단한 뒤, 적절한 답변 카테고리를 2~{max_categories}개 생성하세요.
+이 질문은 개방형 질문입니다. 구체적인 답변 카테고리를 생성하세요.
+
+[닫힌 질문 판단 기준]
+다음 패턴이면 무조건 닫힌 질문:
+- "~할래?", "~줄까?", "~할까?", "~할거야?", "~했어?", "~먹었어?", "~아파?", "~괜찮아?", "~좋아?", "~싫어?"
+- 예/아니오로 대답 가능한 모든 질문
+→ 반드시 ["응", "아니", "잘 모르겠어"] 형태로 2~3개 선택지
+
+[개방형 질문 판단 기준]
+- "뭐 ~?", "어디 ~?", "어떤 ~?", "누구 ~?", "언제 ~?", "기분이 어때?"
+- 구체적 답을 구하는 질문
+→ 환자 키워드/표현 참고해서 구체적 선택지 제공
 
 [환자 과거 데이터 참고]
 관련 키워드: {json.dumps(all_keywords[:20], ensure_ascii=False)}
 관련 표현: {json.dumps(hint_texts, ensure_ascii=False)}
 
 [카테고리 생성 규칙]
-- **닫힌 질문**: [응, 아니, 잘 모르겠어], [좋아, 싫어, 그저그래] 등 질문에 맞는 고정 선택지
-  - 예: "주스 줄까?" → ["응", "아니", "다른 거"]
-  - 예: "아파?" → ["아파", "안 아파", "좀 아파"]
-  - 예: "밥 먹었어?" → ["응", "아직", "배 안 고파"]
-- **개방형 질문**: 환자 키워드/표현에서 **구체적인 단어**를 뽑아서 선택지로 제공. 마지막에 "잘 모르겠어" 또는 "다른 거" 1개 포함
-  - 예: "뭐 먹고 싶어?" → ["계란죽", "국밥", "주스", "잘 모르겠어"] (추상적인 "음식" 금지, 구체적 음식명)
-  - 예: "뭐 듣고 싶어?" → ["트로트", "나훈아", "임영웅", "다른 거"]
-  - 예: "어디 아파?" → ["어깨", "다리", "허리", "잘 모르겠어"]
-- **중요: "음식", "욕구", "일상", "감정" 같은 추상적인 단어를 카테고리로 쓰지 마세요. 환자가 직접 선택할 수 있는 구체적인 단어만 사용하세요.**
+- **닫힌 질문 예시:**
+  - "주스 줄까?" → ["응", "아니", "다른 거"]
+  - "아파?" → ["응 아파", "아니 괜찮아", "좀 그래"]
+  - "밥 먹었어?" → ["응", "아직", "배 안 고파"]
+  - "전화할래?" → ["응", "아니", "나중에"]
+  - "놀러오라고 할까?" → ["응 불러줘", "아니 됐어", "나중에"]
+- **개방형 질문 예시:**
+  - "뭐 먹고 싶어?" → ["계란죽", "국밥", "주스", "잘 모르겠어"]
+  - "어디 아파?" → ["어깨", "다리", "허리", "잘 모르겠어"]
+  - "기분이 어때?" → ["좋아", "별로", "그저그래"]
+- **절대 금지:** "음식", "욕구", "일상", "감정", "요청" 같은 추상적 단어를 카테고리로 쓰지 마세요.
+- **절대 금지:** 질문과 관련 없는 카테고리를 넣지 마세요.
 - 공통: 카테고리 라벨은 짧게(4글자 이내 권장). 각 카테고리에 sentiment(긍정/부정/중립)와 intent(의도) 지정
 - intent 예시: 통증, 욕구, 감정, 음식, 요청, 일상, 기타 (해당 카테고리가 어떤 의도인지 한 단어로)
 
@@ -693,7 +727,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
     for attempt in range(3):
         try:
             resp = llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4.1-mini",
                 messages=[
                     {"role": "system", "content": "JSON만 출력하세요. 다른 텍스트 없이."},
                     {"role": "user", "content": prompt},
@@ -757,6 +791,14 @@ def recommend():
     selected_category = data.get("selected_category") or None
     if not question:
         return jsonify({"error": "질문을 입력하세요"}), 400
+
+    # 동의어 매핑 — 보호자가 쓰는 호칭 → 환자 expressions에 있는 이름
+    SYNONYM_MAP = {"손녀딸": "예승이", "손녀": "예승이", "할아버지": "나"}
+    search_q = question
+    for synonym, replacement in SYNONYM_MAP.items():
+        if synonym in search_q:
+            search_q = search_q + " " + replacement
+
     user_data = _load_user_data_from_db(matching_id)
     if not user_data:
         return jsonify({"error": "matching not found"}), 404
@@ -765,15 +807,33 @@ def recommend():
     if selected_category:
         cat_result = _generate_categories(question, user_data["user_db"])
         intent_filter = (cat_result.get("intentMap") or {}).get(selected_category)
-        category_keyword = selected_category  # "어깨", "허리" 등 카테고리 라벨 자체
-    candidates = _search_sentences_mixed(question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=6)
-    # 카테고리 선택했으면 해당 키워드 포함 표현 우선 + 질문에 카테고리 반영
-    if category_keyword:
-        # 카테고리 키워드가 포함된 후보를 앞으로
+        category_keyword = selected_category
+
+    # 닫힌 질문 응답("응"/"아니") → 맥락에 맞는 검색어로 변환
+    search_question = search_q  # 동의어 매핑 적용된 질문
+    if category_keyword in ("응", "아니", "잘 모르겠어"):
+        if category_keyword == "응":
+            search_question = search_q
+            sentiment_filter = "긍정"
+        elif category_keyword == "아니":
+            search_question = search_q
+            sentiment_filter = "부정"
+        else:
+            search_question = search_q
+            sentiment_filter = "중립"
+
+    candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=6)
+    print(f"[recommend] 검색어: {search_question}")
+    print(f"[recommend] 후보: {[(c['text'], round(c['score'],3)) for c in candidates]}")
+
+    # 개방형 카테고리 선택 → 키워드 포함 표현 우선
+    if category_keyword and category_keyword not in ("응", "아니", "잘 모르겠어"):
         keyword_matched = [c for c in candidates if category_keyword in c["text"]]
         keyword_unmatched = [c for c in candidates if category_keyword not in c["text"]]
         candidates = (keyword_matched + keyword_unmatched)[:6]
-        # LLM에 카테고리 선택 맥락 전달
+
+    # LLM에 원래 질문 + 선택 맥락 전달
+    if category_keyword:
         question = f"{question} (환자가 '{category_keyword}'를 선택함)"
     sentences = _refine_recommend(question, candidates, sentiment_context=sentiment_filter)
     _recommend_stats["recommend_calls"] += 1
@@ -973,18 +1033,26 @@ def recommend_replies():
     if not question:
         return jsonify({"error": "메시지 내용이 필요합니다"}), 400
 
+    # 동의어 매핑
+    SYNONYM_MAP = {"손녀딸": "예승이", "손녀": "예승이", "할아버지": "나"}
+    search_q = question
+    for synonym, replacement in SYNONYM_MAP.items():
+        if synonym in search_q:
+            search_q = search_q + " " + replacement
+
     user_data = _load_user_data_from_db(matching_id)
     if not user_data:
         return jsonify({"error": "matching not found"}), 404
 
     # 대화 이력이 있으면 컨텍스트에 추가
-    context = question
+    context = search_q
     if history:
         history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
         context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
 
-    # replies: 유사도 최소 기준 + 그 안에서 가중치 (관련 없는 것 필터링)
-    MIN_SIM = 0.3  # 유사도 0.3 미만은 관련 없는 것으로 탈락
+    # replies: 유사도 중심 (weight 영향 최소화)
+    MIN_SIM = 0.3
+    WEIGHT_FACTOR = 0.1  # weight 영향을 10%로 축소
     q_vec = get_embedding(question)
     now = datetime.now()
     scored = []
@@ -992,16 +1060,23 @@ def recommend_replies():
         vec = get_embedding(item["text"])
         sim = cosine_sim(q_vec, vec)
         if sim < MIN_SIM:
-            continue  # 관련 없는 것 탈락
-        base_score = sim * item["weight"]
-        temporal_weight = _calculate_temporal_boost(item, now.hour, now.weekday())
-        scored.append({"text": item["text"], "score": base_score * temporal_weight, "source": item["source"]})
+            continue
+        # 유사도 90% + weight 10%
+        weight_bonus = 1.0 + WEIGHT_FACTOR * (item["weight"] - 1.0)
+        scored.append({"text": item["text"], "score": sim * weight_bonus, "source": item["source"]})
     for item in general_db:
         vec = get_embedding(item["text"])
         sim = cosine_sim(q_vec, vec)
         if sim < MIN_SIM:
             continue
         scored.append({"text": item["text"], "score": sim * item["weight"], "source": item["source"]})
+    # 질문의 핵심 단어 추출 (2글자 이상)
+    q_words = [w for w in question.replace("?", " ").replace("!", " ").replace(".", " ").split() if len(w) >= 2]
+    # 핵심 단어가 포함된 후보에 부스트
+    for item in scored:
+        keyword_match = any(qw in item["text"] for qw in q_words)
+        if keyword_match:
+            item["score"] *= 1.3  # 30% 부스트
     scored.sort(key=lambda x: x["score"], reverse=True)
     # 중복 제거 + 상위 6개
     seen = set()
@@ -1012,7 +1087,7 @@ def recommend_replies():
             candidates.append(r)
         if len(candidates) >= 6:
             break
-    print(f"[replies] 후보: {[c['text'] for c in candidates]}")
+    print(f"[replies] 후보: {[(c['text'], round(c['score'],3)) for c in candidates]}")
     sentences = _refine_recommend(context, candidates, sentiment_context=None)
 
     # 각 문장에 intent 분류 + 메타정보 추가

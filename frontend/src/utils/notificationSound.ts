@@ -10,3 +10,10 @@ export function playNotificationSound(type: FcmType): void {
   audio.currentTime = 0;
   audio.play().catch(() => {});
 }
+
+export function stopNotificationSound(): void {
+  sosAudio.pause();
+  sosAudio.currentTime = 0;
+  basicAudio.pause();
+  basicAudio.currentTime = 0;
+}

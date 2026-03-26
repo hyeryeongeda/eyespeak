@@ -4,15 +4,16 @@ import type { FcmType } from '../../shared/stores/notificationStore';
 import { apiClient } from '../../services/apiClient';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { getActiveAuthSession } from '../../services/authSessionRegistry';
+import { stopNotificationSound } from '../../utils/notificationSound';
 
 /** VOICE_READY만 자동 사라짐 (확인 동작이 필요 없음) */
 const AUTO_DISMISS_MS = 4000;
 
-/** type별 배경색 */
-const bgColorMap: Record<Exclude<FcmType, 'SOS'>, string> = {
-  CALL: 'bg-blue-500',
-  CHAT: 'bg-green-500',
-  VOICE_READY: 'bg-purple-500',
+/** type별 스타일 (배경 + 텍스트) */
+const styleMap: Record<Exclude<FcmType, 'SOS'>, { bg: string; text: string; badge: string; button: string }> = {
+  CALL: { bg: 'bg-blue-100', text: 'text-blue-800', badge: 'bg-blue-200 text-blue-800', button: 'bg-blue-200 text-blue-800' },
+  CHAT: { bg: 'bg-green-100', text: 'text-green-800', badge: 'bg-green-200 text-green-800', button: 'bg-green-200 text-green-800' },
+  VOICE_READY: { bg: 'bg-purple-100', text: 'text-purple-800', badge: 'bg-purple-200 text-purple-800', button: 'bg-purple-200 text-purple-800' },
 };
 
 /** type별 라벨 */
@@ -48,7 +49,7 @@ export default function InAppNotification() {
   // SOS는 이 컴포넌트에서 처리하지 않음
   if (!notification || notification.type === 'SOS') return null;
 
-  const bgColor = bgColorMap[notification.type];
+  const style = styleMap[notification.type];
   const label = labelMap[notification.type];
 
   const handleConfirm = async () => {
@@ -72,31 +73,34 @@ export default function InAppNotification() {
       }
     }
 
+    stopNotificationSound();
     clearNotification();
   };
 
   return (
-    <div className={`fixed top-4 left-4 right-4 z-50 ${bgColor} rounded-2xl p-4 shadow-lg`}>
-      {/* 알림 내용 */}
-      <div className="flex items-center gap-3">
-        <span className="rounded-full bg-white/20 px-2 py-1 text-xs font-semibold text-white">
-          {label}
-        </span>
-        <div className="flex-1 text-white">
-          <p className="text-sm font-bold">{notification.title}</p>
-          <p className="text-sm opacity-90">{notification.body}</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className={`mx-4 w-full max-w-sm ${style.bg} rounded-2xl p-4 shadow-lg`}>
+        {/* 알림 내용 */}
+        <div className="flex items-center gap-3">
+          <span className={`rounded-full ${style.badge} px-2 py-1 text-xs font-semibold`}>
+            {label}
+          </span>
+          <div className={`flex-1 ${style.text}`}>
+            <p className="text-sm font-bold">{notification.title}</p>
+            <p className="text-sm opacity-75">{notification.body}</p>
+          </div>
         </div>
-      </div>
 
-      {/* 확인 버튼 (CALL, CHAT) */}
-      {needsConfirm && (
-        <button
-          onClick={handleConfirm}
-          className="mt-3 min-h-[44px] w-full rounded-xl bg-white/20 py-2 text-sm font-bold text-white active:scale-95"
-        >
-          확인
-        </button>
-      )}
+        {/* 확인 버튼 (CALL, CHAT) */}
+        {needsConfirm && (
+          <button
+            onClick={handleConfirm}
+            className={`mt-3 min-h-[44px] w-full rounded-xl ${style.button} py-2 text-sm font-bold active:scale-95`}
+          >
+            확인
+          </button>
+        )}
+      </div>
     </div>
   );
 }
