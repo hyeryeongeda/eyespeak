@@ -619,14 +619,6 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failSubmitOnce,
       })
 
-      try {
-        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
-          text: normalizedText,
-        })
-      } catch (error) {
-        logCustomTalkTtsFailure('recommended', error)
-      }
-
       set(currentState => ({
         draft: {
           ...currentState.draft,
@@ -646,6 +638,16 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           failSubmitOnce: false,
         },
       }))
+
+      void playCustomTalkUtteranceTts({
+        text: normalizedText,
+      })
+        .then(handle => {
+          activeCustomTalkAudioPlayback = handle
+        })
+        .catch(error => {
+          logCustomTalkTtsFailure('recommended', error)
+        })
 
       return true
     } catch (error) {
@@ -915,14 +917,6 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failSubmitOnce,
       })
 
-      try {
-        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
-          text: normalizedText,
-        })
-      } catch (error) {
-        logCustomTalkTtsFailure('generated', error)
-      }
-
       set(currentState => ({
         draft: {
           ...currentState.draft,
@@ -942,6 +936,16 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           failSubmitOnce: false,
         },
       }))
+
+      void playCustomTalkUtteranceTts({
+        text: normalizedText,
+      })
+        .then(handle => {
+          activeCustomTalkAudioPlayback = handle
+        })
+        .catch(error => {
+          logCustomTalkTtsFailure('generated', error)
+        })
 
       return true
     } catch (error) {
@@ -1329,14 +1333,6 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: mockFlags.failSubmitOnce,
       })
 
-      try {
-        activeCustomTalkAudioPlayback = await playCustomTalkUtteranceTts({
-          text,
-        })
-      } catch (error) {
-        logCustomTalkTtsFailure('manual', error)
-      }
-
       set(currentState => ({
         conversationLog: appendConversationLog(
           currentState.conversationLog,
@@ -1357,6 +1353,16 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           failSubmitOnce: false,
         },
       }))
+
+      void playCustomTalkUtteranceTts({
+        text,
+      })
+        .then(handle => {
+          activeCustomTalkAudioPlayback = handle
+        })
+        .catch(error => {
+          logCustomTalkTtsFailure('manual', error)
+        })
 
       // TODO: persist history / favorites candidate
       return true
