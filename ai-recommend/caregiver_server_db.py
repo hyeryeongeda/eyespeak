@@ -14,9 +14,10 @@ from datetime import datetime
 from pathlib import Path
 from collections import Counter
 import numpy as np
+import onnxruntime as ort
 from flask import Flask, jsonify, request, send_file
 from openai import OpenAI
-from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 from dotenv import load_dotenv
 import requests as http_requests
 from metrics import measure_time, record_api_time, get_timing_summary, reset_timing, log_to_mlflow
@@ -64,19 +65,67 @@ llm_client = OpenAI(
     base_url="https://gms.ssafy.io/gmsapi/api.openai.com/v1"
 )
 
-# ====== 임베딩 모델 ======
-print("[초기화] 임베딩 모델 로딩 중...")
-embed_model = SentenceTransformer("sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-print("[초기화] 임베딩 모델 로딩 완료")
+# ====== ONNX 임베딩 모델 ======
+ONNX_MODEL_DIR = os.getenv("ONNX_MODEL_DIR", "onnx_model_quantized")
+print(f"[초기화] ONNX 임베딩 모델 로딩 중... ({ONNX_MODEL_DIR})")
+
+# ONNX 세션 옵션 (CPU 최적화)
+_sess_opts = ort.SessionOptions()
+_sess_opts.inter_op_num_threads = 2
+_sess_opts.intra_op_num_threads = 4
+_sess_opts.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+
+# 양자화 모델 우선, 없으면 FP32 모델
+_onnx_path = os.path.join(ONNX_MODEL_DIR, "model_quantized.onnx")
+if not os.path.exists(_onnx_path):
+    _onnx_path = os.path.join(ONNX_MODEL_DIR, "model.onnx")
+_onnx_session = ort.InferenceSession(_onnx_path, _sess_opts, providers=["CPUExecutionProvider"])
+_onnx_tokenizer = AutoTokenizer.from_pretrained(ONNX_MODEL_DIR)
+_onnx_input_names = [i.name for i in _onnx_session.get_inputs()]
+print("[초기화] ONNX 임베딩 모델 로딩 완료")
 
 # ====== 임베딩 캐시 ======
 embedding_cache: dict = {}
 
 
+def _mean_pool(token_embeddings: np.ndarray, attention_mask: np.ndarray) -> np.ndarray:
+    """Mean pooling — attention mask 적용"""
+    mask = np.expand_dims(attention_mask, -1).astype(np.float32)
+    summed = np.sum(token_embeddings * mask, axis=1)
+    counts = np.clip(mask.sum(axis=1), a_min=1e-9, a_max=None)
+    return summed / counts
+
+
 def get_embedding(text: str) -> np.ndarray:
     if text not in embedding_cache:
-        embedding_cache[text] = embed_model.encode(text, convert_to_numpy=True)
+        inputs = _onnx_tokenizer([text], padding=True, truncation=True, max_length=128, return_tensors="np")
+        feed = {k: v for k, v in inputs.items() if k in _onnx_input_names}
+        outputs = _onnx_session.run(None, feed)
+        vec = _mean_pool(outputs[0], inputs["attention_mask"])[0]
+        # L2 정규화
+        vec = vec / (np.linalg.norm(vec) + 1e-9)
+        embedding_cache[text] = vec
     return embedding_cache[text]
+
+
+def get_embeddings_batch(texts: list[str]) -> np.ndarray:
+    """배치 임베딩 — 여러 텍스트를 한 번에 인코딩"""
+    # 캐시에 없는 것만 인코딩
+    uncached = [t for t in texts if t not in embedding_cache]
+    if uncached:
+        # 배치 크기 64씩 처리
+        for i in range(0, len(uncached), 64):
+            batch = uncached[i:i+64]
+            inputs = _onnx_tokenizer(batch, padding=True, truncation=True, max_length=128, return_tensors="np")
+            feed = {k: v for k, v in inputs.items() if k in _onnx_input_names}
+            outputs = _onnx_session.run(None, feed)
+            vecs = _mean_pool(outputs[0], inputs["attention_mask"])
+            # L2 정규화
+            norms = np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-9
+            vecs = vecs / norms
+            for text, vec in zip(batch, vecs):
+                embedding_cache[text] = vec
+    return np.array([embedding_cache[t] for t in texts])
 
 
 def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
@@ -181,12 +230,8 @@ def precompute_embeddings():
     global general_matrix, general_norms
     all_texts = [item["text"] for item in general_db]
     print(f"[초기화] 임베딩 사전 계산 중 (general_db): {len(all_texts)}개")
-    vecs = []
-    for text in all_texts:
-        vec = get_embedding(text)
-        vecs.append(vec)
-    if vecs:
-        general_matrix = np.array(vecs)
+    if all_texts:
+        general_matrix = get_embeddings_batch(all_texts)  # 배치 인코딩
         general_norms = np.linalg.norm(general_matrix, axis=1) + 1e-9
     print("[초기화] numpy 행렬 완료")
 
@@ -844,17 +889,17 @@ def recommend():
 
     candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=10)
 
-    # 닫힌 질문 "응/아니" → 고정 응답 풀에서 1개 강제 포함
-    if category_keyword == "응":
-        yes_pool = ["응 불러줘", "응 해줘", "응 좋아", "빨리 해줘", "그래 부탁해", "응 먹을게", "응 마실게", "응 듣고 싶어", "응 보자"]
-        # 질문 맥락에 맞는 것을 pool에서 선택 (임베딩 유사도)
+    # 초대/방문 질문에서만 고정 응답 풀 적용
+    invite_keywords = ["오라고", "부를까", "초대", "놀러", "올래", "데려"]
+    is_invite = any(kw in question for kw in invite_keywords)
+    if is_invite and category_keyword == "응":
+        yes_pool = ["응 불러줘", "응 보고 싶어", "빨리 와", "응 데려와"]
         q_vec = get_embedding(question)
         best_yes = max(yes_pool, key=lambda t: cosine_sim(q_vec, get_embedding(t)))
-        # 후보 맨 앞에 강제 삽입
         candidates.insert(0, {"text": best_yes, "score": 99.0, "source": "yes_pool"})
         candidates = candidates[:10]
-    elif category_keyword == "아니":
-        no_pool = ["아니 됐어", "가지 마", "옆에 있어줘", "지금은 싫어", "안 할래", "나중에 하자", "힘들어서 안 돼"]
+    elif is_invite and category_keyword == "아니":
+        no_pool = ["아니 됐어", "가지 마", "나중에 하자", "지금은 싫어"]
         q_vec = get_embedding(question)
         best_no = max(no_pool, key=lambda t: cosine_sim(q_vec, get_embedding(t)))
         candidates.insert(0, {"text": best_no, "score": 99.0, "source": "no_pool"})
