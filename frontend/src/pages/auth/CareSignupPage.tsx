@@ -443,6 +443,7 @@ export default function CareSignupPage() {
               </div>
               {guardianEmailCheckMessage ? (
                 <p
+                  aria-live="polite"
                   style={
                     guardianEmailCheckMessageType === 'error'
                       ? errorMessageStyle

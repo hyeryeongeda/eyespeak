@@ -21,6 +21,18 @@ import {
   withdrawMockApi,
 } from './mockAuthApi'
 
+function isExpectedEmailCheckFailure(code?: string, statusCode?: number) {
+  if (code === 'AUTH-204') {
+    return true
+  }
+
+  if (code === 'GUARDIAN_EMAIL_DUPLICATED' || code === 'PATIENT_LOGIN_ID_DUPLICATED') {
+    return true
+  }
+
+  return statusCode === 409
+}
+
 function mapLoginValuesToRequest(values: LoginFormValues): LoginRequestDto {
   return {
     identifier: values.identifier.trim(),
@@ -55,7 +67,9 @@ export async function checkEmailAvailability(email: string) {
     } as const
   } catch (error) {
     const failure = createServiceFailure(error, '이메일 중복 확인에 실패했습니다.')
-    logServiceFailure('auth.check-email', error, failure, { email: request.email })
+    if (!isExpectedEmailCheckFailure(failure.code, failure.statusCode)) {
+      logServiceFailure('auth.check-email', error, failure, { email: request.email })
+    }
     return failure
   }
 }
