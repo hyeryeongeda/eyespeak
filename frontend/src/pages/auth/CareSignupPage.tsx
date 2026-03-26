@@ -158,8 +158,6 @@ export default function CareSignupPage() {
   }, [])
 
   const handleRoutineWheel = (slotId: number) => (event: WheelEvent<HTMLDivElement>) => {
-    event.preventDefault()
-
     const accumulatedDelta = (routineWheelDeltaRef.current[slotId] ?? 0) + event.deltaY
 
     if (Math.abs(accumulatedDelta) < ROUTINE_WHEEL_THRESHOLD) {
@@ -178,6 +176,7 @@ export default function CareSignupPage() {
 
     routineWheelActionAtRef.current[slotId] = now
     cycleRoutineTag(slotId, accumulatedDelta > 0 ? 1 : -1)
+    event.preventDefault()
   }
 
   const handleRoutineTouchStart = (slotId: number) => (event: TouchEvent<HTMLDivElement>) => {

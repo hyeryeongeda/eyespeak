@@ -3,6 +3,7 @@ import type { ApiMode, ServiceResult } from '../types/api'
 import type {
   AuthSession,
   EmailCheckRequestDto,
+  EmailCheckResponseDto,
   LoginFormValues,
   LoginRequestDto,
   PasswordResetRequestDto,
@@ -39,16 +40,18 @@ export async function checkEmailAvailability(email: string) {
   }
 
   try {
+    let response: EmailCheckResponseDto | null = null
+
     if (authMode === 'mock') {
-      await checkEmailMockApi(request)
+      response = await checkEmailMockApi(request)
     } else {
-      await checkEmailApi(request)
+      response = await checkEmailApi(request)
     }
 
     return {
       success: true,
       source: resolveApiSource(authMode),
-      data: null,
+      data: response,
     } as const
   } catch (error) {
     const failure = createServiceFailure(error, '이메일 중복 확인에 실패했습니다.')
