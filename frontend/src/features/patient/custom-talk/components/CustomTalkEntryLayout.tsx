@@ -8,6 +8,8 @@ import type { CustomTalkStageActionCard } from './CustomTalkStageLayout'
 
 type CustomTalkEntryActionCard = CustomTalkStageActionCard & {
   trackingId?: string
+  loading?: boolean
+  loadingLabel?: string
 }
 
 interface CustomTalkEntryLayoutProps {
@@ -65,6 +67,7 @@ function getCardStyle(
   gridArea: string,
   tone: CustomTalkStageActionCard['tone'],
   disabled: boolean,
+  loading: boolean,
 ): CSSProperties {
   const backgroundByTone: Record<CustomTalkStageActionCard['tone'], string> = {
     sky: 'linear-gradient(180deg, #eef1ff 0%, #e6ebff 100%)',
@@ -77,8 +80,15 @@ function getCardStyle(
     ...cardBaseStyle,
     gridArea,
     background: backgroundByTone[tone],
-    opacity: disabled ? 0.58 : 1,
+    opacity: disabled && !loading ? 0.58 : 1,
     cursor: disabled ? 'default' : 'pointer',
+    overflow: 'hidden',
+    border: loading
+      ? '1px solid rgba(151, 173, 206, 0.92)'
+      : cardBaseStyle.border,
+    boxShadow: loading
+      ? '0 26px 58px rgba(72, 96, 124, 0.16)'
+      : cardBaseStyle.boxShadow,
   }
 }
 
@@ -97,6 +107,75 @@ const cardDescriptionStyle: CSSProperties = {
   fontSize: 'clamp(0.85rem, 1vw, 1rem)',
   fontWeight: 700,
   lineHeight: 1.58,
+}
+
+const loadingSheenStyle: CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  background:
+    'linear-gradient(115deg, rgba(255, 255, 255, 0) 18%, rgba(255, 255, 255, 0.44) 48%, rgba(255, 255, 255, 0) 78%)',
+  transform: 'translateX(-130%)',
+  animation: 'custom-talk-entry-shimmer 1.8s ease-in-out infinite',
+  pointerEvents: 'none',
+}
+
+const loadingBadgeStyle: CSSProperties = {
+  position: 'relative',
+  zIndex: 1,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '10px',
+  padding: '8px 14px',
+  borderRadius: '999px',
+  border: '1px solid rgba(120, 145, 181, 0.28)',
+  backgroundColor: 'rgba(255, 255, 255, 0.82)',
+  boxShadow: '0 10px 24px rgba(72, 96, 124, 0.08)',
+  color: '#5d7495',
+  fontSize: 'clamp(0.82rem, 1vw, 0.95rem)',
+  fontWeight: 900,
+  letterSpacing: '0.01em',
+  backdropFilter: 'blur(10px)',
+}
+
+const loadingDotsStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+}
+
+function getLoadingDotStyle(delaySeconds: number): CSSProperties {
+  return {
+    width: '7px',
+    height: '7px',
+    borderRadius: '999px',
+    backgroundColor: '#6b91c7',
+    opacity: 0.28,
+    animation: `custom-talk-entry-dot 1.1s ${delaySeconds}s ease-in-out infinite`,
+  }
+}
+
+const loadingBarStackStyle: CSSProperties = {
+  position: 'relative',
+  zIndex: 1,
+  width: '100%',
+  maxWidth: '180px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '8px',
+  marginTop: '18px',
+}
+
+function getLoadingBarStyle(width: string, delaySeconds: number): CSSProperties {
+  return {
+    width,
+    height: '6px',
+    borderRadius: '999px',
+    alignSelf: 'center',
+    background:
+      'linear-gradient(90deg, rgba(107, 145, 199, 0.16) 0%, rgba(107, 145, 199, 0.52) 50%, rgba(107, 145, 199, 0.16) 100%)',
+    backgroundSize: '200% 100%',
+    animation: `custom-talk-entry-progress 1.5s ${delaySeconds}s linear infinite`,
+  }
 }
 
 const centerAreaStyle: CSSProperties = {
@@ -124,6 +203,39 @@ const layoutCss = `
     outline-offset: 3px;
   }
 
+  @keyframes custom-talk-entry-shimmer {
+    0% {
+      transform: translateX(-130%);
+    }
+
+    100% {
+      transform: translateX(130%);
+    }
+  }
+
+  @keyframes custom-talk-entry-dot {
+    0%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.28;
+    }
+
+    50% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes custom-talk-entry-progress {
+    0% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: -100% 50%;
+    }
+  }
+
 `
 
 function ActionCard({
@@ -135,6 +247,7 @@ function ActionCard({
   card: CustomTalkEntryActionCard
   dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
+  const isLoading = card.loading ?? false
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(dwellFeedback ?? {
     activeTargetId: null,
     phase: 'idle',
@@ -146,11 +259,13 @@ function ActionCard({
     <button
       type="button"
       className="custom-talk-entry-card"
-      style={getCardStyle(gridArea, card.tone, card.disabled ?? false)}
+      style={getCardStyle(gridArea, card.tone, card.disabled ?? false, isLoading)}
       disabled={card.disabled}
       onClick={card.onSelect}
       data-tracking-id={card.disabled ? undefined : card.trackingId}
+      aria-busy={isLoading || undefined}
     >
+      {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}
       {shouldShowDwellFeedback && dwellFeedback ? (
         <DwellFeedbackBadge
           phase={dwellFeedback.phase}
@@ -158,8 +273,29 @@ function ActionCard({
           remainingMs={dwellFeedback.remainingMs}
         />
       ) : null}
-      <h2 style={cardTitleStyle}>{card.title}</h2>
-      {card.description ? <p style={cardDescriptionStyle}>{card.description}</p> : null}
+      {isLoading ? (
+        <div style={loadingBadgeStyle} aria-hidden="true">
+          <span>{card.loadingLabel ?? 'AI 생성 중'}</span>
+          <span style={loadingDotsStyle}>
+            <span style={getLoadingDotStyle(0)} />
+            <span style={getLoadingDotStyle(0.15)} />
+            <span style={getLoadingDotStyle(0.3)} />
+          </span>
+        </div>
+      ) : null}
+      <h2 style={{ ...cardTitleStyle, position: 'relative', zIndex: 1 }}>{card.title}</h2>
+      {card.description ? (
+        <p style={{ ...cardDescriptionStyle, position: 'relative', zIndex: 1 }}>
+          {card.description}
+        </p>
+      ) : null}
+      {isLoading ? (
+        <div style={loadingBarStackStyle} aria-hidden="true">
+          <span style={getLoadingBarStyle('78%', 0)} />
+          <span style={getLoadingBarStyle('62%', 0.15)} />
+          <span style={getLoadingBarStyle('88%', 0.3)} />
+        </div>
+      ) : null}
     </button>
   )
 }

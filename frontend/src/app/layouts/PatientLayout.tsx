@@ -30,9 +30,6 @@ const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/compon
 const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
 const ReplySentOverlay = lazy(() => import('../../components/patient/chat/ReplySentOverlay'))
 const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
-const ReturnToLeisureOverlay = lazy(
-  () => import('../../components/patient/chat/ReturnToLeisureOverlay'),
-)
 const CallStatusOverlay = lazy(() => import('../../components/patient/CallStatusOverlay'))
 
 type PatientLayoutRouteKind = 'talk' | 'custom_talk' | 'leisure' | 'leisure_player' | 'other'
@@ -57,8 +54,8 @@ function getPatientLayoutRouteKind(pathname: string): PatientLayoutRouteKind {
   return 'other'
 }
 
-function isLeisureBrowseRouteKind(kind: string | null | undefined) {
-  return kind === 'leisure'
+function isLeisureRouteKind(kind: string | null | undefined) {
+  return kind === 'leisure' || kind === 'leisure_player'
 }
 
 function isChatRouteKind(kind: string | null | undefined) {
@@ -82,9 +79,7 @@ function PatientLayoutShell() {
   const [isDailyMoodOverlayVisible, setIsDailyMoodOverlayVisible] = useState(false)
   const [isDailyMoodSubmitting, setIsDailyMoodSubmitting] = useState(false)
   const [dailyMoodErrorMessage, setDailyMoodErrorMessage] = useState<string | null>(null)
-  const [isReturnToLeisureOverlayVisible, setIsReturnToLeisureOverlayVisible] = useState(false)
   const previousPathnameRef = useRef(location.pathname)
-  const promptedResumeAtRef = useRef<number | null>(null)
   const isResumeNavigationInFlightRef = useRef(false)
   const pendingReplyAfterTalkNavigationRef = useRef(false)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
@@ -176,10 +171,8 @@ function PatientLayoutShell() {
     const isEnteringChat = isChatRouteKind(nextRouteKind) && !isChatRouteKind(previousRouteKind)
     const isLeavingChat = isChatRouteKind(previousRouteKind) && !isChatRouteKind(nextRouteKind)
 
-    if (isEnteringChat && !isLeisureBrowseRouteKind(previousRouteKind)) {
-      setIsReturnToLeisureOverlayVisible(false)
+    if (isEnteringChat && !isLeisureRouteKind(previousRouteKind)) {
       clearResumeContext()
-      promptedResumeAtRef.current = null
     }
 
     if (!isLeavingChat) {
@@ -195,19 +188,8 @@ function PatientLayoutShell() {
       return
     }
 
-    setIsReturnToLeisureOverlayVisible(false)
     clearResumeContext()
-    promptedResumeAtRef.current = null
   }, [clearResumeContext, location.pathname, resumeContext?.fromLeisure])
-
-  useEffect(() => {
-    if (resumeContext?.fromLeisure) {
-      return
-    }
-
-    setIsReturnToLeisureOverlayVisible(false)
-    promptedResumeAtRef.current = null
-  }, [resumeContext?.fromLeisure])
 
   useEffect(() => {
     if (!pendingReplyAfterTalkNavigationRef.current) {
@@ -243,49 +225,49 @@ function PatientLayoutShell() {
     }
   }, [chat])
 
-  useEffect(() => {
-    if (!resumeContext?.fromLeisure) {
-      return
-    }
-
-    if (!isChatRouteKind(currentRouteKind)) {
-      return
-    }
-
-    if (chat.state.status === 'sent') {
-      setIsReturnToLeisureOverlayVisible(false)
-      clearResumeContext()
-      promptedResumeAtRef.current = null
-    }
-  }, [chat.state.status, clearResumeContext, currentRouteKind, resumeContext])
+  const resumeTargetPath = resumeContext?.fromLeisure
+    ? resumeContext.resumePath || resumeContext.fallbackPath || ROUTE_PATHS.PATIENT_LEISURE
+    : undefined
 
   useReturnToTalkMainAfterDelay(shouldShowReplySentOverlay, {
     onBeforeNavigate: () => {
-      setIsReturnToLeisureOverlayVisible(false)
-      promptedResumeAtRef.current = null
+      if (!resumeContext?.fromLeisure) {
+        return
+      }
 
-      if (resumeContext?.fromLeisure) {
+      isResumeNavigationInFlightRef.current = true
+
+      if (resumeContext.routeKind !== 'player') {
         clearResumeContext()
       }
     },
+    targetPath: resumeTargetPath,
   })
 
   const handleReplyNow = () => {
-    setIsReturnToLeisureOverlayVisible(false)
-    promptedResumeAtRef.current = null
-
-    if (isLeisureBrowseRouteKind(currentRouteKind)) {
+    if (isLeisureRouteKind(currentRouteKind)) {
       const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
+      const currentPath = `${location.pathname}${location.search}`
 
       if (resumeContext) {
-        patchResumeContext({
+        patchResumeContext(currentContext => ({
+          routeKind: currentContext.routeKind,
+          resumePath:
+            currentContext.routeKind === 'player'
+              ? currentContext.resumePath || currentPath
+              : currentPath,
+          fallbackPath:
+            currentContext.routeKind === 'player'
+              ? currentContext.fallbackPath || ROUTE_PATHS.PATIENT_LEISURE
+              : ROUTE_PATHS.PATIENT_LEISURE,
           fromLeisure: true,
           interruptedMessageId,
-        })
+          savedAt: Date.now(),
+        }))
       } else {
         setResumeContext({
-          routeKind: 'browse',
-          resumePath: `${location.pathname}${location.search}`,
+          routeKind: currentRouteKind === 'leisure_player' ? 'player' : 'browse',
+          resumePath: currentPath,
           fallbackPath: ROUTE_PATHS.PATIENT_LEISURE,
           contentId: null,
           categoryId: null,
@@ -318,37 +300,11 @@ function PatientLayoutShell() {
   }
 
   const handleInterruptLater = () => {
-    if (isLeisureBrowseRouteKind(currentRouteKind)) {
+    if (currentRouteKind === 'leisure') {
       clearResumeContext()
-      promptedResumeAtRef.current = null
     }
 
     chat.deferActiveMessage()
-  }
-
-  const handleReturnToLeisure = () => {
-    if (!resumeContext) {
-      setIsReturnToLeisureOverlayVisible(false)
-      return
-    }
-
-    setIsReturnToLeisureOverlayVisible(false)
-    promptedResumeAtRef.current = resumeContext.savedAt
-    isResumeNavigationInFlightRef.current = true
-
-    const targetPath = resumeContext.resumePath || resumeContext.fallbackPath || ROUTE_PATHS.PATIENT_LEISURE
-
-    if (resumeContext.routeKind !== 'player') {
-      clearResumeContext()
-    }
-
-    navigate(targetPath, { replace: true })
-  }
-
-  const handleStayInChat = () => {
-    setIsReturnToLeisureOverlayVisible(false)
-    clearResumeContext()
-    promptedResumeAtRef.current = null
   }
 
   const handleDailyMoodSubmit = async (request: DailyMoodCreateRequestDto) => {
@@ -411,16 +367,6 @@ function PatientLayoutShell() {
       {!isCalibrationRoute ? (
         <Suspense fallback={null}>
           <CallStatusOverlay />
-        </Suspense>
-      ) : null}
-
-      {!isCalibrationRoute && isReturnToLeisureOverlayVisible ? (
-        <Suspense fallback={null}>
-          <ReturnToLeisureOverlay
-            visible={isReturnToLeisureOverlayVisible}
-            onReturnToLeisure={handleReturnToLeisure}
-            onStayInChat={handleStayInChat}
-          />
         </Suspense>
       ) : null}
 

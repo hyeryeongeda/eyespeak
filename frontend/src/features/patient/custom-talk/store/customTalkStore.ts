@@ -29,6 +29,10 @@ import {
   getKeyboardRootPage,
 } from '../utils/keyboardNavigator'
 import {
+  createEmptyKeyboardComposition,
+  resolveKeyboardManualInput,
+} from '../utils/hangulComposer'
+import {
   filterSelectableRecommendedSentences,
   isBlockedRecommendedSentence,
 } from '../utils/recommendedSentenceGuards'
@@ -69,6 +73,8 @@ const initialComposeOptions = {
   punctuation: [] as string[],
 }
 
+const initialKeyboardComposition = createEmptyKeyboardComposition()
+
 const composeRefreshCounts: Record<ComposeStep, number> = {
   subject: 0,
   object: 0,
@@ -91,28 +97,77 @@ function logCustomTalkTtsFailure(scope: 'recommended' | 'generated' | 'manual', 
   console.warn(`[custom-talk] ${scope} tts failed after successful submit`, error)
 }
 
+function normalizeContextMessage(value?: string | null) {
+  const content = value?.trim()
+  return content ? content : null
+}
+
+function parseContextConversationMessage(message: string) {
+  const trimmedMessage = normalizeContextMessage(message)
+
+  if (!trimmedMessage) {
+    return null
+  }
+
+  const guardianMatch = trimmedMessage.match(/^guardian\s*:\s*(.+)$/i)
+  if (guardianMatch) {
+    return {
+      sender: 'guardian' as const,
+      content: guardianMatch[1].trim(),
+    }
+  }
+
+  const patientMatch = trimmedMessage.match(/^patient\s*:\s*(.+)$/i)
+  if (patientMatch) {
+    return {
+      sender: 'patient' as const,
+      content: patientMatch[1].trim(),
+    }
+  }
+
+  return {
+    sender: 'system' as const,
+    content: trimmedMessage,
+  }
+}
+
 function buildConversationLog(context: CustomTalkContextSummary) {
   const logs: CustomTalkConversationLogItem[] = []
 
-  if (context.guardianMessage) {
-    logs.push({
-      id: 'custom-guardian-current',
-      sender: 'guardian',
-      content: context.guardianMessage,
-      kind: 'context',
-      createdAt: timestampFormatter.format(new Date()),
-    })
-  }
-
   context.recentMessages.forEach((message, index) => {
+    const parsedMessage = parseContextConversationMessage(message)
+
+    if (!parsedMessage) {
+      return
+    }
+
     logs.push({
       id: `custom-context-${index + 1}`,
-      sender: message.startsWith('환자') ? 'patient' : 'guardian',
-      content: message,
+      sender: parsedMessage.sender,
+      content: parsedMessage.content,
       kind: 'context',
       createdAt: timestampFormatter.format(new Date()),
     })
   })
+
+  const guardianMessage = normalizeContextMessage(context.guardianMessage)
+  const latestContextLog = logs[logs.length - 1]
+
+  if (
+    guardianMessage &&
+    !(
+      latestContextLog?.sender === 'guardian' &&
+      latestContextLog.content === guardianMessage
+    )
+  ) {
+    logs.push({
+      id: 'custom-guardian-current',
+      sender: 'guardian',
+      content: guardianMessage,
+      kind: 'context',
+      createdAt: timestampFormatter.format(new Date()),
+    })
+  }
 
   return logs
 }
@@ -132,6 +187,33 @@ function getKeyboardRootOptions() {
   const rootPage = getKeyboardRootPage()
 
   return rootPage.options
+}
+
+function getConsonantSelectionMode(
+  compositionStage: CustomTalkState['keyboardComposition']['stage'],
+) {
+  return compositionStage === 'final_consonant' ? 'final' : 'initial'
+}
+
+function getKeyboardGroupPageForMenu(
+  rootMenu: Exclude<KeyboardRootMenu, 'ending'>,
+  page: number,
+  compositionStage: CustomTalkState['keyboardComposition']['stage'],
+) {
+  return getKeyboardGroupPage(rootMenu, page, {
+    consonantMode: getConsonantSelectionMode(compositionStage),
+  })
+}
+
+function getKeyboardCharPageForMenu(
+  rootMenu: KeyboardRootMenu,
+  groupId: string | undefined,
+  page: number,
+  compositionStage: CustomTalkState['keyboardComposition']['stage'],
+) {
+  return getKeyboardCharPage(rootMenu, groupId, page, {
+    consonantMode: getConsonantSelectionMode(compositionStage),
+  })
 }
 
 function getRootKeyboardState() {
@@ -157,6 +239,68 @@ function getRootKeyboardStateWithEntrySource(
       ...rootKeyboardState.keyboardNavigation,
       entrySource,
     },
+  }
+}
+
+function buildKeyboardManualInput(
+  state: Pick<CustomTalkState, 'draft' | 'keyboardComposition'>,
+  finalConsonant?: string | null,
+) {
+  return resolveKeyboardManualInput(
+    state.draft.manualInput,
+    state.keyboardComposition,
+    finalConsonant,
+  )
+}
+
+function buildVowelSelectionState(
+  state: Pick<CustomTalkState, 'keyboardNavigation'>,
+  initialConsonant: string,
+) {
+  const nextPage = getKeyboardGroupPage('vowel', 0)
+
+  return {
+    keyboardStatus: 'group_select' as const,
+    keyboardNavigation: {
+      ...state.keyboardNavigation,
+      currentRootMenu: 'vowel' as const,
+      currentGroupId: undefined,
+      currentPage: 0,
+      canGoNext: nextPage.canGoNext,
+    },
+    keyboardOptions: nextPage.options,
+    keyboardComposition: {
+      stage: 'vowel' as const,
+      initialConsonant,
+      vowel: null,
+    },
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildFinalConsonantSelectionState(
+  state: Pick<CustomTalkState, 'keyboardNavigation'>,
+  initialConsonant: string,
+  vowel: string,
+) {
+  const nextPage = getKeyboardGroupPageForMenu('consonant', 0, 'final_consonant')
+
+  return {
+    keyboardStatus: 'group_select' as const,
+    keyboardNavigation: {
+      ...state.keyboardNavigation,
+      currentRootMenu: 'consonant' as const,
+      currentGroupId: undefined,
+      currentPage: 0,
+      canGoNext: nextPage.canGoNext,
+    },
+    keyboardOptions: nextPage.options,
+    keyboardComposition: {
+      stage: 'final_consonant' as const,
+      initialConsonant,
+      vowel,
+    },
+    keyboardErrorMessage: null,
   }
 }
 
@@ -291,6 +435,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     currentPage: 0,
     canGoNext: false,
   },
+  keyboardComposition: initialKeyboardComposition,
   keyboardOptions: [],
   status: 'idle',
   errorMessage: null,
@@ -317,10 +462,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     set({
       isInitialized: true,
       context: mergedContext,
-      conversationLog:
-        state.conversationLog.length > 0
-          ? state.conversationLog
-          : buildConversationLog(mergedContext),
+      conversationLog: buildConversationLog(mergedContext),
       visibleCategories,
       status: 'visible',
       errorMessage: null,
@@ -829,6 +971,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         currentPage: 0,
         canGoNext: false,
       },
+      keyboardComposition: initialKeyboardComposition,
       keyboardOptions: [],
       keyboardErrorMessage: null,
       completionMessage: null,
@@ -849,6 +992,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
       set(currentState => ({
         ...getRootKeyboardStateWithEntrySource(currentState.keyboardNavigation.entrySource),
+        keyboardComposition: initialKeyboardComposition,
         mockFlags: {
           ...currentState.mockFlags,
           failKeyboardInitOnce: false,
@@ -869,7 +1013,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectKeyboardRootMenu: menu => {
     if (menu === 'ending') {
-      const nextPage = getKeyboardCharPage(menu, undefined, 0)
+      const nextPage = getKeyboardCharPageForMenu(menu, undefined, 0, 'idle')
 
       if (!nextPage) {
         set({
@@ -894,7 +1038,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       return
     }
 
-    const nextPage = getKeyboardGroupPage(menu, 0)
+    const nextPage = getKeyboardGroupPageForMenu(menu, 0, get().keyboardComposition.stage)
 
     set(state => ({
       keyboardStatus: 'group_select',
@@ -911,7 +1055,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardGroup: groupId => {
-    const { currentRootMenu } = get().keyboardNavigation
+    const { keyboardComposition, keyboardNavigation } = get()
+    const { currentRootMenu } = keyboardNavigation
 
     if (!currentRootMenu || currentRootMenu === 'ending') {
       set({
@@ -921,7 +1066,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       return
     }
 
-    const nextPage = getKeyboardCharPage(currentRootMenu, groupId, 0)
+    const nextPage = getKeyboardCharPageForMenu(
+      currentRootMenu,
+      groupId,
+      0,
+      keyboardComposition.stage,
+    )
 
     if (!nextPage) {
       set({
@@ -945,18 +1095,73 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardChar: value => {
-    set(state => ({
-      draft: {
-        ...state.draft,
-        manualInput: `${state.draft.manualInput}${value}`,
-      },
-      ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
-      keyboardErrorMessage: null,
-    }))
+    set(state => {
+      const currentRootMenu = state.keyboardNavigation.currentRootMenu
+
+      if (currentRootMenu === 'consonant') {
+        if (
+          state.keyboardComposition.stage === 'final_consonant' &&
+          state.keyboardComposition.initialConsonant &&
+          state.keyboardComposition.vowel
+        ) {
+          return {
+            draft: {
+              ...state.draft,
+              manualInput: buildKeyboardManualInput(state, value),
+            },
+            ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+            keyboardComposition: initialKeyboardComposition,
+            keyboardErrorMessage: null,
+          }
+        }
+
+        return buildVowelSelectionState(state, value)
+      }
+
+      if (currentRootMenu === 'vowel') {
+        return buildFinalConsonantSelectionState(
+          state,
+          state.keyboardComposition.initialConsonant ?? 'ㅇ',
+          value,
+        )
+      }
+
+      return {
+        draft: {
+          ...state.draft,
+          manualInput: `${buildKeyboardManualInput(state)}${value}`,
+        },
+        ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+        keyboardComposition: initialKeyboardComposition,
+        keyboardErrorMessage: null,
+      }
+    })
+  },
+
+  skipKeyboardFinalConsonant: () => {
+    set(state => {
+      if (
+        state.keyboardComposition.stage !== 'final_consonant' ||
+        !state.keyboardComposition.initialConsonant ||
+        !state.keyboardComposition.vowel
+      ) {
+        return state
+      }
+
+      return {
+        draft: {
+          ...state.draft,
+          manualInput: buildKeyboardManualInput(state),
+        },
+        ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+        keyboardComposition: initialKeyboardComposition,
+        keyboardErrorMessage: null,
+      }
+    })
   },
 
   goKeyboardNextPage: () => {
-    const { keyboardNavigation } = get()
+    const { keyboardComposition, keyboardNavigation } = get()
     const nextPageIndex = keyboardNavigation.currentPage + 1
 
     if (!keyboardNavigation.currentRootMenu) {
@@ -969,14 +1174,16 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
     const nextPage =
       keyboardNavigation.currentGroupId || keyboardNavigation.currentRootMenu === 'ending'
-        ? getKeyboardCharPage(
+        ? getKeyboardCharPageForMenu(
             keyboardNavigation.currentRootMenu,
             keyboardNavigation.currentGroupId,
             nextPageIndex,
+            keyboardComposition.stage,
           )
-        : getKeyboardGroupPage(
+        : getKeyboardGroupPageForMenu(
             keyboardNavigation.currentRootMenu as Exclude<KeyboardRootMenu, 'ending'>,
             nextPageIndex,
+            keyboardComposition.stage,
           )
 
     if (!nextPage || nextPage.options.length === 0) {
@@ -998,14 +1205,18 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   goKeyboardBack: () => {
-    const { keyboardNavigation } = get()
+    const { keyboardComposition, keyboardNavigation } = get()
 
     if (keyboardNavigation.currentGroupId) {
       const currentRootMenu = keyboardNavigation.currentRootMenu as Exclude<
         KeyboardRootMenu,
         'ending'
       >
-      const nextPage = getKeyboardGroupPage(currentRootMenu, 0)
+      const nextPage = getKeyboardGroupPageForMenu(
+        currentRootMenu,
+        0,
+        keyboardComposition.stage,
+      )
 
       set(state => ({
         keyboardStatus: 'group_select',
@@ -1036,19 +1247,37 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   deleteLastManualChar: () => {
-    set(state => ({
-      draft: {
-        ...state.draft,
-        manualInput: state.draft.manualInput.slice(0, -1),
-      },
-      keyboardStatus: 'editing',
-      keyboardErrorMessage: null,
-    }))
+    set(state => {
+      if (
+        state.keyboardComposition.stage === 'final_consonant' &&
+        state.keyboardComposition.initialConsonant
+      ) {
+        return buildVowelSelectionState(state, state.keyboardComposition.initialConsonant)
+      }
+
+      if (state.keyboardComposition.stage === 'vowel') {
+        return {
+          ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+          keyboardComposition: initialKeyboardComposition,
+          keyboardErrorMessage: null,
+        }
+      }
+
+      return {
+        draft: {
+          ...state.draft,
+          manualInput: state.draft.manualInput.slice(0, -1),
+        },
+        keyboardStatus: 'editing',
+        keyboardErrorMessage: null,
+      }
+    })
   },
 
   submitManualInput: async () => {
-    const { draft, mockFlags, keyboardStatus } = get()
-    const text = draft.manualInput.trim()
+    const { draft, keyboardComposition, mockFlags, keyboardStatus } = get()
+    const resolvedManualInput = resolveKeyboardManualInput(draft.manualInput, keyboardComposition)
+    const text = resolvedManualInput.trim()
 
     if (keyboardStatus === 'loading' || keyboardStatus === 'submitting') {
       return false
@@ -1115,7 +1344,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           text,
           'utterance',
         ),
+        draft: {
+          ...currentState.draft,
+          manualInput: resolvedManualInput,
+        },
         keyboardStatus: 'completed',
+        keyboardComposition: initialKeyboardComposition,
         keyboardErrorMessage: null,
         completionMessage: `직접 입력 문장을 발화했습니다: ${text}`,
         mockFlags: {
