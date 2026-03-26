@@ -56,6 +56,7 @@ export default function CustomTalkRecommendPage() {
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isActionLocked =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const isRecommendationLoading = status === 'loading' || status === 'refreshing'
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onBeforeNavigate: resetCustomTalkSession,
@@ -88,6 +89,8 @@ export default function CustomTalkRecommendPage() {
           }
         },
         disabled: !visibleSentences[0] || isActionLocked,
+        loading: isRecommendationLoading && !visibleSentences[0],
+        loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-1',
       }}
       topCenter={{
@@ -100,6 +103,8 @@ export default function CustomTalkRecommendPage() {
           }
         },
         disabled: !visibleSentences[1] || isActionLocked,
+        loading: isRecommendationLoading && !visibleSentences[1],
+        loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-2',
       }}
       topRight={{
@@ -112,6 +117,8 @@ export default function CustomTalkRecommendPage() {
           }
         },
         disabled: !visibleSentences[2] || isActionLocked,
+        loading: isRecommendationLoading && !visibleSentences[2],
+        loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-3',
       }}
       bottomLeft={{

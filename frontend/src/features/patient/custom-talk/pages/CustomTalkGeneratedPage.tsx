@@ -78,6 +78,7 @@ export default function CustomTalkGeneratedPage() {
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const isGeneratedLoading = status === 'loading' || status === 'refreshing'
   const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
@@ -115,6 +116,8 @@ export default function CustomTalkGeneratedPage() {
           }
         },
         disabled: !visibleGeneratedSentences[0] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[0],
+        loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-1',
       }}
       topCenter={{
@@ -127,6 +130,8 @@ export default function CustomTalkGeneratedPage() {
           }
         },
         disabled: !visibleGeneratedSentences[1] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[1],
+        loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-2',
       }}
       topRight={{
@@ -139,6 +144,8 @@ export default function CustomTalkGeneratedPage() {
           }
         },
         disabled: !visibleGeneratedSentences[2] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[2],
+        loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-3',
       }}
       bottomLeft={{
