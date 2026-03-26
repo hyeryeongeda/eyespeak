@@ -9,17 +9,13 @@ import {
   type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
-import {
-  getRemainingPatientSosCooldownMs,
-  requestPatientCall as requestPatientSosCall,
-} from '../../../../services/patientSosService'
+import { requestPatientCall as requestPatientSosCall } from '../../../../services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
 import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
 
 type GlobalMenuTargetId = PatientGlobalMenuActionId
 
 const ACTION_FEEDBACK_DELAY_MS = 180
-const SOS_COOLDOWN_SYNC_INTERVAL_MS = 250
 
 const responsiveStyle = `
   @media (max-width: 768px) {
@@ -105,10 +101,6 @@ const helperTextStyle: CSSProperties = {
   fontWeight: 700,
   lineHeight: 1.45,
   opacity: 0.86,
-}
-
-function formatSeconds(seconds: number) {
-  return `${Math.max(1, seconds)}초`
 }
 
 function getMenuButtonStyle(args: {
@@ -230,13 +222,8 @@ export default function GlobalMenuOverlay() {
   const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
-  const [sosRemainingMs, setSosRemainingMs] = useState(0)
 
-  const patientId = user?.id ?? 'patient-guest'
   const isTrackingReady = isPatientTrackingAvailable(trackingStatus)
-  const isSosDisabled = sosRemainingMs > 0
-  const sosCooldownSeconds = Math.ceil(sosRemainingMs / 1000)
-
   const { hoveredTargetId, inputSource } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
@@ -253,24 +240,6 @@ export default function GlobalMenuOverlay() {
       queueAction(targetId, 'gaze')
     },
   })
-
-  useEffect(() => {
-    const syncSosCooldown = () => {
-      setSosRemainingMs(getRemainingPatientSosCooldownMs(patientId))
-    }
-
-    syncSosCooldown()
-
-    if (!isOpen) {
-      return
-    }
-
-    const timerId = window.setInterval(syncSosCooldown, SOS_COOLDOWN_SYNC_INTERVAL_MS)
-
-    return () => {
-      window.clearInterval(timerId)
-    }
-  }, [isOpen, patientId])
 
   useEffect(() => {
     return () => {
@@ -298,10 +267,6 @@ export default function GlobalMenuOverlay() {
     source: 'pointer' | 'gaze' = 'pointer',
   ) {
     if (!isOpen || !isTrackingReady || pendingTargetId !== null) {
-      return
-    }
-
-    if (targetId === 'sos' && isSosDisabled) {
       return
     }
 
@@ -348,12 +313,12 @@ export default function GlobalMenuOverlay() {
       }
 
       const matchingId = user?.matchingId ?? null
+
       if (matchingId == null) {
         return
       }
 
       const result = await requestPatientSosCall(matchingId, 'SOS', user)
-      setSosRemainingMs(getRemainingPatientSosCooldownMs(patientId))
 
       if (!result.success) {
         return
@@ -422,23 +387,19 @@ export default function GlobalMenuOverlay() {
 
             <button
               type="button"
-              data-tracking-id={isSosDisabled || pendingTargetId !== null ? undefined : 'sos'}
+              data-tracking-id={pendingTargetId === null ? 'sos' : undefined}
               data-gaze-selection="local"
-              disabled={isSosDisabled || pendingTargetId !== null}
+              disabled={pendingTargetId !== null}
               onClick={() => queueAction('sos')}
               style={getMenuButtonStyle({
                 targetId: 'sos',
                 isHovered: gazeHighlightedTargetId === 'sos',
                 isPending: pendingTargetId === 'sos',
-                disabled: isSosDisabled || pendingTargetId !== null,
+                disabled: pendingTargetId !== null,
               })}
             >
               <p style={labelStyle}>SOS</p>
-              <p style={helperTextStyle}>
-                {isSosDisabled
-                  ? `${formatSeconds(sosCooldownSeconds)} 후 다시 선택 가능`
-                  : '사이렌 재생 후 30초 쿨다운'}
-              </p>
+              <p style={helperTextStyle}>긴급 호출을 바로 전송합니다</p>
             </button>
 
             <button

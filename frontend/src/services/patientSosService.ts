@@ -3,10 +3,6 @@ import { API_ENDPOINTS } from './apiEndpoints'
 import type { AuthSession } from '../types/auth'
 import { createServiceFailure } from '../utils/errorMapper'
 
-export const PATIENT_SOS_COOLDOWN_MS = 30_000
-
-const PATIENT_SOS_STORAGE_PREFIX = 'patientSosLastTriggeredAt'
-
 interface CallCreateRequest {
   matchingId: number
   type: 'NORMAL' | 'SOS'
@@ -35,39 +31,8 @@ type AudioContextWindow = Window & {
 
 let sharedAudioContext: AudioContext | null = null
 
-function isBrowser() {
-  return typeof window !== 'undefined'
-}
-
-function getPatientSosStorageKey(patientId: string) {
-  return `${PATIENT_SOS_STORAGE_PREFIX}:${patientId}`
-}
-
-function getStoredLastPatientSosAt(patientId: string) {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const savedValue = sessionStorage.getItem(getPatientSosStorageKey(patientId))
-
-  if (!savedValue) {
-    return null
-  }
-
-  const parsed = Number(savedValue)
-  return Number.isFinite(parsed) ? parsed : null
-}
-
-function storeLastPatientSosAt(patientId: string, requestedAt: number) {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.setItem(getPatientSosStorageKey(patientId), String(requestedAt))
-}
-
 function getAudioContext() {
-  if (!isBrowser()) {
+  if (typeof window === 'undefined') {
     return null
   }
 
@@ -83,20 +48,6 @@ function getAudioContext() {
   }
 
   return sharedAudioContext
-}
-
-export function getRemainingPatientSosCooldownMs(patientId: string, now = Date.now()) {
-  const lastTriggeredAt = getStoredLastPatientSosAt(patientId)
-
-  if (!lastTriggeredAt) {
-    return 0
-  }
-
-  return Math.max(0, PATIENT_SOS_COOLDOWN_MS - (now - lastTriggeredAt))
-}
-
-export function getPatientSosCooldownSeconds(patientId: string, now = Date.now()) {
-  return Math.ceil(getRemainingPatientSosCooldownMs(patientId, now) / 1000)
 }
 
 export async function playPatientSirenSound(durationMs = 1800) {
@@ -160,19 +111,7 @@ export async function requestPatientCall(
     }
   }
 
-  const patientIdStr = String(matchingId)
-  const remainingMs = getRemainingPatientSosCooldownMs(patientIdStr)
-
-  if (remainingMs > 0) {
-    return {
-      success: false,
-      remainingMs,
-      requestedAt: null,
-    }
-  }
-
   const requestedAt = Date.now()
-  storeLastPatientSosAt(patientIdStr, requestedAt)
 
   if (callType === 'SOS') {
     await playPatientSirenSound()
