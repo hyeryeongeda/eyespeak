@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import { PATIENT_CHAT_MESSAGE_PRESETS } from '../services/mockPatientChatService'
+import type { RecommendationCategoryKey } from '../types/recommendation'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
@@ -31,6 +32,8 @@ export interface PatientIncomingChatContextValue {
   openLatestPendingReply: () => void
   enterReplyMode: (messageId?: string) => void
   retrySuggestions: () => void
+  selectRecommendationCategory: (categoryKey: RecommendationCategoryKey) => Promise<void>
+  setRecommendationCategoryPage: (page: number) => void
   openManualInputSelect: () => void
   setManualInputMode: (mode: PatientChatManualInputMode) => void
   updateManualDraft: (draft: string) => void

@@ -381,7 +381,14 @@ function PatientLayoutShell() {
           <ReplyModePanel
             overlay
             message={chat.activeReplyMessage}
+            messages={chat.state.messages}
+            activeMessageId={chat.activeReplyMessage?.id ?? chat.activeMessage?.id}
             status={chat.state.status}
+            recommendationMode={chat.state.recommendationMode}
+            categoryState={chat.state.categoryState}
+            categories={chat.state.categories}
+            selectedCategoryKey={chat.state.selectedCategoryKey}
+            categoryPage={chat.state.categoryPage}
             suggestionState={chat.state.suggestionState}
             fallbackState={chat.state.fallbackState}
             suggestions={chat.state.suggestions}
@@ -393,6 +400,8 @@ function PatientLayoutShell() {
             manualWordBank={chat.manualWordBank}
             unresolvedCount={chat.unresolvedCount}
             timeoutMs={chat.timeoutMs}
+            onSelectCategory={chat.selectRecommendationCategory}
+            onChangeCategoryPage={chat.setRecommendationCategoryPage}
             onSelectSuggestion={chat.sendSuggestedReply}
             onRetrySuggestions={chat.retrySuggestions}
             onOpenManualInputSelect={chat.openManualInputSelect}
