@@ -456,7 +456,7 @@ def _llm_filter_words(question: str, candidates: list, category: str) -> list:
                 {"role": "system", "content": "JSON 배열만 출력하세요."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=150, temperature=0.1,
+            max_tokens=80, temperature=0.1,
         )
         raw = (resp.choices[0].message.content or "").strip()
         for prefix in ("```json", "```"):
@@ -566,7 +566,7 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
                 {"role": "system", "content": f"{PATIENT_PERSONA} ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=100, temperature=0.7,
+            max_tokens=50, temperature=0.7,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -599,7 +599,7 @@ def _generate_from_words(words: list, question: str) -> list:
                 {"role": "system", "content": f"{PATIENT_PERSONA} ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=120, temperature=0.8,
+            max_tokens=50, temperature=0.8,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -712,7 +712,7 @@ def _auto_generate_keywords(text: str) -> list:
 
 
 @measure_time
-def _generate_categories(question: str, user_db: list | None = None, max_categories: int = 4) -> dict:
+def _generate_categories(question: str, user_db: list | None = None, max_categories: int = 3) -> dict:
     cache_key = hashlib.md5(question.strip().encode()).hexdigest()
     if cache_key in category_cache:
         return category_cache[cache_key]
@@ -732,12 +732,24 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
     print(f"[카테고리 생성] 질문: {question}")
     print(f"[카테고리 생성] 키워드: {all_keywords[:20]}")
     print(f"[카테고리 생성] 힌트표현: {hint_texts}")
-    # 닫힌 질문 자동 판단
-    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "갈게", "올게", "나갈게", "해줄까", "볼까", "들을래", "할게", "갈까"]
+    # 1) 통보/알림형 자동 판단 (질문이 아닌 문장)
+    notify_patterns = ["갈게", "올게", "나갈게", "다녀올게", "있을게", "기다릴게", "쉴게", "잠깐만"]
+    is_notify = any(p in question for p in notify_patterns)
+    if is_notify:
+        result = {
+            "categories": ["알겠어", "조심해", "빨리 와"],
+            "sentimentMap": {"알겠어": "중립", "조심해": "긍정", "빨리 와": "긍정"},
+            "intentMap": {"알겠어": "일상", "조심해": "감정", "빨리 와": "감정"}
+        }
+        category_cache[cache_key] = result
+        print(f"[카테고리 생성] 통보형 감지 → 자동 선택지")
+        return result
+
+    # 2) 닫힌 질문 자동 판단
+    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "해줄까", "볼까", "들을래", "할게", "갈까", "있어?", "없어?", "했니", "왔어", "갔어", "봤어", "잤어", "일어났어"]
     is_closed = any(p in question for p in closed_patterns)
 
     if is_closed:
-        # 닫힌 질문이면 LLM 없이 바로 선택지 생성
         result = {
             "categories": ["응", "아니", "잘 모르겠어"],
             "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"},
@@ -755,7 +767,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
 다음 패턴이면 무조건 닫힌 질문:
 - "~할래?", "~줄까?", "~할까?", "~할거야?", "~했어?", "~먹었어?", "~아파?", "~괜찮아?", "~좋아?", "~싫어?"
 - 예/아니오로 대답 가능한 모든 질문
-→ 반드시 ["응", "아니", "잘 모르겠어"] 형태로 2~3개 선택지
+→ 반드시 ["응", "아니", "잘 모르겠어"] 형태로 정확히 3개 선택지
 
 [개방형 질문 판단 기준]
 - "뭐 ~?", "어디 ~?", "어떤 ~?", "누구 ~?", "언제 ~?", "기분이 어때?"
@@ -779,6 +791,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
   - "기분이 어때?" → ["좋아", "별로", "그저그래"]
 - **절대 금지:** "음식", "욕구", "일상", "감정", "요청" 같은 추상적 단어를 카테고리로 쓰지 마세요.
 - **절대 금지:** 질문과 관련 없는 카테고리를 넣지 마세요.
+- **반드시 정확히 3개** 카테고리를 생성하세요. 2개도 안 되고 4개도 안 됩니다.
 - 공통: 카테고리 라벨은 짧게(4글자 이내 권장). 각 카테고리에 sentiment(긍정/부정/중립)와 intent(의도) 지정
 - intent 예시: 통증, 욕구, 감정, 음식, 요청, 일상, 기타 (해당 카테고리가 어떤 의도인지 한 단어로)
 
@@ -797,7 +810,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
                     {"role": "system", "content": "JSON만 출력하세요. 다른 텍스트 없이."},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=200, temperature=0.3,
+                max_tokens=120, temperature=0.3,
             )
             raw = (resp.choices[0].message.content or "").strip()
             for prefix in ("```json", "```"):
@@ -821,6 +834,18 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
             result = json.loads(raw)
             if "categories" not in result or "sentimentMap" not in result:
                 raise ValueError("Invalid format")
+            # 정확히 3개로 강제 — 초과 시 자르고, 부족 시 "잘 모르겠어" 패딩
+            result["categories"] = result["categories"][:3]
+            while len(result["categories"]) < 3:
+                pad = "잘 모르겠어"
+                if pad in result["categories"]:
+                    pad = "그저그래"
+                if pad in result["categories"]:
+                    pad = "모르겠어"
+                result["categories"].append(pad)
+                result["sentimentMap"][pad] = "중립"
+                result["intentMap"] = result.get("intentMap", {})
+                result["intentMap"][pad] = "기타"
             for cat in result["categories"]:
                 if cat not in result["sentimentMap"]:
                     result["sentimentMap"][cat] = _infer_sentiment(cat)
@@ -1232,7 +1257,41 @@ def health_check():
     return "ok", 200
 
 
+def _precache_demo_questions():
+    """시연 질문 + 변형을 미리 캐시에 넣어두기 (서버 기동 시 실행)"""
+    demo_questions = [
+        # 시연 질문 원본
+        "오렌지 주스 마실래?",
+        "손녀딸이 보고싶대. 집에 놀러오라고 할까?",
+        "알겠어. 손녀 줄 간식 만들러 주방에 잠시 갈게.",
+        "혹시 먹고 싶은 거 있어?",
+        # 유사 변형 (퍼지 캐시)
+        "오렌지주스 마실래?",
+        "주스 마실래?",
+        "손녀딸이 보고싶대 놀러오라고 할까?",
+        "손녀가 보고싶대. 놀러오라고 할까?",
+        "예승이가 보고싶대. 놀러오라고 할까?",
+        "잠깐 주방에 갈게.",
+        "간식 만들러 갈게",
+        "먹고 싶은 거 있어?",
+        "필요한 거 있어?",
+        # 자주 나올 수 있는 질문
+        "오늘 어때?",
+        "기분이 어때?",
+        "밥 먹었어?",
+        "약 먹었어?",
+        "어디 아파?",
+        "뭐 먹고 싶어?",
+        "롯데 이겼어?",
+    ]
+    print(f"[프리캐시] 시연 질문 {len(demo_questions)}개 카테고리 캐싱 중...")
+    for q in demo_questions:
+        _generate_categories(q, user_db=None)
+    print("[프리캐시] 완료")
+
+
 if __name__ == "__main__":
     precompute_embeddings()
+    _precache_demo_questions()
     print("\n[DB 버전] 서버 시작: http://localhost:5003\n")
     app.run(host="0.0.0.0", debug=False, port=5003)
