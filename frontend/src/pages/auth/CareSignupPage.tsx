@@ -94,6 +94,7 @@ export default function CareSignupPage() {
     normalizedGuardianEmail,
     isGuardianEmailChecked,
     guardianEmailCheckMessage,
+    guardianEmailCheckMessageType,
     patientProfile,
     patientRoutines,
     errorMessage: stepErrorMessage,
@@ -442,7 +443,15 @@ export default function CareSignupPage() {
                 </button>
               </div>
               {guardianEmailCheckMessage ? (
-                <p style={successMessage}>{guardianEmailCheckMessage}</p>
+                <p
+                  style={
+                    guardianEmailCheckMessageType === 'error'
+                      ? errorMessageStyle
+                      : successMessage
+                  }
+                >
+                  {guardianEmailCheckMessage}
+                </p>
               ) : isGuardianEmailChecked ? (
                 <p style={successMessage}>사용 가능한 이메일입니다.</p>
               ) : null}
