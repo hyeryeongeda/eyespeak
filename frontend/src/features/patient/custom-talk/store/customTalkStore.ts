@@ -28,6 +28,10 @@ import {
   getKeyboardGroupPage,
   getKeyboardRootPage,
 } from '../utils/keyboardNavigator'
+import {
+  filterSelectableRecommendedSentences,
+  isBlockedRecommendedSentence,
+} from '../utils/recommendedSentenceGuards'
 
 const composeStepKeyMap: Record<
   ComposeStep,
@@ -409,9 +413,11 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failRecommendedLoadOnce,
         context: state.context,
       })
+      const selectableRecommendedSentences =
+        filterSelectableRecommendedSentences(recommendedSentences)
 
       set(currentState => ({
-        recommendedSentences,
+        recommendedSentences: selectableRecommendedSentences,
         status: 'visible',
         errorMessage: null,
         mockFlags: {
@@ -445,6 +451,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       set({
         status: 'error',
         errorMessage: '전송할 문장이 비어 있습니다.',
+      })
+      return false
+    }
+
+    if (isBlockedRecommendedSentence(normalizedText)) {
+      set({
+        status: 'visible',
+        errorMessage: '추천 문장이 아직 준비되지 않았습니다. 다시 추천받기 또는 형태소로 표현하기를 선택해 주세요.',
       })
       return false
     }
