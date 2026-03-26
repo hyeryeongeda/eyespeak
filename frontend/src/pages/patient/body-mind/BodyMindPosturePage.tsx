@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
 import { postureOptionPages } from './bodyMindMock'
 import { submitBodyMindSelection } from './bodyMindSubmission'
@@ -14,6 +15,7 @@ export default function BodyMindPosturePage() {
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
+  useReturnToTalkMainAfterDelay(status === 'completed')
   const [feedbackText, setFeedbackText] = useState(
     '원하는 자세 조절 요청을 선택해 전달합니다.',
   )

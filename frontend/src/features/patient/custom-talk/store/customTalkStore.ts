@@ -28,6 +28,10 @@ import {
   getKeyboardGroupPage,
   getKeyboardRootPage,
 } from '../utils/keyboardNavigator'
+import {
+  filterSelectableRecommendedSentences,
+  isBlockedRecommendedSentence,
+} from '../utils/recommendedSentenceGuards'
 
 const composeStepKeyMap: Record<
   ComposeStep,
@@ -139,6 +143,20 @@ function getRootKeyboardState() {
     },
     keyboardOptions: getKeyboardRootOptions(),
     keyboardErrorMessage: null,
+  }
+}
+
+function getRootKeyboardStateWithEntrySource(
+  entrySource?: CustomTalkState['keyboardNavigation']['entrySource'],
+) {
+  const rootKeyboardState = getRootKeyboardState()
+
+  return {
+    ...rootKeyboardState,
+    keyboardNavigation: {
+      ...rootKeyboardState.keyboardNavigation,
+      entrySource,
+    },
   }
 }
 
@@ -395,9 +413,11 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failRecommendedLoadOnce,
         context: state.context,
       })
+      const selectableRecommendedSentences =
+        filterSelectableRecommendedSentences(recommendedSentences)
 
       set(currentState => ({
-        recommendedSentences,
+        recommendedSentences: selectableRecommendedSentences,
         status: 'visible',
         errorMessage: null,
         mockFlags: {
@@ -431,6 +451,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       set({
         status: 'error',
         errorMessage: '전송할 문장이 비어 있습니다.',
+      })
+      return false
+    }
+
+    if (isBlockedRecommendedSentence(normalizedText)) {
+      set({
+        status: 'visible',
+        errorMessage: '추천 문장이 아직 준비되지 않았습니다. 다시 추천받기 또는 형태소로 표현하기를 선택해 주세요.',
       })
       return false
     }
@@ -820,11 +848,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       })
 
       set(currentState => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: currentState.keyboardNavigation.entrySource,
-        },
+        ...getRootKeyboardStateWithEntrySource(currentState.keyboardNavigation.entrySource),
         mockFlags: {
           ...currentState.mockFlags,
           failKeyboardInitOnce: false,
@@ -921,27 +945,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardChar: value => {
-    const { keyboardNavigation } = get()
-
     set(state => ({
       draft: {
         ...state.draft,
         manualInput: `${state.draft.manualInput}${value}`,
       },
-      keyboardStatus: 'typing',
+      ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
       keyboardErrorMessage: null,
     }))
-
-    if (keyboardNavigation.currentRootMenu === 'ending') {
-      // TODO: 끝표시 입력 후 루트 복귀 / 직전 상태 유지 정책 확정
-      set(state => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: state.keyboardNavigation.entrySource,
-        },
-      }))
-    }
   },
 
   goKeyboardNextPage: () => {
@@ -1013,11 +1024,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
     if (keyboardNavigation.currentRootMenu) {
       set(state => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: state.keyboardNavigation.entrySource,
-        },
+        ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
       }))
       return { shouldExit: false }
     }

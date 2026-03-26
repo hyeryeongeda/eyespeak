@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import type {
   BodyMindUiStatus,
   PainAreaKey,
@@ -27,6 +28,7 @@ export default function BodyMindPainDetailPage() {
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedKey, setSelectedKey] = useState<PainDetailKey | null>(null)
   const [pageIndex, setPageIndex] = useState(0)
+  useReturnToTalkMainAfterDelay(status === 'completed')
   const [feedbackText, setFeedbackText] = useState(
     '통증의 느낌이나 필요한 도움을 선택해 전달합니다.',
   )

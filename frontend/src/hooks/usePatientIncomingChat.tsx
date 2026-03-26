@@ -49,7 +49,7 @@ type PatientChatAction =
       pauseMedia: boolean
       focusMessageId: string
     }
-  | { type: 'ENTER_REPLY_MODE'; messageId: string }
+  | { type: 'ENTER_REPLY_MODE'; messageId: string; pauseMedia: boolean }
   | { type: 'SUGGESTION_LOADING'; messageId: string }
   | { type: 'SUGGESTION_READY'; suggestions: PatientSuggestedResponse[] }
   | { type: 'SUGGESTION_FAILED'; error: string }
@@ -99,6 +99,7 @@ const initialState: PatientChatSessionState = {
 }
 
 const LOCAL_OUTGOING_MATCH_WINDOW_MS = 60_000
+const OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS = 15_000
 
 function normalizeTimestampForCompare(value: string) {
   return value.includes('T') ? value : value.replace(' ', 'T')
@@ -175,7 +176,17 @@ function isSamePatientMessage(
     return false
   }
 
-  if ((currentMessage.replyToId ?? null) !== (nextMessage.replyToId ?? null)) {
+  const currentReplyToId = currentMessage.replyToId ?? null
+  const nextReplyToId = nextMessage.replyToId ?? null
+  const allowsMissingReplyTargetOnEcho =
+    currentMessage.sender === 'patient' &&
+    nextMessage.sender === 'patient' &&
+    currentMessage.meta?.isOptimistic === true &&
+    nextMessage.meta?.isOptimistic !== true &&
+    currentReplyToId != null &&
+    nextReplyToId == null
+
+  if (!allowsMissingReplyTargetOnEcho && currentReplyToId !== nextReplyToId) {
     return false
   }
 
@@ -195,10 +206,18 @@ function isSamePatientMessage(
   const nextTimestamp = getMessageTimestamp(nextMessage)
 
   if (currentTimestamp === 0 || nextTimestamp === 0) {
-    return true
+    return !allowsMissingReplyTargetOnEcho
   }
 
-  return Math.abs(currentTimestamp - nextTimestamp) <= LOCAL_OUTGOING_MATCH_WINDOW_MS
+  const timestampDiff = Math.abs(currentTimestamp - nextTimestamp)
+
+  if (allowsMissingReplyTargetOnEcho) {
+    // Current chat echo payloads do not carry replyToId, so reconcile against the
+    // optimistic local message within a tighter time window instead of duplicating it.
+    return timestampDiff <= OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS
+  }
+
+  return timestampDiff <= LOCAL_OUTGOING_MATCH_WINDOW_MS
 }
 
 function shouldReconcileOptimisticMessage(
@@ -322,7 +341,7 @@ function patientChatReducer(
         messages: mergePatientMessages(state.messages, [action.message]),
         previousRoute: action.previousRoute,
         activeMessageId:
-          state.activeMessageId ?? (action.message.sender === 'guardian' ? action.message.id : null),
+          action.message.sender === 'guardian' ? action.message.id : state.activeMessageId,
         lastEventLabel: '보호자 선발화를 수신했습니다.',
       }
 
@@ -365,6 +384,7 @@ function patientChatReducer(
         selectedSuggestionId: null,
         manualInputMode: null,
         manualDraft: '',
+        isMediaPausedByInterrupt: action.pauseMedia,
         messages: state.messages.map(message =>
           message.id === action.messageId && message.sender === 'guardian'
             ? { ...message, status: 'pending_reply' }
@@ -871,13 +891,9 @@ export function PatientIncomingChatProvider({
       }
 
       if (!alreadyHandling) {
-        dispatch({
-          type: 'OPEN_INTERRUPT',
-          messageId,
+        void enterReplyModeInternal(messageId, incomingMessage, {
           pauseMedia: route.shouldPauseMediaOnInterrupt,
-          focusMessageId: messageId,
         })
-        armTimeout(messageId)
       }
     },
     [pathname],
@@ -1028,7 +1044,7 @@ export function PatientIncomingChatProvider({
 
     const timerId = window.setTimeout(() => {
       dispatch({ type: 'CLEAR_SENT_FEEDBACK' })
-    }, 900)
+    }, 1500)
 
     return () => {
       window.clearTimeout(timerId)
@@ -1057,14 +1073,6 @@ export function PatientIncomingChatProvider({
 
   function setRoutePathname(nextPathname: string) {
     dispatch({ type: 'SET_ROUTE_CONTEXT', route: getRouteContext(nextPathname) })
-  }
-
-  function armTimeout(messageId: string) {
-    dispatch({
-      type: 'ARM_TIMEOUT',
-      messageId,
-      timeoutAt: Date.now() + PATIENT_CHAT_RESPONSE_TIMEOUT_MS,
-    })
   }
 
   function clearTimeoutState() {
@@ -1105,13 +1113,9 @@ export function PatientIncomingChatProvider({
     }
 
     if (!alreadyHandlingConversation) {
-      dispatch({
-        type: 'OPEN_INTERRUPT',
-        messageId: incomingMessage.id,
+      void enterReplyModeInternal(incomingMessage.id, incomingMessage, {
         pauseMedia: route.shouldPauseMediaOnInterrupt,
-        focusMessageId: incomingMessage.id,
       })
-      armTimeout(incomingMessage.id)
     }
   }
 
@@ -1122,7 +1126,11 @@ export function PatientIncomingChatProvider({
     triggerIncomingPreset('water', { messageId: duplicateId })
   }
 
-  async function enterReplyModeInternal(messageId: string, knownMessage?: PatientChatMessage) {
+  async function enterReplyModeInternal(
+    messageId: string,
+    knownMessage?: PatientChatMessage,
+    options?: { pauseMedia?: boolean },
+  ) {
     const currentState = stateRef.current
     const message = knownMessage ?? getMessageById(currentState.messages, messageId)
 
@@ -1131,7 +1139,11 @@ export function PatientIncomingChatProvider({
     }
 
     clearTimeoutState()
-    dispatch({ type: 'ENTER_REPLY_MODE', messageId })
+    dispatch({
+      type: 'ENTER_REPLY_MODE',
+      messageId,
+      pauseMedia: options?.pauseMedia ?? currentState.isMediaPausedByInterrupt,
+    })
 
     const nextState = stateRef.current
     const attempts = nextState.suggestionAttempts[messageId] ?? 0

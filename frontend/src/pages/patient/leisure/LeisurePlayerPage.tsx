@@ -753,6 +753,7 @@ export default function LeisurePlayerPage() {
                   <div style={pausedBadgeStyle}>채팅 인터럽트로 일시정지</div>
                 ) : null}
                 <iframe
+                  key={content.id}
                   ref={iframeRef}
                   title={content.title}
                   src={playerSrc}

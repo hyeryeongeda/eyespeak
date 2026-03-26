@@ -20,6 +20,7 @@ import {
   usePatientIncomingChat,
   type PatientIncomingChatContextValue,
 } from '../../hooks/patientIncomingChatContext'
+import useReturnToTalkMainAfterDelay from '../../hooks/useReturnToTalkMainAfterDelay'
 import { createDailyMood, getTodayDailyMood } from '../../services/dailyMoodService'
 import { usePatientLeisureResumeStore } from '../../stores/patientLeisureResumeStore'
 import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'
@@ -27,6 +28,7 @@ import { ROUTE_PATHS } from '../router/routePaths'
 
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
 const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
+const ReplySentOverlay = lazy(() => import('../../components/patient/chat/ReplySentOverlay'))
 const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
 const ReturnToLeisureOverlay = lazy(
   () => import('../../components/patient/chat/ReturnToLeisureOverlay'),
@@ -55,8 +57,8 @@ function getPatientLayoutRouteKind(pathname: string): PatientLayoutRouteKind {
   return 'other'
 }
 
-function isLeisureRouteKind(kind: string | null | undefined) {
-  return kind === 'leisure' || kind === 'leisure_player'
+function isLeisureBrowseRouteKind(kind: string | null | undefined) {
+  return kind === 'leisure'
 }
 
 function isChatRouteKind(kind: string | null | undefined) {
@@ -97,6 +99,7 @@ function PatientLayoutShell() {
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
+  const shouldShowReplySentOverlay = chat.state.status === 'sent'
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
@@ -173,7 +176,7 @@ function PatientLayoutShell() {
     const isEnteringChat = isChatRouteKind(nextRouteKind) && !isChatRouteKind(previousRouteKind)
     const isLeavingChat = isChatRouteKind(previousRouteKind) && !isChatRouteKind(nextRouteKind)
 
-    if (isEnteringChat && !isLeisureRouteKind(previousRouteKind)) {
+    if (isEnteringChat && !isLeisureBrowseRouteKind(previousRouteKind)) {
       setIsReturnToLeisureOverlayVisible(false)
       clearResumeContext()
       promptedResumeAtRef.current = null
@@ -249,23 +252,29 @@ function PatientLayoutShell() {
       return
     }
 
-    if (chat.state.status !== 'sent') {
-      return
+    if (chat.state.status === 'sent') {
+      setIsReturnToLeisureOverlayVisible(false)
+      clearResumeContext()
+      promptedResumeAtRef.current = null
     }
+  }, [chat.state.status, clearResumeContext, currentRouteKind, resumeContext])
 
-    if (promptedResumeAtRef.current === resumeContext.savedAt) {
-      return
-    }
+  useReturnToTalkMainAfterDelay(shouldShowReplySentOverlay, {
+    onBeforeNavigate: () => {
+      setIsReturnToLeisureOverlayVisible(false)
+      promptedResumeAtRef.current = null
 
-    promptedResumeAtRef.current = resumeContext.savedAt
-    setIsReturnToLeisureOverlayVisible(true)
-  }, [chat.state.status, currentRouteKind, resumeContext])
+      if (resumeContext?.fromLeisure) {
+        clearResumeContext()
+      }
+    },
+  })
 
   const handleReplyNow = () => {
     setIsReturnToLeisureOverlayVisible(false)
     promptedResumeAtRef.current = null
 
-    if (isLeisureRouteKind(currentRouteKind)) {
+    if (isLeisureBrowseRouteKind(currentRouteKind)) {
       const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
 
       if (resumeContext) {
@@ -309,7 +318,7 @@ function PatientLayoutShell() {
   }
 
   const handleInterruptLater = () => {
-    if (isLeisureRouteKind(currentRouteKind)) {
+    if (isLeisureBrowseRouteKind(currentRouteKind)) {
       clearResumeContext()
       promptedResumeAtRef.current = null
     }
@@ -412,6 +421,12 @@ function PatientLayoutShell() {
             onReturnToLeisure={handleReturnToLeisure}
             onStayInChat={handleStayInChat}
           />
+        </Suspense>
+      ) : null}
+
+      {!isCalibrationRoute && shouldShowReplySentOverlay ? (
+        <Suspense fallback={null}>
+          <ReplySentOverlay visible={shouldShowReplySentOverlay} />
         </Suspense>
       ) : null}
 

@@ -8,6 +8,7 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import {
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
   fetchFavorites,
@@ -103,6 +104,42 @@ const loadingMessageStyle: CSSProperties = {
   color: '#647587',
 }
 
+const completedStateStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px',
+}
+
+const completedCardStyle: CSSProperties = {
+  width: 'min(720px, 100%)',
+  borderRadius: '30px',
+  border: '1px solid rgba(203, 225, 214, 0.94)',
+  background:
+    'linear-gradient(180deg, rgba(247, 253, 249, 0.98) 0%, rgba(238, 249, 243, 0.98) 100%)',
+  boxShadow: '0 24px 56px rgba(54, 96, 76, 0.12)',
+  padding: '40px 28px',
+  textAlign: 'center',
+}
+
+const completedTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#2d5a47',
+  fontSize: 'clamp(1.7rem, 2.6vw, 2.2rem)',
+  fontWeight: 900,
+  lineHeight: 1.3,
+}
+
+const completedDescriptionStyle: CSSProperties = {
+  margin: '14px 0 0',
+  color: '#557767',
+  fontSize: 'clamp(1rem, 1.4vw, 1.12rem)',
+  fontWeight: 700,
+  lineHeight: 1.7,
+}
+
 const SORT_KEY: FavoritesSortKey = 'recentUsed'
 const TRACKING_BACK_BUTTON = 'favorites-back'
 const TRACKING_PAGINATION_PREV = 'favorites-pagination-prev'
@@ -131,6 +168,7 @@ export default function FavoritesPage() {
   const [pageIndex, setPageIndex] = useState(0)
   const [errorKind, setErrorKind] = useState<FavoritesErrorKind | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [reloadToken, setReloadToken] = useState(0)
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
@@ -139,6 +177,8 @@ export default function FavoritesPage() {
     dwellFeedback,
     TRACKING_BACK_BUTTON,
   )
+
+  useReturnToTalkMainAfterDelay(status === 'completed')
 
   const loadFavorites = useCallback(() => {
     setErrorKind(null)
@@ -186,6 +226,7 @@ export default function FavoritesPage() {
 
   const handleAfterSelection = useCallback((_item: FavoriteItem, success: boolean) => {
     if (success) {
+      setSuccessMessage('선택한 문장을 보호자에게 전달했어요. 잠시 후 대화하기 메인으로 이동합니다.')
       setStatus('completed')
     }
   }, [])
@@ -329,6 +370,27 @@ export default function FavoritesPage() {
           dwellFeedback={dwellFeedback}
           centerAriaRole="alert"
         />
+      </main>
+    )
+  }
+
+  if (status === 'completed') {
+    return (
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={element => {
+          dwellFeedback.containerRef.current = element
+        }}
+      >
+        <section style={completedStateStyle} role="status" aria-live="polite">
+          <div style={completedCardStyle}>
+            <h2 style={completedTitleStyle}>보호자에게 전달했어요.</h2>
+            <p style={completedDescriptionStyle}>
+              {successMessage || '잠시 후 대화하기 메인으로 이동합니다.'}
+            </p>
+          </div>
+        </section>
       </main>
     )
   }

@@ -14,6 +14,7 @@ import type {
   KeyboardRootMenu,
 } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 
@@ -94,7 +95,12 @@ export default function CustomTalkKeyboardPage() {
   const goKeyboardBack = useCustomTalkStore(state => state.goKeyboardBack)
   const deleteLastManualChar = useCustomTalkStore(state => state.deleteLastManualChar)
   const submitManualInput = useCustomTalkStore(state => state.submitManualInput)
+  const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
   const hasEntrySource = Boolean(keyboardNavigation.entrySource)
+
+  useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
+    onBeforeNavigate: resetCustomTalkSession,
+  })
 
   useEffect(() => {
     if (!hasEntrySource || keyboardStatus !== 'idle') {

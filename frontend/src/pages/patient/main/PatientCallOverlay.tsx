@@ -1,12 +1,9 @@
 import type { CSSProperties } from 'react'
-import usePatientGlobalMenuActionTarget from '../../../features/patient/input/hooks/usePatientGlobalMenuActionTarget'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 
 interface PatientCallOverlayProps {
   status: PatientCallFlowStatus
   message?: string
-  cooldownSeconds?: number
-  onClose?: () => void
 }
 
 const overlayBackdropStyle: CSSProperties = {
@@ -56,31 +53,6 @@ const descriptionStyle: CSSProperties = {
   fontWeight: 600,
 }
 
-const actionRowStyle: CSSProperties = {
-  marginTop: '28px',
-  display: 'flex',
-  justifyContent: 'center',
-  gap: '12px',
-  flexWrap: 'wrap',
-}
-
-const actionButtonBaseStyle: CSSProperties = {
-  minWidth: '144px',
-  height: '54px',
-  padding: '0 20px',
-  borderRadius: '999px',
-  fontSize: '16px',
-  fontWeight: 700,
-  cursor: 'pointer',
-}
-
-const secondaryActionButtonStyle: CSSProperties = {
-  ...actionButtonBaseStyle,
-  border: '1px solid #d4deea',
-  backgroundColor: '#ffffff',
-  color: '#4d607d',
-}
-
 const spinnerStyle: CSSProperties = {
   width: '52px',
   height: '52px',
@@ -103,46 +75,24 @@ const animationStyle = `
   }
 `
 
-function getOverlayCopy(status: PatientCallFlowStatus, cooldownSeconds?: number, message?: string) {
+function getOverlayCopy(status: PatientCallFlowStatus, message?: string) {
   if (status === 'requesting') {
     return {
       label: '호출 전송 중',
       title: '보호자를 호출하는 중입니다.',
-      description: '잠시만 기다려주세요.',
-    }
-  }
-
-  if (status === 'success') {
-    return {
-      label: '호출 완료',
-      title: message ?? '보호자에게 호출 신호가 전송되었습니다.',
-      description: '잠시 후 메인 화면으로 돌아갑니다.',
+      description: '잠시만 기다려 주세요.',
     }
   }
 
   return {
-    label: '잠시 대기',
-    title: '잠시 후 다시 시도해주세요.',
-    description:
-      cooldownSeconds && cooldownSeconds > 0
-        ? `${cooldownSeconds}초 뒤에 다시 호출할 수 있습니다.`
-        : '30초 이내에는 동일 호출을 다시 보낼 수 없습니다.',
+    label: '호출 완료',
+    title: message ?? '보호자에게 호출 신호가 전송되었습니다.',
+    description: '잠시 후 메인 화면으로 돌아갑니다.',
   }
 }
 
-export default function PatientCallOverlay({
-  status,
-  message,
-  cooldownSeconds,
-  onClose,
-}: PatientCallOverlayProps) {
-  usePatientGlobalMenuActionTarget({
-    enabled: status === 'cooldown' && typeof onClose === 'function',
-    priority: 200,
-    onPositiveAction: onClose,
-  })
-
-  const copy = getOverlayCopy(status, cooldownSeconds, message)
+export default function PatientCallOverlay({ status, message }: PatientCallOverlayProps) {
+  const copy = getOverlayCopy(status, message)
 
   return (
     <div style={overlayBackdropStyle} role="dialog" aria-modal="true" aria-labelledby="patient-call-title">
@@ -154,14 +104,6 @@ export default function PatientCallOverlay({
           {copy.title}
         </h2>
         <p style={descriptionStyle}>{copy.description}</p>
-
-        {status === 'cooldown' ? (
-          <div style={actionRowStyle}>
-            <button type="button" style={secondaryActionButtonStyle} onClick={onClose}>
-              확인
-            </button>
-          </div>
-        ) : null}
       </div>
     </div>
   )
