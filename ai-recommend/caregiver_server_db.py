@@ -173,13 +173,22 @@ print("[초기화] DB에서 general_corpus 로딩 중...")
 general_db = _load_general_db_from_db()
 print(f"[초기화] general_corpus: {len(general_db)}개 로드 완료")
 
+# ====== numpy 행렬 사전 계산 ======
+general_matrix = None  # (N, 384) numpy 행렬
+general_norms = None    # (N,) 각 벡터 norm
 
 def precompute_embeddings():
+    global general_matrix, general_norms
     all_texts = [item["text"] for item in general_db]
     print(f"[초기화] 임베딩 사전 계산 중 (general_db): {len(all_texts)}개")
+    vecs = []
     for text in all_texts:
-        get_embedding(text)
-    print("[초기화] 완료")
+        vec = get_embedding(text)
+        vecs.append(vec)
+    if vecs:
+        general_matrix = np.array(vecs)
+        general_norms = np.linalg.norm(general_matrix, axis=1) + 1e-9
+    print("[초기화] numpy 행렬 완료")
 
 
 # ====== 검색 (caregiver_server.py와 동일) ======
@@ -242,19 +251,29 @@ def _search_sentences(question: str, user_db: list, sentiment_filter: str | None
 
 
 def _search_general(question: str, k: int = 3, sentiment_filter: str | None = None, mmr_lambda: float = 0.85) -> list:
-    if not general_db:
+    if not general_db or general_matrix is None:
         return []
-    pool = general_db
-    if sentiment_filter is not None and "sentiment" in general_db[0]:
-        pool = [item for item in general_db if item.get("sentiment") == sentiment_filter]
-        if not pool:
-            return []
     q_vec = get_embedding(question)
-    scored = []
-    for item in pool:
-        vec = get_embedding(item["text"])
-        sim = cosine_sim(q_vec, vec)
-        scored.append({"text": item["text"], "score": sim * item["weight"], "source": item["source"], "vec": vec})
+    q_norm = np.linalg.norm(q_vec) + 1e-9
+
+    # sentiment 필터링
+    if sentiment_filter is not None:
+        indices = [i for i, item in enumerate(general_db) if item.get("sentiment") == sentiment_filter]
+        if not indices:
+            return []
+        sub_matrix = general_matrix[indices]
+        sub_norms = general_norms[indices]
+        sims = np.dot(sub_matrix, q_vec) / (sub_norms * q_norm)
+        scored = []
+        for j, idx in enumerate(indices):
+            item = general_db[idx]
+            scored.append({"text": item["text"], "score": float(sims[j]) * item["weight"], "source": item["source"], "vec": sub_matrix[j]})
+    else:
+        # numpy 행렬 연산으로 한 번에 유사도 계산
+        sims = np.dot(general_matrix, q_vec) / (general_norms * q_norm)
+        scored = []
+        for i, item in enumerate(general_db):
+            scored.append({"text": item["text"], "score": float(sims[i]) * item["weight"], "source": item["source"], "vec": general_matrix[i]})
     # 중복 제거
     seen, candidates = set(), []
     for r in sorted(scored, key=lambda x: x["score"], reverse=True):
@@ -493,7 +512,8 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
 5. {diversity_rule}
 6. 질문과 모순되는 답변 금지
 7. 여러 주제를 한 문장에 섞지 마세요
-8. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
+8. "고마워", "잘 됐다", "괜찮아", "다행이다" 같은 범용 감정 표현은 질문에 직접 관련된 구체적 답변이 있으면 제외하세요. 예: "필요한 거 있어?"에는 "물 좀 줘"가 "고마워"보다 적절합니다.
+9. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
             model="gpt-4.1-mini",
@@ -822,7 +842,7 @@ def recommend():
             search_question = search_q
             sentiment_filter = "중립"
 
-    candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=6)
+    candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=10)
     print(f"[recommend] 검색어: {search_question}")
     print(f"[recommend] 후보: {[(c['text'], round(c['score'],3)) for c in candidates]}")
 
@@ -1013,7 +1033,7 @@ def recommend_by_category():
         context_question += f" 보호자가 '{guardian_message}'라고 말했습니다."
 
     # 기존 추천 로직 재활용: context_question을 question으로 사용
-    candidates = _search_sentences_mixed(context_question, user_db, sentiment_filter=None, intent_filter=None, k_total=6)
+    candidates = _search_sentences_mixed(context_question, user_db, sentiment_filter=None, intent_filter=None, k_total=10)
     sentences = _refine_recommend(context_question, candidates, sentiment_context=None)
 
     _recommend_stats["recommend_calls"] += 1
