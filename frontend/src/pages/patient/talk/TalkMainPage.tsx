@@ -2,6 +2,7 @@ import { useMemo, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
+import ReplyModePanel from '../../../components/patient/chat/ReplyModePanel'
 import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
@@ -160,12 +161,68 @@ export default function TalkMainPage() {
     4: null,
     5: 'talk-main-back-main',
   } as Record<number, string | null>), [])
+  const emptyTalkCellMapping = useMemo(
+    () =>
+      ({
+        0: null,
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: null,
+      }) as Record<number, string | null>,
+    [],
+  )
+  const shouldShowInlineReply =
+    chat.state.currentRoute?.responseSurface === 'inline' && Boolean(chat.activeReplyMessage)
 
-  useCellMapping(talkMainCellMapping)
+  useCellMapping(shouldShowInlineReply ? emptyTalkCellMapping : talkMainCellMapping)
 
   const moveToReplyRoute = (routePath: string) => {
     chat.focusLatestPendingMessage()
     navigate(routePath)
+  }
+
+  if (shouldShowInlineReply) {
+    return (
+      <div style={pageWrap}>
+        <ReplyModePanel
+          message={chat.activeReplyMessage}
+          messages={chat.state.messages}
+          activeMessageId={chat.activeReplyMessage?.id ?? chat.activeMessage?.id}
+          status={chat.state.status}
+          recommendationMode={chat.state.recommendationMode}
+          categoryState={chat.state.categoryState}
+          categories={chat.state.categories}
+          selectedCategoryKey={chat.state.selectedCategoryKey}
+          categoryPage={chat.state.categoryPage}
+          suggestionState={chat.state.suggestionState}
+          fallbackState={chat.state.fallbackState}
+          suggestions={chat.state.suggestions}
+          selectedSuggestionId={chat.state.selectedSuggestionId}
+          suggestionError={chat.state.suggestionError}
+          sendError={chat.state.sendError}
+          manualInputMode={chat.state.manualInputMode}
+          manualDraft={chat.state.manualDraft}
+          manualWordBank={chat.manualWordBank}
+          unresolvedCount={chat.unresolvedCount}
+          timeoutMs={chat.timeoutMs}
+          onSelectCategory={chat.selectRecommendationCategory}
+          onChangeCategoryPage={chat.setRecommendationCategoryPage}
+          onSelectSuggestion={chat.sendSuggestedReply}
+          onRetrySuggestions={chat.retrySuggestions}
+          onOpenManualInputSelect={chat.openManualInputSelect}
+          onSelectManualInputMode={chat.setManualInputMode}
+          onDraftChange={chat.updateManualDraft}
+          onAppendWord={chat.appendManualWord}
+          onClearDraft={chat.clearManualDraft}
+          onSendManualReply={chat.sendManualReply}
+          onDefer={chat.deferActiveMessage}
+          onClose={chat.closeReplyMode}
+          onOpenLatestPendingReply={chat.openLatestPendingReply}
+        />
+      </div>
+    )
   }
 
   return (

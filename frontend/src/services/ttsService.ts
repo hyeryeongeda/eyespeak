@@ -56,10 +56,6 @@ export async function synthesizeTts(
 export async function playSynthesizeTts(
   request: TtsSynthesizeRequestDto,
 ): Promise<AudioPlaybackHandle | null> {
-  if (getActiveAiApiMode() !== 'real') {
-    return null
-  }
-
   stopActiveSynthesizeTtsPlayback('replaced')
 
   const ttsPlaybackState = useTtsPlaybackStore.getState()

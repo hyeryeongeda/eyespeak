@@ -41,6 +41,7 @@ export interface PatientIncomingChatContextValue {
   clearManualDraft: () => void
   sendSuggestedReply: (suggestion: PatientSuggestedResponse) => Promise<void>
   sendManualReply: () => Promise<void>
+  completeReplyCompletion: () => void
   deferActiveMessage: () => void
   closeReplyMode: () => void
   setNextSendOutcome: (outcome: PatientChatSendOutcome) => void

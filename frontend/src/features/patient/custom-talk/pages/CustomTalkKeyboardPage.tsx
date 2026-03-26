@@ -163,7 +163,7 @@ export default function CustomTalkKeyboardPage() {
   const hasEntrySource = Boolean(keyboardNavigation.entrySource)
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
-    onBeforeNavigate: resetCustomTalkSession,
+    onAfterNavigate: resetCustomTalkSession,
   })
 
   useEffect(() => {

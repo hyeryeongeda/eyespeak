@@ -74,6 +74,7 @@ type PatientChatAction =
   | { type: 'ARM_TIMEOUT'; messageId: string; timeoutAt: number }
   | { type: 'CLEAR_TIMEOUT' }
   | { type: 'TIMEOUT_EXPIRED'; messageId: string }
+  | { type: 'COMPLETE_REPLY_COMPLETION' }
   | { type: 'DEFER_ACTIVE_MESSAGE' }
   | { type: 'START_RESTORE' }
   | { type: 'FINISH_RESTORE' }
@@ -631,11 +632,13 @@ function patientChatReducer(
       )
       const mergedMessages = mergePatientMessages(nextMessages, [action.replyMessage])
       const nextActiveMessage = getLatestUnresolvedGuardianMessage(mergedMessages)
+      const shouldKeepLeisureFollowup =
+        isLeisureRouteContext(state.currentRoute) && state.isMediaPausedByInterrupt
 
       return {
         ...state,
-        status: 'sent',
-        interruptState: 'none',
+        status: shouldKeepLeisureFollowup ? 'reply_completion_pending' : 'sent',
+        interruptState: shouldKeepLeisureFollowup ? 'completion_pending' : 'none',
         recommendationMode: 'category',
         categoryState: 'idle',
         messages: mergedMessages,
@@ -654,7 +657,7 @@ function patientChatReducer(
         manualDraft: '',
         responseTimeoutAt: null,
         responseTimeoutMessageId: null,
-        isMediaPausedByInterrupt: false,
+        isMediaPausedByInterrupt: shouldKeepLeisureFollowup,
         lastEventLabel: '응답을 전송했습니다.',
       }
     }
@@ -722,6 +725,15 @@ function patientChatReducer(
         responseTimeoutMessageId: null,
         isMediaPausedByInterrupt: false,
         lastEventLabel: '응답 시간이 지나 이전 화면으로 복귀합니다.',
+      }
+
+    case 'COMPLETE_REPLY_COMPLETION':
+      return {
+        ...state,
+        status: state.messages.length > 0 ? 'conversation_active' : 'waiting_message',
+        interruptState: 'none',
+        isMediaPausedByInterrupt: false,
+        lastEventLabel: 'Reply completion flow cleared.',
       }
 
     case 'DEFER_ACTIVE_MESSAGE':
@@ -809,7 +821,7 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
       pathname,
       label: '대화하기',
       kind: 'talk',
-      responseSurface: 'overlay',
+      responseSurface: 'inline',
       canEnterReplyMode: true,
       shouldPauseMediaOnInterrupt: false,
     }
@@ -919,6 +931,10 @@ function getPreferredReplyTargetId(state: PatientChatSessionState) {
   }
 
   return getLatestUnresolvedGuardianMessage(state.messages)?.id ?? null
+}
+
+function isLeisureRouteContext(route: PatientChatRouteContext | null) {
+  return route?.kind === 'leisure' || route?.kind === 'leisure_player'
 }
 
 function toPatientChatMessage(payload: StompChatInbound): PatientChatMessage {
@@ -1044,10 +1060,15 @@ export function PatientIncomingChatProvider({
       const route = currentState.currentRoute ?? getRouteContext(pathname)
       const alreadyHandling =
         currentState.interruptState === 'incoming_interrupt' ||
-        currentState.interruptState === 'reply_mode'
+        currentState.interruptState === 'reply_mode' ||
+        currentState.interruptState === 'completion_pending'
 
       if (route.responseSurface === 'inline') {
-        dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId })
+        if (!alreadyHandling) {
+          void enterReplyModeInternal(messageId, incomingMessage, {
+            pauseMedia: route.shouldPauseMediaOnInterrupt,
+          })
+        }
         return
       }
 
@@ -1269,10 +1290,15 @@ export function PatientIncomingChatProvider({
     const route = currentState.currentRoute ?? getRouteContext(pathname)
     const alreadyHandlingConversation =
       currentState.interruptState === 'incoming_interrupt' ||
-      currentState.interruptState === 'reply_mode'
+      currentState.interruptState === 'reply_mode' ||
+      currentState.interruptState === 'completion_pending'
 
     if (route.responseSurface === 'inline') {
-      dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId: incomingMessage.id })
+      if (!alreadyHandlingConversation) {
+        void enterReplyModeInternal(incomingMessage.id, incomingMessage, {
+          pauseMedia: route.shouldPauseMediaOnInterrupt,
+        })
+      }
       return
     }
 
@@ -1648,6 +1674,10 @@ export function PatientIncomingChatProvider({
     })
   }
 
+  function completeReplyCompletion() {
+    dispatch({ type: 'COMPLETE_REPLY_COMPLETION' })
+  }
+
   function deferActiveMessage() {
     clearTimeoutState()
     dispatch({ type: 'DEFER_ACTIVE_MESSAGE' })
@@ -1691,6 +1721,7 @@ export function PatientIncomingChatProvider({
     clearManualDraft,
     sendSuggestedReply,
     sendManualReply,
+    completeReplyCompletion,
     deferActiveMessage,
     closeReplyMode,
     setNextSendOutcome,
