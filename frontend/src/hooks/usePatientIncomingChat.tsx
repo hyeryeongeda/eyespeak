@@ -99,19 +99,64 @@ const initialState: PatientChatSessionState = {
 }
 
 const LOCAL_OUTGOING_MATCH_WINDOW_MS = 60_000
-const OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS = 15_000
+const OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS = 600_000
 function normalizeTimestampForCompare(value: string) {
   return value.includes('T') ? value : value.replace(' ', 'T')
 }
 
+function hasExplicitTimestampTimezone(value: string) {
+  return /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(value)
+}
+
+function getTimestampCandidates(
+  value: string,
+  options?: { includeUtcFallback?: boolean },
+) {
+  const normalizedValue = normalizeTimestampForCompare(value)
+  const candidates = new Set<number>()
+  const parsedTimestamp = Date.parse(normalizedValue)
+
+  if (!Number.isNaN(parsedTimestamp)) {
+    candidates.add(parsedTimestamp)
+  }
+
+  if (options?.includeUtcFallback && !hasExplicitTimestampTimezone(normalizedValue)) {
+    const parsedUtcTimestamp = Date.parse(`${normalizedValue}Z`)
+
+    if (!Number.isNaN(parsedUtcTimestamp)) {
+      candidates.add(parsedUtcTimestamp)
+    }
+  }
+
+  return [...candidates]
+}
+
 function getMessageTimestamp(message: PatientChatMessage) {
-  const timestamp = Date.parse(normalizeTimestampForCompare(message.createdAt))
+  const timestamp = getTimestampCandidates(message.createdAt)[0] ?? 0
 
   return Number.isNaN(timestamp) ? 0 : timestamp
 }
 
 function getMessageContentType(message: PatientChatMessage) {
   return message.meta?.contentType ?? 'TEXT'
+}
+
+function isTimestampWithinWindow(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+  windowMs: number,
+  options?: { includeUtcFallback?: boolean },
+) {
+  const currentCandidates = getTimestampCandidates(currentMessage.createdAt, options)
+  const nextCandidates = getTimestampCandidates(nextMessage.createdAt, options)
+
+  if (currentCandidates.length === 0 || nextCandidates.length === 0) {
+    return true
+  }
+
+  return currentCandidates.some(currentTimestamp =>
+    nextCandidates.some(nextTimestamp => Math.abs(currentTimestamp - nextTimestamp) <= windowMs),
+  )
 }
 
 function resolveGuardianStatus(
@@ -177,13 +222,27 @@ function isSamePatientMessage(
 
   const currentReplyToId = currentMessage.replyToId ?? null
   const nextReplyToId = nextMessage.replyToId ?? null
-  const allowsMissingReplyTargetOnEcho =
+  const isOptimisticPatientEchoPair =
     currentMessage.sender === 'patient' &&
     nextMessage.sender === 'patient' &&
-    currentMessage.meta?.isOptimistic === true &&
-    nextMessage.meta?.isOptimistic !== true &&
-    currentReplyToId != null &&
-    nextReplyToId == null
+    currentMessage.meta?.isOptimistic !== nextMessage.meta?.isOptimistic &&
+    (currentMessage.meta?.isOptimistic === true || nextMessage.meta?.isOptimistic === true)
+  const optimisticReplyToId =
+    currentMessage.meta?.isOptimistic === true
+      ? currentReplyToId
+      : nextMessage.meta?.isOptimistic === true
+        ? nextReplyToId
+        : null
+  const echoedReplyToId =
+    currentMessage.meta?.isOptimistic === true
+      ? nextReplyToId
+      : nextMessage.meta?.isOptimistic === true
+        ? currentReplyToId
+        : null
+  const allowsMissingReplyTargetOnEcho =
+    isOptimisticPatientEchoPair &&
+    optimisticReplyToId != null &&
+    echoedReplyToId == null
 
   if (!allowsMissingReplyTargetOnEcho && currentReplyToId !== nextReplyToId) {
     return false
@@ -205,18 +264,21 @@ function isSamePatientMessage(
   const nextTimestamp = getMessageTimestamp(nextMessage)
 
   if (currentTimestamp === 0 || nextTimestamp === 0) {
-    return !allowsMissingReplyTargetOnEcho
+    return true
   }
 
-  const timestampDiff = Math.abs(currentTimestamp - nextTimestamp)
-
-  if (allowsMissingReplyTargetOnEcho) {
-    // Current chat echo payloads do not carry replyToId, so reconcile against the
-    // optimistic local message within a tighter time window instead of duplicating it.
-    return timestampDiff <= OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS
+  if (isOptimisticPatientEchoPair) {
+    // Server echoes can arrive without timezone info, so compare against a broader
+    // window and also treat timezone-less timestamps as UTC candidates.
+    return isTimestampWithinWindow(
+      currentMessage,
+      nextMessage,
+      OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS,
+      { includeUtcFallback: true },
+    )
   }
 
-  return timestampDiff <= LOCAL_OUTGOING_MATCH_WINDOW_MS
+  return Math.abs(currentTimestamp - nextTimestamp) <= LOCAL_OUTGOING_MATCH_WINDOW_MS
 }
 
 function shouldReconcileOptimisticMessage(
