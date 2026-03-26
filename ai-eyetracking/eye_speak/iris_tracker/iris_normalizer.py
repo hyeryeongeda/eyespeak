@@ -98,12 +98,14 @@ def normalize_to_signed(ratio: Optional[float]) -> Optional[float]:
 def compute_iris_position(
     landmarks_px: Optional[LandmarksPx],
     blink_threshold: Optional[float] = None,
+    y_gain: Optional[float] = None,
 ) -> Tuple[Optional[float], Optional[float], float, bool]:
     """홍채 상대 위치(0~1)와 평균 EAR·깜빡임 여부를 계산한다.
 
     Args:
         landmarks_px: 픽셀 좌표 리스트(최소 478점). 비어 있거나 부족하면 신뢰 불가.
         blink_threshold: EAR 임계값. ``None``이면 YAML ``blink_ear_threshold`` 사용.
+        y_gain: Y축 amplification gain. ``None``이면 Y는 ``4.0`` (X와 동일 기본).
 
     Returns:
         ``(ratio_x, ratio_y, ear_avg, is_blinking)``.
@@ -184,6 +186,14 @@ def compute_iris_position(
     else:
         ratio_x = sum(ratios_x) / len(ratios_x)
         ratio_y = sum(ratios_y) / len(ratios_y)
+
+    # --- Iris ratio amplification ---
+    _CENTER = 0.5
+    _GAIN_X = 4.0
+    _GAIN_Y = y_gain if y_gain is not None else 10.0
+    ratio_x = max(0.0, min(1.0, _CENTER + (ratio_x - _CENTER) * _GAIN_X))
+    ratio_y = max(0.0, min(1.0, _CENTER + (ratio_y - _CENTER) * _GAIN_Y))
+
     return (ratio_x, ratio_y, ear_avg, is_blinking)
 
 
@@ -195,9 +205,19 @@ class IrisNormalizer:
             blink_threshold: EAR 임계값. ``None``이면 설정 파일 기본값.
         """
         self.blink_threshold: Optional[float] = blink_threshold
+        self._y_gain: Optional[float] = None
+
+    def set_y_gain(self, gain: float) -> None:
+        """캘리브레이션에서 계산된 Y축 전용 gain을 설정한다."""
+        self._y_gain = float(gain)
+        logger.info("IrisNormalizer: Y gain set to %.2f", self._y_gain)
+
+    @property
+    def y_gain(self) -> Optional[float]:
+        return self._y_gain
 
     def __call__(
         self, landmarks_px: Optional[LandmarksPx]
     ) -> Tuple[Optional[float], Optional[float], float, bool]:
         """랜드마크에서 비율 좌표와 EAR을 반환한다."""
-        return compute_iris_position(landmarks_px, self.blink_threshold)
+        return compute_iris_position(landmarks_px, self.blink_threshold, self._y_gain)

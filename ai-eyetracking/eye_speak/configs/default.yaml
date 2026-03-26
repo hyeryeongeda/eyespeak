@@ -14,62 +14,69 @@ grid:
   cols: 3
   pitch_offset_deg: 0.0
   yaw_offset_deg: 0.0
-  # Conservative tuning for cell confirmation only.
-  # Goal: reduce frequent gazeCell flips near grid boundaries.
-  # Tradeoff: stable cell switching can become slightly slower.
-  cell_stability_count: 5
-  hysteresis_threshold: 0.12
+  cell_stability_count: 4
+  hysteresis_threshold: 0.10
 
 smoothing:
   use_gaze_refiner: true
-  # "ema" | "one_euro"
   refiner_type: one_euro
   gaze_refiner_alpha: 0.3
-  one_euro_min_cutoff_x: 1.2
-  one_euro_beta_x: 0.15
-  one_euro_min_cutoff_y: 0.8
-  one_euro_beta_y: 0.05
-  # Hold the last stable screen point briefly when iris tracking drops.
-  screen_hold_ms: 400
-  screen_outlier_distance: 0.35
-  screen_fallback_jump_margin: 0.08
+  one_euro_min_cutoff_x: 0.8
+  one_euro_beta_x: 0.25
+  one_euro_min_cutoff_y: 0.5
+  one_euro_beta_y: 0.15
+  screen_hold_ms: 500
+  screen_outlier_distance: 0.4
+  screen_fallback_jump_margin: 0.10
   readiness_valid_streak: 2
   blink_ear_threshold: 0.18
 
 weights:
-  head_pose_weight: 0.35
-  iris_gaze_weight: 0.65
+  head_pose_weight: 0.0
+  iris_gaze_weight: 1.0
   l2cs_weight: 0.0
 
 calibration:
-  points: 12
-  # 프론트 calibrationConstants (6x2, safe margin 2%) DEFAULT_CALIBRATION_TARGETS 와 동일 순서
+  points: 18
+  # 3x6 센터-퍼스트: JS getCalibPoints(18)과 동일 순서
   target_rx:
-    - 0.02
-    - 0.21
-    - 0.40
-    - 0.60
-    - 0.79
-    - 0.98
-    - 0.02
-    - 0.21
-    - 0.40
-    - 0.60
-    - 0.79
-    - 0.98
+    - 0.50
+    - 0.30
+    - 0.70
+    - 0.10
+    - 0.90
+    - 0.01
+    - 0.50
+    - 0.30
+    - 0.70
+    - 0.10
+    - 0.90
+    - 0.01
+    - 0.50
+    - 0.30
+    - 0.70
+    - 0.10
+    - 0.90
+    - 0.99
   target_ry:
-    - 0.02
-    - 0.02
-    - 0.02
-    - 0.02
-    - 0.02
-    - 0.02
-    - 0.98
-    - 0.98
-    - 0.98
-    - 0.98
-    - 0.98
-    - 0.98
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.99
+    - 0.99
+    - 0.99
+    - 0.99
+    - 0.99
+    - 0.99
 
 trigger:
   dwell_time_sec: 1.5
@@ -87,5 +94,4 @@ runtime:
   poll_interval_ms: 50
   frame_max_width: 480
   frame_jpeg_quality: 0.72
-  # Consumed by runtime_embed.html for the client-side interpolation loop.
-  lerp_factor: 0.45
+  lerp_factor: 0.35

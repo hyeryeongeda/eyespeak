@@ -174,6 +174,48 @@ class HybridTracker:
         trx: List[float] = [float(x) for x in cal["target_rx"]]
         try_: List[float] = [float(y) for y in cal["target_ry"]]
         n = min(len(trx), len(try_), len(points))
+
+        # --- Y축 동적 감도 계산 ---
+        # 캘리브레이션 데이터에서 상단/하단 포인트의 ry 차이를 측정
+        cal_cfg = self._cfg["calibration"]
+        target_ry_list = [float(y) for y in cal_cfg["target_ry"]]
+        n_cal = min(len(target_ry_list), len(points))
+
+        top_rys: List[float] = []  # 상단 포인트 (target_ry < 0.3)
+        bot_rys: List[float] = []  # 하단 포인트 (target_ry > 0.7)
+        for i in range(n_cal):
+            ry_val = float(points[i].get("ry", 0.5))
+            ty = target_ry_list[i]
+            if ty < 0.3:
+                top_rys.append(ry_val)
+            elif ty > 0.7:
+                bot_rys.append(ry_val)
+
+        if top_rys and bot_rys:
+            top_mean = sum(top_rys) / len(top_rys)
+            bot_mean = sum(bot_rys) / len(bot_rys)
+            y_range = abs(bot_mean - top_mean)
+            if y_range > 0.02:
+                # 목표: 상단~하단의 iris 차이가 0.6 범위를 커버하도록
+                dynamic_y_gain = 0.6 / y_range
+                # gain 범위 제한: 최소 3.0, 최대 15.0
+                dynamic_y_gain = max(3.0, min(15.0, dynamic_y_gain))
+                self.iris_normalizer.set_y_gain(dynamic_y_gain)
+                logger.info(
+                    "Dynamic Y gain: %.2f (top_mean=%.4f bot_mean=%.4f range=%.4f)",
+                    dynamic_y_gain,
+                    top_mean,
+                    bot_mean,
+                    y_range,
+                )
+            else:
+                logger.warning(
+                    "Y range too small (%.4f), keeping default gain. top=%.4f bot=%.4f",
+                    y_range,
+                    top_mean,
+                    bot_mean,
+                )
+
         raw_pts = [
             (float(points[i].get("rx", 0.5)), float(points[i].get("ry", 0.5)))
             for i in range(n)
@@ -239,6 +281,8 @@ class HybridTracker:
             is_blink,
         )
         trig = self.trigger.update(ear, time.time())
+        if trig != "none":
+            logger.info("[TRIGGER] event=%s ear=%.3f", trig, ear)
         self._ear_samples.append(ear)
 
         yn: Optional[float] = None
@@ -247,7 +291,11 @@ class HybridTracker:
             hy, hp = head_pose_from_landmarks(lm, w, h)
             if hy is not None and hp is not None:
                 yn = max(0.0, min(1.0, (hy + self._grid_yaw) / (2.0 * self._grid_yaw)))
-                pn = max(0.0, min(1.0, (hp + self._grid_pitch) / (2.0 * self._grid_pitch)))
+                pitch_offset = float(self._cfg["grid"].get("pitch_offset_deg", 0.0))
+                pn = max(
+                    0.0,
+                    min(1.0, (hp + pitch_offset + self._grid_pitch) / (2.0 * self._grid_pitch)),
+                )
 
         used_head_pose_fallback = False
         if rx is None or ry is None:
@@ -275,8 +323,9 @@ class HybridTracker:
             used_head_pose_fallback = True
             logger.debug("HybridTracker: iris unavailable; using head-pose fallback gaze")
         elif self._w_head > 0 and yn is not None and pn is not None:
-            fused_rx = self._w_iris * rx + self._w_head * yn
-            fused_ry = self._w_iris * ry + self._w_head * pn
+            # 비대칭 융합: X축은 iris only, Y축은 iris + head pose pitch
+            fused_rx = rx  # X: head pose 미사용 (iris만으로 좌우 정확)
+            fused_ry = self._w_iris * ry + self._w_head * pn  # Y: head pitch로 상하 보조
         else:
             fused_rx, fused_ry = rx, ry
 

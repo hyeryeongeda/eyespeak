@@ -43,6 +43,29 @@ const CalibrationRegion = (function () {
         { x: 0.60, y: 0.97 }, { x: 0.80, y: 0.97 }, { x: 0.97, y: 0.97 },
       ];
     }
+    if (nPoints === 18) {
+      // 3×6 그리드, 센터-퍼스트 순서
+      return [
+        { x: 0.50, y: 0.50 },
+        { x: 0.30, y: 0.50 },
+        { x: 0.70, y: 0.50 },
+        { x: 0.10, y: 0.50 },
+        { x: 0.90, y: 0.50 },
+        { x: 0.01, y: 0.50 },
+        { x: 0.50, y: 0.01 },
+        { x: 0.30, y: 0.01 },
+        { x: 0.70, y: 0.01 },
+        { x: 0.10, y: 0.01 },
+        { x: 0.90, y: 0.01 },
+        { x: 0.01, y: 0.01 },
+        { x: 0.50, y: 0.99 },
+        { x: 0.30, y: 0.99 },
+        { x: 0.70, y: 0.99 },
+        { x: 0.10, y: 0.99 },
+        { x: 0.90, y: 0.99 },
+        { x: 0.99, y: 0.99 },
+      ];
+    }
     if (nPoints === 25) {
       const xy = [0.1, 0.3, 0.5, 0.7, 0.9];
       const out = [];
@@ -51,7 +74,7 @@ const CalibrationRegion = (function () {
           out.push({ x: xy[col], y: xy[row] });
       return out;
     }
-    throw new Error('getCalibPoints: nPoints must be 9, 12, or 25');
+    throw new Error('getCalibPoints: nPoints must be 9, 12, 18, or 25');
   }
 
   /**

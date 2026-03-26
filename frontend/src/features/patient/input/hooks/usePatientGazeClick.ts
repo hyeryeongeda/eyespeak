@@ -548,7 +548,22 @@ export function usePatientGazeClick({
     startSelectionCooldown(resolvedTarget.key, resolvedTarget.element)
     commitDelayTimerRef.current = window.setTimeout(() => {
       commitDelayTimerRef.current = null
-      resolvedTarget.element.click()
+      const el = resolvedTarget.element
+      if (!el.isConnected) {
+        console.warn('[patient-input] click-skipped: element disconnected', {
+          targetKey: resolvedTarget.key,
+          tagName: el.tagName,
+        })
+        const pt = useGazeInputStore.getState().point
+        const fallback = document.elementFromPoint(pt?.clientX ?? 0, pt?.clientY ?? 0)
+        if (fallback && fallback instanceof HTMLElement) {
+          console.info('[patient-input] click-fallback', { tagName: fallback.tagName })
+          fallback.click()
+        }
+        return
+      }
+      console.info('[patient-input] click-dispatch', { tagName: el.tagName, connected: el.isConnected })
+      el.click()
     }, SELECTION_COMMIT_DELAY_MS)
 
     console.info('[patient-input] selection-commit-success', {
