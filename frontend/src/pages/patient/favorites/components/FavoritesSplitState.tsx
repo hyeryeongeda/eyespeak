@@ -7,14 +7,15 @@ import {
 
 const wrapStyle: CSSProperties = {
   flex: 1,
+  width: '100%',
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   gap: '0',
   overflow: 'hidden',
-  borderRadius: '32px',
-  border: '1px solid rgba(207, 216, 227, 0.92)',
-  boxShadow: '0 18px 44px rgba(33, 48, 66, 0.08)',
+  borderRadius: 0,
+  border: 'none',
+  boxShadow: 'none',
 }
 
 const panelBaseStyle: CSSProperties = {
