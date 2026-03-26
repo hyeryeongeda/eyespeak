@@ -55,8 +55,8 @@ function getPatientLayoutRouteKind(pathname: string): PatientLayoutRouteKind {
   return 'other'
 }
 
-function isLeisureRouteKind(kind: string | null | undefined) {
-  return kind === 'leisure' || kind === 'leisure_player'
+function isLeisureBrowseRouteKind(kind: string | null | undefined) {
+  return kind === 'leisure'
 }
 
 function isChatRouteKind(kind: string | null | undefined) {
@@ -173,7 +173,7 @@ function PatientLayoutShell() {
     const isEnteringChat = isChatRouteKind(nextRouteKind) && !isChatRouteKind(previousRouteKind)
     const isLeavingChat = isChatRouteKind(previousRouteKind) && !isChatRouteKind(nextRouteKind)
 
-    if (isEnteringChat && !isLeisureRouteKind(previousRouteKind)) {
+    if (isEnteringChat && !isLeisureBrowseRouteKind(previousRouteKind)) {
       setIsReturnToLeisureOverlayVisible(false)
       clearResumeContext()
       promptedResumeAtRef.current = null
@@ -265,7 +265,7 @@ function PatientLayoutShell() {
     setIsReturnToLeisureOverlayVisible(false)
     promptedResumeAtRef.current = null
 
-    if (isLeisureRouteKind(currentRouteKind)) {
+    if (isLeisureBrowseRouteKind(currentRouteKind)) {
       const interruptedMessageId = chat.activeMessage?.id ?? chat.latestUnresolvedMessage?.id ?? null
 
       if (resumeContext) {
@@ -309,7 +309,7 @@ function PatientLayoutShell() {
   }
 
   const handleInterruptLater = () => {
-    if (isLeisureRouteKind(currentRouteKind)) {
+    if (isLeisureBrowseRouteKind(currentRouteKind)) {
       clearResumeContext()
       promptedResumeAtRef.current = null
     }
