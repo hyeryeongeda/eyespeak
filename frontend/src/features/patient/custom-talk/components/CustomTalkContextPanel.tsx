@@ -15,6 +15,8 @@ const wrapStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   minHeight: 0,
+  height: '100%',
+  width: '100%',
 }
 
 const panelStyle: CSSProperties = {
@@ -25,14 +27,17 @@ const panelStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  height: '100%',
 }
 
 const chatListStyle: CSSProperties = {
+  flex: 1,
   minHeight: 0,
   padding: '20px 24px',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'center',
+  overflow: 'auto',
 }
 
 const rowBaseStyle: CSSProperties = {
@@ -112,7 +117,7 @@ export default function CustomTalkContextPanel({
   }
   const chatListStyleByMode: CSSProperties = {
     ...chatListStyle,
-    padding: isEntryMode ? '26px 28px' : chatListStyle.padding,
+    padding: isEntryMode ? '18px 20px' : chatListStyle.padding,
   }
 
   useEffect(() => {
@@ -149,7 +154,7 @@ export default function CustomTalkContextPanel({
                   <div style={getBubbleStyle(item.sender, false)}>
                     <div
                       style={{
-                        fontSize: isEntryMode ? '36px' : '19px',
+                        fontSize: isEntryMode ? 'clamp(1.3rem, 2.45vmin, 1.85rem)' : '19px',
                         fontWeight: 800,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',

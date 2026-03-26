@@ -26,31 +26,32 @@ interface CustomTalkEntryLayoutProps {
 }
 
 const pageWrap: CSSProperties = {
-  minHeight: '100dvh',
+  height: 'calc(100dvh - var(--sat, 0px) - var(--sab, 0px))',
   width: '100%',
-  padding: '16px',
+  padding: '12px',
   boxSizing: 'border-box',
   background: 'linear-gradient(180deg, #edf3f8 0%, #f8fbff 48%, #eef2f6 100%)',
-  overflow: 'auto',
+  overflow: 'hidden',
 }
 
 const gridStyle: CSSProperties = {
   width: '100%',
-  minHeight: 'calc(100dvh - 32px)',
+  height: '100%',
+  minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'minmax(200px, 0.92fr) minmax(120px, auto) minmax(200px, 0.92fr)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(96px, 0.35fr) minmax(0, 1fr)',
   gridTemplateAreas: `
     "top-left top-center top-right"
     "center center center"
     "bottom-left bottom-center bottom-right"
   `,
-  gap: '12px',
+  gap: '10px',
 }
 
 const cardBaseStyle: CSSProperties = {
-  borderRadius: '30px',
-  padding: '20px 18px',
+  borderRadius: '28px',
+  padding: '18px 16px',
   border: '1px solid rgba(216, 225, 235, 0.9)',
   boxShadow: '0 22px 48px rgba(53, 77, 103, 0.1)',
   display: 'flex',
@@ -95,18 +96,23 @@ function getCardStyle(
 const cardTitleStyle: CSSProperties = {
   margin: 0,
   color: '#1f3047',
-  fontSize: 'clamp(3.5rem, 6vw, 4.75rem)',
+  fontSize: 'clamp(2.45rem, 5.8vmin, 4.1rem)',
   fontWeight: 900,
-  lineHeight: 1.28,
+  lineHeight: 1.18,
+  wordBreak: 'keep-all',
 }
 
 const cardDescriptionStyle: CSSProperties = {
-  margin: '10px 0 0',
-  maxWidth: '20ch',
+  margin: '8px 0 0',
+  maxWidth: '22ch',
   color: '#6f8095',
-  fontSize: 'clamp(0.85rem, 1vw, 1rem)',
+  fontSize: 'clamp(0.78rem, 1.35vmin, 0.96rem)',
   fontWeight: 700,
-  lineHeight: 1.58,
+  lineHeight: 1.45,
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
 }
 
 const loadingSheenStyle: CSSProperties = {
@@ -181,11 +187,13 @@ function getLoadingBarStyle(width: string, delaySeconds: number): CSSProperties 
 const centerAreaStyle: CSSProperties = {
   gridArea: 'center',
   minHeight: 0,
-  borderRadius: '30px',
+  borderRadius: '28px',
   border: '1px solid rgba(219, 227, 236, 0.9)',
   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, #f8fbff 100%)',
   boxShadow: '0 18px 40px rgba(53, 77, 103, 0.08)',
   overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
 }
 
 const layoutCss = `
@@ -201,6 +209,32 @@ const layoutCss = `
   .custom-talk-entry-card:focus-visible {
     outline: 3px solid #6b91c7;
     outline-offset: 3px;
+  }
+
+  @media (max-height: 900px) {
+    .custom-talk-entry-page {
+      padding: 12px !important;
+    }
+
+    .custom-talk-entry-layout {
+      gap: 8px !important;
+      grid-template-rows: minmax(0, 1fr) minmax(88px, 0.32fr) minmax(0, 1fr) !important;
+    }
+
+    .custom-talk-entry-card {
+      padding: 15px 13px !important;
+    }
+  }
+
+  @media (max-height: 760px) {
+    .custom-talk-entry-layout {
+      gap: 6px !important;
+    }
+
+    .custom-talk-entry-card {
+      padding: 12px 10px !important;
+      border-radius: 24px !important;
+    }
   }
 
   @keyframes custom-talk-entry-shimmer {
@@ -283,9 +317,17 @@ function ActionCard({
           </span>
         </div>
       ) : null}
-      <h2 style={{ ...cardTitleStyle, position: 'relative', zIndex: 1 }}>{card.title}</h2>
+      <h2
+        className="custom-talk-entry-card-title"
+        style={{ ...cardTitleStyle, position: 'relative', zIndex: 1 }}
+      >
+        {card.title}
+      </h2>
       {card.description ? (
-        <p style={{ ...cardDescriptionStyle, position: 'relative', zIndex: 1 }}>
+        <p
+          className="custom-talk-entry-card-description"
+          style={{ ...cardDescriptionStyle, position: 'relative', zIndex: 1 }}
+        >
           {card.description}
         </p>
       ) : null}

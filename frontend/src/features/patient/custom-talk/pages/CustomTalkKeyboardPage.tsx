@@ -4,7 +4,6 @@ import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
-import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
 import {
@@ -27,19 +26,15 @@ import {
 const centerStackStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  gap: '10px',
   minHeight: 0,
   height: '100%',
-  padding: '16px',
+  padding: '12px',
   boxSizing: 'border-box',
 }
 
-const contextSlotStyle: CSSProperties = {
-  minHeight: 0,
-  overflow: 'hidden',
-}
-
 const sentenceSlotStyle: CSSProperties = {
+  flex: 1,
   minHeight: 0,
   overflow: 'hidden',
 }
@@ -145,8 +140,6 @@ export default function CustomTalkKeyboardPage() {
   const dwellFeedback = useDwellFeedback<CustomTalkKeyboardTrackingId>({
     enabled: true,
   })
-  const context = useCustomTalkStore(state => state.context)
-  const conversationLog = useCustomTalkStore(state => state.conversationLog)
   const draft = useCustomTalkStore(state => state.draft)
   const keyboardStatus = useCustomTalkStore(state => state.keyboardStatus)
   const keyboardNavigation = useCustomTalkStore(state => state.keyboardNavigation)
@@ -412,14 +405,6 @@ export default function CustomTalkKeyboardPage() {
       dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <div style={contextSlotStyle}>
-            <CustomTalkContextPanel
-              context={context}
-              conversationLog={conversationLog}
-              mode="entry"
-            />
-          </div>
-
           <div style={sentenceSlotStyle}>
             <KeyboardSentenceDisplay sentence={displayedSentence} helperText={helperText} />
           </div>
