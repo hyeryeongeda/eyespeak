@@ -6,6 +6,7 @@ interface UseReturnToTalkMainAfterDelayOptions {
   delayMs?: number
   replace?: boolean
   onBeforeNavigate?: () => void
+  onAfterNavigate?: () => void
   targetPath?: string
 }
 
@@ -17,6 +18,7 @@ export default function useReturnToTalkMainAfterDelay(
 ) {
   const navigate = useNavigate()
   const onBeforeNavigateRef = useRef(options?.onBeforeNavigate)
+  const onAfterNavigateRef = useRef(options?.onAfterNavigate)
   const targetPathRef = useRef(options?.targetPath ?? ROUTE_PATHS.PATIENT_TALK_MAIN)
   const delayMs = options?.delayMs ?? RETURN_TO_TALK_MAIN_DELAY_MS
   const replace = options?.replace ?? true
@@ -24,6 +26,10 @@ export default function useReturnToTalkMainAfterDelay(
   useEffect(() => {
     onBeforeNavigateRef.current = options?.onBeforeNavigate
   }, [options?.onBeforeNavigate])
+
+  useEffect(() => {
+    onAfterNavigateRef.current = options?.onAfterNavigate
+  }, [options?.onAfterNavigate])
 
   useEffect(() => {
     targetPathRef.current = options?.targetPath ?? ROUTE_PATHS.PATIENT_TALK_MAIN
@@ -37,6 +43,11 @@ export default function useReturnToTalkMainAfterDelay(
     const timerId = window.setTimeout(() => {
       onBeforeNavigateRef.current?.()
       navigate(targetPathRef.current, { replace })
+      if (onAfterNavigateRef.current) {
+        window.setTimeout(() => {
+          onAfterNavigateRef.current?.()
+        }, 0)
+      }
     }, delayMs)
 
     return () => {

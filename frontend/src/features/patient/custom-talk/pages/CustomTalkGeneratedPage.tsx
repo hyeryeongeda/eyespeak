@@ -82,7 +82,7 @@ export default function CustomTalkGeneratedPage() {
   const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
-    onBeforeNavigate: resetCustomTalkSession,
+    onAfterNavigate: resetCustomTalkSession,
   })
 
   useEffect(() => {

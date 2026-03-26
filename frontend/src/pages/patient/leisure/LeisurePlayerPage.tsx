@@ -517,6 +517,10 @@ export default function LeisurePlayerPage() {
       return
     }
 
+    if (chat.state.isMediaPausedByInterrupt) {
+      return
+    }
+
     if (
       resumeContext.routeKind !== 'player' ||
       !resumeContext.fromLeisure ||
@@ -546,7 +550,14 @@ export default function LeisurePlayerPage() {
     pausedSnapshotRef.current = null
     handledInterruptMessageIdRef.current = null
     clearResumeContext()
-  }, [applyPlaybackSnapshot, clearResumeContext, content, currentPlayerPath, resumeContext])
+  }, [
+    applyPlaybackSnapshot,
+    chat.state.isMediaPausedByInterrupt,
+    clearResumeContext,
+    content,
+    currentPlayerPath,
+    resumeContext,
+  ])
 
   useEffect(() => {
     if (!resumeContext || !resumeContext.fromLeisure) {

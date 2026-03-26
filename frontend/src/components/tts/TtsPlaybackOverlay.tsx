@@ -15,7 +15,7 @@ export default function TtsPlaybackOverlay() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-[1200] flex items-center justify-center"
+      className="pointer-events-none fixed inset-0 z-[1500] flex items-center justify-center"
     >
       <div className={overlayCardClassName}>
         <span role="img" aria-label={status === 'preparing' ? 'TTS preparing' : 'TTS playing'}>

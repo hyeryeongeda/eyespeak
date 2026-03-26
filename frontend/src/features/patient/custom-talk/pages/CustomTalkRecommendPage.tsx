@@ -17,6 +17,11 @@ const centerStackStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '12px',
+  minHeight: 0,
+  height: '100%',
+  padding: '16px',
+  boxSizing: 'border-box',
+  justifyContent: 'center',
 }
 
 const noticeStackStyle: CSSProperties = {
@@ -59,7 +64,7 @@ export default function CustomTalkRecommendPage() {
   const isRecommendationLoading = status === 'loading' || status === 'refreshing'
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
-    onBeforeNavigate: resetCustomTalkSession,
+    onAfterNavigate: resetCustomTalkSession,
   })
 
   useEffect(() => {
@@ -155,6 +160,7 @@ export default function CustomTalkRecommendPage() {
           <CustomTalkContextPanel
             context={context}
             conversationLog={conversationLog}
+            mode="entry"
           />
 
           {status === 'loading' || errorMessage || completionMessage ? (
