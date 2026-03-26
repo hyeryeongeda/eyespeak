@@ -6,7 +6,6 @@ export type KeyboardRootMenu = 'consonant' | 'vowel' | 'ending' | 'number'
 
 export type KeyboardCompositionStage =
   | 'idle'
-  | 'initial_consonant'
   | 'vowel'
   | 'final_consonant'
 
@@ -67,7 +66,9 @@ export interface KeyboardNavigationState {
 export interface KeyboardCompositionState {
   stage: KeyboardCompositionStage
   initialConsonant: string | null
-  vowel: string | null
+  medialVowel: string | null
+  finalConsonant: string | null
+  vowel?: string | null
 }
 
 export interface CustomTalkCategoryOption {

@@ -68,12 +68,27 @@ function getBubbleStyle(
     width: 'fit-content',
     maxWidth: '100%',
     padding: '18px 24px',
-    borderRadius: isGuardian ? '24px' : '24px',
+    borderRadius: '24px',
     backgroundColor: isGuardian ? '#f5f8fb' : isPatient ? '#e9f3ff' : '#f6f9fc',
     border: '1px solid #dbe4eb',
     color: '#243246',
     boxShadow: isPreview ? '0 12px 28px rgba(101, 128, 174, 0.12)' : 'none',
   }
+}
+
+function getVisibleConversationLog(
+  conversationLog: CustomTalkConversationLogItem[],
+  mode: 'default' | 'entry',
+) {
+  if (mode !== 'entry') {
+    return conversationLog.slice(-1)
+  }
+
+  const latestContextItem = [...conversationLog]
+    .reverse()
+    .find(item => item.sender !== 'patient')
+
+  return latestContextItem ? [latestContextItem] : []
 }
 
 export default function CustomTalkContextPanel({
@@ -84,7 +99,7 @@ export default function CustomTalkContextPanel({
 }: CustomTalkContextPanelProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const isEntryMode = mode === 'entry'
-  const visibleConversationLog = conversationLog.slice(-1)
+  const visibleConversationLog = getVisibleConversationLog(conversationLog, mode)
   const shouldShowPreview = mode === 'default' && Boolean(previewText)
   const panelStyleByMode: CSSProperties = {
     ...panelStyle,
@@ -107,16 +122,18 @@ export default function CustomTalkContextPanel({
     }
 
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [conversationLog.length, isEntryMode, previewText])
+  }, [conversationLog.length, isEntryMode, previewText, visibleConversationLog.length])
 
   void context
 
   return (
-    <section style={wrapStyle} aria-label="맞춤대화 맥락">
+    <section style={wrapStyle} aria-label="\ub9de\ucda4 \ub300\ud654 \ub9e5\ub77d">
       <div style={panelStyleByMode}>
         <div style={chatListStyleByMode}>
           {visibleConversationLog.length === 0 ? (
-            <div style={emptyStyle}>아직 연결된 최근 대화가 없습니다.</div>
+            <div style={emptyStyle}>
+              \ud45c\uc2dc\ud560 \ub300\ud654 \ub9e5\ub77d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.
+            </div>
           ) : (
             visibleConversationLog.map(item => {
               const isGuardian = item.sender === 'guardian'
@@ -139,7 +156,7 @@ export default function CustomTalkContextPanel({
                         wordBreak: 'keep-all',
                       }}
                     >
-                      {item.content || '내용 없음'}
+                      {item.content || '\ub0b4\uc6a9 \uc5c6\uc74c'}
                     </div>
                   </div>
                 </div>

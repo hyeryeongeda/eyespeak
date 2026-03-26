@@ -16,6 +16,7 @@ import { useCustomTalkStore } from '../store/customTalkStore'
 import type {
   CustomTalkKeyboardOption,
   KeyboardCompositionState,
+  KeyboardNavigationState,
   KeyboardRootMenu,
 } from '../types'
 import {
@@ -64,13 +65,30 @@ type KeyboardCardModel = {
     | 'custom-talk-keyboard-option-4'
 }
 
+const CARD_TRACKING_IDS = [
+  'custom-talk-keyboard-option-1',
+  'custom-talk-keyboard-option-2',
+  'custom-talk-keyboard-option-3',
+  'custom-talk-keyboard-option-4',
+] as const
+
 function createEmptyCard(trackingId: KeyboardCardModel['trackingId']): KeyboardCardModel {
   return {
-    title: '선택 없음',
-    description: '현재 표시할 항목이 없습니다.',
+    title: '\ub2e4\uc2dc \uc900\ube44',
+    description: '\ud604\uc7ac \uc790\ub9ac\uc5d0 \ub123\uc744 \uae30\ub2a5\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.',
     tone: 'sand',
     onSelect: () => {},
     disabled: true,
+    trackingId,
+  }
+}
+
+function createUtilityCard(
+  trackingId: KeyboardCardModel['trackingId'],
+  config: Omit<KeyboardCardModel, 'trackingId'>,
+): KeyboardCardModel {
+  return {
+    ...config,
     trackingId,
   }
 }
@@ -79,23 +97,46 @@ function getKeyboardHelperText(
   keyboardComposition: KeyboardCompositionState,
   currentRootMenu?: KeyboardRootMenu,
 ) {
-  if (keyboardComposition.stage === 'vowel') {
-    return '모음을 선택하세요.'
+  if (keyboardComposition.stage === 'vowel' && keyboardComposition.initialConsonant) {
+    return '\ucd08\uc131\uc744 \uace8\ub790\uc2b5\ub2c8\ub2e4. \ub2e4\uc74c \ubaa8\uc74c\uc744 \uc120\ud0dd\ud574 \uc74c\uc808\uc744 \ub9cc\ub4dc\uc138\uc694.'
+  }
+
+  if (
+    keyboardComposition.stage === 'final_consonant' &&
+    keyboardComposition.finalConsonant
+  ) {
+    return '\ubc1b\uce68\uc774 \uc784\uc2dc\ub85c \uc870\ud569\ub41c \uc0c1\ud0dc\uc785\ub2c8\ub2e4. \uc790\uc74c\uc744 \ud55c \ubc88 \ub354 \ub204\ub974\uba74 \uacb9\ubc1b\uce68\uc73c\ub85c \ud655\uc7a5\ud560 \uc218 \uc788\uace0, \ubaa8\uc74c\uc744 \ub204\ub974\uba74 \ud544\uc694\ud55c \ub9cc\ud07c \ubd84\ud574\ub418\uc5b4 \ub2e4\uc74c \uc74c\uc808\ub85c \uc774\ub3d9\ud569\ub2c8\ub2e4.'
   }
 
   if (keyboardComposition.stage === 'final_consonant') {
-    return '두 번째 자음을 선택하거나 건너뛰세요.'
+    return '\ubc1b\uce68\uc744 \uace0\ub974\uac70\ub098 \ubaa8\uc74c\uc744 \ud55c \ubc88 \ub354 \ub20c\ub7ec \ubcf5\ud569 \ubaa8\uc74c\uc73c\ub85c \ud655\uc7a5\ud558\uc138\uc694. \ubc1b\uce68 \uc0c1\ud0dc\uc5d0\uc11c\ub294 \uc790\uc74c\uc744 \ud55c \ubc88 \ub354 \ub20c\ub7ec \uacb9\ubc1b\uce68\uc744 \ub9cc\ub4e4 \uc218 \uc788\uc2b5\ub2c8\ub2e4.'
   }
 
   if (currentRootMenu === 'ending') {
-    return '띄어쓰기와 문장부호를 바로 넣을 수 있어요.'
+    return '\ub744\uc5b4\uc4f0\uae30\uc640 \ubb38\uc7a5\ubd80\ud638\ub97c \ubc14\ub85c \uc785\ub825\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.'
   }
 
   if (currentRootMenu === 'number') {
-    return '숫자를 바로 추가할 수 있어요.'
+    return '\uc22b\uc790\ub97c \ubc14\ub85c \ubd99\uc5ec \uc785\ub825\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.'
   }
 
-  return '기본 흐름: 자음(된자음) -> 모음 -> 자음(된자음, 선택)'
+  if (currentRootMenu === 'vowel') {
+    return '\ubcf5\ud569 \ubaa8\uc74c \ud398\uc774\uc9c0\uc5d0\uc11c \u3158, \u3159, \u315a, \u315d, \u315e, \u315f, \u3162\ub97c \ubc14\ub85c \uace0\ub97c \uc218 \uc788\uc2b5\ub2c8\ub2e4.'
+  }
+
+  return '\uc790\uc74c\uc744 \uace0\ub974\uace0 \ubaa8\uc74c\uc744 \uc774\uc5b4\uc11c \uc870\ud569\ud558\uc138\uc694. \ubcf5\ud569 \ubaa8\uc74c\uc740 \ubaa8\uc74c\uc744 \ud55c \ubc88 \ub354 \ub204\ub974\uac70\ub098 \ubc14\ub85c \uc120\ud0dd\ud560 \uc218 \uc788\uc2b5\ub2c8\ub2e4.'
+}
+
+function isVowelMainPage(keyboardNavigation: KeyboardNavigationState) {
+  return keyboardNavigation.currentRootMenu === 'vowel' && !keyboardNavigation.currentGroupId
+}
+
+function isComplexVowelTailPage(keyboardNavigation: KeyboardNavigationState) {
+  return (
+    keyboardNavigation.currentRootMenu === 'vowel' &&
+    keyboardNavigation.currentGroupId === 'vowel-complex' &&
+    !keyboardNavigation.canGoNext
+  )
 }
 
 export default function CustomTalkKeyboardPage() {
@@ -179,6 +220,16 @@ export default function CustomTalkKeyboardPage() {
     selectKeyboardChar(option.value)
   }
 
+  const handleAppendSpace = () => {
+    handleSelectOption({
+      id: 'keyboard-space',
+      label: '\ub744\uc5b4\uc4f0\uae30',
+      value: ' ',
+      description: '\uacf5\ubc31\uc744 \uc785\ub825\ud569\ub2c8\ub2e4.',
+      kind: 'char',
+    })
+  }
+
   const handleBack = () => {
     const result = goKeyboardBack()
 
@@ -195,169 +246,167 @@ export default function CustomTalkKeyboardPage() {
     )
   }
 
-  const isKeyboardBusy = keyboardStatus === 'loading' || keyboardStatus === 'submitting'
-  const canSubmit = !isKeyboardBusy && displayedSentence.trim().length > 0 && !isInputBlocked
+  const isKeyboardLocked =
+    keyboardStatus === 'loading' ||
+    keyboardStatus === 'submitting' ||
+    keyboardStatus === 'completed'
+  const canSubmit =
+    !isKeyboardLocked && displayedSentence.trim().length > 0 && !isInputBlocked
   const canDelete =
-    !isKeyboardBusy && (draft.manualInput.length > 0 || hasPendingComposition)
+    !isKeyboardLocked && (draft.manualInput.length > 0 || hasPendingComposition)
   const canSkipFinalConsonant =
-    !isKeyboardBusy &&
+    !isKeyboardLocked &&
     !isInputBlocked &&
     keyboardComposition.stage === 'final_consonant' &&
     Boolean(keyboardComposition.initialConsonant) &&
-    Boolean(keyboardComposition.vowel)
+    Boolean(keyboardComposition.medialVowel) &&
+    !keyboardComposition.finalConsonant
 
-  const utilityCards: KeyboardCardModel[] = []
-
-  if (canSkipFinalConsonant) {
-    utilityCards.push({
-      title: '건너뛰기',
-      description: '두 번째 자음 없이 지금 음절을 확정합니다.',
-      tone: 'mint',
-      onSelect: skipKeyboardFinalConsonant,
-      trackingId: 'custom-talk-keyboard-option-1',
-    })
-  }
-
-  if (canDelete) {
-    utilityCards.push({
-      title: '한 글자 지우기',
-      description: '마지막 입력이나 조합 단계를 되돌립니다.',
-      tone: 'sky',
-      onSelect: deleteLastManualChar,
-      trackingId: 'custom-talk-keyboard-option-1',
-    })
-  }
-
-  if (canSubmit) {
-    utilityCards.push({
-      title: '문장 확정',
-      description: '현재 입력한 문장을 바로 발화합니다.',
-      tone: 'mint',
-      onSelect: () => void submitManualInput(),
-      trackingId: 'custom-talk-keyboard-option-1',
-    })
-  }
+  const deleteCard = createUtilityCard(CARD_TRACKING_IDS[0], {
+    title: '\uc9c0\uc6b0\uae30',
+    description: '\ub9c8\uc9c0\ub9c9 \uc785\ub825 \ub610\ub294 \uc870\ud569 \ub2e8\uacc4\ub97c \ub418\ub3cc\ub9bd\ub2c8\ub2e4.',
+    tone: 'sky',
+    onSelect: deleteLastManualChar,
+    disabled: !canDelete,
+  })
+  const skipCard = createUtilityCard(CARD_TRACKING_IDS[0], {
+    title: '\ubc1b\uce68 \uc5c6\uc774',
+    description: '\ud604\uc7ac \uc74c\uc808\uc744 \ubc1b\uce68 \uc5c6\uc774 \ud655\uc815\ud569\ub2c8\ub2e4.',
+    tone: 'mint',
+    onSelect: skipKeyboardFinalConsonant,
+    disabled: !canSkipFinalConsonant,
+  })
+  const submitCard = createUtilityCard(CARD_TRACKING_IDS[0], {
+    title: '\ubb38\uc7a5 \ud655\uc815',
+    description: '\ud604\uc7ac \uc785\ub825\ud55c \ubb38\uc7a5\uc744 \ubc14\ub85c \ubcf4\ub0c5\ub2c8\ub2e4.',
+    tone: 'mint',
+    onSelect: () => void submitManualInput(),
+    disabled: !canSubmit,
+  })
 
   const optionCards: KeyboardCardModel[] = keyboardOptions.map((option, index) => ({
     title: option.label,
-    description: option.description ?? '현재 선택지입니다.',
+    description: option.description ?? '\ud604\uc7ac \uc120\ud0dd\uc9c0\uc785\ub2c8\ub2e4.',
     tone: 'sand',
     onSelect: () => handleSelectOption(option),
-    disabled: isKeyboardBusy || isInputBlocked || !option.value,
-    trackingId: (
-      [
-        'custom-talk-keyboard-option-1',
-        'custom-talk-keyboard-option-2',
-        'custom-talk-keyboard-option-3',
-        'custom-talk-keyboard-option-4',
-      ] as const
-    )[index] ?? 'custom-talk-keyboard-option-4',
+    disabled: isKeyboardLocked || isInputBlocked || !option.value,
+    trackingId: CARD_TRACKING_IDS[index] ?? CARD_TRACKING_IDS[CARD_TRACKING_IDS.length - 1],
   }))
+
+  const utilityCards: KeyboardCardModel[] = []
+
+  if (isVowelMainPage(keyboardNavigation)) {
+    utilityCards.push(deleteCard)
+  }
+
+  if (isComplexVowelTailPage(keyboardNavigation)) {
+    utilityCards.push(deleteCard)
+  }
+
+  if (
+    canSkipFinalConsonant &&
+    !utilityCards.some(card => card.title === skipCard.title)
+  ) {
+    utilityCards.push(skipCard)
+  }
+
+  if (
+    !utilityCards.some(card => card.title === deleteCard.title) &&
+    (canDelete || optionCards.length === 3)
+  ) {
+    utilityCards.push(deleteCard)
+  }
+
+  if (!utilityCards.some(card => card.title === submitCard.title) && canSubmit) {
+    utilityCards.push(submitCard)
+  }
 
   const mixedCards = [...optionCards]
 
   utilityCards.forEach(card => {
     if (mixedCards.length < 4) {
-      mixedCards.push(card)
+      mixedCards.push({
+        ...card,
+        trackingId: CARD_TRACKING_IDS[mixedCards.length],
+      })
     }
   })
 
   while (mixedCards.length < 4) {
-    mixedCards.push(
-      createEmptyCard(
-        (
-          [
-            'custom-talk-keyboard-option-1',
-            'custom-talk-keyboard-option-2',
-            'custom-talk-keyboard-option-3',
-            'custom-talk-keyboard-option-4',
-          ] as const
-        )[mixedCards.length] ?? 'custom-talk-keyboard-option-4',
-      ),
-    )
+    mixedCards.push(createEmptyCard(CARD_TRACKING_IDS[mixedCards.length]))
   }
 
   const visibleCards = mixedCards.slice(0, 4).map((card, index) => ({
     ...card,
-    trackingId: (
-      [
-        'custom-talk-keyboard-option-1',
-        'custom-talk-keyboard-option-2',
-        'custom-talk-keyboard-option-3',
-        'custom-talk-keyboard-option-4',
-      ] as const
-    )[index],
+    trackingId: CARD_TRACKING_IDS[index],
   }))
 
-  const actionCard = keyboardNavigation.canGoNext
-    ? {
-        title: '다음',
-        description: '다음 선택지를 보여줍니다.',
-        tone: 'mint' as const,
-        onSelect: goKeyboardNextPage,
-        disabled: isKeyboardBusy || isInputBlocked,
-      }
-    : canSubmit
+  const actionCard =
+    keyboardStatus === 'completed'
       ? {
-          title: '문장 확정',
-          description: '현재 입력한 문장을 바로 발화합니다.',
+          title: '\uc804\uc1a1 \uc644\ub8cc',
+          description: '\uace7 \ub300\ud654 \ud654\uba74\uc73c\ub85c \ub3cc\uc544\uac11\ub2c8\ub2e4.',
           tone: 'mint' as const,
-          onSelect: () => void submitManualInput(),
-          disabled: false,
+          onSelect: () => {},
+          disabled: true,
         }
-      : {
-          title: '다시 준비',
-          description: '처음 선택지부터 다시 불러옵니다.',
-          tone: 'mint' as const,
-          onSelect: () => void initializeKeyboard(),
-          disabled: isKeyboardBusy,
-        }
+      : isVowelMainPage(keyboardNavigation)
+        ? {
+            title: '\ub744\uc5b4\uc4f0\uae30',
+            description: '\ud604\uc7ac \uc870\ud569\uc744 \ud655\uc815\ud558\uace0 \uacf5\ubc31\uc744 \uc785\ub825\ud569\ub2c8\ub2e4.',
+            tone: 'mint' as const,
+            onSelect: handleAppendSpace,
+            disabled: isKeyboardLocked || isInputBlocked,
+          }
+        : keyboardNavigation.canGoNext
+          ? {
+              title: '\ub2e4\uc74c',
+              description: '\ub2e4\uc74c \uc120\ud0dd\uc9c0\ub97c \ubcf4\uc5ec\uc90d\ub2c8\ub2e4.',
+              tone: 'mint' as const,
+              onSelect: goKeyboardNextPage,
+              disabled: isKeyboardLocked || isInputBlocked,
+            }
+          : isComplexVowelTailPage(keyboardNavigation)
+            ? {
+                title: '\uc9c0\uc6b0\uae30',
+                description: '\ub9c8\uc9c0\ub9c9 \uc785\ub825 \ub610\ub294 \uc870\ud569 \ub2e8\uacc4\ub97c \ub418\ub3cc\ub9bd\ub2c8\ub2e4.',
+                tone: 'sky' as const,
+                onSelect: deleteLastManualChar,
+                disabled: !canDelete,
+              }
+            : canSubmit
+              ? {
+                  title: '\ubb38\uc7a5 \ud655\uc815',
+                  description: '\ud604\uc7ac \uc785\ub825\ud55c \ubb38\uc7a5\uc744 \ubc14\ub85c \ubcf4\ub0c5\ub2c8\ub2e4.',
+                  tone: 'mint' as const,
+                  onSelect: () => void submitManualInput(),
+                  disabled: false,
+                }
+              : {
+                  title: '\ub2e4\uc2dc \uc900\ube44',
+                  description: '\ucc98\uc74c \uc120\ud0dd\uc9c0\ubd80\ud130 \ub2e4\uc2dc \ubd88\ub7ec\uc635\ub2c8\ub2e4.',
+                  tone: 'mint' as const,
+                  onSelect: () => void initializeKeyboard(),
+                  disabled: isKeyboardLocked,
+                }
 
   return (
     <CustomTalkEntryLayout
-      title="직접 말하기"
-      topLeft={{
-        title: visibleCards[0].title,
-        description: visibleCards[0].description,
-        tone: visibleCards[0].tone,
-        onSelect: visibleCards[0].onSelect,
-        disabled: visibleCards[0].disabled,
-        trackingId: visibleCards[0].trackingId,
-      }}
-      topCenter={{
-        title: visibleCards[1].title,
-        description: visibleCards[1].description,
-        tone: visibleCards[1].tone,
-        onSelect: visibleCards[1].onSelect,
-        disabled: visibleCards[1].disabled,
-        trackingId: visibleCards[1].trackingId,
-      }}
-      topRight={{
-        title: visibleCards[2].title,
-        description: visibleCards[2].description,
-        tone: visibleCards[2].tone,
-        onSelect: visibleCards[2].onSelect,
-        disabled: visibleCards[2].disabled,
-        trackingId: visibleCards[2].trackingId,
-      }}
-      bottomLeft={{
-        title: visibleCards[3].title,
-        description: visibleCards[3].description,
-        tone: visibleCards[3].tone,
-        onSelect: visibleCards[3].onSelect,
-        disabled: visibleCards[3].disabled,
-        trackingId: visibleCards[3].trackingId,
-      }}
+      title="\uc9c1\uc811 \ub9d0\ud558\uae30"
+      topLeft={visibleCards[0]}
+      topCenter={visibleCards[1]}
+      topRight={visibleCards[2]}
+      bottomLeft={visibleCards[3]}
       bottomCenter={{
         ...actionCard,
         trackingId: 'custom-talk-keyboard-action',
       }}
       bottomRight={{
-        title: '뒤로가기',
-        description: '이전 단계나 문장 화면으로 돌아갑니다.',
+        title: '\ub4a4\ub85c\uac00\uae30',
+        description: '\uc774\uc804 \ub2e8\uacc4 \ub610\ub294 \ubb38\uc7a5 \ud654\uba74\uc73c\ub85c \ub3cc\uc544\uac11\ub2c8\ub2e4.',
         tone: 'slate',
         onSelect: handleBack,
-        disabled: isKeyboardBusy,
+        disabled: isKeyboardLocked,
         trackingId: 'custom-talk-keyboard-back',
       }}
       dwellFeedback={dwellFeedback}
@@ -377,7 +426,7 @@ export default function CustomTalkKeyboardPage() {
 
           {keyboardStatus === 'loading' ? (
             <div style={customTalkLoadingNoticeStyle}>
-              직접 말하기 키보드를 준비하고 있습니다.
+              \uc9c1\uc811 \ub9d0\ud558\uae30 \ud0a4\ubcf4\ub4dc\ub97c \uc900\ube44\ud558\uace0 \uc788\uc2b5\ub2c8\ub2e4.
             </div>
           ) : null}
           {keyboardErrorMessage ? (

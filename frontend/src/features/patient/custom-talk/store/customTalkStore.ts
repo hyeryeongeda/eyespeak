@@ -30,6 +30,12 @@ import {
 } from '../utils/keyboardNavigator'
 import {
   createEmptyKeyboardComposition,
+  applyKeyboardConsonantSelection,
+  applyKeyboardVowelSelection,
+  appendKeyboardText,
+  deleteKeyboardInput,
+  finalizeKeyboardComposition,
+  hasPendingKeyboardComposition,
   resolveKeyboardManualInput,
 } from '../utils/hangulComposer'
 import {
@@ -189,19 +195,13 @@ function getKeyboardRootOptions() {
   return rootPage.options
 }
 
-function getConsonantSelectionMode(
-  compositionStage: CustomTalkState['keyboardComposition']['stage'],
-) {
-  return compositionStage === 'final_consonant' ? 'final' : 'initial'
-}
-
 function getKeyboardGroupPageForMenu(
   rootMenu: Exclude<KeyboardRootMenu, 'ending'>,
   page: number,
-  compositionStage: CustomTalkState['keyboardComposition']['stage'],
+  keyboardComposition: CustomTalkState['keyboardComposition'],
 ) {
   return getKeyboardGroupPage(rootMenu, page, {
-    consonantMode: getConsonantSelectionMode(compositionStage),
+    composition: keyboardComposition,
   })
 }
 
@@ -209,10 +209,10 @@ function getKeyboardCharPageForMenu(
   rootMenu: KeyboardRootMenu,
   groupId: string | undefined,
   page: number,
-  compositionStage: CustomTalkState['keyboardComposition']['stage'],
+  keyboardComposition: CustomTalkState['keyboardComposition'],
 ) {
   return getKeyboardCharPage(rootMenu, groupId, page, {
-    consonantMode: getConsonantSelectionMode(compositionStage),
+    composition: keyboardComposition,
   })
 }
 
@@ -242,22 +242,23 @@ function getRootKeyboardStateWithEntrySource(
   }
 }
 
-function buildKeyboardManualInput(
-  state: Pick<CustomTalkState, 'draft' | 'keyboardComposition'>,
-  finalConsonant?: string | null,
-) {
-  return resolveKeyboardManualInput(
-    state.draft.manualInput,
-    state.keyboardComposition,
-    finalConsonant,
-  )
-}
-
 function buildVowelSelectionState(
   state: Pick<CustomTalkState, 'keyboardNavigation'>,
-  initialConsonant: string,
+  keyboardCompositionOrInitial: CustomTalkState['keyboardComposition'] | string,
 ) {
-  const nextPage = getKeyboardGroupPage('vowel', 0)
+  const keyboardComposition =
+    typeof keyboardCompositionOrInitial === 'string'
+      ? {
+          stage: 'vowel' as const,
+          initialConsonant: keyboardCompositionOrInitial,
+          medialVowel: null,
+          finalConsonant: null,
+          vowel: null,
+        }
+      : keyboardCompositionOrInitial
+  const nextPage = getKeyboardGroupPage('vowel', 0, {
+    composition: keyboardComposition,
+  })
 
   return {
     keyboardStatus: 'group_select' as const,
@@ -269,21 +270,37 @@ function buildVowelSelectionState(
       canGoNext: nextPage.canGoNext,
     },
     keyboardOptions: nextPage.options,
-    keyboardComposition: {
-      stage: 'vowel' as const,
-      initialConsonant,
-      vowel: null,
-    },
+    keyboardComposition,
     keyboardErrorMessage: null,
   }
 }
 
+function buildKeyboardManualInput(
+  state: Pick<CustomTalkState, 'draft' | 'keyboardComposition'>,
+  finalConsonant?: string | null,
+) {
+  return resolveKeyboardManualInput(state.draft.manualInput, {
+    ...state.keyboardComposition,
+    finalConsonant: finalConsonant ?? state.keyboardComposition.finalConsonant,
+  })
+}
+
 function buildFinalConsonantSelectionState(
   state: Pick<CustomTalkState, 'keyboardNavigation'>,
-  initialConsonant: string,
-  vowel: string,
+  keyboardCompositionOrInitial: CustomTalkState['keyboardComposition'] | string,
+  medialVowel?: string,
 ) {
-  const nextPage = getKeyboardGroupPageForMenu('consonant', 0, 'final_consonant')
+  const keyboardComposition =
+    typeof keyboardCompositionOrInitial === 'string'
+      ? {
+          stage: 'final_consonant' as const,
+          initialConsonant: keyboardCompositionOrInitial,
+          medialVowel: medialVowel ?? null,
+          finalConsonant: null,
+          vowel: medialVowel ?? null,
+        }
+      : keyboardCompositionOrInitial
+  const nextPage = getKeyboardGroupPageForMenu('consonant', 0, keyboardComposition)
 
   return {
     keyboardStatus: 'group_select' as const,
@@ -295,11 +312,165 @@ function buildFinalConsonantSelectionState(
       canGoNext: nextPage.canGoNext,
     },
     keyboardOptions: nextPage.options,
-    keyboardComposition: {
-      stage: 'final_consonant' as const,
-      initialConsonant,
-      vowel,
+    keyboardComposition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildKeyboardStateFromComposition(
+  state: Pick<CustomTalkState, 'keyboardNavigation'>,
+  keyboardComposition: CustomTalkState['keyboardComposition'],
+) {
+  if (
+    keyboardComposition.stage === 'vowel' &&
+    keyboardComposition.initialConsonant
+  ) {
+    return buildVowelSelectionState(state, keyboardComposition)
+  }
+
+  if (
+    keyboardComposition.stage === 'final_consonant' &&
+    keyboardComposition.initialConsonant &&
+    keyboardComposition.medialVowel
+  ) {
+    return buildFinalConsonantSelectionState(state, keyboardComposition)
+  }
+
+  return {
+    ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+    keyboardComposition,
+  }
+}
+
+function buildKeyboardCharSelectionUpdate(
+  state: CustomTalkState,
+  value: string,
+) {
+  const currentRootMenu = state.keyboardNavigation.currentRootMenu
+
+  if (!currentRootMenu) {
+    return state
+  }
+
+  const currentInput = {
+    confirmedText: state.draft.manualInput,
+    composition: state.keyboardComposition,
+  }
+
+  if (currentRootMenu === 'consonant') {
+    const nextInput = applyKeyboardConsonantSelection(currentInput, value)
+
+    if (
+      nextInput.composition.stage === 'vowel' &&
+      nextInput.composition.initialConsonant
+    ) {
+      return {
+        draft: {
+          ...state.draft,
+          manualInput: nextInput.confirmedText,
+        },
+        ...buildVowelSelectionState(state, nextInput.composition),
+      }
+    }
+
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...buildKeyboardStateFromComposition(state, nextInput.composition),
+      keyboardErrorMessage: null,
+    }
+  }
+
+  if (currentRootMenu === 'vowel') {
+    const nextInput = applyKeyboardVowelSelection(currentInput, value)
+
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...buildKeyboardStateFromComposition(state, nextInput.composition),
+      keyboardErrorMessage: null,
+    }
+  }
+
+  const nextInput = appendKeyboardText(currentInput, value)
+
+  return {
+    draft: {
+      ...state.draft,
+      manualInput: nextInput.confirmedText,
     },
+    ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+    keyboardComposition: nextInput.composition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildSkipKeyboardFinalConsonantUpdate(state: CustomTalkState) {
+  if (
+    state.keyboardComposition.stage !== 'final_consonant' ||
+    !state.keyboardComposition.initialConsonant ||
+    !state.keyboardComposition.medialVowel ||
+    state.keyboardComposition.finalConsonant
+  ) {
+    return state
+  }
+
+  const nextInput = finalizeKeyboardComposition({
+    confirmedText: state.draft.manualInput,
+    composition: state.keyboardComposition,
+  })
+
+  return {
+    draft: {
+      ...state.draft,
+      manualInput: nextInput.confirmedText,
+    },
+    ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+    keyboardComposition: nextInput.composition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildDeleteLastManualCharUpdate(state: CustomTalkState) {
+  const nextInput = deleteKeyboardInput({
+    confirmedText: state.draft.manualInput,
+    composition: state.keyboardComposition,
+  })
+
+  if (hasPendingKeyboardComposition(nextInput.composition)) {
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...buildKeyboardStateFromComposition(state, nextInput.composition),
+      keyboardErrorMessage: null,
+    }
+  }
+
+  if (hasPendingKeyboardComposition(state.keyboardComposition)) {
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+      keyboardComposition: nextInput.composition,
+      keyboardErrorMessage: null,
+    }
+  }
+
+  return {
+    draft: {
+      ...state.draft,
+      manualInput: nextInput.confirmedText,
+    },
+    keyboardComposition: nextInput.composition,
+    keyboardStatus: 'editing' as const,
     keyboardErrorMessage: null,
   }
 }
@@ -1017,7 +1188,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectKeyboardRootMenu: menu => {
     if (menu === 'ending') {
-      const nextPage = getKeyboardCharPageForMenu(menu, undefined, 0, 'idle')
+      const nextPage = getKeyboardCharPageForMenu(menu, undefined, 0, get().keyboardComposition)
 
       if (!nextPage) {
         set({
@@ -1042,7 +1213,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       return
     }
 
-    const nextPage = getKeyboardGroupPageForMenu(menu, 0, get().keyboardComposition.stage)
+    const nextPage = getKeyboardGroupPageForMenu(menu, 0, get().keyboardComposition)
 
     set(state => ({
       keyboardStatus: 'group_select',
@@ -1074,7 +1245,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       currentRootMenu,
       groupId,
       0,
-      keyboardComposition.stage,
+      keyboardComposition,
     )
 
     if (!nextPage) {
@@ -1099,6 +1270,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardChar: value => {
+    set(state => buildKeyboardCharSelectionUpdate(state, value))
+    if (false) {
     set(state => {
       const currentRootMenu = state.keyboardNavigation.currentRootMenu
 
@@ -1140,9 +1313,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         keyboardErrorMessage: null,
       }
     })
+    }
   },
 
   skipKeyboardFinalConsonant: () => {
+    set(state => buildSkipKeyboardFinalConsonantUpdate(state))
+    if (false) {
     set(state => {
       if (
         state.keyboardComposition.stage !== 'final_consonant' ||
@@ -1162,6 +1338,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         keyboardErrorMessage: null,
       }
     })
+    }
   },
 
   goKeyboardNextPage: () => {
@@ -1182,12 +1359,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
             keyboardNavigation.currentRootMenu,
             keyboardNavigation.currentGroupId,
             nextPageIndex,
-            keyboardComposition.stage,
+            keyboardComposition,
           )
         : getKeyboardGroupPageForMenu(
             keyboardNavigation.currentRootMenu as Exclude<KeyboardRootMenu, 'ending'>,
             nextPageIndex,
-            keyboardComposition.stage,
+            keyboardComposition,
           )
 
     if (!nextPage || nextPage.options.length === 0) {
@@ -1219,7 +1396,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       const nextPage = getKeyboardGroupPageForMenu(
         currentRootMenu,
         0,
-        keyboardComposition.stage,
+        keyboardComposition,
       )
 
       set(state => ({
@@ -1251,6 +1428,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   deleteLastManualChar: () => {
+    set(state => buildDeleteLastManualCharUpdate(state))
+    if (false) {
     set(state => {
       if (
         state.keyboardComposition.stage === 'final_consonant' &&
@@ -1276,6 +1455,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         keyboardErrorMessage: null,
       }
     })
+    }
   },
 
   submitManualInput: async () => {
@@ -1283,7 +1463,11 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     const resolvedManualInput = resolveKeyboardManualInput(draft.manualInput, keyboardComposition)
     const text = resolvedManualInput.trim()
 
-    if (keyboardStatus === 'loading' || keyboardStatus === 'submitting') {
+    if (
+      keyboardStatus === 'loading' ||
+      keyboardStatus === 'submitting' ||
+      keyboardStatus === 'completed'
+    ) {
       return false
     }
 
