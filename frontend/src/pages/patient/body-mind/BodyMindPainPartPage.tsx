@@ -27,10 +27,12 @@ import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
 const PREVIEW_DELAY_MS = 220
 
 const GROUP_VIEW_OFFSETS: Record<string, BodyViewOffset> = {
-  upper_body: { y: 1.2, z: 2.6 },
-  middle_body: { y: 0.45, z: 2.8 },
-  lower_body: { y: -0.9, z: 3.4 },
+  upper_body: { y: 1.1, z: 2.6 },
+  middle_body: { y: 0.35, z: 2.85 },
+  lower_body: { y: -0.8, z: 3.25 },
 }
+
+const REAR_VIEW_PARTS: PainAreaKey[] = ['waist', 'hip']
 
 export default function BodyMindPainPartPage() {
   const navigate = useNavigate()
@@ -105,7 +107,6 @@ export default function BodyMindPainPartPage() {
   const viewOffset = GROUP_VIEW_OFFSETS[group.key] ?? null
   const hoveredModel = getPainAreaModelByKey(hoveredAreaKey)
   const highlightModelUrl = hoveredModel?.modelUrl ?? null
-  const REAR_VIEW_PARTS: PainAreaKey[] = ['back', 'hip']
   const guideRotationY = hoveredAreaKey && REAR_VIEW_PARTS.includes(hoveredAreaKey) ? Math.PI : 0
   const [primaryLeftTop, primaryTopRight, primaryLeftBottom, primaryBottomCenter] = group.options
 
@@ -140,11 +141,11 @@ export default function BodyMindPainPartPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-004A"
-      title="세부 부위 선택"
-      description={`${group.label} 안에서 아픈 부위를 하나 더 구체적으로 고릅니다.`}
+      title={`${group.label} 통증 부위`}
+      description={`${group.label}에서 아픈 부위를 하나 더 구체적으로 선택합니다.`}
       status={status}
       contextLabel={selectedArea ? `현재 선택: ${selectedArea.label}` : group.label}
-      feedbackText="세부 부위를 선택하면 중앙 가이드가 바뀌고 통증 상세 단계로 이동합니다."
+      feedbackText="부위를 선택하면 통증 상세 문구 화면으로 이동합니다."
     >
       <BodyMindFixedGrid
         primaryCards={[
@@ -153,7 +154,7 @@ export default function BodyMindPainPartPage() {
             title={primaryLeftTop.label}
             description={primaryLeftTop.description}
             tone={primaryLeftTop.tone}
-            badge="세부 부위"
+            badge="통증 부위"
             trackingId={primaryLeftTop.key}
             selected={selectedArea?.key === primaryLeftTop.key}
             onSelect={() => handleSelectArea(primaryLeftTop.key)}
@@ -172,7 +173,7 @@ export default function BodyMindPainPartPage() {
             title={primaryLeftBottom.label}
             description={primaryLeftBottom.description}
             tone={primaryLeftBottom.tone}
-            badge="세부 부위"
+            badge="통증 부위"
             trackingId={primaryLeftBottom.key}
             selected={selectedArea?.key === primaryLeftBottom.key}
             onSelect={() => handleSelectArea(primaryLeftBottom.key)}
@@ -184,7 +185,7 @@ export default function BodyMindPainPartPage() {
             title={primaryBottomCenter.label}
             description={primaryBottomCenter.description}
             tone={primaryBottomCenter.tone}
-            badge="세부 부위"
+            badge="통증 부위"
             trackingId={primaryBottomCenter.key}
             selected={selectedArea?.key === primaryBottomCenter.key}
             onSelect={() => handleSelectArea(primaryBottomCenter.key)}
@@ -197,7 +198,7 @@ export default function BodyMindPainPartPage() {
             title={primaryTopRight.label}
             description={primaryTopRight.description}
             tone={primaryTopRight.tone}
-            badge="세부 부위"
+            badge="통증 부위"
             trackingId={primaryTopRight.key}
             selected={selectedArea?.key === primaryTopRight.key}
             onSelect={() => handleSelectArea(primaryTopRight.key)}
@@ -207,8 +208,8 @@ export default function BodyMindPainPartPage() {
         }
         bottomRightCard={
           <BodyMindOptionCard
-            title="뒤로가기"
-            description="통증 메인으로"
+            title="← 뒤로가기"
+            description="통증 범위 선택으로 이동"
             tone="slate"
             badge="고정 위치"
             onSelect={handleBack}

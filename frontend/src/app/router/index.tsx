@@ -40,9 +40,9 @@ const BodyMindBreathingPage = lazy(() => import('../../pages/patient/body-mind/B
 const BodyMindPainAreaPage = lazy(() => import('../../pages/patient/body-mind/BodyMindPainAreaPage'))
 const BodyMindPainPartPage = lazy(() => import('../../pages/patient/body-mind/BodyMindPainPartPage'))
 const BodyMindPainDetailPage = lazy(() => import('../../pages/patient/body-mind/BodyMindPainDetailPage'))
+const BodyMindPosturePage = lazy(() => import('../../pages/patient/body-mind/BodyMindPosturePage'))
 const BodyMindCategoryListPage = lazy(() => import('../../pages/patient/body-mind/BodyMindCategoryListPage'))
 const BodyMindCategoryDetailPage = lazy(() => import('../../pages/patient/body-mind/BodyMindCategoryDetailPage'))
-const BodyMindPlaceholderPage = lazy(() => import('../../pages/patient/body-mind/BodyMindPlaceholderPage'))
 const FavoritesPage = lazy(() => import('../../pages/patient/favorites/FavoritesPage'))
 const CustomTalkDirectionPage = lazy(() => import('../../features/patient/custom-talk/pages/CustomTalkDirectionPage'))
 const CustomTalkRecommendPage = lazy(() => import('../../features/patient/custom-talk/pages/CustomTalkRecommendPage'))
@@ -228,14 +228,7 @@ const patientRoutes = [
     path: ROUTE_SEGMENTS.PATIENT.BODY_MIND_POSTURE,
     element: (
       <Suspense fallback={null}>
-        <BodyMindPlaceholderPage
-          code="PAT-BM-STUB"
-          title="자세 바꿔줘"
-          description="자세 변경 상세 화면은 스텁으로 우선 연결했습니다."
-          note="자세 바꿔줘 상세 항목은 추후 디자인과 표현 스펙이 확정되면 연결합니다."
-          backPath={ROUTE_PATHS.PATIENT_BODY_MIND}
-          backDescription="몸과마음 메인으로 돌아가기"
-        />
+        <BodyMindPosturePage />
       </Suspense>
     ),
   },
