@@ -159,6 +159,7 @@ export class LeisureCategoryResolutionError extends Error {
 }
 
 const generatedContentRegistry = new Map<string, LeisureContent>()
+const htmlEntityPattern = /&(?:#\d+|#x[0-9a-f]+|[a-z]+);/i
 
 function buildThumbnailUrl(videoId: string) {
   return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`
@@ -269,7 +270,9 @@ async function fetchNoCategoryYouTubeContentDetail(
     })
     const item = response.items?.[0]
     if (!item?.id) return null
-    const content = mapYouTubeVideoToLeisureContent(null, item.id, item.snippet)
+    const content = normalizeLeisureContentText(
+      mapYouTubeVideoToLeisureContent(null, item.id, item.snippet),
+    )
     registerGeneratedContents([content])
     return content
   } catch {
@@ -290,6 +293,41 @@ function registerGeneratedContents(contents: LeisureContent[]) {
   contents.forEach(content => {
     generatedContentRegistry.set(content.id, content)
   })
+}
+
+function decodeHtmlEntities(value: string | null | undefined) {
+  const normalizedValue = value?.trim() ?? ''
+
+  if (!normalizedValue || !htmlEntityPattern.test(normalizedValue)) {
+    return normalizedValue
+  }
+
+  if (typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea')
+    textarea.innerHTML = normalizedValue
+    return textarea.value.trim()
+  }
+
+  return normalizedValue
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&apos;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+}
+
+function normalizeLeisureContentText(content: LeisureContent): LeisureContent {
+  return {
+    ...content,
+    title: decodeHtmlEntities(content.title) || content.title,
+    channelName: decodeHtmlEntities(content.channelName) || content.channelName,
+    categoryLabel: decodeHtmlEntities(content.categoryLabel) || null,
+    description: decodeHtmlEntities(content.description) || content.description,
+    tags: content.tags
+      .map(tag => decodeHtmlEntities(tag) || tag)
+      .filter(Boolean),
+  }
 }
 
 async function fetchYouTubeApi<TResponse>(
@@ -396,7 +434,7 @@ function mapYouTubeVideoToLeisureContent(
   snippet?: YouTubeSnippet,
 ): LeisureContent {
   const category = categoryId ? (categoryMap.get(categoryId) ?? null) : null
-  const categoryLabel = category?.label ?? null
+  const categoryLabel = decodeHtmlEntities(category?.label ?? null) || null
   const id = categoryId
     ? buildGeneratedContentId(categoryId, videoId)
     : `${GENERATED_CONTENT_ID_PREFIX}:${videoId}`
@@ -466,6 +504,7 @@ async function searchYouTubeContents(
       return mapYouTubeVideoToLeisureContent(categoryId, videoId, item.snippet)
     })
     .filter((content): content is LeisureContent => Boolean(content))
+    .map(normalizeLeisureContentText)
 
   registerGeneratedContents(contents)
   return contents
@@ -511,10 +550,12 @@ async function fetchGeneratedYouTubeContentDetail(contentId: string) {
       return null
     }
 
-    const content = mapYouTubeVideoToLeisureContent(
-      parsedContentId.categoryId,
-      item.id,
-      item.snippet,
+    const content = normalizeLeisureContentText(
+      mapYouTubeVideoToLeisureContent(
+        parsedContentId.categoryId,
+        item.id,
+        item.snippet,
+      ),
     )
     registerGeneratedContents([content])
     return content
@@ -668,11 +709,12 @@ export function toPlayableLeisureItem(item: LeisureContentResponseDto): LeisureC
 
   const categoryId = normalizeCategory(item.category)
   const category = categoryId ? categoryMap.get(categoryId) ?? null : null
-  const categoryLabel = item.categoryName ?? category?.label ?? null
+  const categoryLabel = decodeHtmlEntities(item.categoryName) || decodeHtmlEntities(category?.label) || null
+  const title = decodeHtmlEntities(item.name) || item.name
 
   return {
     id: String(item.id),
-    title: item.name,
+    title,
     channelName: categoryLabel ?? 'YouTube',
     thumbnailUrl: buildThumbnailUrl(videoId),
     embedUrl: buildEmbedUrl(videoId),
@@ -681,7 +723,7 @@ export function toPlayableLeisureItem(item: LeisureContentResponseDto): LeisureC
     categoryId,
     categoryLabel,
     tags: categoryLabel ? [categoryLabel] : [],
-    description: item.name,
+    description: title,
   }
 }
 
@@ -691,7 +733,8 @@ function mapApiItemToShortcut(
 ): LeisureShortcut | null {
   const categoryId = normalizeCategory(item.category)
   const category = categoryId ? categoryMap.get(categoryId) ?? null : null
-  const categoryLabel = item.categoryName ?? category?.label ?? null
+  const categoryLabel = decodeHtmlEntities(item.categoryName) || decodeHtmlEntities(category?.label) || null
+  const title = decodeHtmlEntities(item.name) || item.name
   const tone = getShortcutTone(index, category)
 
   if (item.url) {
@@ -703,7 +746,7 @@ function mapApiItemToShortcut(
 
     return {
       id: String(item.id),
-      title: item.name,
+      title,
       description: '보호자가 등록한 YouTube 콘텐츠를 바로 재생합니다.',
       tone,
       badgeLabel: '바로 재생',
@@ -720,7 +763,7 @@ function mapApiItemToShortcut(
 
   return {
     id: String(item.id),
-    title: item.name,
+    title,
     description: `${
       categoryLabel ?? '지정한 카테고리'
     } 관련 콘텐츠를 바로 재생합니다.`,
@@ -737,6 +780,7 @@ async function getPlayableContents() {
   const contents = (await getRawLeisureContents())
     .map(toPlayableLeisureItem)
     .filter((content): content is LeisureContent => Boolean(content))
+    .map(normalizeLeisureContentText)
 
   registerGeneratedContents(contents)
   return contents
