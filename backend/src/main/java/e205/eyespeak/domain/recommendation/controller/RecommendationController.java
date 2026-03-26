@@ -29,6 +29,7 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 추천 API 컨트롤러
@@ -158,29 +159,49 @@ public class RecommendationController {
         // hints 계산 → AI 서버에 함께 전달
         HintsDto hints = recommendationService.computeHints(matching.getId());
 
+        // 고정 카테고리(맞춤대화)인지 동적 카테고리(보호자 메시지 응답)인지 판단
+        Set<String> fixedCategories = Set.of("mood", "schedule", "frequent", "recent");
+        boolean isDynamic = !fixedCategories.contains(request.getCategoryKey());
+
         Map<String, Object> body = new HashMap<>();
         body.put("matching_id", matching.getId());
-        body.put("recommend_type", request.getCategoryKey());
-        body.put("hints", Map.of(
-                "mood_hint", hints.getMoodHint() != null ? hints.getMoodHint() : "",
-                "schedule_hint", hints.getScheduleHint() != null ? hints.getScheduleHint() : "",
-                "frequent_hint", hints.getFrequentHint() != null ? hints.getFrequentHint() : "",
-                "recent_hint", hints.getRecentHint() != null ? hints.getRecentHint() : ""
-        ));
-        if (request.getGuardianMessage() != null) {
-            body.put("guardian_message", request.getGuardianMessage());
-        }
-        if (request.getRecentMessages() != null) {
-            body.put("recent_messages", request.getRecentMessages());
-        }
 
-        try {
-            Map result = restTemplate.postForObject(
-                    aiServerUrl + "/recommend/category", buildRequest(body), Map.class);
-            List<String> sentences = (List<String>) result.get("sentences");
-            return ApiResponse.ok(new SentencesResponse(sentences));
-        } catch (Exception e) {
-            throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+        if (isDynamic) {
+            // 동적 카테고리 → AI /recommend (보호자 메시지 기반 추천)
+            body.put("question", request.getGuardianMessage() != null ? request.getGuardianMessage() : "");
+            body.put("selected_category", request.getCategoryKey());
+            body.put("sentiment", "");
+            try {
+                Map result = restTemplate.postForObject(
+                        aiServerUrl + "/recommend", buildRequest(body), Map.class);
+                List<String> sentences = (List<String>) result.get("sentences");
+                return ApiResponse.ok(new SentencesResponse(sentences));
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+            }
+        } else {
+            // 고정 카테고리 → AI /recommend/category (맞춤대화)
+            body.put("recommend_type", request.getCategoryKey());
+            body.put("hints", Map.of(
+                    "mood_hint", hints.getMoodHint() != null ? hints.getMoodHint() : "",
+                    "schedule_hint", hints.getScheduleHint() != null ? hints.getScheduleHint() : "",
+                    "frequent_hint", hints.getFrequentHint() != null ? hints.getFrequentHint() : "",
+                    "recent_hint", hints.getRecentHint() != null ? hints.getRecentHint() : ""
+            ));
+            if (request.getGuardianMessage() != null) {
+                body.put("guardian_message", request.getGuardianMessage());
+            }
+            if (request.getRecentMessages() != null) {
+                body.put("recent_messages", request.getRecentMessages());
+            }
+            try {
+                Map result = restTemplate.postForObject(
+                        aiServerUrl + "/recommend/category", buildRequest(body), Map.class);
+                List<String> sentences = (List<String>) result.get("sentences");
+                return ApiResponse.ok(new SentencesResponse(sentences));
+            } catch (Exception e) {
+                throw new BusinessException(ErrorCode.AI_RECOMMENDATION_FAILED);
+            }
         }
     }
 
