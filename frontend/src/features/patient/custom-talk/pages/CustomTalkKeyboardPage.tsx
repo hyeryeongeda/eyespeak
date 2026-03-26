@@ -1,6 +1,9 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
+import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
@@ -9,14 +12,16 @@ import {
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
+import { useCustomTalkStore } from '../store/customTalkStore'
 import type {
   CustomTalkKeyboardOption,
+  KeyboardCompositionState,
   KeyboardRootMenu,
 } from '../types'
-import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
-import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
-import { useCustomTalkStore } from '../store/customTalkStore'
-import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import {
+  hasPendingKeyboardComposition,
+  resolveKeyboardManualInput,
+} from '../utils/hangulComposer'
 
 const centerStackStyle: CSSProperties = {
   display: 'flex',
@@ -59,9 +64,7 @@ type KeyboardCardModel = {
     | 'custom-talk-keyboard-option-4'
 }
 
-function createEmptyCard(
-  trackingId: KeyboardCardModel['trackingId'],
-): KeyboardCardModel {
+function createEmptyCard(trackingId: KeyboardCardModel['trackingId']): KeyboardCardModel {
   return {
     title: '선택 없음',
     description: '현재 표시할 항목이 없습니다.',
@@ -70,6 +73,29 @@ function createEmptyCard(
     disabled: true,
     trackingId,
   }
+}
+
+function getKeyboardHelperText(
+  keyboardComposition: KeyboardCompositionState,
+  currentRootMenu?: KeyboardRootMenu,
+) {
+  if (keyboardComposition.stage === 'vowel') {
+    return '모음을 선택하세요.'
+  }
+
+  if (keyboardComposition.stage === 'final_consonant') {
+    return '두 번째 자음을 선택하거나 건너뛰세요.'
+  }
+
+  if (currentRootMenu === 'ending') {
+    return '띄어쓰기와 문장부호를 바로 넣을 수 있어요.'
+  }
+
+  if (currentRootMenu === 'number') {
+    return '숫자를 바로 추가할 수 있어요.'
+  }
+
+  return '기본 흐름: 자음(된자음) -> 모음 -> 자음(된자음, 선택)'
 }
 
 export default function CustomTalkKeyboardPage() {
@@ -83,6 +109,7 @@ export default function CustomTalkKeyboardPage() {
   const draft = useCustomTalkStore(state => state.draft)
   const keyboardStatus = useCustomTalkStore(state => state.keyboardStatus)
   const keyboardNavigation = useCustomTalkStore(state => state.keyboardNavigation)
+  const keyboardComposition = useCustomTalkStore(state => state.keyboardComposition)
   const keyboardOptions = useCustomTalkStore(state => state.keyboardOptions)
   const keyboardErrorMessage = useCustomTalkStore(state => state.keyboardErrorMessage)
   const completionMessage = useCustomTalkStore(state => state.completionMessage)
@@ -91,6 +118,9 @@ export default function CustomTalkKeyboardPage() {
   const selectKeyboardRootMenu = useCustomTalkStore(state => state.selectKeyboardRootMenu)
   const selectKeyboardGroup = useCustomTalkStore(state => state.selectKeyboardGroup)
   const selectKeyboardChar = useCustomTalkStore(state => state.selectKeyboardChar)
+  const skipKeyboardFinalConsonant = useCustomTalkStore(
+    state => state.skipKeyboardFinalConsonant,
+  )
   const goKeyboardNextPage = useCustomTalkStore(state => state.goKeyboardNextPage)
   const goKeyboardBack = useCustomTalkStore(state => state.goKeyboardBack)
   const deleteLastManualChar = useCustomTalkStore(state => state.deleteLastManualChar)
@@ -120,6 +150,16 @@ export default function CustomTalkKeyboardPage() {
     !mockFlags.keyboardTrackingStable ||
     mockFlags.keyboardUpperInterrupt ||
     hasGlobalInterrupt
+
+  const displayedSentence = resolveKeyboardManualInput(
+    draft.manualInput,
+    keyboardComposition,
+  )
+  const helperText = getKeyboardHelperText(
+    keyboardComposition,
+    keyboardNavigation.currentRootMenu,
+  )
+  const hasPendingComposition = hasPendingKeyboardComposition(keyboardComposition)
 
   const handleSelectOption = (option: CustomTalkKeyboardOption) => {
     if (isInputBlocked || !option.value) {
@@ -156,15 +196,32 @@ export default function CustomTalkKeyboardPage() {
   }
 
   const isKeyboardBusy = keyboardStatus === 'loading' || keyboardStatus === 'submitting'
-  const canSubmit = !isKeyboardBusy && draft.manualInput.trim().length > 0 && !isInputBlocked
-  const canDelete = !isKeyboardBusy && draft.manualInput.length > 0
+  const canSubmit = !isKeyboardBusy && displayedSentence.trim().length > 0 && !isInputBlocked
+  const canDelete =
+    !isKeyboardBusy && (draft.manualInput.length > 0 || hasPendingComposition)
+  const canSkipFinalConsonant =
+    !isKeyboardBusy &&
+    !isInputBlocked &&
+    keyboardComposition.stage === 'final_consonant' &&
+    Boolean(keyboardComposition.initialConsonant) &&
+    Boolean(keyboardComposition.vowel)
 
   const utilityCards: KeyboardCardModel[] = []
+
+  if (canSkipFinalConsonant) {
+    utilityCards.push({
+      title: '건너뛰기',
+      description: '두 번째 자음 없이 지금 음절을 확정합니다.',
+      tone: 'mint',
+      onSelect: skipKeyboardFinalConsonant,
+      trackingId: 'custom-talk-keyboard-option-1',
+    })
+  }
 
   if (canDelete) {
     utilityCards.push({
       title: '한 글자 지우기',
-      description: '입력 문장의 마지막 글자를 삭제합니다.',
+      description: '마지막 입력이나 조합 단계를 되돌립니다.',
       tone: 'sky',
       onSelect: deleteLastManualChar,
       trackingId: 'custom-talk-keyboard-option-1',
@@ -174,7 +231,7 @@ export default function CustomTalkKeyboardPage() {
   if (canSubmit) {
     utilityCards.push({
       title: '문장 확정',
-      description: '현재 입력 문장을 바로 말합니다.',
+      description: '현재 입력한 문장을 바로 발화합니다.',
       tone: 'mint',
       onSelect: () => void submitManualInput(),
       trackingId: 'custom-talk-keyboard-option-1',
@@ -235,7 +292,7 @@ export default function CustomTalkKeyboardPage() {
   const actionCard = keyboardNavigation.canGoNext
     ? {
         title: '다음',
-        description: '다음 선택지 4개를 보여줍니다.',
+        description: '다음 선택지를 보여줍니다.',
         tone: 'mint' as const,
         onSelect: goKeyboardNextPage,
         disabled: isKeyboardBusy || isInputBlocked,
@@ -243,14 +300,14 @@ export default function CustomTalkKeyboardPage() {
     : canSubmit
       ? {
           title: '문장 확정',
-          description: '현재 입력 문장을 바로 말합니다.',
+          description: '현재 입력한 문장을 바로 발화합니다.',
           tone: 'mint' as const,
           onSelect: () => void submitManualInput(),
           disabled: false,
         }
       : {
           title: '다시 준비',
-          description: '키보드 선택지를 처음부터 다시 불러옵니다.',
+          description: '처음 선택지부터 다시 불러옵니다.',
           tone: 'mint' as const,
           onSelect: () => void initializeKeyboard(),
           disabled: isKeyboardBusy,
@@ -258,7 +315,7 @@ export default function CustomTalkKeyboardPage() {
 
   return (
     <CustomTalkEntryLayout
-      title="직접말해요"
+      title="직접 말하기"
       topLeft={{
         title: visibleCards[0].title,
         description: visibleCards[0].description,
@@ -297,7 +354,7 @@ export default function CustomTalkKeyboardPage() {
       }}
       bottomRight={{
         title: '뒤로가기',
-        description: '이전 단계 또는 맞춤문장 화면으로 돌아갑니다.',
+        description: '이전 단계나 문장 화면으로 돌아갑니다.',
         tone: 'slate',
         onSelect: handleBack,
         disabled: isKeyboardBusy,
@@ -315,15 +372,12 @@ export default function CustomTalkKeyboardPage() {
           </div>
 
           <div style={sentenceSlotStyle}>
-            <KeyboardSentenceDisplay
-              sentence={draft.manualInput}
-              helperText=""
-            />
+            <KeyboardSentenceDisplay sentence={displayedSentence} helperText={helperText} />
           </div>
 
           {keyboardStatus === 'loading' ? (
             <div style={customTalkLoadingNoticeStyle}>
-              직접말하기 키보드를 준비하는 중입니다.
+              직접 말하기 키보드를 준비하고 있습니다.
             </div>
           ) : null}
           {keyboardErrorMessage ? (
