@@ -596,13 +596,19 @@ export function useGuardianSignupFlow() {
     }
 
     setIsCheckingGuardianEmail(true)
-    const result = await checkEmailAvailability(normalizedGuardianEmail)
+    let result: Awaited<ReturnType<typeof checkEmailAvailability>>
+
+    try {
+      result = await checkEmailAvailability(normalizedGuardianEmail)
+    } finally {
+      if (isMountedRef.current) {
+        setIsCheckingGuardianEmail(false)
+      }
+    }
 
     if (!isMountedRef.current) {
       return
     }
-
-    setIsCheckingGuardianEmail(false)
 
     if (!result.success) {
       setCheckedGuardianEmail('')

@@ -99,3 +99,8 @@ export interface GuardianSignupRequestDto {
 export interface EmailCheckRequestDto {
   email: string
 }
+
+export interface EmailCheckResponseDto {
+  code: string
+  message: string
+}

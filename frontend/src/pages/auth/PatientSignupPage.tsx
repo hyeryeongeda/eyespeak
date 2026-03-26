@@ -17,6 +17,7 @@ import {
   pageTitle,
   primaryButton,
   secondaryButton,
+  successMessage,
   successBox,
   teamCodeBox,
   textLink,
@@ -30,12 +31,17 @@ export default function PatientSignupPage() {
     teamCode,
     verifiedTeamCode,
     patientAccount,
+    isPatientEmailChecked,
+    patientEmailCheckMessage,
+    patientEmailCheckMessageType,
     errorMessage: error,
-    isLoading,
+    isVerifyingTeamCode,
+    isCheckingPatientEmail,
+    isSubmitting,
     setTeamCode,
     setPatientAccount,
     handleVerifyTeamCode,
-    handleResetTeamCode,
+    handleCheckPatientEmail,
     handleSubmit,
   } = usePatientSignup()
 
@@ -57,6 +63,8 @@ export default function PatientSignupPage() {
   const accountIntroStyle = { ...infoBox, marginBottom: '12px' }
   const teamCodeFormStyle = { ...formStack, gap: '10px' }
   const patientAccountFormStyle = { ...formStack, gap: '14px' }
+  const inlineFieldStyle = { display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center' }
+  const inlineFieldInputStyle = { ...input, minWidth: 0 }
 
   const moveFocusToField = (
     refs: Array<HTMLInputElement | HTMLButtonElement | null>,
@@ -72,6 +80,7 @@ export default function PatientSignupPage() {
 
     target.focus()
     target.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    return true
   }
 
   const handleFieldWheel =
@@ -81,8 +90,6 @@ export default function PatientSignupPage() {
       currentIndex: number,
     ) =>
     (event: WheelEvent<HTMLElement>) => {
-      event.preventDefault()
-
       const accumulatedDelta = (wheelDeltaRef.current[groupKey] ?? 0) + event.deltaY
 
       if (Math.abs(accumulatedDelta) < SCROLL_THRESHOLD) {
@@ -100,7 +107,11 @@ export default function PatientSignupPage() {
       }
 
       wheelActionAtRef.current[groupKey] = now
-      moveFocusToField(refs, currentIndex, accumulatedDelta > 0 ? 1 : -1)
+      const didMoveFocus = moveFocusToField(refs, currentIndex, accumulatedDelta > 0 ? 1 : -1)
+
+      if (didMoveFocus) {
+        event.preventDefault()
+      }
     }
 
   const handleFieldTouchStart =
@@ -168,47 +179,32 @@ export default function PatientSignupPage() {
             {!verifiedTeamCode ? (
               <button
                 type="button"
-                style={isLoading ? { ...primaryButton, opacity: 0.7 } : primaryButton}
+                style={isVerifyingTeamCode ? { ...primaryButton, opacity: 0.7 } : primaryButton}
                 ref={node => {
                   teamCodeFieldRefs.current[1] = node
                 }}
                 onClick={() => void handleVerifyTeamCode()}
-                disabled={isLoading}
+                disabled={isVerifyingTeamCode}
                 onWheel={handleFieldWheel('team-code-1', teamCodeFieldRefs.current, 1)}
                 onTouchStart={handleFieldTouchStart('team-code-1')}
                 onTouchEnd={handleFieldTouchEnd('team-code-1', teamCodeFieldRefs.current, 1)}
               >
-                {isLoading ? '확인 중...' : '팀코드 확인'}
+                {isVerifyingTeamCode ? '확인 중...' : '팀코드 확인'}
               </button>
             ) : (
-              <>
-                <div style={verifiedCodeBoxStyle}>
-                  <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '12px' }}>
-                    확인된 팀코드
+              <div style={verifiedCodeBoxStyle}>
+                <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '12px' }}>
+                  확인된 팀코드
+                </p>
+                <p style={{ margin: '0 0 6px', color: '#203042', fontSize: '20px', fontWeight: 800 }}>
+                  {verifiedTeamCode.teamCode}
+                </p>
+                {verifiedTeamCode.verificationMode === 'lookup' && verifiedTeamCode.patientName ? (
+                  <p style={{ margin: 0, color: '#6d7f8f', fontSize: '12px' }}>
+                    {`연결 대상 환자: ${verifiedTeamCode.patientName}`}
                   </p>
-                  <p style={{ margin: '0 0 6px', color: '#203042', fontSize: '20px', fontWeight: 800 }}>
-                    {verifiedTeamCode.teamCode}
-                  </p>
-                  {verifiedTeamCode.verificationMode === 'lookup' && verifiedTeamCode.patientName ? (
-                    <p style={{ margin: 0, color: '#6d7f8f', fontSize: '12px' }}>
-                      {`연결 대상 환자: ${verifiedTeamCode.patientName}`}
-                    </p>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  style={secondaryButton}
-                  ref={node => {
-                    teamCodeFieldRefs.current[1] = node
-                  }}
-                  onClick={handleResetTeamCode}
-                  onWheel={handleFieldWheel('team-code-1', teamCodeFieldRefs.current, 1)}
-                  onTouchStart={handleFieldTouchStart('team-code-1')}
-                  onTouchEnd={handleFieldTouchEnd('team-code-1', teamCodeFieldRefs.current, 1)}
-                >
-                  팀코드 다시 입력
-                </button>
-              </>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
@@ -238,42 +234,75 @@ export default function PatientSignupPage() {
                 onTouchStart={handleFieldTouchStart('patient-signup-0')}
                 onTouchEnd={handleFieldTouchEnd('patient-signup-0', patientSignupFieldRefs.current, 0)}
               />
-              <input
-                type="email"
-                placeholder="로그인 이메일"
-                style={input}
-                ref={node => {
-                  patientSignupFieldRefs.current[1] = node
-                }}
-                value={patientAccount.loginId}
-                onChange={event =>
-                  setPatientAccount(prev => ({ ...prev, loginId: event.target.value }))
-                }
-                onWheel={handleFieldWheel('patient-signup-1', patientSignupFieldRefs.current, 1)}
-                onTouchStart={handleFieldTouchStart('patient-signup-1')}
-                onTouchEnd={handleFieldTouchEnd('patient-signup-1', patientSignupFieldRefs.current, 1)}
-              />
+              <div style={inlineFieldStyle}>
+                <input
+                  type="email"
+                  placeholder="로그인 이메일"
+                  style={inlineFieldInputStyle}
+                  ref={node => {
+                    patientSignupFieldRefs.current[1] = node
+                  }}
+                  value={patientAccount.loginId}
+                  onChange={event =>
+                    setPatientAccount(prev => ({ ...prev, loginId: event.target.value }))
+                  }
+                  onWheel={handleFieldWheel('patient-signup-1', patientSignupFieldRefs.current, 1)}
+                  onTouchStart={handleFieldTouchStart('patient-signup-1')}
+                  onTouchEnd={handleFieldTouchEnd('patient-signup-1', patientSignupFieldRefs.current, 1)}
+                />
+                <button
+                  type="button"
+                  style={
+                    isCheckingPatientEmail
+                      ? { ...secondaryButton, width: '112px', height: '52px', opacity: 0.7 }
+                      : { ...secondaryButton, width: '112px', height: '52px' }
+                  }
+                  ref={node => {
+                    patientSignupFieldRefs.current[2] = node
+                  }}
+                  onClick={() => void handleCheckPatientEmail()}
+                  disabled={isCheckingPatientEmail}
+                  onWheel={handleFieldWheel('patient-signup-2', patientSignupFieldRefs.current, 2)}
+                  onTouchStart={handleFieldTouchStart('patient-signup-2')}
+                  onTouchEnd={handleFieldTouchEnd('patient-signup-2', patientSignupFieldRefs.current, 2)}
+                >
+                  {isCheckingPatientEmail ? '확인 중...' : '중복 확인'}
+                </button>
+              </div>
+              {patientEmailCheckMessage ? (
+                <p
+                  style={
+                    patientEmailCheckMessageType === 'error'
+                      ? errorMessage
+                      : successMessage
+                  }
+                >
+                  {patientEmailCheckMessage}
+                </p>
+              ) : isPatientEmailChecked ? (
+                <p style={successMessage}>사용 가능한 로그인 이메일입니다.</p>
+              ) : null}
               <input
                 type="password"
                 placeholder="비밀번호"
                 style={input}
                 ref={node => {
-                  patientSignupFieldRefs.current[2] = node
+                  patientSignupFieldRefs.current[3] = node
                 }}
                 value={patientAccount.password}
                 onChange={event =>
                   setPatientAccount(prev => ({ ...prev, password: event.target.value }))
                 }
-                onWheel={handleFieldWheel('patient-signup-2', patientSignupFieldRefs.current, 2)}
-                onTouchStart={handleFieldTouchStart('patient-signup-2')}
-                onTouchEnd={handleFieldTouchEnd('patient-signup-2', patientSignupFieldRefs.current, 2)}
+                onWheel={handleFieldWheel('patient-signup-3', patientSignupFieldRefs.current, 3)}
+                onTouchStart={handleFieldTouchStart('patient-signup-3')}
+                onTouchEnd={handleFieldTouchEnd('patient-signup-3', patientSignupFieldRefs.current, 3)}
               />
               <input
                 type="password"
                 placeholder="비밀번호 확인"
                 style={input}
                 ref={node => {
-                  patientSignupFieldRefs.current[3] = node
+                  patientSignupFieldRefs.current[4] = node
                 }}
                 value={patientAccount.passwordConfirm}
                 onChange={event =>
@@ -282,24 +311,24 @@ export default function PatientSignupPage() {
                     passwordConfirm: event.target.value,
                   }))
                 }
-                onWheel={handleFieldWheel('patient-signup-3', patientSignupFieldRefs.current, 3)}
-                onTouchStart={handleFieldTouchStart('patient-signup-3')}
-                onTouchEnd={handleFieldTouchEnd('patient-signup-3', patientSignupFieldRefs.current, 3)}
+                onWheel={handleFieldWheel('patient-signup-4', patientSignupFieldRefs.current, 4)}
+                onTouchStart={handleFieldTouchStart('patient-signup-4')}
+                onTouchEnd={handleFieldTouchEnd('patient-signup-4', patientSignupFieldRefs.current, 4)}
               />
 
               <button
                 type="button"
-                style={isLoading ? { ...primaryButton, opacity: 0.7 } : primaryButton}
+                style={isSubmitting ? { ...primaryButton, opacity: 0.7 } : primaryButton}
                 ref={node => {
-                  patientSignupFieldRefs.current[4] = node
+                  patientSignupFieldRefs.current[5] = node
                 }}
                 onClick={() => void handleSubmit()}
-                disabled={isLoading}
-                onWheel={handleFieldWheel('patient-signup-4', patientSignupFieldRefs.current, 4)}
-                onTouchStart={handleFieldTouchStart('patient-signup-4')}
-                onTouchEnd={handleFieldTouchEnd('patient-signup-4', patientSignupFieldRefs.current, 4)}
+                disabled={isSubmitting}
+                onWheel={handleFieldWheel('patient-signup-5', patientSignupFieldRefs.current, 5)}
+                onTouchStart={handleFieldTouchStart('patient-signup-5')}
+                onTouchEnd={handleFieldTouchEnd('patient-signup-5', patientSignupFieldRefs.current, 5)}
               >
-                {isLoading ? '회원가입 중...' : '계정 생성'}
+                {isSubmitting ? '회원가입 중...' : '계정 생성'}
               </button>
             </div>
           </>
