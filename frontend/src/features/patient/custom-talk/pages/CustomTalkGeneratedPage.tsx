@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
   getCustomTalkNoticeStyle,
@@ -70,6 +71,7 @@ export default function CustomTalkGeneratedPage() {
   const buildGeneratedSentences = useCustomTalkStore(state => state.buildGeneratedSentences)
   const selectGeneratedSentence = useCustomTalkStore(state => state.selectGeneratedSentence)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
+  const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
   const hasComposeValue = Boolean(
     draft.subject || draft.object || draft.predicate || draft.punctuation,
   )
@@ -77,6 +79,10 @@ export default function CustomTalkGeneratedPage() {
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
   const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
+
+  useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
+    onBeforeNavigate: resetCustomTalkSession,
+  })
 
   useEffect(() => {
     if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {

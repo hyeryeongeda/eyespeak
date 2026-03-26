@@ -20,6 +20,7 @@ import {
   usePatientIncomingChat,
   type PatientIncomingChatContextValue,
 } from '../../hooks/patientIncomingChatContext'
+import useReturnToTalkMainAfterDelay from '../../hooks/useReturnToTalkMainAfterDelay'
 import { createDailyMood, getTodayDailyMood } from '../../services/dailyMoodService'
 import { usePatientLeisureResumeStore } from '../../stores/patientLeisureResumeStore'
 import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'
@@ -27,6 +28,7 @@ import { ROUTE_PATHS } from '../router/routePaths'
 
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
 const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
+const ReplySentOverlay = lazy(() => import('../../components/patient/chat/ReplySentOverlay'))
 const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
 const ReturnToLeisureOverlay = lazy(
   () => import('../../components/patient/chat/ReturnToLeisureOverlay'),
@@ -97,6 +99,7 @@ function PatientLayoutShell() {
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
+  const shouldShowReplySentOverlay = chat.state.status === 'sent'
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
@@ -249,17 +252,23 @@ function PatientLayoutShell() {
       return
     }
 
-    if (chat.state.status !== 'sent') {
-      return
+    if (chat.state.status === 'sent') {
+      setIsReturnToLeisureOverlayVisible(false)
+      clearResumeContext()
+      promptedResumeAtRef.current = null
     }
+  }, [chat.state.status, clearResumeContext, currentRouteKind, resumeContext])
 
-    if (promptedResumeAtRef.current === resumeContext.savedAt) {
-      return
-    }
+  useReturnToTalkMainAfterDelay(shouldShowReplySentOverlay, {
+    onBeforeNavigate: () => {
+      setIsReturnToLeisureOverlayVisible(false)
+      promptedResumeAtRef.current = null
 
-    promptedResumeAtRef.current = resumeContext.savedAt
-    setIsReturnToLeisureOverlayVisible(true)
-  }, [chat.state.status, currentRouteKind, resumeContext])
+      if (resumeContext?.fromLeisure) {
+        clearResumeContext()
+      }
+    },
+  })
 
   const handleReplyNow = () => {
     setIsReturnToLeisureOverlayVisible(false)
@@ -412,6 +421,12 @@ function PatientLayoutShell() {
             onReturnToLeisure={handleReturnToLeisure}
             onStayInChat={handleStayInChat}
           />
+        </Suspense>
+      ) : null}
+
+      {!isCalibrationRoute && shouldShowReplySentOverlay ? (
+        <Suspense fallback={null}>
+          <ReplySentOverlay visible={shouldShowReplySentOverlay} />
         </Suspense>
       ) : null}
 

@@ -1044,7 +1044,7 @@ export function PatientIncomingChatProvider({
 
     const timerId = window.setTimeout(() => {
       dispatch({ type: 'CLEAR_SENT_FEEDBACK' })
-    }, 900)
+    }, 1500)
 
     return () => {
       window.clearTimeout(timerId)

@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
@@ -10,6 +11,7 @@ import {
 } from '../components/customTalkUi'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import { filterSelectableRecommendedSentences } from '../utils/recommendedSentenceGuards'
 
 const centerStackStyle: CSSProperties = {
   display: 'flex',
@@ -24,20 +26,7 @@ const noticeStackStyle: CSSProperties = {
 }
 
 function getVisibleSentences(sentences: string[]) {
-  const fallbackSentences = [
-    '추천 문장을 다시 준비하고 있습니다.',
-    '잠시 후 다시 선택해 주세요.',
-    '원하는 문장이 없으면 형태소 조합으로 이어갈 수 있습니다.',
-  ]
-  const visible = [...sentences]
-
-  fallbackSentences.forEach(sentence => {
-    if (visible.length < 3 && !visible.includes(sentence)) {
-      visible.push(sentence)
-    }
-  })
-
-  return visible.slice(0, 3)
+  return filterSelectableRecommendedSentences(sentences).slice(0, 3)
 }
 
 type CustomTalkRecommendTrackingId =
@@ -63,9 +52,14 @@ export default function CustomTalkRecommendPage() {
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const startCompose = useCustomTalkStore(state => state.startCompose)
+  const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isActionLocked =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+
+  useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
+    onBeforeNavigate: resetCustomTalkSession,
+  })
 
   useEffect(() => {
     if (!hasCategoryKey || recommendedSentences.length > 0) {
@@ -86,7 +80,7 @@ export default function CustomTalkRecommendPage() {
       title="추천 문장 선택"
       topLeft={{
         title: visibleSentences[0] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
+        description: visibleSentences[0] ? '이 문장으로 바로 답변합니다.' : '추천 문장을 기다리는 중입니다.',
         tone: 'sky',
         onSelect: () => {
           if (visibleSentences[0]) {
@@ -98,7 +92,7 @@ export default function CustomTalkRecommendPage() {
       }}
       topCenter={{
         title: visibleSentences[1] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
+        description: visibleSentences[1] ? '이 문장으로 바로 답변합니다.' : '추천 문장을 기다리는 중입니다.',
         tone: 'sand',
         onSelect: () => {
           if (visibleSentences[1]) {
@@ -110,7 +104,7 @@ export default function CustomTalkRecommendPage() {
       }}
       topRight={{
         title: visibleSentences[2] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
+        description: visibleSentences[2] ? '이 문장으로 바로 답변합니다.' : '추천 문장을 기다리는 중입니다.',
         tone: 'mint',
         onSelect: () => {
           if (visibleSentences[2]) {
