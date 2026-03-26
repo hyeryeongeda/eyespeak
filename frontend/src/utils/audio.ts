@@ -1,5 +1,14 @@
 import type { AudioPlaybackHandle, AudioPlaybackSource, TtsAudioResponseDto } from '../types/tts'
 
+type AudioPlaybackEndReason = 'ended' | 'pause' | 'error' | 'cleanup'
+
+interface PlayAudioSourceOptions {
+  audio?: HTMLAudioElement
+  onPlaybackStart?: () => void
+  onPlaybackEnd?: (reason: AudioPlaybackEndReason) => void
+  onPlaybackError?: (error: Error) => void
+}
+
 function writeAscii(view: DataView, offset: number, value: string) {
   for (let index = 0; index < value.length; index += 1) {
     view.setUint8(offset + index, value.charCodeAt(index))
@@ -77,18 +86,83 @@ export function normalizeAudioResponse(
 
 export async function playAudioSource(
   source: AudioPlaybackSource,
-  audio = new Audio(),
+  options: PlayAudioSourceOptions = {},
 ): Promise<AudioPlaybackHandle> {
+  const audio = options.audio ?? new Audio()
+  let isSettled = false
+  let hasStartedPlayback = false
+
+  const removeListeners = () => {
+    audio.removeEventListener('playing', handlePlaying)
+    audio.removeEventListener('ended', handleEnded)
+    audio.removeEventListener('pause', handlePause)
+    audio.removeEventListener('error', handleError)
+  }
+
+  const cleanupSource = () => {
+    audio.pause()
+    audio.removeAttribute('src')
+    audio.load()
+    source.revoke?.()
+  }
+
+  const finalizePlayback = (reason: AudioPlaybackEndReason) => {
+    if (isSettled) {
+      return
+    }
+
+    isSettled = true
+    removeListeners()
+    cleanupSource()
+    options.onPlaybackEnd?.(reason)
+  }
+
+  const handlePlaying = () => {
+    if (hasStartedPlayback || isSettled) {
+      return
+    }
+
+    hasStartedPlayback = true
+    options.onPlaybackStart?.()
+  }
+
+  const handleEnded = () => {
+    finalizePlayback('ended')
+  }
+
+  const handlePause = () => {
+    if (isSettled || audio.ended) {
+      return
+    }
+
+    finalizePlayback('pause')
+  }
+
+  const handleError = () => {
+    const error = new Error('Audio playback failed.')
+
+    options.onPlaybackError?.(error)
+    finalizePlayback('error')
+  }
+
+  audio.addEventListener('playing', handlePlaying)
+  audio.addEventListener('ended', handleEnded)
+  audio.addEventListener('pause', handlePause)
+  audio.addEventListener('error', handleError)
   audio.src = source.src
-  await audio.play()
+
+  try {
+    await audio.play()
+  } catch (error) {
+    removeListeners()
+    cleanupSource()
+    throw error
+  }
 
   return {
     audio,
     cleanup: () => {
-      audio.pause()
-      audio.removeAttribute('src')
-      audio.load()
-      source.revoke?.()
+      finalizePlayback('cleanup')
     },
   }
 }
