@@ -1,13 +1,19 @@
-import { useEffect, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import {
+  getWeightedInteractiveTargetFromArea,
   getTrackingTargetIdFromPoint,
   isPointInsideElement,
 } from '../services/trackingService'
+import {
+  getPatientSelectionProfile,
+  type PatientSelectionSurface,
+} from '../services/patientSelectionPolicy'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 
 interface UseTrackingOptions {
   containerRef: RefObject<HTMLElement | null>
   enabled?: boolean
+  selectionSurface?: PatientSelectionSurface
 }
 
 interface InputTrackingState<TTarget extends string> {
@@ -23,6 +29,11 @@ interface TrackingState<TTarget extends string>
   gazeHoveredTargetId: TTarget | null
 }
 
+interface TrackingTargetCandidate<TTarget extends string> {
+  targetId: TTarget | null
+  confidence: number
+}
+
 const INITIAL_INPUT_TRACKING_STATE = {
   hoveredTargetId: null,
   isPointerInside: false,
@@ -36,14 +47,33 @@ const INITIAL_TRACKING_STATE = {
   gazeHoveredTargetId: null,
 } as const
 
+const INITIAL_TRACKING_TARGET_CANDIDATE = {
+  targetId: null,
+  confidence: 0,
+} as const
+
 export function useTracking<TTarget extends string>({
   containerRef,
   enabled = true,
+  selectionSurface = 'common',
 }: UseTrackingOptions): TrackingState<TTarget> {
+  const selectionProfile = useMemo(
+    () => getPatientSelectionProfile(selectionSurface),
+    [selectionSurface],
+  )
   const [trackingState, setTrackingState] =
     useState<InputTrackingState<TTarget>>(INITIAL_INPUT_TRACKING_STATE)
-  const [gazeTrackingState, setGazeTrackingState] =
-    useState<InputTrackingState<TTarget>>(INITIAL_INPUT_TRACKING_STATE)
+  const [isGazeInside, setIsGazeInside] = useState(false)
+  const [gazeRawTarget, setGazeRawTarget] = useState<TrackingTargetCandidate<TTarget>>(
+    INITIAL_TRACKING_TARGET_CANDIDATE,
+  )
+  const [gazeStableTarget, setGazeStableTarget] = useState<TrackingTargetCandidate<TTarget>>(
+    INITIAL_TRACKING_TARGET_CANDIDATE,
+  )
+  const pendingGazeTargetRef = useRef<TrackingTargetCandidate<TTarget>>(
+    INITIAL_TRACKING_TARGET_CANDIDATE,
+  )
+  const targetSwitchTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (!enabled) {
@@ -101,39 +131,73 @@ export function useTracking<TTarget extends string>({
 
   useEffect(() => {
     if (!enabled) {
+      setIsGazeInside(false)
+      setGazeRawTarget(INITIAL_TRACKING_TARGET_CANDIDATE)
+      setGazeStableTarget(INITIAL_TRACKING_TARGET_CANDIDATE)
       return
     }
 
     let frameId = 0
+    const resolveTrackingCandidate = (
+      clientX: number,
+      clientY: number,
+      container: HTMLElement,
+    ): TrackingTargetCandidate<TTarget> => {
+      const areaTarget = getWeightedInteractiveTargetFromArea(clientX, clientY, {
+        container,
+        radiusPx: selectionProfile.areaHitRadiusPx,
+      })
+      const areaTargetId = areaTarget?.element.dataset.trackingId as TTarget | undefined
+
+      if (areaTarget && areaTargetId) {
+        return {
+          targetId: areaTargetId,
+          confidence: 0.55 + areaTarget.score * 0.45,
+        }
+      }
+
+      const pointTargetId = getTrackingTargetIdFromPoint<TTarget>(clientX, clientY, container)
+
+      return pointTargetId
+        ? {
+            targetId: pointTargetId,
+            confidence: 0.88,
+          }
+        : INITIAL_TRACKING_TARGET_CANDIDATE
+    }
 
     const updateFromPoint = () => {
       const gazePoint = useGazeInputStore.getState().point
       const container = containerRef.current
 
       if (!gazePoint || !container) {
-        setGazeTrackingState(INITIAL_INPUT_TRACKING_STATE)
+        setIsGazeInside(false)
+        setGazeRawTarget(INITIAL_TRACKING_TARGET_CANDIDATE)
         return
       }
 
       const isPointerInside = isPointInsideElement(gazePoint.clientX, gazePoint.clientY, container)
 
       if (!isPointerInside) {
-        setGazeTrackingState(INITIAL_INPUT_TRACKING_STATE)
+        setIsGazeInside(false)
+        setGazeRawTarget(INITIAL_TRACKING_TARGET_CANDIDATE)
         return
       }
 
-      setGazeTrackingState({
-        hoveredTargetId: getTrackingTargetIdFromPoint<TTarget>(
+      setIsGazeInside(true)
+      setGazeRawTarget(current => {
+        const nextCandidate = resolveTrackingCandidate(
           gazePoint.clientX,
           gazePoint.clientY,
           container,
-        ),
-        isPointerInside: true,
-        pointerType: 'gaze',
-        inputSource: 'gaze',
+        )
+
+        return current.targetId === nextCandidate.targetId &&
+          current.confidence === nextCandidate.confidence
+          ? current
+          : nextCandidate
       })
     }
-
 
     const tick = () => {
       updateFromPoint()
@@ -145,20 +209,84 @@ export function useTracking<TTarget extends string>({
     return () => {
       window.cancelAnimationFrame(frameId)
     }
-  }, [containerRef, enabled])
+  }, [containerRef, enabled, selectionProfile.areaHitRadiusPx])
+
+  useEffect(() => {
+    const clearTargetSwitchTimer = () => {
+      if (targetSwitchTimerRef.current !== null) {
+        window.clearTimeout(targetSwitchTimerRef.current)
+        targetSwitchTimerRef.current = null
+      }
+    }
+
+    if (!enabled || !isGazeInside) {
+      clearTargetSwitchTimer()
+      setGazeStableTarget(INITIAL_TRACKING_TARGET_CANDIDATE)
+      return
+    }
+
+    const currentTargetId = gazeStableTarget.targetId
+    const nextTargetId = gazeRawTarget.targetId
+
+    if (currentTargetId === nextTargetId) {
+      clearTargetSwitchTimer()
+
+      if (
+        gazeStableTarget.confidence !== gazeRawTarget.confidence &&
+        nextTargetId !== null
+      ) {
+        setGazeStableTarget(gazeRawTarget)
+      }
+
+      return
+    }
+
+    if (!currentTargetId && nextTargetId) {
+      clearTargetSwitchTimer()
+      setGazeStableTarget(gazeRawTarget)
+      return
+    }
+
+    if (
+      currentTargetId &&
+      nextTargetId &&
+      gazeRawTarget.confidence < gazeStableTarget.confidence + selectionProfile.switchMargin
+    ) {
+      clearTargetSwitchTimer()
+      return
+    }
+
+    clearTargetSwitchTimer()
+
+    pendingGazeTargetRef.current = gazeRawTarget
+    targetSwitchTimerRef.current = window.setTimeout(() => {
+      targetSwitchTimerRef.current = null
+      setGazeStableTarget(pendingGazeTargetRef.current)
+    }, nextTargetId !== null ? selectionProfile.switchHoldMs : selectionProfile.stableHoldMs)
+
+    return clearTargetSwitchTimer
+  }, [enabled, gazeRawTarget, gazeStableTarget, isGazeInside, selectionProfile])
 
   if (!enabled) {
     return INITIAL_TRACKING_STATE
   }
 
-  const activeTrackingState = gazeTrackingState.isPointerInside ? gazeTrackingState : trackingState
+  const gazeHoveredTargetId = isGazeInside ? gazeStableTarget.targetId : null
+  const activeTrackingState: InputTrackingState<TTarget> = gazeHoveredTargetId
+    ? {
+        hoveredTargetId: gazeHoveredTargetId,
+        isPointerInside: true,
+        pointerType: 'gaze',
+        inputSource: 'gaze',
+      }
+    : trackingState
   const pointerHoveredTargetId =
     trackingState.pointerType === 'mouse' ? trackingState.hoveredTargetId : null
 
   return {
     ...activeTrackingState,
     pointerHoveredTargetId,
-    gazeHoveredTargetId: gazeTrackingState.hoveredTargetId,
+    gazeHoveredTargetId,
   }
 }
 

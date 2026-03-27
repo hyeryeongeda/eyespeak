@@ -157,6 +157,7 @@ export default function BodyMindPainAreaPage() {
             description="몸과 마음 메인으로 이동"
             tone="slate"
             badge="고정 위치"
+            trackingId="body-mind-pain-area-back"
             onSelect={handleBack}
           />
         }

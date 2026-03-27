@@ -9,6 +9,7 @@ import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGa
 import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
 import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
+import type { PatientSelectionSurface } from '../../features/patient/input/services/patientSelectionPolicy'
 import {
   isPatientTrackingAvailable,
   isPatientTrackingBlocked,
@@ -61,6 +62,33 @@ function isChatRouteKind(kind: string | null | undefined) {
   return kind === 'talk' || kind === 'custom_talk'
 }
 
+function getPatientSelectionSurface(pathname: string): PatientSelectionSurface {
+  if (pathname === ROUTE_PATHS.PATIENT_MAIN) {
+    return 'main'
+  }
+
+  if (pathname === ROUTE_PATHS.PATIENT_TALK_MAIN) {
+    return 'menu'
+  }
+
+  if (pathname === ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD) {
+    return 'keyboard'
+  }
+
+  if (pathname.startsWith(ROUTE_PATHS.PATIENT_CUSTOM_TALK)) {
+    return 'custom-talk'
+  }
+
+  if (
+    pathname.startsWith(ROUTE_PATHS.PATIENT_BODY_MIND) ||
+    pathname.startsWith(ROUTE_PATHS.PATIENT_FAVORITES)
+  ) {
+    return 'menu'
+  }
+
+  return 'common'
+}
+
 type PatientChatDebugWindow = Window & {
   __patientChatDebug?: {
     presets: string[]
@@ -92,6 +120,7 @@ function PatientLayoutShell() {
   const isTrackingBlocked = isPatientTrackingBlocked(trackingStatus)
   const eyeTrackingProfileId = getPatientEyeTrackingProfileId(user)
   const currentRouteKind = chat.state.currentRoute?.kind ?? getPatientLayoutRouteKind(location.pathname)
+  const currentSelectionSurface = getPatientSelectionSurface(location.pathname)
   const currentRoutePath = `${location.pathname}${location.search}`
   const shouldShowLeisureReturnOverlay =
     !isCalibrationRoute &&
@@ -108,7 +137,7 @@ function PatientLayoutShell() {
       !isCalibrationRoute &&
       !isGlobalMenuOpen &&
       isPatientTrackingAvailable(trackingStatus),
-    customTalkSelectionScopeEnabled: currentRouteKind === 'custom_talk',
+    selectionSurface: currentSelectionSurface,
   })
   usePatientModeDwellSync({
     enabled: !isCalibrationRoute,

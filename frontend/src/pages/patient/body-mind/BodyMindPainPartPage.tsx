@@ -212,6 +212,7 @@ export default function BodyMindPainPartPage() {
             description="통증 범위 선택으로 이동"
             tone="slate"
             badge="고정 위치"
+            trackingId="body-mind-pain-part-back"
             onSelect={handleBack}
           />
         }

@@ -227,6 +227,7 @@ export default function GlobalMenuOverlay() {
   const { gazeHoveredTargetId, pointerHoveredTargetId } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
+    selectionSurface: 'global-menu',
   })
   const highlightedTargetId =
     pendingTargetId === null
