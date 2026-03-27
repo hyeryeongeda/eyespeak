@@ -7,110 +7,122 @@ interface LeisureReplyReturnOverlayProps {
   onReturnToMain: () => void
 }
 
+const overlayCopy = {
+  title: '\uB2F5\uBCC0\uC744 \uBCF4\uB0C8\uC5B4\uC694.\n\uC5B4\uB514\uB85C \uB3CC\uC544\uAC08\uAE4C\uC694?',
+  leisure: '\uC5EC\uAC00\uB85C\n\uB3CC\uC544\uAC00\uAE30',
+  main: '\uBA54\uC778\uD654\uBA74\uC73C\uB85C\n\uB3CC\uC544\uAC00\uAE30',
+}
+
 const backdropStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px',
+  padding: 'clamp(12px, 2vw, 28px)',
   background:
-    'linear-gradient(180deg, rgba(239, 245, 251, 0.82) 0%, rgba(228, 236, 246, 0.88) 100%)',
+    'radial-gradient(circle at top, rgba(255, 255, 255, 0.72) 0%, rgba(247, 249, 252, 0.92) 44%, rgba(237, 241, 246, 0.96) 100%)',
   backdropFilter: 'blur(10px)',
   zIndex: 1135,
 }
 
-const panelStyle: CSSProperties = {
-  width: 'min(760px, 100%)',
+const shellStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 0.94fr) minmax(0, 1.08fr) minmax(0, 0.94fr)',
+  gap: '0',
   borderRadius: '30px',
-  padding: '32px 28px',
-  background:
-    'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 249, 253, 0.96) 100%)',
-  border: '1px solid rgba(212, 225, 236, 0.96)',
-  boxShadow: '0 24px 56px rgba(60, 80, 104, 0.16)',
+  overflow: 'hidden',
+  border: '1px solid rgba(200, 208, 221, 0.92)',
+  boxShadow: '0 28px 60px rgba(70, 88, 112, 0.14)',
+}
+
+const panelBaseStyle: CSSProperties = {
+  minWidth: 0,
+  minHeight: 0,
   display: 'flex',
-  flexDirection: 'column',
-  gap: '24px',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 'clamp(24px, 4vw, 40px)',
+  textAlign: 'center',
+}
+
+const choiceButtonBaseStyle: CSSProperties = {
+  ...panelBaseStyle,
+  width: '100%',
+  height: '100%',
+  appearance: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  background: 'transparent',
+  transition: 'transform 0.18s ease, filter 0.18s ease, box-shadow 0.18s ease',
+}
+
+const leisureChoiceStyle: CSSProperties = {
+  ...choiceButtonBaseStyle,
+  background: 'linear-gradient(180deg, #eef4ee 0%, #eaf1ea 100%)',
+  borderRight: '1px solid rgba(194, 204, 214, 0.92)',
+}
+
+const centerPanelStyle: CSSProperties = {
+  ...panelBaseStyle,
+  background:
+    'linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(252, 252, 252, 0.98) 100%)',
+  borderRight: '1px solid rgba(194, 204, 214, 0.92)',
+}
+
+const mainChoiceStyle: CSSProperties = {
+  ...choiceButtonBaseStyle,
+  background: 'linear-gradient(180deg, #f2f4fa 0%, #eceff6 100%)',
 }
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  color: '#213244',
-  fontSize: 'clamp(1.8rem, 2.8vw, 2.3rem)',
+  color: '#111111',
+  fontSize: 'clamp(2rem, 3.2vw, 3rem)',
   fontWeight: 900,
-  lineHeight: 1.3,
-  letterSpacing: '-0.03em',
-  textAlign: 'center',
+  lineHeight: 1.24,
+  letterSpacing: '-0.04em',
+  whiteSpace: 'pre-line',
+  wordBreak: 'keep-all',
 }
 
-const descriptionStyle: CSSProperties = {
+const choiceLabelStyle: CSSProperties = {
   margin: 0,
-  color: '#66788f',
-  fontSize: 'clamp(1rem, 1.5vw, 1.1rem)',
-  fontWeight: 700,
-  lineHeight: 1.6,
-  textAlign: 'center',
-}
-
-const actionRowStyle: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '16px',
-}
-
-const actionButtonBaseStyle: CSSProperties = {
-  appearance: 'none',
-  borderRadius: '24px',
-  padding: '26px 20px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  alignItems: 'center',
-  justifyContent: 'center',
-  textAlign: 'center',
-  cursor: 'pointer',
-  border: '1px solid rgba(214, 222, 232, 0.96)',
-  backgroundColor: '#ffffff',
-  boxShadow: '0 16px 34px rgba(41, 57, 79, 0.08)',
-}
-
-const leisureButtonStyle: CSSProperties = {
-  ...actionButtonBaseStyle,
-  background: 'linear-gradient(180deg, #eff7f0 0%, #ebf8f6 100%)',
-}
-
-const mainButtonStyle: CSSProperties = {
-  ...actionButtonBaseStyle,
-  background: 'linear-gradient(180deg, #f7f8fc 0%, #edf1f7 100%)',
-}
-
-const actionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#203042',
-  fontSize: 'clamp(1.5rem, 2.2vw, 1.9rem)',
+  color: '#111111',
+  fontSize: 'clamp(2rem, 3vw, 2.8rem)',
   fontWeight: 900,
-  lineHeight: 1.3,
+  lineHeight: 1.18,
+  letterSpacing: '-0.04em',
+  whiteSpace: 'pre-line',
+  wordBreak: 'keep-all',
 }
 
-const actionDescriptionStyle: CSSProperties = {
-  margin: 0,
-  color: '#687b91',
-  fontSize: '0.98rem',
-  fontWeight: 700,
-  lineHeight: 1.5,
-}
-
-const buttonCss = `
-  .leisure-reply-return-button:hover,
-  .leisure-reply-return-button:focus-visible {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 42px rgba(53, 77, 103, 0.14);
+const overlayCss = `
+  .leisure-reply-return-choice:hover,
+  .leisure-reply-return-choice:focus-visible {
+    transform: scale(1.012);
+    filter: brightness(0.985);
+    box-shadow: inset 0 0 0 2px rgba(98, 121, 150, 0.22);
     outline: none;
   }
 
-  @media (max-width: 720px) {
-    .leisure-reply-return-actions {
-      grid-template-columns: 1fr !important;
+  .leisure-reply-return-choice:active {
+    transform: scale(1);
+  }
+
+  @media (max-width: 920px) {
+    .leisure-reply-return-shell {
+      grid-template-columns: 1fr;
+      grid-template-rows: minmax(180px, 0.84fr) minmax(160px, 1fr) minmax(160px, 1fr);
+    }
+
+    .leisure-reply-return-panel-center {
+      border-right: none !important;
+      border-bottom: 1px solid rgba(194, 204, 214, 0.92);
+    }
+
+    .leisure-reply-return-panel-left {
+      border-right: none !important;
+      border-bottom: 1px solid rgba(194, 204, 214, 0.92);
     }
   }
 `
@@ -133,36 +145,37 @@ export default function LeisureReplyReturnOverlay({
 
   return (
     <div style={backdropStyle} role="dialog" aria-modal="true" aria-labelledby="reply-return-title">
-      <style>{buttonCss}</style>
-      <div style={panelStyle}>
-        <h2 id="reply-return-title" style={titleStyle}>
-          답변을 보냈어요. 어디로 돌아갈까요?
-        </h2>
-        <p style={descriptionStyle}>
-          지금 보고 있던 여가 화면으로 이어서 돌아가거나 메인 화면으로 이동할 수 있어요.
-        </p>
+      <style>{overlayCss}</style>
+      <div className="leisure-reply-return-shell" style={shellStyle}>
+        <button
+          type="button"
+          className="leisure-reply-return-choice leisure-reply-return-panel-left"
+          style={leisureChoiceStyle}
+          onClick={onReturnToLeisure}
+          aria-label="\uC5EC\uAC00\uB85C \uB3CC\uC544\uAC00\uAE30"
+        >
+          <p style={choiceLabelStyle}>{overlayCopy.leisure}</p>
+        </button>
 
-        <div className="leisure-reply-return-actions" style={actionRowStyle}>
-          <button
-            type="button"
-            className="leisure-reply-return-button"
-            style={leisureButtonStyle}
-            onClick={onReturnToLeisure}
-          >
-            <p style={actionTitleStyle}>여가로 돌아가기</p>
-            <p style={actionDescriptionStyle}>현재 여가 화면과 재생 상태를 그대로 이어서 봅니다.</p>
-          </button>
-
-          <button
-            type="button"
-            className="leisure-reply-return-button"
-            style={mainButtonStyle}
-            onClick={onReturnToMain}
-          >
-            <p style={actionTitleStyle}>메인 화면으로 돌아가기</p>
-            <p style={actionDescriptionStyle}>환자 메인 화면으로 이동합니다.</p>
-          </button>
+        <div
+          className="leisure-reply-return-panel-center"
+          style={centerPanelStyle}
+          aria-live="polite"
+        >
+          <h2 id="reply-return-title" style={titleStyle}>
+            {overlayCopy.title}
+          </h2>
         </div>
+
+        <button
+          type="button"
+          className="leisure-reply-return-choice"
+          style={mainChoiceStyle}
+          onClick={onReturnToMain}
+          aria-label="\uBA54\uC778\uD654\uBA74\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30"
+        >
+          <p style={choiceLabelStyle}>{overlayCopy.main}</p>
+        </button>
       </div>
     </div>
   )
