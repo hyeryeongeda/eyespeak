@@ -13,6 +13,7 @@ export interface CustomTalkGuardianPromptCard {
   tone: CustomTalkGuardianPromptTone
   onSelect: () => void
   disabled?: boolean
+  commitDisabled?: boolean
   trackingId?: string
   loading?: boolean
   loadingLabel?: string
@@ -169,7 +170,7 @@ const loadingLabelStyle: CSSProperties = {
 }
 
 const layoutCss = `
-  .custom-talk-guardian-prompt-card:hover:not(:disabled) {
+  .custom-talk-guardian-prompt-card:hover:not([aria-disabled='true']) {
     transform: translateY(-3px);
     box-shadow: 0 16px 34px rgba(76, 91, 108, 0.11);
   }
@@ -219,6 +220,13 @@ const layoutCss = `
   }
 `
 
+const guardianPromptCellByArea: Record<string, number> = {
+  'top-left': 0,
+  'top-right': 2,
+  'bottom-left': 3,
+  'bottom-right': 5,
+}
+
 function ActionCard({
   gridArea,
   card,
@@ -229,6 +237,9 @@ function ActionCard({
   dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
   const isLoading = card.loading ?? false
+  const isUnavailable = card.disabled ?? false
+  const isCommitDisabled = card.commitDisabled ?? false
+  const isInteractionBlocked = isUnavailable || isCommitDisabled
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(
     dwellFeedback ?? {
       activeTargetId: null,
@@ -243,10 +254,25 @@ function ActionCard({
     <button
       type="button"
       className="custom-talk-guardian-prompt-card"
-      style={getCardStyle(gridArea, card.tone, card.disabled ?? false, isLoading)}
-      disabled={card.disabled}
-      onClick={card.onSelect}
-      data-tracking-id={card.disabled ? undefined : card.trackingId}
+      style={getCardStyle(gridArea, card.tone, isInteractionBlocked, isLoading)}
+      aria-disabled={isInteractionBlocked || undefined}
+      tabIndex={isInteractionBlocked ? -1 : undefined}
+      onClick={event => {
+        if (isInteractionBlocked) {
+          event.preventDefault()
+          event.stopPropagation()
+          return
+        }
+
+        card.onSelect()
+      }}
+      data-tracking-id={card.trackingId}
+      data-gaze-selectable={card.trackingId ? 'true' : undefined}
+      data-gaze-commit-disabled={isInteractionBlocked ? 'true' : undefined}
+      data-gaze-disabled-reason={
+        isCommitDisabled ? 'busy' : isUnavailable ? 'unavailable' : undefined
+      }
+      data-cell={card.trackingId ? guardianPromptCellByArea[gridArea] : undefined}
       aria-busy={isLoading || undefined}
     >
       {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}
@@ -273,6 +299,8 @@ export default function CustomTalkGuardianPromptLayout({
   bottomRight,
   dwellFeedback,
 }: CustomTalkGuardianPromptLayoutProps) {
+  const setContainerElement = dwellFeedback?.setContainerElement
+
   return (
     <main
       className="custom-talk-guardian-prompt-page"
@@ -285,11 +313,7 @@ export default function CustomTalkGuardianPromptLayout({
         <div
           className="custom-talk-guardian-prompt-grid"
           style={gridStyle}
-          ref={element => {
-            if (dwellFeedback) {
-              dwellFeedback.containerRef.current = element
-            }
-          }}
+          ref={setContainerElement}
         >
           <ActionCard gridArea="top-left" card={topLeft} dwellFeedback={dwellFeedback} />
           <ActionCard gridArea="top-right" card={topRight} dwellFeedback={dwellFeedback} />

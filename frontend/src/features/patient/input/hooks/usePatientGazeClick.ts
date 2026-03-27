@@ -11,6 +11,10 @@ import {
   getInteractiveElementSelectionKey,
   isInteractiveElementEligibleForGlobalGazeSelection,
 } from '../services/trackingService'
+import {
+  normalizePatientCellMappingTarget,
+  type PatientCellMapping,
+} from '../services/patientCellMapping'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import { useCellMappingStore } from '../stores/cellMappingStore'
 import { usePatientModeStore } from '../stores/patientModeStore'
@@ -18,24 +22,36 @@ import {
   ACTIVATION_DELAY_OPTIONS,
   type ActivationDelayPreset,
 } from '../../../../types/care'
+import {
+  useGazeSelectionStore,
+  type GazeSelectionCommitSource,
+} from '../stores/gazeSelectionStore'
 
 interface UsePatientGazeClickOptions {
   enabled?: boolean
 }
 
-const GAZE_TARGET_SWITCH_GRACE_MS = 500
+const GAZE_TARGET_SWITCH_GRACE_MS = 160
 const SELECTION_CONFIRM_FEEDBACK_MS = 3000
 const SELECTION_COMMIT_DELAY_MS = 0
 const TARGET_RESELECTION_COOLDOWN_MS = 2000
 
-interface GazeTarget {
+type SelectionTargetSource =
+  | 'cell-mapping'
+  | 'patient-main-point'
+  | 'point-hit-test'
+  | 'point-nearest'
+
+type GazePoint = { clientX: number; clientY: number; updatedAt?: number } | null
+
+interface SelectionTarget {
   element: HTMLElement
   key: string
-  source: 'cell-mapping' | 'point-hit-test' | 'cell-dom-fallback'
+  trackingId: string | null
+  source: SelectionTargetSource
   cell: number | null
+  groupId: string | null
 }
-
-type PatientSelectionCommitSource = 'gaze-dwell' | 'pointer-dwell'
 
 interface SelectionCooldownEntry {
   element: HTMLElement | null
@@ -43,11 +59,16 @@ interface SelectionCooldownEntry {
   timerId: number
 }
 
+type PatientDebugWindow = Window & {
+  __DEV_GAZE_DISABLE_POINT_HIT_TEST?: boolean
+  __PATIENT_GAZE_DEBUG_STATE?: unknown
+}
+
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
   return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
 }
 
-function getElementByTrackingId(trackingId: string): HTMLElement | null {
+function getElementByTrackingId(trackingId: string) {
   if (typeof document === 'undefined') {
     return null
   }
@@ -60,36 +81,41 @@ function getElementByTrackingId(trackingId: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[data-tracking-id="${escapedTrackingId}"]`)
 }
 
+function createSelectionTarget(
+  element: HTMLElement,
+  source: SelectionTargetSource,
+  cell: number | null,
+  groupId: string | null = null,
+): SelectionTarget {
+  return {
+    element,
+    key: getInteractiveElementSelectionKey(element),
+    trackingId: element.dataset.trackingId ?? null,
+    source,
+    cell,
+    groupId,
+  }
+}
+
 function isPatientMainTrackingId(value: string | null | undefined) {
   return value === 'talk' || value === 'call' || value === 'leisure'
 }
 
-function getPatientMainPointTarget(gazePoint: { clientX: number; clientY: number } | null): GazeTarget | null {
+function getPatientMainPointTarget(gazePoint: GazePoint): SelectionTarget | null {
   if (!gazePoint) {
     return null
   }
 
   const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
 
-  if (!element) {
+  if (!element || !isPatientMainTrackingId(element.dataset.trackingId)) {
     return null
   }
 
-  const trackingId = element.dataset.trackingId
-
-  if (!isPatientMainTrackingId(trackingId)) {
-    return null
-  }
-
-  return {
-    element,
-    key: getInteractiveElementSelectionKey(element),
-    source: 'point-hit-test',
-    cell: null,
-  }
+  return createSelectionTarget(element, 'patient-main-point', null, element.dataset.trackingId ?? null)
 }
 
-function getFallbackPatientMainCellMapping(): Record<number, string | null> | null {
+function getFallbackPatientMainCellMapping(): PatientCellMapping | null {
   if (typeof document === 'undefined') {
     return null
   }
@@ -113,40 +139,12 @@ function getFallbackPatientMainCellMapping(): Record<number, string | null> | nu
   }
 }
 
-function getMappedGazeTarget(
-  cell: number | null,
-  mapping: Record<number, string | null> | null,
-): GazeTarget | null {
-  const mappedTrackingId = typeof cell === 'number' && mapping ? (mapping[cell] ?? null) : null
-
-  if (!mappedTrackingId) {
-    return null
-  }
-
-  const mappedElement = getElementByTrackingId(mappedTrackingId)
-
-  if (!mappedElement) {
-    return null
-  }
-
-  return {
-    element: mappedElement,
-    key: getInteractiveElementSelectionKey(mappedElement),
-    source: 'cell-mapping',
-    cell,
-  }
-}
-
-function isElementVisuallyInteractive(element: HTMLElement) {
+function isElementVisibleForSelection(element: HTMLElement) {
   if (!element.isConnected) {
     return false
   }
 
   if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
-    return false
-  }
-
-  if (element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') {
     return false
   }
 
@@ -164,15 +162,30 @@ function isElementVisuallyInteractive(element: HTMLElement) {
   return rect.width > 0 && rect.height > 0
 }
 
-function getNearestInteractiveTargetFromPoint(
-  point: { clientX: number; clientY: number } | null,
-): GazeTarget | null {
-  if (typeof document === 'undefined' || !point) {
+function isElementVisuallyInteractive(element: HTMLElement) {
+  if (!isElementVisibleForSelection(element)) {
+    return false
+  }
+
+  if (element.matches(':disabled')) {
+    return false
+  }
+
+  return (
+    element.getAttribute('aria-disabled') !== 'true' ||
+    element.dataset.gazeCommitDisabled === 'true'
+  )
+}
+
+function getNearestInteractiveTargetFromPoint(gazePoint: GazePoint): SelectionTarget | null {
+  if (typeof document === 'undefined' || !gazePoint) {
     return null
   }
 
   const interactiveElements = Array.from(
-    document.querySelectorAll<HTMLElement>('button, a[href], input[type="button"], input[type="submit"], [role="button"]')
+    document.querySelectorAll<HTMLElement>(
+      'button, a[href], input[type="button"], input[type="submit"], [role="button"]',
+    ),
   ).filter(isElementVisuallyInteractive)
 
   if (interactiveElements.length === 0) {
@@ -184,33 +197,177 @@ function getNearestInteractiveTargetFromPoint(
       return current
     }
 
-    const cr = current.getBoundingClientRect()
-    const br = best.getBoundingClientRect()
+    const currentRect = current.getBoundingClientRect()
+    const bestRect = best.getBoundingClientRect()
+    const currentCenterX = currentRect.left + currentRect.width / 2
+    const currentCenterY = currentRect.top + currentRect.height / 2
+    const bestCenterX = bestRect.left + bestRect.width / 2
+    const bestCenterY = bestRect.top + bestRect.height / 2
+    const currentDistance = Math.hypot(
+      gazePoint.clientX - currentCenterX,
+      gazePoint.clientY - currentCenterY,
+    )
+    const bestDistance = Math.hypot(
+      gazePoint.clientX - bestCenterX,
+      gazePoint.clientY - bestCenterY,
+    )
 
-    const ccx = cr.left + cr.width / 2
-    const ccy = cr.top + cr.height / 2
-    const bcx = br.left + br.width / 2
-    const bcy = br.top + br.height / 2
-
-    const currentDist = Math.hypot(point.clientX - ccx, point.clientY - ccy)
-    const bestDist = Math.hypot(point.clientX - bcx, point.clientY - bcy)
-
-    return currentDist < bestDist ? current : best
+    return currentDistance < bestDistance ? current : best
   }, null)
 
-  if (!nearest) {
+  return nearest ? createSelectionTarget(nearest, 'point-nearest', null) : null
+}
+
+function getNearestTrackingId(
+  trackingIds: string[],
+  gazePoint: GazePoint,
+) {
+  if (!gazePoint || trackingIds.length === 0) {
     return null
   }
 
-  return {
-    element: nearest,
-    key: getInteractiveElementSelectionKey(nearest),
-    source: 'point-hit-test',
-    cell: null,
-  }
+  const nearestElement = trackingIds
+    .map(trackingId => ({
+      trackingId,
+      element: getElementByTrackingId(trackingId),
+    }))
+    .filter(
+      (
+        entry,
+      ): entry is {
+        trackingId: string
+        element: HTMLElement
+      } => Boolean(entry.element && isElementVisibleForSelection(entry.element)),
+    )
+    .reduce<{
+      trackingId: string
+      element: HTMLElement
+      distance: number
+    } | null>((best, current) => {
+      const rect = current.element.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      const distance = Math.hypot(gazePoint.clientX - centerX, gazePoint.clientY - centerY)
+
+      if (!best || distance < best.distance) {
+        return { ...current, distance }
+      }
+
+      return best
+    }, null)
+
+  return nearestElement?.trackingId ?? null
 }
 
-function getInteractiveElementBlockReason(element: HTMLElement | null) {
+function resolveMappedGazeTarget(input: {
+  cell: number | null
+  mapping: PatientCellMapping | null
+  gazePoint: GazePoint
+  stableTarget: SelectionTarget | null
+  pointTrackingId: string | null
+}): SelectionTarget | null {
+  const { cell, mapping, gazePoint, stableTarget, pointTrackingId } = input
+
+  if (cell === null || !mapping) {
+    return null
+  }
+
+  const normalizedTarget = normalizePatientCellMappingTarget(mapping[cell] ?? null)
+
+  if (normalizedTarget.allTargets.length === 0) {
+    return null
+  }
+
+  const stableTrackingId = stableTarget?.trackingId ?? null
+
+  const resolveTrackingId = (trackingIds: string[]) => {
+    if (trackingIds.length === 0) {
+      return null
+    }
+
+    if (pointTrackingId && trackingIds.includes(pointTrackingId)) {
+      return pointTrackingId
+    }
+
+    if (stableTrackingId && trackingIds.includes(stableTrackingId)) {
+      return stableTrackingId
+    }
+
+    return getNearestTrackingId(trackingIds, gazePoint) ?? trackingIds[0] ?? null
+  }
+
+  const trackingId =
+    resolveTrackingId(normalizedTarget.targets) ??
+    resolveTrackingId(normalizedTarget.fallbackTargets)
+
+  if (!trackingId) {
+    return null
+  }
+
+  const mappedElement = getElementByTrackingId(trackingId)
+
+  if (!mappedElement || !isElementVisibleForSelection(mappedElement)) {
+    return null
+  }
+
+  return createSelectionTarget(mappedElement, 'cell-mapping', cell, normalizedTarget.groupId)
+}
+
+function resolveRawGazeTarget(input: {
+  enabled: boolean
+  gazePoint: GazePoint
+  gazeCell: number | null
+  cellMapping: PatientCellMapping | null
+  stableTarget: SelectionTarget | null
+}): SelectionTarget | null {
+  const { enabled, gazePoint, gazeCell, cellMapping, stableTarget } = input
+
+  if (!enabled) {
+    return null
+  }
+
+  const disablePointHitTest =
+    import.meta.env.DEV &&
+    typeof window !== 'undefined' &&
+    (window as PatientDebugWindow).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
+
+  if (gazePoint && !disablePointHitTest) {
+    const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
+    if (patientMainPointTarget) {
+      return patientMainPointTarget
+    }
+  }
+
+  let pointTarget: SelectionTarget | null = null
+
+  if (gazePoint && !disablePointHitTest) {
+    const pointElement = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
+    if (pointElement) {
+      pointTarget = createSelectionTarget(pointElement, 'point-hit-test', gazeCell)
+    }
+  }
+
+  const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
+  const mappedTarget = resolveMappedGazeTarget({
+    cell: gazeCell,
+    mapping: activeCellMapping,
+    gazePoint,
+    stableTarget,
+    pointTrackingId: pointTarget?.trackingId ?? null,
+  })
+
+  if (mappedTarget) {
+    return mappedTarget
+  }
+
+  if (pointTarget) {
+    return pointTarget
+  }
+
+  return getNearestInteractiveTargetFromPoint(gazePoint)
+}
+
+function getSelectionBlockReason(element: HTMLElement | null) {
   if (!element) {
     return 'missing-target'
   }
@@ -219,8 +376,16 @@ function getInteractiveElementBlockReason(element: HTMLElement | null) {
     return 'disconnected'
   }
 
-  if (element.matches(':disabled') || element.getAttribute('aria-disabled') === 'true') {
+  if (element.dataset.gazeCommitDisabled === 'true') {
+    return element.dataset.gazeDisabledReason ?? 'commit-disabled'
+  }
+
+  if (element.matches(':disabled')) {
     return 'disabled'
+  }
+
+  if (element.getAttribute('aria-disabled') === 'true') {
+    return 'aria-disabled'
   }
 
   const computedStyle = window.getComputedStyle(element)
@@ -231,6 +396,10 @@ function getInteractiveElementBlockReason(element: HTMLElement | null) {
 
   if (computedStyle.visibility === 'hidden') {
     return 'visibility-hidden'
+  }
+
+  if (computedStyle.pointerEvents === 'none') {
+    return 'pointer-events-none'
   }
 
   if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
@@ -249,45 +418,51 @@ export function usePatientGazeClick({
   const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const [activationDelayMs, setActivationDelayMs] =
     useState(ACTIVATION_DELAY_OPTIONS.short.value)
-  const activeElementRef = useRef<HTMLElement | null>(null)
+  const [mouseTarget, setMouseTarget] = useState<SelectionTarget | null>(null)
+  const [stableGazeTarget, setStableGazeTarget] = useState<SelectionTarget | null>(null)
   const targetSwitchTimerRef = useRef<number | null>(null)
-  const targetSwitchGraceStartedAtRef = useRef<number | null>(null)
-  const targetSwitchPendingKeyRef = useRef<string | null>(null)
-  const lastGazeTargetDebugSignatureRef = useRef<string | null>(null)
-  const highlightedElementRef = useRef<HTMLElement | null>(null)
+  const targetSwitchStartedAtRef = useRef<number | null>(null)
+  const pendingTargetSwitchKeyRef = useRef<string | null>(null)
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
   const commitDelayTimerRef = useRef<number | null>(null)
   const lastMousePointRef = useRef<{ clientX: number; clientY: number } | null>(null)
+  const lastDebugSignatureRef = useRef<string | null>(null)
+  const lastCancelReasonRef = useRef<string | null>(null)
   const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
-  const [mouseTarget, setMouseTarget] = useState<GazeTarget | null>(null)
-  const [stableGazeTarget, setStableGazeTarget] = useState<GazeTarget | null>(null)
+  const highlightedElementRef = useRef<HTMLElement | null>(null)
+  const mouseTargetRef = useRef<SelectionTarget | null>(null)
+  const stableGazeTargetRef = useRef<SelectionTarget | null>(null)
+  const currentSelectionTargetRef = useRef<SelectionTarget | null>(null)
+  const currentInputSourceRef = useRef<'pointer' | 'gaze' | null>(null)
+
+  const rawGazeTarget = useMemo(
+    () =>
+      resolveRawGazeTarget({
+        enabled,
+        gazePoint,
+        gazeCell,
+        cellMapping,
+        stableTarget: stableGazeTarget,
+      }),
+    [cellMapping, enabled, gazeCell, gazePoint, stableGazeTarget],
+  )
+
+  const currentSelectionTarget = mouseTarget ?? stableGazeTarget ?? null
+  const currentInputSource: 'pointer' | 'gaze' | null = mouseTarget
+    ? 'pointer'
+    : stableGazeTarget
+      ? 'gaze'
+      : null
+  const currentSelectionBlockReason = currentSelectionTarget
+    ? getSelectionBlockReason(currentSelectionTarget.element)
+    : null
 
   const clearConfirmedTimer = () => {
     if (confirmedTimerRef.current !== null) {
       window.clearTimeout(confirmedTimerRef.current)
       confirmedTimerRef.current = null
     }
-  }
-
-  const clearCommitDelayTimer = () => {
-    if (commitDelayTimerRef.current !== null) {
-      window.clearTimeout(commitDelayTimerRef.current)
-      commitDelayTimerRef.current = null
-    }
-  }
-
-  const clearConfirmedSelection = (element?: HTMLElement | null) => {
-    const targetElement = element ?? confirmedElementRef.current
-    if (targetElement) {
-      targetElement.removeAttribute('data-gaze-confirmed')
-    }
-
-    if (!element || confirmedElementRef.current === element) {
-      confirmedElementRef.current = null
-    }
-
-    clearConfirmedTimer()
   }
 
   const clearSelectionCooldown = (targetKey: string) => {
@@ -356,102 +531,11 @@ export function usePatientGazeClick({
     })
   }
 
-  const rawGazeTarget = useMemo(() => {
-    if (!enabled) {
-      return null
-    }
+  const resolveCurrentPointerTarget = () => {
+    const currentTarget = mouseTargetRef.current
 
-    const disablePointHitTest =
-      import.meta.env.DEV &&
-      typeof window !== 'undefined' &&
-      (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
-
-    // 1. 메인 페이지 전용 point-hit-test
-    if (gazePoint && !disablePointHitTest) {
-      const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
-      if (patientMainPointTarget) {
-        return patientMainPointTarget
-      }
-    }
-
-    // 2. Cell mapping 기반 타겟
-    const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
-    const mappedTarget = getMappedGazeTarget(gazeCell, activeCellMapping)
-    if (mappedTarget) {
-      return mappedTarget
-    }
-
-    // 3. 일반 point-hit-test
-    if (gazePoint && !disablePointHitTest) {
-      const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
-      if (element) {
-        return {
-          element,
-          key: getInteractiveElementSelectionKey(element),
-          source: 'point-hit-test' as const,
-          cell: gazeCell,
-        }
-      }
-
-      // 4. 최후 수단: 가장 가까운 interactive 요소
-      const nearest = getNearestInteractiveTargetFromPoint(gazePoint)
-      if (nearest) {
-        return nearest
-      }
-    }
-
-    return null
-  }, [cellMapping, enabled, gazeCell, gazePoint])
-
-  const resolveCurrentGazeTarget = () => {
-    if (stableGazeTarget?.element && stableGazeTarget.element.isConnected) {
-      return stableGazeTarget
-    }
-
-    if (rawGazeTarget?.element && rawGazeTarget.element.isConnected) {
-      return rawGazeTarget
-    }
-
-    const latestPoint = useGazeInputStore.getState().point
-    const latestCell = useGazeInputStore.getState().cell
-
-    if (latestPoint) {
-      const patientMainPointTarget = getPatientMainPointTarget(latestPoint)
-      if (patientMainPointTarget?.element.isConnected) {
-        return patientMainPointTarget
-      }
-
-      const element = getInteractiveElementFromPoint(latestPoint.clientX, latestPoint.clientY)
-
-      if (element) {
-        return {
-          element,
-          key: getInteractiveElementSelectionKey(element),
-          source: 'point-hit-test',
-          cell: useGazeInputStore.getState().cell,
-        }
-      }
-
-      const nearest = getNearestInteractiveTargetFromPoint(latestPoint)
-      if (nearest?.element.isConnected) {
-        return nearest
-      }
-    }
-
-    const mappedTarget = getMappedGazeTarget(
-      latestCell,
-      useCellMappingStore.getState().cellMapping ?? getFallbackPatientMainCellMapping(),
-    )
-    if (mappedTarget?.element.isConnected) {
-      return mappedTarget
-    }
-
-    return null
-  }
-
-  const resolveCurrentMouseTarget = () => {
-    if (mouseTarget?.element && mouseTarget.element.isConnected) {
-      return mouseTarget
+    if (currentTarget?.element && currentTarget.element.isConnected) {
+      return currentTarget
     }
 
     const latestMousePoint = lastMousePointRef.current
@@ -465,31 +549,27 @@ export function usePatientGazeClick({
       latestMousePoint.clientY,
     )
 
-    if (!element) {
-      return null
-    }
-
-    return {
-      element,
-      key: getInteractiveElementSelectionKey(element),
-      source: 'point-hit-test' as const,
-      cell: null,
-    }
+    return element ? createSelectionTarget(element, 'point-hit-test', null) : null
   }
 
-  const commitSelection = (source: PatientSelectionCommitSource) => {
-    const { isGlobalMenuOpen, trackingStatus } = usePatientModeStore.getState()
+  const resolveCurrentGazeTarget = () => {
+    const currentTarget = stableGazeTargetRef.current
 
-    if (import.meta.env.DEV) {
-      console.info('[patient-input] selection-commit-attempt', {
-        source,
-        mouseTargetKey: mouseTarget?.key ?? null,
-        stableTargetKey: stableGazeTarget?.key ?? null,
-        rawTargetKey: rawGazeTarget?.key ?? null,
-        globalMenuOpen: isGlobalMenuOpen,
-        trackingStatus,
-      })
+    if (currentTarget?.element && currentTarget.element.isConnected) {
+      return currentTarget
     }
+
+    return resolveRawGazeTarget({
+      enabled: true,
+      gazePoint: useGazeInputStore.getState().point,
+      gazeCell: useGazeInputStore.getState().cell,
+      cellMapping: useCellMappingStore.getState().cellMapping,
+      stableTarget: stableGazeTargetRef.current,
+    })
+  }
+
+  const commitSelection = (source: GazeSelectionCommitSource) => {
+    const { isGlobalMenuOpen, trackingStatus } = usePatientModeStore.getState()
 
     if (isGlobalMenuOpen) {
       console.info('[patient-input] selection-commit-blocked', {
@@ -497,40 +577,31 @@ export function usePatientGazeClick({
         reason: 'global-menu-open',
         trackingStatus,
       })
-
       return false
     }
 
     if (commitDelayTimerRef.current !== null) {
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] selection-commit-blocked', {
-          source,
-          reason: 'pending-commit',
-          trackingStatus,
-        })
-      }
-
+      console.info('[patient-input] selection-commit-blocked', {
+        source,
+        reason: 'pending-commit',
+        trackingStatus,
+      })
       return false
     }
 
     const resolvedTarget =
       source === 'pointer-dwell'
-        ? resolveCurrentMouseTarget()
+        ? resolveCurrentPointerTarget()
         : resolveCurrentGazeTarget()
 
     if (!resolvedTarget) {
-      activeElementRef.current = null
-
       console.info('[patient-input] selection-commit-blocked', {
         source,
         reason: 'no-active-target',
         trackingStatus,
       })
-
       return false
     }
-
-    activeElementRef.current = resolvedTarget.element
 
     if (isTargetCoolingDown(resolvedTarget.key)) {
       console.info('[patient-input] selection-commit-blocked', {
@@ -539,39 +610,27 @@ export function usePatientGazeClick({
         targetKey: resolvedTarget.key,
         trackingStatus,
       })
-
       return false
     }
 
-    const blockReason = getInteractiveElementBlockReason(resolvedTarget.element)
+    const blockReason = getSelectionBlockReason(resolvedTarget.element)
 
     if (blockReason) {
       console.info('[patient-input] selection-commit-blocked', {
         source,
         reason: blockReason,
         targetKey: resolvedTarget.key,
+        trackingId: resolvedTarget.trackingId,
         targetSource: resolvedTarget.source,
         targetCell: resolvedTarget.cell,
         trackingStatus,
       })
-
+      useGazeSelectionStore.getState().setSelectionSnapshot({
+        debug: {
+          lastCancelReason: blockReason,
+        },
+      })
       return false
-    }
-
-    const computedStyle = window.getComputedStyle(resolvedTarget.element)
-
-    if (import.meta.env.DEV) {
-      console.info('[patient-input] selection-commit-ready', {
-        source,
-        targetKey: resolvedTarget.key,
-        trackingId: resolvedTarget.element.dataset.trackingId ?? null,
-        tagName: resolvedTarget.element.tagName,
-        pointerEvents: computedStyle.pointerEvents,
-        visibility: computedStyle.visibility,
-        targetSource: resolvedTarget.source,
-        targetCell: resolvedTarget.cell,
-        trackingStatus,
-      })
     }
 
     if (source === 'gaze-dwell') {
@@ -582,45 +641,48 @@ export function usePatientGazeClick({
     startSelectionCooldown(resolvedTarget.key, resolvedTarget.element)
     commitDelayTimerRef.current = window.setTimeout(() => {
       commitDelayTimerRef.current = null
-      const el = resolvedTarget.element
-      if (!el.isConnected) {
+
+      if (!resolvedTarget.element.isConnected) {
         console.warn('[patient-input] click-skipped: element disconnected', {
           targetKey: resolvedTarget.key,
-          tagName: el.tagName,
+          trackingId: resolvedTarget.trackingId,
         })
-        const fallbackPoint =
-          source === 'pointer-dwell'
-            ? lastMousePointRef.current
-            : useGazeInputStore.getState().point
-        const fallback = document.elementFromPoint(
-          fallbackPoint?.clientX ?? 0,
-          fallbackPoint?.clientY ?? 0,
-        )
-        if (fallback && fallback instanceof HTMLElement) {
-          console.info('[patient-input] click-fallback', { tagName: fallback.tagName })
-          fallback.click()
-        }
         return
       }
-      console.info('[patient-input] click-dispatch', { tagName: el.tagName, connected: el.isConnected })
-      el.click()
+
+      resolvedTarget.element.click()
     }, SELECTION_COMMIT_DELAY_MS)
 
     console.info('[patient-input] selection-commit-success', {
       source,
       targetKey: resolvedTarget.key,
-      trackingId: resolvedTarget.element.dataset.trackingId ?? null,
-      tagName: resolvedTarget.element.tagName,
-      pointerEvents: computedStyle.pointerEvents,
+      trackingId: resolvedTarget.trackingId,
+      targetSource: resolvedTarget.source,
       trackingStatus,
+    })
+
+    useGazeSelectionStore.getState().setSelectionSnapshot({
+      debug: {
+        lastCommitTargetKey: resolvedTarget.key,
+        lastCommitTargetId: resolvedTarget.trackingId,
+        lastCommitSource: source,
+      },
     })
 
     return true
   }
 
   useEffect(() => {
+    mouseTargetRef.current = mouseTarget
+    stableGazeTargetRef.current = stableGazeTarget
+    currentSelectionTargetRef.current = currentSelectionTarget
+    currentInputSourceRef.current = currentInputSource
+  }, [currentInputSource, currentSelectionTarget, mouseTarget, stableGazeTarget])
+
+  useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
       lastMousePointRef.current = null
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMouseTarget(null)
       return
     }
@@ -647,23 +709,13 @@ export function usePatientGazeClick({
         return
       }
 
-      const nextTarget = {
-        element,
-        key: getInteractiveElementSelectionKey(element),
-        source: 'point-hit-test' as const,
-        cell: null,
-      }
+      const nextTarget = createSelectionTarget(element, 'point-hit-test', null)
 
-      setMouseTarget(current => {
-        if (
-          current?.element === nextTarget.element &&
-          current?.key === nextTarget.key
-        ) {
-          return current
-        }
-
-        return nextTarget
-      })
+      setMouseTarget(current =>
+        current?.key === nextTarget.key && current?.element === nextTarget.element
+          ? current
+          : nextTarget,
+      )
     }
 
     const handleMouseOut = (event: MouseEvent) => {
@@ -694,25 +746,26 @@ export function usePatientGazeClick({
         targetSwitchTimerRef.current = null
       }
     }
-    const resetTargetSwitchGraceTracking = () => {
-      targetSwitchGraceStartedAtRef.current = null
-      targetSwitchPendingKeyRef.current = null
+
+    const resetSwitchGrace = () => {
+      targetSwitchStartedAtRef.current = null
+      pendingTargetSwitchKeyRef.current = null
     }
 
     if (!enabled) {
       clearTargetSwitchTimer()
-      resetTargetSwitchGraceTracking()
+      resetSwitchGrace()
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStableGazeTarget(null)
       return
     }
 
-    const currentTargetKey = stableGazeTarget?.key ?? null
-    const nextTargetKey = rawGazeTarget?.key ?? null
+    const currentKey = stableGazeTarget?.key ?? null
+    const nextKey = rawGazeTarget?.key ?? null
 
-    if (currentTargetKey === nextTargetKey) {
+    if (currentKey === nextKey) {
       clearTargetSwitchTimer()
-      resetTargetSwitchGraceTracking()
+      resetSwitchGrace()
 
       if (
         stableGazeTarget &&
@@ -728,158 +781,25 @@ export function usePatientGazeClick({
     clearTargetSwitchTimer()
 
     if (!stableGazeTarget && rawGazeTarget) {
-      resetTargetSwitchGraceTracking()
+      resetSwitchGrace()
       setStableGazeTarget(rawGazeTarget)
       return
     }
 
-    const pendingTargetSwitchKey = `${currentTargetKey ?? 'null'}=>${nextTargetKey ?? 'null'}`
-    if (targetSwitchPendingKeyRef.current !== pendingTargetSwitchKey) {
-      targetSwitchPendingKeyRef.current = pendingTargetSwitchKey
-      targetSwitchGraceStartedAtRef.current = Date.now()
+    const pendingSwitchKey = `${currentKey ?? 'null'}=>${nextKey ?? 'null'}`
+    if (pendingTargetSwitchKeyRef.current !== pendingSwitchKey) {
+      pendingTargetSwitchKeyRef.current = pendingSwitchKey
+      targetSwitchStartedAtRef.current = Date.now()
     }
 
     targetSwitchTimerRef.current = window.setTimeout(() => {
       targetSwitchTimerRef.current = null
-      resetTargetSwitchGraceTracking()
+      resetSwitchGrace()
       setStableGazeTarget(rawGazeTarget)
     }, GAZE_TARGET_SWITCH_GRACE_MS)
 
     return clearTargetSwitchTimer
   }, [enabled, rawGazeTarget, stableGazeTarget])
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) {
-      lastGazeTargetDebugSignatureRef.current = null
-      return
-    }
-    const gracePending = targetSwitchTimerRef.current !== null
-    const disablePointHitTestFlag =
-      typeof window !== 'undefined' &&
-      (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
-    const debugPayload = {
-      // 좌표계 확인용: hit-test에 실제 사용된 viewport 픽셀 좌표
-      clientX: gazePoint?.clientX ?? null,
-      clientY: gazePoint?.clientY ?? null,
-      viewport: typeof window !== 'undefined'
-        ? { width: window.innerWidth, height: window.innerHeight }
-        : null,
-      // rawTargetSource: 'point-hit-test' | 'cell-mapping' | 'cell-dom-fallback'
-      // point-hit-test → clientX/clientY 기반 document.elementsFromPoint() 결과
-      // cell-mapping   → iframe이 보낸 cell 번호 기반 매핑 결과
-      rawTargetSource: rawGazeTarget?.source ?? null,
-      gazeCell,
-      rawTargetKey: rawGazeTarget?.key ?? null,
-      stableTargetKey: stableGazeTarget?.key ?? null,
-      stableTargetSource: stableGazeTarget?.source ?? null,
-      rawTargetCell: rawGazeTarget?.cell ?? null,
-      stableTargetCell: stableGazeTarget?.cell ?? null,
-      gracePending,
-      targetSwitchGraceMs: gracePending ? GAZE_TARGET_SWITCH_GRACE_MS : null,
-      targetSwitchGraceStartedAt: gracePending ? targetSwitchGraceStartedAtRef.current : null,
-      gazePointUpdatedAt: gazePoint?.updatedAt ?? null,
-      DEV_GAZE_DISABLE_POINT_HIT_TEST: disablePointHitTestFlag,
-    }
-    const nextDebugSignature = JSON.stringify({
-      gazeCell: debugPayload.gazeCell,
-      rawTargetKey: debugPayload.rawTargetKey,
-      stableTargetKey: debugPayload.stableTargetKey,
-      rawTargetSource: debugPayload.rawTargetSource,
-      stableTargetSource: debugPayload.stableTargetSource,
-      rawTargetCell: debugPayload.rawTargetCell,
-      stableTargetCell: debugPayload.stableTargetCell,
-      gracePending: debugPayload.gracePending,
-      targetSwitchGraceMs: debugPayload.targetSwitchGraceMs,
-      targetSwitchGraceStartedAt: debugPayload.targetSwitchGraceStartedAt,
-    })
-
-    if (lastGazeTargetDebugSignatureRef.current === nextDebugSignature) {
-      return
-    }
-
-    lastGazeTargetDebugSignatureRef.current = nextDebugSignature
-    console.info('[patient-input] gaze-target-state', debugPayload)
-  }, [
-    enabled,
-    gazeCell,
-    gazePoint?.updatedAt,
-    rawGazeTarget?.cell,
-    rawGazeTarget?.key,
-    rawGazeTarget?.source,
-    stableGazeTarget?.cell,
-    stableGazeTarget?.key,
-    stableGazeTarget?.source,
-  ])
-
-  useEffect(() => {
-    const nextHighlightedElement = mouseTarget?.element ?? stableGazeTarget?.element ?? null
-    const previousHighlightedElement = highlightedElementRef.current
-
-    if (previousHighlightedElement && previousHighlightedElement !== nextHighlightedElement) {
-      previousHighlightedElement.removeAttribute('data-gaze-active')
-    }
-
-    if (nextHighlightedElement) {
-      nextHighlightedElement.setAttribute('data-gaze-active', 'true')
-    }
-
-    highlightedElementRef.current = nextHighlightedElement
-    activeElementRef.current = nextHighlightedElement
-
-    return () => {
-      if (highlightedElementRef.current) {
-        highlightedElementRef.current.removeAttribute('data-gaze-active')
-        highlightedElementRef.current = null
-      }
-    }
-  }, [mouseTarget, stableGazeTarget])
-
-  useEffect(() => {
-    return () => {
-      clearCommitDelayTimer()
-      clearConfirmedSelection()
-
-      for (const targetKey of selectionCooldownsRef.current.keys()) {
-        clearSelectionCooldown(targetKey)
-      }
-    }
-  }, [])
-
-  // useEffect(() => {
-  //   if (!enabled || !import.meta.env.DEV) {
-  //     return
-  //   }
-  //
-  //   console.info('[patient-input] gaze-target-observed', {
-  //     gazePointPresent: gazePoint !== null,
-  //     hasCellMapping: cellMapping !== null,
-  //     hasFallbackPatientMainMapping: getFallbackPatientMainCellMapping() !== null,
-  //     hasGenericCellDomFallback: getFallbackInteractiveElementFromCell(gazeCell) !== null,
-  //     patientMainPointTargetFound: getPatientMainPointTarget(gazePoint) !== null,
-  //     hasNearestPointFallback: getNearestInteractiveTargetFromPoint(gazePoint) !== null,
-  //     rawTargetKey: rawGazeTarget?.key ?? null,
-  //     rawTargetSource: rawGazeTarget?.source ?? null,
-  //     rawTargetCell: rawGazeTarget?.cell ?? null,
-  //     stableTargetKey: stableGazeTarget?.key ?? null,
-  //     stableTargetSource: stableGazeTarget?.source ?? null,
-  //     stableTargetCell: stableGazeTarget?.cell ?? null,
-  //     mappedTrackingId:
-  //       typeof gazeCell === 'number' && cellMapping ? (cellMapping[gazeCell] ?? null) : null,
-  //     gazeCell,
-  //     updatedAt: gazePoint?.updatedAt ?? null,
-  //   })
-  // }, [
-  //   cellMapping,
-  //   enabled,
-  //   gazeCell,
-  //   gazePoint?.updatedAt,
-  //   rawGazeTarget?.cell,
-  //   rawGazeTarget?.key,
-  //   rawGazeTarget?.source,
-  //   stableGazeTarget?.cell,
-  //   stableGazeTarget?.key,
-  //   stableGazeTarget?.source,
-  // ])
 
   useEffect(() => {
     if (!enabled) {
@@ -933,53 +853,197 @@ export function usePatientGazeClick({
     }
   }, [enabled])
 
-  useDwell<string>({
-    hoveredTargetId: stableGazeTarget?.key ?? null,
+  const dwellState = useDwell<string>({
+    hoveredTargetId: currentSelectionTarget?.key ?? null,
     dwellDurationMs,
     activationDelayMs,
-    disabled: !enabled || !stableGazeTarget || mouseTarget !== null,
+    disabled: !enabled || !currentSelectionTarget || currentSelectionBlockReason !== null,
     onCommit: () => {
+      const commitSource =
+        currentInputSourceRef.current === 'pointer' ? 'pointer-dwell' : 'gaze-dwell'
+
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
         console.info('[patient-input] skipped dwell commit because the global menu is open', {
-          targetKey: stableGazeTarget?.key ?? null,
+          targetKey: currentSelectionTargetRef.current?.key ?? null,
         })
-
         return
       }
 
       console.info('[patient-input] dwell commit', {
-        targetKey: stableGazeTarget?.key ?? null,
+        source: commitSource,
+        targetKey: currentSelectionTargetRef.current?.key ?? null,
         dwellDurationMs,
         activationDelayMs,
       })
 
-      commitSelection('gaze-dwell')
+      commitSelection(commitSource)
     },
   })
 
-  useDwell<string>({
-    hoveredTargetId: mouseTarget?.key ?? null,
-    dwellDurationMs,
-    activationDelayMs,
-    disabled: !enabled || !mouseTarget,
-    onCommit: () => {
-      if (usePatientModeStore.getState().isGlobalMenuOpen) {
-        console.info('[patient-input] skipped pointer dwell commit because the global menu is open', {
-          targetKey: mouseTarget?.key ?? null,
-        })
+  useEffect(() => {
+    if (!enabled) {
+      lastCancelReasonRef.current = null
+      return
+    }
 
-        return
+    if (
+      currentSelectionBlockReason &&
+      currentSelectionTarget &&
+      lastCancelReasonRef.current !== currentSelectionBlockReason
+    ) {
+      console.info('[patient-input] dwell-cancel', {
+        targetKey: currentSelectionTarget.key,
+        trackingId: currentSelectionTarget.trackingId,
+        reason: currentSelectionBlockReason,
+      })
+      lastCancelReasonRef.current = currentSelectionBlockReason
+      useGazeSelectionStore.getState().setSelectionSnapshot({
+        debug: {
+          lastCancelReason: currentSelectionBlockReason,
+        },
+      })
+    }
+
+    if (!currentSelectionBlockReason) {
+      lastCancelReasonRef.current = null
+      useGazeSelectionStore.getState().setSelectionSnapshot({
+        debug: {
+          lastCancelReason: null,
+        },
+      })
+    }
+  }, [currentSelectionBlockReason, currentSelectionTarget, enabled])
+
+  useEffect(() => {
+    const nextHighlightedElement = currentSelectionTarget?.element ?? null
+    const previousHighlightedElement = highlightedElementRef.current
+
+    if (previousHighlightedElement && previousHighlightedElement !== nextHighlightedElement) {
+      previousHighlightedElement.removeAttribute('data-gaze-active')
+    }
+
+    if (nextHighlightedElement) {
+      nextHighlightedElement.setAttribute('data-gaze-active', 'true')
+    }
+
+    highlightedElementRef.current = nextHighlightedElement
+
+    return () => {
+      if (highlightedElementRef.current) {
+        highlightedElementRef.current.removeAttribute('data-gaze-active')
+        highlightedElementRef.current = null
+      }
+    }
+  }, [currentSelectionTarget])
+
+  useEffect(() => {
+    const nextDebugPayload = {
+      inputSource: currentInputSource,
+      clientX: gazePoint?.clientX ?? null,
+      clientY: gazePoint?.clientY ?? null,
+      gazeCell,
+      rawTargetKey: rawGazeTarget?.key ?? null,
+      rawTargetId: rawGazeTarget?.trackingId ?? null,
+      rawTargetSource: rawGazeTarget?.source ?? null,
+      rawTargetCell: rawGazeTarget?.cell ?? null,
+      rawTargetGroupId: rawGazeTarget?.groupId ?? null,
+      stableTargetKey: stableGazeTarget?.key ?? null,
+      stableTargetId: stableGazeTarget?.trackingId ?? null,
+      stableTargetSource: stableGazeTarget?.source ?? null,
+      stableTargetCell: stableGazeTarget?.cell ?? null,
+      stableTargetGroupId: stableGazeTarget?.groupId ?? null,
+      hoveredTargetKey: currentSelectionTarget?.key ?? null,
+      hoveredTargetId: currentSelectionTarget?.trackingId ?? null,
+      hoveredTargetBlockedReason: currentSelectionBlockReason,
+      dwellPhase: dwellState.phase,
+      dwellProgress: dwellState.progress,
+      dwellRemainingMs: dwellState.remainingMs,
+      switchGracePending: targetSwitchTimerRef.current !== null,
+      switchGraceStartedAt: targetSwitchStartedAtRef.current,
+      switchGraceMs:
+        targetSwitchTimerRef.current !== null ? GAZE_TARGET_SWITCH_GRACE_MS : null,
+      gazePointUpdatedAt: gazePoint?.updatedAt ?? null,
+    }
+
+    useGazeSelectionStore.getState().setSelectionSnapshot({
+      enabled,
+      inputSource: currentInputSource,
+      hoveredTargetId: currentSelectionTarget?.trackingId ?? null,
+      activeTargetId:
+        currentSelectionTarget?.trackingId && dwellState.phase !== 'idle'
+          ? currentSelectionTarget.trackingId
+          : null,
+      rawTargetId: rawGazeTarget?.trackingId ?? null,
+      stableTargetId: stableGazeTarget?.trackingId ?? null,
+      phase: dwellState.phase,
+      progress: dwellState.progress,
+      remainingMs: dwellState.remainingMs,
+      debug: nextDebugPayload,
+    })
+
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const nextDebugSignature = JSON.stringify(nextDebugPayload)
+
+    if (lastDebugSignatureRef.current === nextDebugSignature) {
+      return
+    }
+
+    lastDebugSignatureRef.current = nextDebugSignature
+    ;(window as PatientDebugWindow).__PATIENT_GAZE_DEBUG_STATE = nextDebugPayload
+    console.info('[patient-input] gaze-selection-state', nextDebugPayload)
+  }, [
+    currentInputSource,
+    currentSelectionBlockReason,
+    currentSelectionTarget,
+    dwellState.phase,
+    dwellState.progress,
+    dwellState.remainingMs,
+    enabled,
+    gazeCell,
+    gazePoint,
+    rawGazeTarget,
+    stableGazeTarget,
+  ])
+
+  useEffect(() => {
+    const selectionCooldowns = selectionCooldownsRef.current
+
+    return () => {
+      if (commitDelayTimerRef.current !== null) {
+        window.clearTimeout(commitDelayTimerRef.current)
+        commitDelayTimerRef.current = null
       }
 
-      console.info('[patient-input] pointer dwell commit', {
-        targetKey: mouseTarget?.key ?? null,
-        dwellDurationMs,
-        activationDelayMs,
-      })
+      if (confirmedTimerRef.current !== null) {
+        window.clearTimeout(confirmedTimerRef.current)
+        confirmedTimerRef.current = null
+      }
 
-      commitSelection('pointer-dwell')
-    },
-  })
+      if (confirmedElementRef.current) {
+        confirmedElementRef.current.removeAttribute('data-gaze-confirmed')
+        confirmedElementRef.current = null
+      }
+
+      for (const entry of selectionCooldowns.values()) {
+        window.clearTimeout(entry.timerId)
+        entry.element?.removeAttribute('data-gaze-cooldown')
+      }
+      selectionCooldowns.clear()
+
+      useGazeSelectionStore.getState().resetSelectionSnapshot()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (enabled) {
+      return
+    }
+
+    useGazeSelectionStore.getState().resetSelectionSnapshot()
+  }, [enabled])
 }
 
 export default usePatientGazeClick

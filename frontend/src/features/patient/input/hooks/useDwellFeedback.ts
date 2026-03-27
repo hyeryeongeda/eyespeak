@@ -1,19 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react'
-import {
-  CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
-  getActivationDelayPreset,
-  type CareActivationDelayPresetUpdatedDetail,
-} from '../../../../services/careSettingService'
-import {
-  ACTIVATION_DELAY_OPTIONS,
-  type ActivationDelayPreset,
-} from '../../../../types/care'
-import { useDwell, type DwellPhase } from './useDwell'
-import { useTracking } from './useTracking'
+import { useCallback, useRef, useState, type MutableRefObject } from 'react'
 import {
   isPatientTrackingAvailable,
   usePatientModeStore,
 } from '../stores/patientModeStore'
+import { useGazeSelectionStore } from '../stores/gazeSelectionStore'
+import type { DwellPhase } from './useDwell'
 
 export interface DwellFeedbackViewModel<TTarget extends string = string> {
   activeTargetId: TTarget | null
@@ -25,6 +16,7 @@ export interface DwellFeedbackViewModel<TTarget extends string = string> {
 export interface UseDwellFeedbackResult<TTarget extends string = string>
   extends DwellFeedbackViewModel<TTarget> {
   containerRef: MutableRefObject<HTMLElement | null>
+  setContainerElement: (element: HTMLElement | null) => void
   hoveredTargetId: TTarget | null
   inputSource: 'pointer' | 'gaze' | null
   enabled: boolean
@@ -34,8 +26,29 @@ interface UseDwellFeedbackOptions {
   enabled?: boolean
 }
 
-function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
-  return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
+function getTrackedElement(trackingId: string | null) {
+  if (!trackingId || typeof document === 'undefined') {
+    return null
+  }
+
+  const escapedTrackingId =
+    typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(trackingId)
+      : trackingId.replace(/["\\]/g, '\\$&')
+
+  return document.querySelector<HTMLElement>(`[data-tracking-id="${escapedTrackingId}"]`)
+}
+
+function isTrackedTargetInsideContainer(
+  trackingId: string | null,
+  container: HTMLElement | null,
+) {
+  if (!trackingId || !container) {
+    return false
+  }
+
+  const trackedElement = getTrackedElement(trackingId)
+  return Boolean(trackedElement && container.contains(trackedElement))
 }
 
 export function isDwellFeedbackVisible(phase: DwellPhase) {
@@ -61,102 +74,48 @@ export function useDwellFeedback<TTarget extends string>(
 ): UseDwellFeedbackResult<TTarget> {
   const { enabled = true } = options
   const containerRef = useRef<HTMLElement | null>(null)
-  const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
+  const [containerElement, setContainerElementState] = useState<HTMLElement | null>(null)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
-  const [activationDelayMs, setActivationDelayMs] = useState(
-    ACTIVATION_DELAY_OPTIONS.medium.value,
-  )
+  const selectionState = useGazeSelectionStore(state => ({
+    inputSource: state.inputSource,
+    hoveredTargetId: state.hoveredTargetId,
+    activeTargetId: state.activeTargetId,
+    phase: state.phase,
+    progress: state.progress,
+    remainingMs: state.remainingMs,
+  }))
 
   const isFeedbackEnabled =
     enabled &&
     !isGlobalMenuOpen &&
     isPatientTrackingAvailable(trackingStatus)
+  const setContainerElement = useCallback((element: HTMLElement | null) => {
+    containerRef.current = element
+    setContainerElementState(element)
+  }, [])
 
-  const { gazeHoveredTargetId, pointerHoveredTargetId } = useTracking<TTarget>({
-    containerRef,
-    enabled: isFeedbackEnabled,
-  })
-
-  const hoveredTargetId = pointerHoveredTargetId ?? gazeHoveredTargetId
-  const inputSource = pointerHoveredTargetId
-    ? 'pointer'
-    : gazeHoveredTargetId
-      ? 'gaze'
+  const hoveredTargetId =
+    isFeedbackEnabled &&
+    isTrackedTargetInsideContainer(selectionState.hoveredTargetId, containerElement)
+      ? (selectionState.hoveredTargetId as TTarget)
       : null
-  const handleCommit = useCallback((_targetId: TTarget) => {}, [])
-
-  const dwellState = useDwell<TTarget>({
-    hoveredTargetId,
-    dwellDurationMs,
-    activationDelayMs,
-    disabled: !isFeedbackEnabled || !hoveredTargetId,
-    onCommit: handleCommit,
-  })
-
-  useEffect(() => {
-    if (!enabled) {
-      return
-    }
-
-    let isMounted = true
-
-    void getActivationDelayPreset()
-      .then(result => {
-        if (!isMounted || !result.success) {
-          return
-        }
-
-        setActivationDelayMs(ACTIVATION_DELAY_OPTIONS[result.data].value)
-      })
-      .catch(() => {
-        // Keep default activation delay when sync fails.
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [enabled])
-
-  useEffect(() => {
-    if (!enabled || typeof window === 'undefined') {
-      return
-    }
-
-    const handlePresetUpdated = (event: Event) => {
-      const preset = (
-        event as CustomEvent<CareActivationDelayPresetUpdatedDetail>
-      ).detail?.preset
-
-      if (!isActivationDelayPreset(preset)) {
-        return
-      }
-
-      setActivationDelayMs(ACTIVATION_DELAY_OPTIONS[preset].value)
-    }
-
-    window.addEventListener(
-      CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
-      handlePresetUpdated as EventListener,
-    )
-
-    return () => {
-      window.removeEventListener(
-        CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
-        handlePresetUpdated as EventListener,
-      )
-    }
-  }, [enabled])
+  const activeTargetId =
+    isFeedbackEnabled &&
+    isTrackedTargetInsideContainer(selectionState.activeTargetId, containerElement)
+      ? (selectionState.activeTargetId as TTarget)
+      : null
 
   return {
     containerRef,
+    setContainerElement,
     hoveredTargetId,
-    inputSource,
+    inputSource: hoveredTargetId ? selectionState.inputSource : null,
     enabled: isFeedbackEnabled,
-    activeTargetId: dwellState.activeTargetId,
-    phase: dwellState.phase,
-    progress: dwellState.progress,
-    remainingMs: dwellState.remainingMs,
+    activeTargetId,
+    phase: activeTargetId ? selectionState.phase : 'idle',
+    progress: activeTargetId ? selectionState.progress : 0,
+    remainingMs: activeTargetId ? selectionState.remainingMs : 0,
   }
 }
 

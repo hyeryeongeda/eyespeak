@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect } from 'react'
+import { type CSSProperties, useEffect, useMemo } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
@@ -8,7 +8,9 @@ import {
 } from '../components/customTalkUi'
 import type { ComposeStep } from '../types'
 import { useCustomTalkStore } from '../store/customTalkStore'
+import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import { createEntryCellMapping } from '../utils/customTalkGazeMapping'
 import { polishSentence } from '../utils/polishSentence'
 
 const composeStepLabelMap: Record<ComposeStep, string> = {
@@ -95,6 +97,20 @@ export default function CustomTalkComposePage() {
     status === 'loading' || status === 'refreshing' || status === 'submitting'
   const visibleOptions = getVisibleComposeOptions(composeOptions[composeStep])
   const composedText = buildComposedText(draft)
+  const cellMapping = useMemo(
+    () =>
+      createEntryCellMapping({
+        topLeft: visibleOptions[0] ? 'custom-talk-compose-option-1' : null,
+        topCenter: visibleOptions[1] ? 'custom-talk-compose-option-2' : null,
+        topRight: visibleOptions[2] ? 'custom-talk-compose-option-3' : null,
+        bottomLeft: 'custom-talk-compose-skip',
+        bottomCenter: 'custom-talk-compose-refresh',
+        bottomRight: 'custom-talk-compose-back',
+      }),
+    [visibleOptions],
+  )
+
+  useCellMapping(cellMapping)
 
   useEffect(() => {
     if (!hasCategoryKey || composeOptions[composeStep].length > 0) {
@@ -126,7 +142,8 @@ export default function CustomTalkComposePage() {
             navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
-        disabled: !visibleOptions[0] || isBusy,
+        disabled: !visibleOptions[0],
+        commitDisabled: isBusy,
         trackingId: 'custom-talk-compose-option-1',
       }}
       topCenter={{
@@ -144,7 +161,8 @@ export default function CustomTalkComposePage() {
             navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
-        disabled: !visibleOptions[1] || isBusy,
+        disabled: !visibleOptions[1],
+        commitDisabled: isBusy,
         trackingId: 'custom-talk-compose-option-2',
       }}
       topRight={{
@@ -162,7 +180,8 @@ export default function CustomTalkComposePage() {
             navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
-        disabled: !visibleOptions[2] || isBusy,
+        disabled: !visibleOptions[2],
+        commitDisabled: isBusy,
         trackingId: 'custom-talk-compose-option-3',
       }}
       bottomLeft={{
@@ -176,7 +195,7 @@ export default function CustomTalkComposePage() {
             navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
-        disabled: isBusy,
+        commitDisabled: isBusy,
         trackingId: 'custom-talk-compose-skip',
       }}
       bottomCenter={{
@@ -186,7 +205,7 @@ export default function CustomTalkComposePage() {
         onSelect: () => {
           void refreshComposeStep(composeStep)
         },
-        disabled: isBusy,
+        commitDisabled: isBusy,
         trackingId: 'custom-talk-compose-refresh',
       }}
       bottomRight={{
@@ -200,7 +219,7 @@ export default function CustomTalkComposePage() {
             navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK)
           }
         },
-        disabled: status === 'submitting',
+        commitDisabled: status === 'submitting',
         trackingId: 'custom-talk-compose-back',
       }}
       dwellFeedback={dwellFeedback}
