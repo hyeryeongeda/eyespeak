@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
   CATEGORIES_TREE: '/categories/tree',
   LEISURE_CONTENTS: '/leisure-contents',
   RECOMMENDATION_CATEGORIES: '/recommendations/categories',
+  RECOMMENDATION_REPLY_CATEGORIES: '/recommendations/reply-categories',
   RECOMMENDATION_SENTENCES: '/recommendations/sentences',
   RECOMMENDATION_COMPOSE: '/recommendations/compose',
   RECOMMENDATION_SEND: '/recommendations/send',
