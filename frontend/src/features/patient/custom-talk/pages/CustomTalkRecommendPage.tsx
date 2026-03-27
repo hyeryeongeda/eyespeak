@@ -3,7 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
-import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
+import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
 import {
   getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
@@ -19,15 +19,18 @@ const centerStackStyle: CSSProperties = {
   gap: '12px',
   minHeight: 0,
   height: '100%',
-  padding: '16px',
-  boxSizing: 'border-box',
-  justifyContent: 'center',
+}
+
+const promptPanelSlotStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
 }
 
 const noticeStackStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: '10px',
+  flexShrink: 0,
 }
 
 function getVisibleSentences(sentences: string[]) {
@@ -38,8 +41,6 @@ type CustomTalkRecommendTrackingId =
   | 'custom-talk-recommend-option-1'
   | 'custom-talk-recommend-option-2'
   | 'custom-talk-recommend-option-3'
-  | 'custom-talk-recommend-compose'
-  | 'custom-talk-recommend-refresh'
   | 'custom-talk-recommend-back'
 
 export default function CustomTalkRecommendPage() {
@@ -56,11 +57,13 @@ export default function CustomTalkRecommendPage() {
   const completionMessage = useCustomTalkStore(state => state.completionMessage)
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
-  const startCompose = useCustomTalkStore(state => state.startCompose)
   const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isActionLocked =
-    status === 'loading' || status === 'refreshing' || status === 'submitting'
+    status === 'loading' ||
+    status === 'refreshing' ||
+    status === 'submitting' ||
+    status === 'completed'
   const isRecommendationLoading = status === 'loading' || status === 'refreshing'
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
@@ -82,11 +85,10 @@ export default function CustomTalkRecommendPage() {
   const visibleSentences = getVisibleSentences(recommendedSentences)
 
   return (
-    <CustomTalkEntryLayout
-      title="추천 문장 선택"
+    <CustomTalkGuardianPromptLayout
+      title="보호자 선발화-답변"
       topLeft={{
         title: visibleSentences[0] ?? '추천 문장 준비 중',
-        description: visibleSentences[0] ? '이 문장으로 바로 답변합니다.' : '추천 문장을 기다리는 중입니다.',
         tone: 'sky',
         onSelect: () => {
           if (visibleSentences[0]) {
@@ -98,10 +100,9 @@ export default function CustomTalkRecommendPage() {
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-1',
       }}
-      topCenter={{
+      topRight={{
         title: visibleSentences[1] ?? '추천 문장 준비 중',
-        description: visibleSentences[1] ? '이 문장으로 바로 답변합니다.' : '추천 문장을 기다리는 중입니다.',
-        tone: 'sand',
+        tone: 'mint',
         onSelect: () => {
           if (visibleSentences[1]) {
             void selectRecommendedSentence(visibleSentences[1])
@@ -112,10 +113,9 @@ export default function CustomTalkRecommendPage() {
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-2',
       }}
-      topRight={{
+      bottomLeft={{
         title: visibleSentences[2] ?? '추천 문장 준비 중',
-        description: visibleSentences[2] ? '이 문장으로 바로 답변합니다.' : '추천 문장을 기다리는 중입니다.',
-        tone: 'mint',
+        tone: 'sand',
         onSelect: () => {
           if (visibleSentences[2]) {
             void selectRecommendedSentence(visibleSentences[2])
@@ -126,30 +126,8 @@ export default function CustomTalkRecommendPage() {
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-3',
       }}
-      bottomLeft={{
-        title: '형태소로 표현하기',
-        description: '추천 대신 형태소를 조합해 문장을 만듭니다.',
-        tone: 'mint',
-        onSelect: async () => {
-          await startCompose()
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
-        },
-        disabled: isActionLocked,
-        trackingId: 'custom-talk-recommend-compose',
-      }}
-      bottomCenter={{
-        title: '다시 추천받기',
-        description: '같은 카테고리에서 추천 문장을 다시 불러옵니다.',
-        tone: 'sky',
-        onSelect: () => {
-          void loadRecommendedSentences(draft.categoryKey)
-        },
-        disabled: isActionLocked,
-        trackingId: 'custom-talk-recommend-refresh',
-      }}
       bottomRight={{
-        title: '이전으로',
-        description: '카테고리 선택 화면으로 돌아갑니다.',
+        title: '뒤로가기',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK),
         trackingId: 'custom-talk-recommend-back',
@@ -157,11 +135,13 @@ export default function CustomTalkRecommendPage() {
       dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <CustomTalkContextPanel
-            context={context}
-            conversationLog={conversationLog}
-            mode="entry"
-          />
+          <div style={promptPanelSlotStyle}>
+            <CustomTalkContextPanel
+              context={context}
+              conversationLog={conversationLog}
+              mode="entry"
+            />
+          </div>
 
           {status === 'loading' || errorMessage || completionMessage ? (
             <div style={noticeStackStyle}>

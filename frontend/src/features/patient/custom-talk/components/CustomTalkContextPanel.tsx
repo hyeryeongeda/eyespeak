@@ -64,9 +64,24 @@ const previewWrapStyle: CSSProperties = {
 function getBubbleStyle(
   sender: CustomTalkConversationLogItem['sender'],
   isPreview = false,
+  mode: 'default' | 'entry' = 'default',
 ): CSSProperties {
   const isGuardian = sender === 'guardian'
   const isPatient = sender === 'patient' || isPreview
+
+  if (mode === 'entry') {
+    return {
+      alignSelf: 'center',
+      width: 'fit-content',
+      maxWidth: '84%',
+      padding: '16px 22px',
+      borderRadius: '6px',
+      backgroundColor: '#ffffff',
+      border: '1px solid rgba(219, 223, 228, 0.92)',
+      color: '#4a4f56',
+      boxShadow: '0 10px 22px rgba(110, 116, 124, 0.08)',
+    }
+  }
 
   return {
     alignSelf: isGuardian ? 'flex-start' : 'flex-end',
@@ -108,16 +123,17 @@ export default function CustomTalkContextPanel({
   const shouldShowPreview = mode === 'default' && Boolean(previewText)
   const panelStyleByMode: CSSProperties = {
     ...panelStyle,
-    borderRadius: isEntryMode ? '28px' : panelStyle.borderRadius,
+    borderRadius: isEntryMode ? '18px' : panelStyle.borderRadius,
     background: isEntryMode
-      ? 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f8fbff 100%)'
+      ? 'linear-gradient(180deg, #e8e7e6 0%, #e2e2e2 100%)'
       : panelStyle.backgroundColor,
-    border: isEntryMode ? '1px solid #e3ebf2' : panelStyle.border,
-    boxShadow: isEntryMode ? 'inset 0 1px 0 rgba(255, 255, 255, 0.72)' : 'none',
+    border: isEntryMode ? '1px solid #d8dade' : panelStyle.border,
+    boxShadow: isEntryMode ? 'inset 0 1px 0 rgba(255, 255, 255, 0.52)' : 'none',
   }
   const chatListStyleByMode: CSSProperties = {
     ...chatListStyle,
-    padding: isEntryMode ? '18px 20px' : chatListStyle.padding,
+    padding: isEntryMode ? '18px' : chatListStyle.padding,
+    alignItems: isEntryMode ? 'center' : undefined,
   }
 
   useEffect(() => {
@@ -148,17 +164,23 @@ export default function CustomTalkContextPanel({
                   key={item.id}
                   style={{
                     ...rowBaseStyle,
-                    alignItems: isGuardian ? 'flex-start' : 'flex-end',
+                    alignItems: isEntryMode
+                      ? 'center'
+                      : isGuardian
+                        ? 'flex-start'
+                        : 'flex-end',
+                    width: '100%',
                   }}
                 >
-                  <div style={getBubbleStyle(item.sender, false)}>
+                  <div style={getBubbleStyle(item.sender, false, mode)}>
                     <div
                       style={{
-                        fontSize: isEntryMode ? 'clamp(1.3rem, 2.45vmin, 1.85rem)' : '19px',
+                        fontSize: isEntryMode ? 'clamp(1rem, 1.35vmax, 1.2rem)' : '19px',
                         fontWeight: 800,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',
                         wordBreak: 'keep-all',
+                        textAlign: isEntryMode ? 'center' : 'left',
                       }}
                     >
                       {item.content || '\ub0b4\uc6a9 \uc5c6\uc74c'}
