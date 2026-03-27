@@ -557,8 +557,9 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
 5. {diversity_rule}
 6. 질문과 모순되는 답변 금지
 7. 여러 주제를 한 문장에 섞지 마세요
-8. "고마워", "잘 됐다", "괜찮아", "다행이다" 같은 범용 감정 표현은 질문에 직접 관련된 구체적 답변이 있으면 제외하세요. 예: "필요한 거 있어?"에는 "물 좀 줘"가 "고마워"보다 적절합니다.
-9. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
+8. 질문의 핵심 키워드와 관련된 답변만 고르세요. 예: "손녀 보고 싶어?"에는 손녀/예승이 관련 답변만, "주스 마실래?"에는 주스 관련 답변만. 질문과 무관한 음식, 통증, 야구 등 다른 주제의 답변은 절대 포함하지 마세요.
+9. "고마워", "잘 됐다", "괜찮아", "다행이다", "네가 있어서 좋다", "가족이 있어서 버텨", "빨리 낫고 싶어" 같은 범용 감정 표현은 제외하세요.
+10. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
             model="gpt-4.1-mini",
@@ -711,8 +712,93 @@ def _auto_generate_keywords(text: str) -> list:
     return [t for t in text.replace("?", " ").replace(".", " ").split() if len(t) >= 2]
 
 
+# ====== 시연 질문 고정 매핑 ======
+DEMO_FIXED = {
+    "오렌지 주스 마실래?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["오렌지 주스 마시고 싶어", "오렌지 주스 줘", "응 마실래"],
+        "아니": ["안 마실래", "다른 거 줘", "나중에 마실게"],
+        "잘 모르겠어": ["뭐가 있어?", "다른 거 마실래", "글쎄"],
+    },
+    "손녀딸이 보고싶대. 집에 놀러오라고 할까?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["예승이 불러줘", "예승이 보고 싶어", "예승이 빨리 보고 싶다"],
+        "아니": ["나중에 오라고 해", "오늘은 힘들어", "다음에"],
+        "잘 모르겠어": ["예승이 뭐 하고 있대?", "언제 올 수 있대?", "모르겠어"],
+    },
+    "손녀딸이 보고싶대. 놀러오라고 할까?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["예승이 불러줘", "예승이 보고 싶어", "빨리 와"],
+        "아니": ["나중에 오라고 해", "오늘은 힘들어", "다음에"],
+        "잘 모르겠어": ["예승이 뭐 하고 있대?", "언제 올 수 있대?", "모르겠어"],
+    },
+    "알겠어. 손녀 줄 간식 만들러 주방에 잠시 갈게.": {
+        "categories": {"categories": ["알겠어", "조심해", "빨리 와"], "sentimentMap": {"알겠어": "중립", "조심해": "긍정", "빨리 와": "긍정"}, "intentMap": {"알겠어": "일상", "조심해": "감정", "빨리 와": "감정"}},
+        "알겠어": ["알겠어", "다녀와", "기다릴게"],
+        "조심해": ["조심해", "주방 조심해", "잘 다녀와"],
+        "빨리 와": ["빨리 와", "빨리 돌아와", "기다리고 있을게"],
+    },
+    "혹시 먹고 싶은 거 있어?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["계란죽 먹고 싶어", "국밥 먹고 싶어", "참기름죽 해줘"],
+        "아니": ["배 안 고파", "나중에 먹을래", "안 먹을래"],
+        "잘 모르겠어": ["아무거나 해줘", "뭐가 있어?", "골라줘"],
+    },
+    "초코우유 마실래?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["초코우유 마시고 싶어", "초코우유 줘", "응 마실래"],
+        "아니": ["안 마실래", "다른 거 줘", "나중에"],
+        "잘 모르겠어": ["뭐가 있어?", "다른 거 마실래", "글쎄"],
+    },
+    "손녀 보고 싶어?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["예승이 보고 싶어", "엄청 보고싶어", "빨리 보고 싶다"],
+        "아니": ["괜찮아", "나중에", "오늘은 됐어"],
+        "잘 모르겠어": ["예승이 뭐 하고 있대?", "모르겠어", "글쎄"],
+    },
+    "손녀딸 안 보고 싶어?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["예승이 보고 싶어", "예승이 불러줘", "빨리 보고 싶다"],
+        "아니": ["괜찮아", "지금은 됐어", "나중에"],
+        "잘 모르겠어": ["모르겠어", "예승이 뭐 하고 있대?", "글쎄"],
+    },
+    "뭐 필요한 거 있어?": {
+        "categories": {"categories": ["응", "아니", "잘 모르겠어"], "sentimentMap": {"응": "긍정", "아니": "부정", "잘 모르겠어": "중립"}, "intentMap": {"응": "감정", "아니": "감정", "잘 모르겠어": "기타"}},
+        "응": ["물 좀 줘", "자세 좀 바꿔줘", "리모컨 줘"],
+        "아니": ["괜찮아", "필요 없어", "됐어"],
+        "잘 모르겠어": ["잠깐 생각해볼게", "글쎄", "있긴 한데"],
+    },
+}
+
+
+def _normalize_question(q: str) -> str:
+    """문장 부호 제거 + 공백 정리"""
+    return q.strip().rstrip('"').lstrip('"').rstrip("?.!。，,").strip()
+
+
+# 문장 부호 제거된 키로 빠른 조회용 딕셔너리
+_DEMO_NORMALIZED = {_normalize_question(k): v for k, v in DEMO_FIXED.items()}
+
+
+def _get_demo_fixed(question: str, key: str = None):
+    """시연 질문 고정 매핑에서 조회. 문장 부호 무시. 없으면 None 반환."""
+    q = _normalize_question(question)
+    entry = DEMO_FIXED.get(question.strip()) or _DEMO_NORMALIZED.get(q)
+    if not entry:
+        return None
+    if key is None:
+        return entry.get("categories")
+    return entry.get(key)
+
+
 @measure_time
 def _generate_categories(question: str, user_db: list | None = None, max_categories: int = 3) -> dict:
+    # 시연 질문 고정 매핑 우선 체크
+    demo = _get_demo_fixed(question)
+    if demo:
+        print(f"[카테고리 생성] 시연 고정 매핑 히트: {question}")
+        return demo
+
     cache_key = hashlib.md5(question.strip().encode()).hexdigest()
     if cache_key in category_cache:
         return category_cache[cache_key]
@@ -746,7 +832,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
         return result
 
     # 2) 닫힌 질문 자동 판단
-    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "해줄까", "볼까", "들을래", "할게", "갈까", "있어?", "없어?", "했니", "왔어", "갔어", "봤어", "잤어", "일어났어"]
+    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "해줄까", "볼까", "들을래", "할게", "갈까", "있어?", "없어?", "했니", "왔어", "갔어", "봤어", "잤어", "일어났어", "싶어?", "안 돼?", "될까", "줄래", "해줘", "보고싶어", "그래?", "그랬어?", "맞아?", "아니야?"]
     is_closed = any(p in question for p in closed_patterns)
 
     if is_closed:
@@ -882,6 +968,15 @@ def recommend():
     if not question:
         return jsonify({"error": "질문을 입력하세요"}), 400
 
+    # 시연 질문 고정 매핑 우선 체크
+    if selected_category:
+        demo_sentences = _get_demo_fixed(question, selected_category)
+        if demo_sentences:
+            print(f"[recommend] 시연 고정 매핑 히트: {question} + [{selected_category}]")
+            _recommend_stats["recommend_calls"] += 1
+            _last_recommend_by_user[matching_id] = {"sentences": demo_sentences, "at": datetime.now().isoformat()}
+            return jsonify({"sentences": demo_sentences})
+
     # 동의어 매핑 — 보호자가 쓰는 호칭 → 환자 expressions에 있는 이름
     SYNONYM_MAP = {"손녀딸": "예승이", "손녀": "예승이", "할아버지": "나"}
     search_q = question
@@ -913,6 +1008,31 @@ def recommend():
             sentiment_filter = "중립"
 
     candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=10)
+
+    # 질문 키워드 기반 후보 필터링 — 관련 없는 주제 제거
+    _QUESTION_KEYWORDS = {
+        "주스": ["주스", "오렌지", "마시"],
+        "초코우유": ["초코", "우유", "마시"],
+        "우유": ["우유", "마시"],
+        "손녀": ["예승", "손녀", "불러", "보고 싶", "데려"],
+        "예승": ["예승", "손녀", "불러", "보고 싶", "데려"],
+        "간식": ["간식", "만들", "주방"],
+        "야구": ["야구", "롯데", "전준우", "홈런", "이겼", "졌"],
+        "트로트": ["트로트", "나훈아", "임영웅", "노래", "틀어"],
+        "먹고": ["먹", "죽", "국밥", "밥", "국", "음식"],
+        "아파": ["아파", "아프", "통증", "어깨", "다리", "허리"],
+    }
+    q_lower = question
+    matched_keywords = []
+    for trigger, keywords in _QUESTION_KEYWORDS.items():
+        if trigger in q_lower:
+            matched_keywords.extend(keywords)
+    if matched_keywords:
+        relevant = [c for c in candidates if any(kw in c["text"] for kw in matched_keywords)]
+        irrelevant = [c for c in candidates if not any(kw in c["text"] for kw in matched_keywords)]
+        # 관련 있는 것 먼저, 부족하면 나머지로 채움
+        candidates = (relevant + irrelevant)[:10]
+        print(f"[recommend] 키워드 필터: {matched_keywords}, 관련후보: {len(relevant)}개")
 
     # 초대/방문 질문에서만 고정 응답 풀 적용
     invite_keywords = ["오라고", "부를까", "초대", "놀러", "올래", "데려"]
