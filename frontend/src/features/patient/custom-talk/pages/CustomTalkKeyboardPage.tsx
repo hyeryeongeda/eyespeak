@@ -1,9 +1,8 @@
-import { type CSSProperties, useEffect, useMemo } from 'react'
+import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
-import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
@@ -13,7 +12,6 @@ import {
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import { useCustomTalkStore } from '../store/customTalkStore'
-import { createEntryCellMapping } from '../utils/customTalkGazeMapping'
 import type {
   CustomTalkKeyboardOption,
   KeyboardCompositionState,
@@ -55,7 +53,6 @@ type KeyboardCardModel = {
   tone: 'sand' | 'sky' | 'mint' | 'slate'
   onSelect: () => void
   disabled?: boolean
-  placeholder?: boolean
   trackingId:
     | 'custom-talk-keyboard-option-1'
     | 'custom-talk-keyboard-option-2'
@@ -77,7 +74,6 @@ function createEmptyCard(trackingId: KeyboardCardModel['trackingId']): KeyboardC
     tone: 'sand',
     onSelect: () => {},
     disabled: true,
-    placeholder: true,
     trackingId,
   }
 }
@@ -88,7 +84,6 @@ function createUtilityCard(
 ): KeyboardCardModel {
   return {
     ...config,
-    placeholder: false,
     trackingId,
   }
 }
@@ -178,6 +173,10 @@ export default function CustomTalkKeyboardPage() {
 
     void initializeKeyboard()
   }, [hasEntrySource, initializeKeyboard, keyboardStatus])
+
+  if (!hasEntrySource) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
+  }
 
   const hasGlobalInterrupt = chat.shouldShowInterruptOverlay || chat.shouldShowReplyOverlay
   const isInputBlocked =
@@ -284,7 +283,6 @@ export default function CustomTalkKeyboardPage() {
     tone: 'sand',
     onSelect: () => handleSelectOption(option),
     disabled: isKeyboardLocked || isInputBlocked || !option.value,
-    placeholder: false,
     trackingId: CARD_TRACKING_IDS[index] ?? CARD_TRACKING_IDS[CARD_TRACKING_IDS.length - 1],
   }))
 
@@ -335,14 +333,6 @@ export default function CustomTalkKeyboardPage() {
     ...card,
     trackingId: CARD_TRACKING_IDS[index],
   }))
-  const [topLeftCard, topCenterCard, topRightCard, bottomLeftCard] = visibleCards as [
-    KeyboardCardModel,
-    KeyboardCardModel,
-    KeyboardCardModel,
-    KeyboardCardModel,
-  ]
-  const actionTrackingId = 'custom-talk-keyboard-action' as const
-  const backTrackingId = 'custom-talk-keyboard-back' as const
 
   const actionCard =
     keyboardStatus === 'completed'
@@ -392,62 +382,25 @@ export default function CustomTalkKeyboardPage() {
                   onSelect: () => void initializeKeyboard(),
                   disabled: isKeyboardLocked,
                 }
-  const cellMapping = useMemo(
-    () =>
-      createEntryCellMapping({
-        topLeft: topLeftCard.placeholder ? null : topLeftCard.trackingId,
-        topCenter: topCenterCard.placeholder ? null : topCenterCard.trackingId,
-        topRight: topRightCard.placeholder ? null : topRightCard.trackingId,
-        bottomLeft: bottomLeftCard.placeholder ? null : bottomLeftCard.trackingId,
-        bottomCenter: actionTrackingId,
-        bottomRight: backTrackingId,
-      }),
-    [bottomLeftCard, topCenterCard, topLeftCard, topRightCard],
-  )
-
-  useCellMapping(cellMapping)
-
-  if (!hasEntrySource) {
-    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
-  }
 
   return (
     <CustomTalkEntryLayout
       title="\uc9c1\uc811 \ub9d0\ud558\uae30"
-      topLeft={{
-        ...topLeftCard,
-        disabled: Boolean(topLeftCard.placeholder),
-        commitDisabled: Boolean(topLeftCard.disabled && !topLeftCard.placeholder),
-      }}
-      topCenter={{
-        ...topCenterCard,
-        disabled: Boolean(topCenterCard.placeholder),
-        commitDisabled: Boolean(topCenterCard.disabled && !topCenterCard.placeholder),
-      }}
-      topRight={{
-        ...topRightCard,
-        disabled: Boolean(topRightCard.placeholder),
-        commitDisabled: Boolean(topRightCard.disabled && !topRightCard.placeholder),
-      }}
-      bottomLeft={{
-        ...bottomLeftCard,
-        disabled: Boolean(bottomLeftCard.placeholder),
-        commitDisabled: Boolean(bottomLeftCard.disabled && !bottomLeftCard.placeholder),
-      }}
+      topLeft={visibleCards[0]}
+      topCenter={visibleCards[1]}
+      topRight={visibleCards[2]}
+      bottomLeft={visibleCards[3]}
       bottomCenter={{
         ...actionCard,
-        disabled: false,
-        commitDisabled: Boolean(actionCard.disabled),
-        trackingId: actionTrackingId,
+        trackingId: 'custom-talk-keyboard-action',
       }}
       bottomRight={{
         title: '\ub4a4\ub85c\uac00\uae30',
         description: '\uc774\uc804 \ub2e8\uacc4 \ub610\ub294 \ubb38\uc7a5 \ud654\uba74\uc73c\ub85c \ub3cc\uc544\uac11\ub2c8\ub2e4.',
         tone: 'slate',
         onSelect: handleBack,
-        disabled: false,
-        commitDisabled: isKeyboardLocked,
-        trackingId: backTrackingId,
+        disabled: isKeyboardLocked,
+        trackingId: 'custom-talk-keyboard-back',
       }}
       dwellFeedback={dwellFeedback}
       centerChildren={

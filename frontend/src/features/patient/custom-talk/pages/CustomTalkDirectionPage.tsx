@@ -1,11 +1,13 @@
-import { type CSSProperties, useEffect, useMemo } from 'react'
+import { type CSSProperties, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
-import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
-import { createGuardianPromptCellMapping } from '../utils/customTalkGazeMapping'
+import {
+  getCustomTalkNoticeStyle,
+  customTalkLoadingNoticeStyle,
+} from '../components/customTalkUi'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
@@ -22,6 +24,13 @@ const centerStackStyle: CSSProperties = {
 const promptPanelSlotStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
+}
+
+const noticeStackStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  flexShrink: 0,
 }
 
 type CustomTalkDirectionTrackingId =
@@ -117,14 +126,11 @@ export default function CustomTalkDirectionPage() {
     (chat.activeMessage?.sender === 'guardian' ? chat.activeMessage : null) ??
     getLatestGuardianMessage(chat.state.messages)
   const guardianMessage = currentGuardianMessage?.content.trim() ?? ''
-  const recentMessages = useMemo(
-    () =>
-      buildRecentMessages(
-        chat.state.messages,
-        currentGuardianMessage?.id ?? null,
-      ),
-    [chat.state.messages, currentGuardianMessage?.id],
+  const recentMessages = buildRecentMessages(
+    chat.state.messages,
+    currentGuardianMessage?.id ?? null,
   )
+  const recentMessagesSignature = recentMessages.join('\n')
 
   useEffect(() => {
     void initializeCustomTalk({
@@ -134,30 +140,12 @@ export default function CustomTalkDirectionPage() {
   }, [
     guardianMessage,
     initializeCustomTalk,
-    recentMessages,
+    recentMessagesSignature,
   ])
 
   const categoryCards = buildCategoryCards(visibleCategories)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
-  const assistiveText =
-    errorMessage ??
-    (status === 'loading' || status === 'refreshing'
-      ? '맞춤대화 카테고리를 불러오는 중입니다.'
-      : null)
-  const cellMapping = useMemo(
-    () =>
-      createGuardianPromptCellMapping({
-        topLeft: categoryCards[0].category ? categoryCards[0].trackingId : null,
-        topRight: categoryCards[1].category ? categoryCards[1].trackingId : null,
-        bottomLeft: categoryCards[2].category ? categoryCards[2].trackingId : null,
-        bottomRight: 'custom-talk-direction-back',
-        namespace: 'custom-talk-direction',
-      }),
-    [categoryCards],
-  )
-
-  useCellMapping(cellMapping)
 
   const handleSelectCategory = (category: CustomTalkCategoryOption | null) => {
     if (!category) {
@@ -171,29 +159,25 @@ export default function CustomTalkDirectionPage() {
   return (
     <CustomTalkGuardianPromptLayout
       title="보호자 선발화-카테고리"
-      assistiveText={assistiveText}
       topLeft={{
         title: categoryCards[0].title,
         tone: categoryCards[0].tone,
         onSelect: () => handleSelectCategory(categoryCards[0].category),
-        disabled: categoryCards[0].disabled,
-        commitDisabled: isBusy,
+        disabled: isBusy || categoryCards[0].disabled,
         trackingId: categoryCards[0].trackingId,
       }}
       topRight={{
         title: categoryCards[1].title,
         tone: categoryCards[1].tone,
         onSelect: () => handleSelectCategory(categoryCards[1].category),
-        disabled: categoryCards[1].disabled,
-        commitDisabled: isBusy,
+        disabled: isBusy || categoryCards[1].disabled,
         trackingId: categoryCards[1].trackingId,
       }}
       bottomLeft={{
         title: categoryCards[2].title,
         tone: categoryCards[2].tone,
         onSelect: () => handleSelectCategory(categoryCards[2].category),
-        disabled: categoryCards[2].disabled,
-        commitDisabled: isBusy,
+        disabled: isBusy || categoryCards[2].disabled,
         trackingId: categoryCards[2].trackingId,
       }}
       bottomRight={{
@@ -212,6 +196,19 @@ export default function CustomTalkDirectionPage() {
               mode="entry"
             />
           </div>
+
+          {status === 'loading' || status === 'refreshing' || errorMessage ? (
+            <div style={noticeStackStyle}>
+              {status === 'loading' || status === 'refreshing' ? (
+                <div style={customTalkLoadingNoticeStyle}>
+                  맞춤대화 카테고리를 불러오는 중입니다.
+                </div>
+              ) : null}
+              {errorMessage ? (
+                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       }
     />
