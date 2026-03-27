@@ -16,6 +16,30 @@ const INTERACTIVE_ELEMENT_SELECTOR = [
   '[role="button"]',
 ].join(', ')
 
+interface InteractiveAreaSample {
+  offsetX: number
+  offsetY: number
+  weight: number
+}
+
+interface WeightedInteractiveTargetResult {
+  element: HTMLElement
+  score: number
+  hitCount: number
+}
+
+const DEFAULT_INTERACTIVE_AREA_SAMPLES: InteractiveAreaSample[] = [
+  { offsetX: 0, offsetY: 0, weight: 0.28 },
+  { offsetX: 0, offsetY: -1, weight: 0.1 },
+  { offsetX: 1, offsetY: 0, weight: 0.1 },
+  { offsetX: 0, offsetY: 1, weight: 0.1 },
+  { offsetX: -1, offsetY: 0, weight: 0.1 },
+  { offsetX: -1, offsetY: -1, weight: 0.08 },
+  { offsetX: 1, offsetY: -1, weight: 0.08 },
+  { offsetX: 1, offsetY: 1, weight: 0.08 },
+  { offsetX: -1, offsetY: 1, weight: 0.08 },
+]
+
 export function clampTrackingProgress(value: number) {
   if (!Number.isFinite(value)) {
     return 0
@@ -117,6 +141,80 @@ export function getInteractiveElementFromPoint(
   }
 
   return null
+}
+
+export function getWeightedInteractiveTargetFromArea(
+  clientX: number,
+  clientY: number,
+  options?: {
+    container?: HTMLElement | null
+    radiusPx?: number
+    candidateSelector?: string
+  },
+): WeightedInteractiveTargetResult | null {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const radiusPx = Math.max(0, options?.radiusPx ?? 0)
+  const candidateSelector = options?.candidateSelector
+  const weightedHits = new Map<
+    HTMLElement,
+    { score: number; hitCount: number }
+  >()
+
+  for (const sample of DEFAULT_INTERACTIVE_AREA_SAMPLES) {
+    const sampleX = clientX + sample.offsetX * radiusPx
+    const sampleY = clientY + sample.offsetY * radiusPx
+    const element = getInteractiveElementFromPoint(sampleX, sampleY, options?.container)
+
+    if (!element) {
+      continue
+    }
+
+    const candidate = candidateSelector
+      ? element.closest<HTMLElement>(candidateSelector)
+      : element
+
+    if (!candidate) {
+      continue
+    }
+
+    if (options?.container && !options.container.contains(candidate)) {
+      continue
+    }
+
+    const current = weightedHits.get(candidate)
+
+    if (current) {
+      current.score += sample.weight
+      current.hitCount += 1
+      continue
+    }
+
+    weightedHits.set(candidate, {
+      score: sample.weight,
+      hitCount: 1,
+    })
+  }
+
+  let bestEntry: WeightedInteractiveTargetResult | null = null
+
+  for (const [element, hit] of weightedHits.entries()) {
+    if (
+      !bestEntry ||
+      hit.score > bestEntry.score ||
+      (hit.score === bestEntry.score && hit.hitCount > bestEntry.hitCount)
+    ) {
+      bestEntry = {
+        element,
+        score: hit.score,
+        hitCount: hit.hitCount,
+      }
+    }
+  }
+
+  return bestEntry
 }
 
 export function isInteractiveElementEligibleForGlobalGazeSelection(element: HTMLElement) {
