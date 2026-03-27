@@ -5,51 +5,59 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * [Unit 3] WebSocket 세션 저장소 — "누가 지금 온라인인가?" 를 추적
- *
- * 보호자가 채팅 화면에 있는지(WebSocket 연결) 없는지(끊김)에 따라
- * 메시지 전달 방식이 달라진다:
- *   - 온라인 → WebSocket으로 즉시 전달
- *   - 오프라인 → FCM 푸시 알림으로 전달
+ * WebSocket 세션 저장소 — "누가 지금 온라인인가?" 를 추적
  *
  * WebSocketEventListener가 연결/해제 이벤트를 감지하여
- * 이 클래스의 addSession()/removeSession()을 호출한다.
+ * 이 클래스의 addSession()/removeSessionBySessionId()을 호출한다.
+ *
+ * 재연결 race condition 방어:
+ *   새 CONNECT가 먼저 처리되고 옛 DISCONNECT가 뒤늦게 도착하면,
+ *   옛 세션의 DISCONNECT가 새 세션까지 삭제하는 문제가 있었다.
+ *   userIdToSessionId(Map ③)로 "끊어진 세션이 최신 세션인지" 확인하여,
+ *   최신 세션일 때만 오프라인 처리한다.
  */
 @Component
 public class WebSocketSessionManager {
 
-    // ConcurrentHashMap: 여러 유저가 동시에 접속/해제해도 데이터가 꼬이지 않는 안전한 Map
-    // key: userId(String), value: StompPrincipal(userId, role)
+    // Map ①: userId → StompPrincipal — "이 유저가 온라인인가?"
     private final ConcurrentHashMap<String, StompPrincipal> sessions = new ConcurrentHashMap<>();
 
-    // sessionId → userId 역방향 매핑
-    // DISCONNECT 이벤트에서 Principal이 null일 때 sessionId로 userId를 역추적하기 위함
+    // Map ②: sessionId → userId — "이 세션은 누구 건가?" (DISCONNECT 시 userId 역추적용)
     private final ConcurrentHashMap<String, String> sessionIdToUserId = new ConcurrentHashMap<>();
+
+    // Map ③: userId → sessionId — "이 유저의 최신 세션은?" (race condition 방어용)
+    private final ConcurrentHashMap<String, String> userIdToSessionId = new ConcurrentHashMap<>();
 
     public void addSession(String userId, String sessionId, StompPrincipal principal) {
         sessions.put(userId, principal);
+        userIdToSessionId.put(userId, sessionId);
         sessionIdToUserId.put(sessionId, userId);
     }
 
     public void removeSession(String userId) {
+        String sessionId = userIdToSessionId.remove(userId);
+        if (sessionId != null) {
+            sessionIdToUserId.remove(sessionId);
+        }
         sessions.remove(userId);
     }
 
     /**
      * sessionId로 세션 제거 — DISCONNECT 이벤트에서 항상 사용.
-     * sessionId는 Principal과 달리 DISCONNECT 이벤트에 항상 존재한다.
+     *
+     * CAS(Compare-And-Swap) 연산으로 race condition 방어:
+     *   끊어진 세션이 이 유저의 최신 세션일 때만 오프라인 처리.
+     *   이미 새 세션이 등록되어 있으면 오프라인 처리하지 않는다.
      */
     public void removeSessionBySessionId(String sessionId) {
         String userId = sessionIdToUserId.remove(sessionId);
         if (userId != null) {
-            sessions.remove(userId);
+            if (userIdToSessionId.remove(userId, sessionId)) {
+                sessions.remove(userId);
+            }
         }
     }
 
-    /**
-     * 채팅 메시지 전송 시 이 메서드로 상대방이 온라인인지 확인하여
-     * WebSocket / FCM 분기를 결정한다.
-     */
     public boolean isOnline(String userId) {
         return sessions.containsKey(userId);
     }
