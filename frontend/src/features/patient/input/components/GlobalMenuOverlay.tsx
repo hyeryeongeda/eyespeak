@@ -224,20 +224,26 @@ export default function GlobalMenuOverlay() {
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
 
   const isTrackingReady = isPatientTrackingAvailable(trackingStatus)
-  const { hoveredTargetId, inputSource } = useTracking<GlobalMenuTargetId>({
+  const { gazeHoveredTargetId, pointerHoveredTargetId } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
     enabled: isOpen && isTrackingReady && pendingTargetId === null,
   })
-  const isGazeSelectionActive = inputSource === 'gaze'
-  const gazeHighlightedTargetId =
-    isGazeSelectionActive && pendingTargetId === null ? hoveredTargetId : null
+  const highlightedTargetId =
+    pendingTargetId === null
+      ? (pointerHoveredTargetId ?? gazeHoveredTargetId)
+      : null
+  const dwellInputSource = pointerHoveredTargetId
+    ? 'pointer'
+    : gazeHoveredTargetId
+      ? 'gaze'
+      : null
 
   useDwell<GlobalMenuTargetId>({
-    hoveredTargetId: isGazeSelectionActive ? hoveredTargetId : null,
+    hoveredTargetId: highlightedTargetId,
     dwellDurationMs,
-    disabled: !isOpen || !isTrackingReady || pendingTargetId !== null,
+    disabled: !isOpen || !isTrackingReady || pendingTargetId !== null || !highlightedTargetId,
     onCommit: targetId => {
-      queueAction(targetId, 'gaze')
+      queueAction(targetId, dwellInputSource ?? 'pointer')
     },
   })
 
@@ -359,7 +365,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('yes')}
               style={getMenuButtonStyle({
                 targetId: 'yes',
-                isHovered: gazeHighlightedTargetId === 'yes',
+                isHovered: highlightedTargetId === 'yes',
                 isPending: pendingTargetId === 'yes',
                 disabled: pendingTargetId !== null,
               })}
@@ -376,7 +382,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('no')}
               style={getMenuButtonStyle({
                 targetId: 'no',
-                isHovered: gazeHighlightedTargetId === 'no',
+                isHovered: highlightedTargetId === 'no',
                 isPending: pendingTargetId === 'no',
                 disabled: pendingTargetId !== null,
               })}
@@ -393,7 +399,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('sos')}
               style={getMenuButtonStyle({
                 targetId: 'sos',
-                isHovered: gazeHighlightedTargetId === 'sos',
+                isHovered: highlightedTargetId === 'sos',
                 isPending: pendingTargetId === 'sos',
                 disabled: pendingTargetId !== null,
               })}
@@ -410,7 +416,7 @@ export default function GlobalMenuOverlay() {
               onClick={() => queueAction('home')}
               style={getMenuButtonStyle({
                 targetId: 'home',
-                isHovered: gazeHighlightedTargetId === 'home',
+                isHovered: highlightedTargetId === 'home',
                 isPending: pendingTargetId === 'home',
                 disabled: pendingTargetId !== null,
               })}

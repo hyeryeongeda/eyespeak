@@ -32,7 +32,7 @@ const threeColLayout: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: '1fr 2fr 1fr',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   gridTemplateRows: '1fr 1fr',
   gap: '12px',
   gridTemplateAreas: `

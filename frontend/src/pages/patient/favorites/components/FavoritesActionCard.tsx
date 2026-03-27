@@ -4,11 +4,15 @@ import {
   isDwellFeedbackTargetActive,
   type DwellFeedbackViewModel,
 } from '../../../../features/patient/input/hooks/useDwellFeedback'
+import {
+  favoriteTileToneStyleMap,
+  type FavoriteTileTone,
+} from '../favoritesUi'
 
 const cardStyle: CSSProperties = {
-  width: '100%',
   minHeight: 0,
   flex: 1,
+  width: '100%',
   padding: '18px 16px',
   borderRadius: '24px',
   border: '1px solid rgba(213, 222, 233, 0.88)',
@@ -29,25 +33,30 @@ const cardStyle: CSSProperties = {
 
 const primaryStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.5rem, 2.25vw, 2rem)',
+  maxWidth: '100%',
+  fontSize: 'clamp(3rem, 5vw, 4.45rem)',
   fontWeight: 800,
+  lineHeight: 1.22,
+  letterSpacing: '-0.03em',
+  wordBreak: 'keep-all',
   color: '#203042',
-  lineHeight: 1.2,
 }
 
 const descriptionStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(0.98rem, 1.35vw, 1.1rem)',
+  maxWidth: '100%',
+  fontSize: 'clamp(1rem, 1.55vw, 1.15rem)',
   fontWeight: 600,
   color: '#647587',
   lineHeight: 1.4,
+  wordBreak: 'keep-all',
 }
 
 const interactiveCss = `
   .favorites-action-card:hover:not(:disabled),
   .favorites-action-card:focus-visible:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 44px rgba(40, 66, 90, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 28px 54px rgba(40, 66, 90, 0.16);
     outline: none;
   }
 `
@@ -55,6 +64,7 @@ const interactiveCss = `
 export interface FavoritesActionCardProps {
   primaryText: string
   description: string
+  tone?: FavoriteTileTone
   disabled?: boolean
   onClick: () => void
   children?: ReactNode
@@ -65,12 +75,14 @@ export interface FavoritesActionCardProps {
 export default function FavoritesActionCard({
   primaryText,
   description,
+  tone = 'slate',
   disabled = false,
   onClick,
   children,
   trackingId,
   dwellFeedback,
 }: FavoritesActionCardProps) {
+  const toneStyle = favoriteTileToneStyleMap[tone]
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(
     dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
     trackingId,
@@ -84,6 +96,7 @@ export default function FavoritesActionCard({
         className="favorites-action-card"
         style={{
           ...cardStyle,
+          background: toneStyle.background,
           opacity: disabled ? 0.65 : 1,
           cursor: disabled ? 'not-allowed' : 'pointer',
         }}
