@@ -5,10 +5,6 @@ import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
 import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-} from '../components/customTalkUi'
 import { createGuardianPromptCellMapping } from '../utils/customTalkGazeMapping'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
@@ -26,13 +22,6 @@ const centerStackStyle: CSSProperties = {
 const promptPanelSlotStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
-}
-
-const noticeStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  flexShrink: 0,
 }
 
 type CustomTalkDirectionTrackingId =
@@ -151,6 +140,11 @@ export default function CustomTalkDirectionPage() {
   const categoryCards = buildCategoryCards(visibleCategories)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const assistiveText =
+    errorMessage ??
+    (status === 'loading' || status === 'refreshing'
+      ? '맞춤대화 카테고리를 불러오는 중입니다.'
+      : null)
   const cellMapping = useMemo(
     () =>
       createGuardianPromptCellMapping({
@@ -177,6 +171,7 @@ export default function CustomTalkDirectionPage() {
   return (
     <CustomTalkGuardianPromptLayout
       title="보호자 선발화-카테고리"
+      assistiveText={assistiveText}
       topLeft={{
         title: categoryCards[0].title,
         tone: categoryCards[0].tone,
@@ -217,19 +212,6 @@ export default function CustomTalkDirectionPage() {
               mode="entry"
             />
           </div>
-
-          {status === 'loading' || status === 'refreshing' || errorMessage ? (
-            <div style={noticeStackStyle}>
-              {status === 'loading' || status === 'refreshing' ? (
-                <div style={customTalkLoadingNoticeStyle}>
-                  맞춤대화 카테고리를 불러오는 중입니다.
-                </div>
-              ) : null}
-              {errorMessage ? (
-                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       }
     />

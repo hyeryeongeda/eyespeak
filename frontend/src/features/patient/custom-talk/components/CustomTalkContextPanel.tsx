@@ -152,9 +152,11 @@ export default function CustomTalkContextPanel({
       <div style={panelStyleByMode}>
         <div style={chatListStyleByMode}>
           {visibleConversationLog.length === 0 ? (
-            <div style={emptyStyle}>
-              \ud45c\uc2dc\ud560 \ub300\ud654 \ub9e5\ub77d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.
-            </div>
+            isEntryMode ? null : (
+              <div style={emptyStyle}>
+                \ud45c\uc2dc\ud560 \ub300\ud654 \ub9e5\ub77d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.
+              </div>
+            )
           ) : (
             visibleConversationLog.map(item => {
               const isGuardian = item.sender === 'guardian'
