@@ -5,6 +5,7 @@ import {
   type UseDwellFeedbackResult,
 } from '../../input/hooks/useDwellFeedback'
 import type { CustomTalkStageActionCard } from './CustomTalkStageLayout'
+import { CUSTOM_TALK_SELECTION_SCOPE_ID } from '../utils/selectionScope'
 
 type CustomTalkEntryActionCard = CustomTalkStageActionCard & {
   trackingId?: string
@@ -355,7 +356,12 @@ export default function CustomTalkEntryLayout({
   gridTemplateRows,
 }: CustomTalkEntryLayoutProps) {
   return (
-    <main className="custom-talk-entry-page" style={pageWrap} aria-label={title}>
+    <main
+      className="custom-talk-entry-page"
+      style={pageWrap}
+      aria-label={title}
+      data-gaze-selection-scope={CUSTOM_TALK_SELECTION_SCOPE_ID}
+    >
       <style>{layoutCss}</style>
       <div
         className="custom-talk-entry-layout"
@@ -363,11 +369,8 @@ export default function CustomTalkEntryLayout({
           ...gridStyle,
           gridTemplateRows: gridTemplateRows ?? gridStyle.gridTemplateRows,
         }}
-        ref={element => {
-          if (dwellFeedback) {
-            dwellFeedback.containerRef.current = element
-          }
-        }}
+        data-gaze-selectable-group={CUSTOM_TALK_SELECTION_SCOPE_ID}
+        ref={dwellFeedback?.setContainerElement}
       >
         <ActionCard gridArea="top-left" card={topLeft} dwellFeedback={dwellFeedback} />
         <ActionCard gridArea="top-center" card={topCenter} dwellFeedback={dwellFeedback} />

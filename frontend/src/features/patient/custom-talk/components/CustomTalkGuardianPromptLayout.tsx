@@ -4,6 +4,7 @@ import {
   isDwellFeedbackTargetActive,
   type UseDwellFeedbackResult,
 } from '../../input/hooks/useDwellFeedback'
+import { CUSTOM_TALK_SELECTION_SCOPE_ID } from '../utils/selectionScope'
 
 type CustomTalkGuardianPromptTone = 'sky' | 'sand' | 'mint' | 'slate'
 
@@ -278,6 +279,7 @@ export default function CustomTalkGuardianPromptLayout({
       className="custom-talk-guardian-prompt-page"
       style={pageWrapStyle}
       aria-label={title}
+      data-gaze-selection-scope={CUSTOM_TALK_SELECTION_SCOPE_ID}
     >
       <style>{layoutCss}</style>
       <div style={contentStyle}>
@@ -285,11 +287,8 @@ export default function CustomTalkGuardianPromptLayout({
         <div
           className="custom-talk-guardian-prompt-grid"
           style={gridStyle}
-          ref={element => {
-            if (dwellFeedback) {
-              dwellFeedback.containerRef.current = element
-            }
-          }}
+          data-gaze-selectable-group={CUSTOM_TALK_SELECTION_SCOPE_ID}
+          ref={dwellFeedback?.setContainerElement}
         >
           <ActionCard gridArea="top-left" card={topLeft} dwellFeedback={dwellFeedback} />
           <ActionCard gridArea="top-right" card={topRight} dwellFeedback={dwellFeedback} />

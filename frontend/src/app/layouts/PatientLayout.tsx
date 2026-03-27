@@ -108,6 +108,7 @@ function PatientLayoutShell() {
       !isCalibrationRoute &&
       !isGlobalMenuOpen &&
       isPatientTrackingAvailable(trackingStatus),
+    customTalkSelectionScopeEnabled: currentRouteKind === 'custom_talk',
   })
   usePatientModeDwellSync({
     enabled: !isCalibrationRoute,

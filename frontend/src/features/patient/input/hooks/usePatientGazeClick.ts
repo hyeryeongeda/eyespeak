@@ -7,6 +7,11 @@ import {
 } from '../../../../services/careSettingService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
+  CUSTOM_TALK_CARD_SELECTOR,
+  getCustomTalkSelectableGroupElement,
+  isCustomTalkSelectableGroupElement,
+} from '../../custom-talk/utils/selectionScope'
+import {
   getInteractiveElementFromPoint,
   getInteractiveElementSelectionKey,
   getWeightedInteractiveTargetFromArea,
@@ -30,14 +35,13 @@ import {
 
 interface UsePatientGazeClickOptions {
   enabled?: boolean
+  customTalkSelectionScopeEnabled?: boolean
 }
 
 const GAZE_TARGET_SWITCH_GRACE_MS = 160
 const SELECTION_CONFIRM_FEEDBACK_MS = 3000
 const SELECTION_COMMIT_DELAY_MS = 0
 const TARGET_RESELECTION_COOLDOWN_MS = 2000
-const CUSTOM_TALK_CARD_SELECTOR =
-  '.custom-talk-entry-card, .custom-talk-guardian-prompt-card'
 const CUSTOM_TALK_GAZE_TUNING = {
   stableHoldMs: 240,
   switchHoldMs: 240,
@@ -178,29 +182,33 @@ function getSelectionSemanticRole(
   return 'other'
 }
 
-function isCustomTalkElement(element: HTMLElement | null) {
-  return Boolean(element?.closest(CUSTOM_TALK_CARD_SELECTOR))
+function isCustomTalkElement(
+  element: HTMLElement | null,
+  customTalkSelectionScopeEnabled: boolean,
+) {
+  return (
+    customTalkSelectionScopeEnabled &&
+    Boolean(element?.closest(CUSTOM_TALK_CARD_SELECTOR)) &&
+    isCustomTalkSelectableGroupElement(element)
+  )
 }
 
-function isCustomTalkSelectionTarget(target: SelectionTarget | null) {
+function isCustomTalkSelectionTarget(
+  target: SelectionTarget | null,
+  customTalkSelectionScopeEnabled: boolean,
+) {
+  if (!customTalkSelectionScopeEnabled) {
+    return false
+  }
+
   return (
-    isCustomTalkTrackingId(target?.trackingId) ||
-    isCustomTalkElement(target?.element ?? null)
+    isCustomTalkTrackingId(target?.trackingId) &&
+    isCustomTalkElement(target?.element ?? null, customTalkSelectionScopeEnabled)
   )
 }
 
 function isSelectionTargetVisible(target: SelectionTarget | null) {
   return Boolean(target && isElementVisibleForSelection(target.element))
-}
-
-function isCustomTalkCellMapping(mapping: PatientCellMapping | null) {
-  if (!mapping) {
-    return false
-  }
-
-  return Object.values(mapping).some(target =>
-    normalizePatientCellMappingTarget(target).allTargets.some(isCustomTalkTrackingId),
-  )
 }
 
 function areTargetsInSameCell(
@@ -397,6 +405,7 @@ function isElementVisuallyInteractive(element: HTMLElement) {
 function getNearestInteractiveTargetFromPoint(
   gazePoint: GazePoint,
   options?: {
+    container?: HTMLElement | null
     candidateSelector?: string
     source?: SelectionTargetSource
   },
@@ -410,7 +419,11 @@ function getNearestInteractiveTargetFromPoint(
       options?.candidateSelector ??
         'button, a[href], input[type="button"], input[type="submit"], [role="button"]',
     ),
-  ).filter(isElementVisuallyInteractive)
+  ).filter(
+    element =>
+      (!options?.container || options.container.contains(element)) &&
+      isElementVisuallyInteractive(element),
+  )
 
   if (interactiveElements.length === 0) {
     return null
@@ -581,12 +594,14 @@ function resolveMappedGazeTarget(input: {
 function getCustomTalkAreaHitTarget(
   gazePoint: GazePoint,
   gazeCell: number | null,
+  container: HTMLElement | null,
 ): SelectionTarget | null {
   if (!gazePoint) {
     return null
   }
 
   const areaTarget = getWeightedInteractiveTargetFromArea(gazePoint.clientX, gazePoint.clientY, {
+    container,
     radiusPx: CUSTOM_TALK_GAZE_TUNING.areaHitRadiusPx,
     candidateSelector: CUSTOM_TALK_CARD_SELECTOR,
   })
@@ -665,6 +680,7 @@ function getPreferredCustomTalkTarget(input: {
 
 function resolveRawGazeTarget(input: {
   enabled: boolean
+  customTalkSelectionScopeEnabled: boolean
   gazePoint: GazePoint
   gazeCell: number | null
   cellMapping: PatientCellMapping | null
@@ -677,8 +693,10 @@ function resolveRawGazeTarget(input: {
   }
 
   const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
-  const isCustomTalkRuntime =
-    isCustomTalkCellMapping(activeCellMapping) || isCustomTalkSelectionTarget(stableTarget)
+  const customTalkSelectableGroup = input.customTalkSelectionScopeEnabled
+    ? getCustomTalkSelectableGroupElement()
+    : null
+  const isCustomTalkRuntime = customTalkSelectableGroup !== null
 
   const disablePointHitTest =
     import.meta.env.DEV &&
@@ -695,12 +713,20 @@ function resolveRawGazeTarget(input: {
   let pointTarget: SelectionTarget | null = null
 
   if (gazePoint && !disablePointHitTest) {
-    if (isCustomTalkRuntime) {
-      pointTarget = getCustomTalkAreaHitTarget(gazePoint, gazeCell)
+    if (customTalkSelectableGroup) {
+      pointTarget = getCustomTalkAreaHitTarget(
+        gazePoint,
+        gazeCell,
+        customTalkSelectableGroup,
+      )
     }
 
     if (!pointTarget) {
-      const pointElement = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
+      const pointElement = getInteractiveElementFromPoint(
+        gazePoint.clientX,
+        gazePoint.clientY,
+        customTalkSelectableGroup,
+      )
       if (pointElement) {
         pointTarget = createSelectionTarget(pointElement, 'point-hit-test', gazeCell, null, 0.88)
       }
@@ -715,13 +741,17 @@ function resolveRawGazeTarget(input: {
     pointTarget,
   })
 
-  const nearestTarget = getNearestInteractiveTargetFromPoint(gazePoint, isCustomTalkRuntime
-    ? {
-        candidateSelector: CUSTOM_TALK_CARD_SELECTOR,
-      }
-    : undefined)
+  const nearestTarget = getNearestInteractiveTargetFromPoint(
+    gazePoint,
+    isCustomTalkRuntime
+      ? {
+          container: customTalkSelectableGroup,
+          candidateSelector: CUSTOM_TALK_CARD_SELECTOR,
+        }
+      : undefined,
+  )
 
-  if (isCustomTalkRuntime) {
+  if (customTalkSelectableGroup) {
     return getPreferredCustomTalkTarget({
       stableTarget,
       pointTarget,
@@ -785,6 +815,7 @@ function getSelectionBlockReason(element: HTMLElement | null) {
 
 export function usePatientGazeClick({
   enabled = true,
+  customTalkSelectionScopeEnabled = false,
 }: UsePatientGazeClickOptions = {}) {
   const gazePoint = useGazeInputStore(state => state.point)
   const gazeCell = useGazeInputStore(state => state.cell)
@@ -817,17 +848,24 @@ export function usePatientGazeClick({
     () =>
       resolveRawGazeTarget({
         enabled,
+        customTalkSelectionScopeEnabled,
         gazePoint,
         gazeCell,
         cellMapping,
         stableTarget: stableGazeTarget,
       }),
-    [cellMapping, enabled, gazeCell, gazePoint, stableGazeTarget],
+    [
+      cellMapping,
+      customTalkSelectionScopeEnabled,
+      enabled,
+      gazeCell,
+      gazePoint,
+      stableGazeTarget,
+    ],
   )
   const isCustomTalkRuntime =
-    isCustomTalkCellMapping(cellMapping) ||
-    isCustomTalkSelectionTarget(rawGazeTarget) ||
-    isCustomTalkSelectionTarget(stableGazeTarget)
+    isCustomTalkSelectionTarget(rawGazeTarget, customTalkSelectionScopeEnabled) ||
+    isCustomTalkSelectionTarget(stableGazeTarget, customTalkSelectionScopeEnabled)
   const effectiveDwellDurationMs = isCustomTalkRuntime
     ? Math.max(dwellDurationMs, CUSTOM_TALK_GAZE_TUNING.dwellMs)
     : dwellDurationMs
@@ -1034,7 +1072,7 @@ export function usePatientGazeClick({
     startSelectionCooldown(
       resolvedTarget.key,
       resolvedTarget.element,
-      isCustomTalkSelectionTarget(resolvedTarget)
+      isCustomTalkSelectionTarget(resolvedTarget, customTalkSelectionScopeEnabled)
         ? CUSTOM_TALK_GAZE_TUNING.cooldownMs
         : TARGET_RESELECTION_COOLDOWN_MS,
     )
@@ -1206,7 +1244,8 @@ export function usePatientGazeClick({
     }
 
     const usesCustomTalkSwitchTuning =
-      isCustomTalkSelectionTarget(stableGazeTarget) || isCustomTalkSelectionTarget(rawGazeTarget)
+      isCustomTalkSelectionTarget(stableGazeTarget, customTalkSelectionScopeEnabled) ||
+      isCustomTalkSelectionTarget(rawGazeTarget, customTalkSelectionScopeEnabled)
 
     if (
       usesCustomTalkSwitchTuning &&
@@ -1261,7 +1300,7 @@ export function usePatientGazeClick({
     }, switchGraceMs)
 
     return clearTargetSwitchTimer
-  }, [enabled, rawGazeTarget, stableGazeTarget])
+  }, [customTalkSelectionScopeEnabled, enabled, rawGazeTarget, stableGazeTarget])
 
   useEffect(() => {
     if (!enabled) {
