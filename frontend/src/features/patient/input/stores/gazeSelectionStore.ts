@@ -21,6 +21,10 @@ export interface GazeSelectionDebugState {
   stableTargetGroupId: string | null
   hoveredTargetKey: string | null
   hoveredTargetId: string | null
+  commitTargetKey: string | null
+  commitTargetId: string | null
+  commitTargetSource: string | null
+  commitTargetInputSource: GazeSelectionInputSource
   hoveredTargetBlockedReason: string | null
   dwellPhase?: DwellPhase
   dwellProgress?: number
@@ -42,6 +46,8 @@ export interface GazeSelectionSnapshot {
   activeTargetId: string | null
   rawTargetId: string | null
   stableTargetId: string | null
+  commitTargetKey: string | null
+  commitTargetId: string | null
   phase: DwellPhase
   progress: number
   remainingMs: number
@@ -64,6 +70,8 @@ const initialState: GazeSelectionSnapshot = {
   activeTargetId: null,
   rawTargetId: null,
   stableTargetId: null,
+  commitTargetKey: null,
+  commitTargetId: null,
   phase: 'idle',
   progress: 0,
   remainingMs: 0,
@@ -84,6 +92,10 @@ const initialState: GazeSelectionSnapshot = {
     stableTargetGroupId: null,
     hoveredTargetKey: null,
     hoveredTargetId: null,
+    commitTargetKey: null,
+    commitTargetId: null,
+    commitTargetSource: null,
+    commitTargetInputSource: null,
     hoveredTargetBlockedReason: null,
     dwellPhase: 'idle',
     dwellProgress: 0,

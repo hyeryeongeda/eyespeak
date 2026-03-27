@@ -420,13 +420,14 @@ export function usePatientGazeClick({
     useState(ACTIVATION_DELAY_OPTIONS.short.value)
   const [mouseTarget, setMouseTarget] = useState<SelectionTarget | null>(null)
   const [stableGazeTarget, setStableGazeTarget] = useState<SelectionTarget | null>(null)
+  const [suppressedCommitTargetKey, setSuppressedCommitTargetKey] =
+    useState<string | null>(null)
   const targetSwitchTimerRef = useRef<number | null>(null)
   const targetSwitchStartedAtRef = useRef<number | null>(null)
   const pendingTargetSwitchKeyRef = useRef<string | null>(null)
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
   const commitDelayTimerRef = useRef<number | null>(null)
-  const lastMousePointRef = useRef<{ clientX: number; clientY: number } | null>(null)
   const lastDebugSignatureRef = useRef<string | null>(null)
   const lastCancelReasonRef = useRef<string | null>(null)
   const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
@@ -454,6 +455,8 @@ export function usePatientGazeClick({
     : stableGazeTarget
       ? 'gaze'
       : null
+  const isCurrentSelectionCommitSuppressed =
+    currentSelectionTarget?.key === suppressedCommitTargetKey
   const currentSelectionBlockReason = currentSelectionTarget
     ? getSelectionBlockReason(currentSelectionTarget.element)
     : null
@@ -531,44 +534,34 @@ export function usePatientGazeClick({
     })
   }
 
-  const resolveCurrentPointerTarget = () => {
-    const currentTarget = mouseTargetRef.current
+  const getCommittedSelectionTarget = (
+    source: GazeSelectionCommitSource,
+    targetKey: string,
+  ) => {
+    const expectedInputSource = source === 'pointer-dwell' ? 'pointer' : 'gaze'
+    const sourceSnapshot =
+      source === 'pointer-dwell' ? mouseTargetRef.current : stableGazeTargetRef.current
 
-    if (currentTarget?.element && currentTarget.element.isConnected) {
-      return currentTarget
+    if (sourceSnapshot?.key === targetKey) {
+      return sourceSnapshot
     }
 
-    const latestMousePoint = lastMousePointRef.current
+    const currentSnapshot = currentSelectionTargetRef.current
 
-    if (!latestMousePoint) {
-      return null
+    if (
+      currentInputSourceRef.current === expectedInputSource &&
+      currentSnapshot?.key === targetKey
+    ) {
+      return currentSnapshot
     }
 
-    const element = getInteractiveElementFromPoint(
-      latestMousePoint.clientX,
-      latestMousePoint.clientY,
-    )
-
-    return element ? createSelectionTarget(element, 'point-hit-test', null) : null
+    return null
   }
 
-  const resolveCurrentGazeTarget = () => {
-    const currentTarget = stableGazeTargetRef.current
-
-    if (currentTarget?.element && currentTarget.element.isConnected) {
-      return currentTarget
-    }
-
-    return resolveRawGazeTarget({
-      enabled: true,
-      gazePoint: useGazeInputStore.getState().point,
-      gazeCell: useGazeInputStore.getState().cell,
-      cellMapping: useCellMappingStore.getState().cellMapping,
-      stableTarget: stableGazeTargetRef.current,
-    })
-  }
-
-  const commitSelection = (source: GazeSelectionCommitSource) => {
+  const commitSelection = (
+    source: GazeSelectionCommitSource,
+    committedTargetKey: string,
+  ) => {
     const { isGlobalMenuOpen, trackingStatus } = usePatientModeStore.getState()
 
     if (isGlobalMenuOpen) {
@@ -589,16 +582,22 @@ export function usePatientGazeClick({
       return false
     }
 
-    const resolvedTarget =
-      source === 'pointer-dwell'
-        ? resolveCurrentPointerTarget()
-        : resolveCurrentGazeTarget()
+    const resolvedTarget = getCommittedSelectionTarget(source, committedTargetKey)
 
     if (!resolvedTarget) {
       console.info('[patient-input] selection-commit-blocked', {
         source,
-        reason: 'no-active-target',
+        reason: 'stale-commit-target',
+        targetKey: committedTargetKey,
         trackingStatus,
+      })
+      setSuppressedCommitTargetKey(current =>
+        current === committedTargetKey ? current : committedTargetKey,
+      )
+      useGazeSelectionStore.getState().setSelectionSnapshot({
+        debug: {
+          lastCancelReason: 'stale-commit-target',
+        },
       })
       return false
     }
@@ -625,6 +624,9 @@ export function usePatientGazeClick({
         targetCell: resolvedTarget.cell,
         trackingStatus,
       })
+      setSuppressedCommitTargetKey(current =>
+        current === resolvedTarget.key ? current : resolvedTarget.key,
+      )
       useGazeSelectionStore.getState().setSelectionSnapshot({
         debug: {
           lastCancelReason: blockReason,
@@ -632,6 +634,10 @@ export function usePatientGazeClick({
       })
       return false
     }
+
+    setSuppressedCommitTargetKey(current =>
+      current === resolvedTarget.key ? null : current,
+    )
 
     if (source === 'gaze-dwell') {
       submitActiveEyeTrackingSelectionFeedback()
@@ -680,26 +686,44 @@ export function usePatientGazeClick({
   }, [currentInputSource, currentSelectionTarget, mouseTarget, stableGazeTarget])
 
   useEffect(() => {
+    if (!suppressedCommitTargetKey) {
+      return
+    }
+
+    if (currentSelectionTarget?.key !== suppressedCommitTargetKey) {
+      setSuppressedCommitTargetKey(null)
+      return
+    }
+
+    if (currentSelectionBlockReason !== null || typeof window === 'undefined') {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setSuppressedCommitTargetKey(current =>
+        current === suppressedCommitTargetKey ? null : current,
+      )
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [currentSelectionBlockReason, currentSelectionTarget?.key, suppressedCommitTargetKey])
+
+  useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
-      lastMousePointRef.current = null
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMouseTarget(null)
       return
     }
 
     const resetMouseTarget = () => {
-      lastMousePointRef.current = null
       setMouseTarget(null)
     }
 
     const handlePointerMove = (event: PointerEvent) => {
       if (event.pointerType !== 'mouse') {
         return
-      }
-
-      lastMousePointRef.current = {
-        clientX: event.clientX,
-        clientY: event.clientY,
       }
 
       const element = getInteractiveElementFromPoint(event.clientX, event.clientY)
@@ -857,26 +881,30 @@ export function usePatientGazeClick({
     hoveredTargetId: currentSelectionTarget?.key ?? null,
     dwellDurationMs,
     activationDelayMs,
-    disabled: !enabled || !currentSelectionTarget || currentSelectionBlockReason !== null,
-    onCommit: () => {
+    disabled:
+      !enabled ||
+      !currentSelectionTarget ||
+      currentSelectionBlockReason !== null ||
+      isCurrentSelectionCommitSuppressed,
+    onCommit: committedTargetKey => {
       const commitSource =
         currentInputSourceRef.current === 'pointer' ? 'pointer-dwell' : 'gaze-dwell'
 
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
         console.info('[patient-input] skipped dwell commit because the global menu is open', {
-          targetKey: currentSelectionTargetRef.current?.key ?? null,
+          targetKey: committedTargetKey,
         })
         return
       }
 
       console.info('[patient-input] dwell commit', {
         source: commitSource,
-        targetKey: currentSelectionTargetRef.current?.key ?? null,
+        targetKey: committedTargetKey,
         dwellDurationMs,
         activationDelayMs,
       })
 
-      commitSelection(commitSource)
+      commitSelection(commitSource, committedTargetKey)
     },
   })
 
@@ -937,6 +965,8 @@ export function usePatientGazeClick({
   }, [currentSelectionTarget])
 
   useEffect(() => {
+    const commitSnapshotTarget = currentSelectionTarget
+
     const nextDebugPayload = {
       inputSource: currentInputSource,
       clientX: gazePoint?.clientX ?? null,
@@ -954,6 +984,10 @@ export function usePatientGazeClick({
       stableTargetGroupId: stableGazeTarget?.groupId ?? null,
       hoveredTargetKey: currentSelectionTarget?.key ?? null,
       hoveredTargetId: currentSelectionTarget?.trackingId ?? null,
+      commitTargetKey: commitSnapshotTarget?.key ?? null,
+      commitTargetId: commitSnapshotTarget?.trackingId ?? null,
+      commitTargetSource: commitSnapshotTarget?.source ?? null,
+      commitTargetInputSource: currentInputSource,
       hoveredTargetBlockedReason: currentSelectionBlockReason,
       dwellPhase: dwellState.phase,
       dwellProgress: dwellState.progress,
@@ -975,6 +1009,8 @@ export function usePatientGazeClick({
           : null,
       rawTargetId: rawGazeTarget?.trackingId ?? null,
       stableTargetId: stableGazeTarget?.trackingId ?? null,
+      commitTargetKey: commitSnapshotTarget?.key ?? null,
+      commitTargetId: commitSnapshotTarget?.trackingId ?? null,
       phase: dwellState.phase,
       progress: dwellState.progress,
       remainingMs: dwellState.remainingMs,
@@ -1004,6 +1040,7 @@ export function usePatientGazeClick({
     enabled,
     gazeCell,
     gazePoint,
+    isCurrentSelectionCommitSuppressed,
     rawGazeTarget,
     stableGazeTarget,
   ])
