@@ -94,23 +94,13 @@ const panelStyle: CSSProperties = {
   width: '100%',
   minHeight: '100dvh',
   height: '100%',
-  padding: '20px 18px 24px',
+  padding: '8px',
   background: 'linear-gradient(180deg, #f6f4f1 0%, #f8f7f4 100%)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
   boxSizing: 'border-box',
   overflow: 'hidden',
   position: 'relative',
-}
-
-const screenTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#c4c0b9',
-  fontSize: 'clamp(1.4rem, 1.9vw, 2rem)',
-  fontWeight: 700,
-  lineHeight: 1.1,
-  letterSpacing: '-0.02em',
 }
 
 const metaStyle: CSSProperties = {
@@ -146,7 +136,7 @@ const categoryGridStyle: CSSProperties = {
     "top-left center top-right"
     "bottom-left center bottom-right"
   `,
-  gap: '12px',
+  gap: '8px',
 }
 
 const cardBaseStyle: CSSProperties = {
@@ -814,10 +804,6 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       <style>{panelCss}</style>
       {pagerControls ? <div style={floatingPagerWrapStyle}>{pagerControls}</div> : null}
       <div style={srOnlyStyle}>{`${statusCopy} 대기 ${unresolvedCount}건`}</div>
-      <h1 style={screenTitleStyle}>
-        {recommendationMode === 'category' ? '보호자 선발화-카테고리' : '보호자 선발화-답변'}
-      </h1>
-
       {recommendationMode === 'category' ? categoryContent : sentenceContent}
     </section>
   )
