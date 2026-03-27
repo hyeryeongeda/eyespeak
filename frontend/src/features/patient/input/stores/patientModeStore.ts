@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 
-export const PATIENT_GLOBAL_MENU_DWELL_MS = 1000
+export const PATIENT_GLOBAL_MENU_DWELL_MS = 500
 
 export function isPatientTrackingAvailable(status: CalibrationTrackingStatus) {
   return status === 'ready'

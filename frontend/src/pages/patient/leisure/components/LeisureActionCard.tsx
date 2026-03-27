@@ -54,6 +54,7 @@ export default function LeisureActionCard({
       onClick={onSelect}
       disabled={disabled}
       data-leisure-slot={slotId}
+      data-tracking-id={slotId}
       data-patient-target={slotId}
       style={{
         ...leisureCardBaseStyle,

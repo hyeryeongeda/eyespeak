@@ -20,6 +20,7 @@ from eye_speak.iris_tracker.calibration import PolynomialCalibrator
 from eye_speak.iris_tracker.calibration import CalibrationRefiner
 from eye_speak.iris_tracker.detector import MediaPipeDetector
 from eye_speak.iris_tracker.grid_mapper import GridMapper
+from eye_speak.iris_tracker.snapshot_classifier import SnapshotClassifier
 from eye_speak.iris_tracker.head_pose import head_pose_from_landmarks
 from eye_speak.iris_tracker.iris_normalizer import IrisNormalizer
 from eye_speak.iris_tracker.smoother import OneEuroRefiner, ScreenStabilizer
@@ -83,6 +84,13 @@ class HybridTracker:
             buffer_size=5,
             hysteresis_threshold=float(gr.get("hysteresis_threshold", 0.05)),
         )
+        self._snapshot = SnapshotClassifier(
+            int(gr["rows"]),
+            int(gr["cols"]),
+            k=5,
+            temporal_window=7,
+            temporal_threshold=4,
+        )
         self.trigger = TriggerDetector(blink_threshold=bth)
         self._ear_samples: deque[float] = deque(maxlen=120)
         self._calibrated = False
@@ -122,6 +130,7 @@ class HybridTracker:
         self._one_euro.reset()
         self._screen_stabilizer.reset()
         self._mapper.reset_stabilizer()
+        self._snapshot.reset_temporal()
         self._last_valid_output = None
         self._last_valid_at = None
         self._ready_streak = 0
@@ -233,7 +242,18 @@ class HybridTracker:
             n_screen = len(self._recent_screen)
             self._drift_baseline_x = sum(p[0] for p in self._recent_screen) / n_screen
             self._drift_baseline_y = sum(p[1] for p in self._recent_screen) / n_screen
+        # 스냅샷 분류기 학습
+        self._snapshot.fit(points, trx, try_)
+        # 방향 검증 로그: 각 셀의 centroid가 올바른 위치인지 확인
+        gr = self._cfg["grid"]
+        for cell_idx, (crx, cry) in sorted(self._snapshot._centroids.items()):
+            row, col = divmod(cell_idx, int(gr["cols"]))
+            logger.info(
+                "[DIRECTION] cell=%d (row=%d,col=%d) centroid_iris=(%.4f,%.4f)",
+                cell_idx, row, col, crx, cry,
+            )
         self._calibrated = True
+        self.iris_normalizer.reset_center()
         self._reset_runtime_state()
         logger.info("HybridTracker: calibration fitted (%s points)", n)
 
@@ -273,6 +293,7 @@ class HybridTracker:
             return out
 
         rx, ry, ear, is_blink = self.iris_normalizer(lm)
+        raw_iris_rx, raw_iris_ry = rx, ry
         logger.debug(
             "[DIAG] iris raw: rx=%s ry=%s ear=%.3f blink=%s",
             f"{float(rx):.4f}" if rx is not None else "None",
@@ -282,7 +303,22 @@ class HybridTracker:
         )
         trig = self.trigger.update(ear, time.time())
         if trig != "none":
-            logger.info("[TRIGGER] event=%s ear=%.3f", trig, ear)
+            logger.info(
+                "[TRIGGER] event=%s ear=%.3f threshold=%.3f",
+                trig,
+                ear,
+                self.iris_normalizer.blink_threshold,
+            )
+        elif hasattr(self, "_frame_count"):
+            self._frame_count += 1
+            if self._frame_count % 30 == 0:
+                logger.info(
+                    "[EAR-DIAG] ear=%.3f threshold=%.3f",
+                    ear,
+                    self.iris_normalizer.blink_threshold or 0.16,
+                )
+        else:
+            self._frame_count = 0
         self._ear_samples.append(ear)
 
         yn: Optional[float] = None
@@ -323,9 +359,9 @@ class HybridTracker:
             used_head_pose_fallback = True
             logger.debug("HybridTracker: iris unavailable; using head-pose fallback gaze")
         elif self._w_head > 0 and yn is not None and pn is not None:
-            # 비대칭 융합: X축은 iris only, Y축은 iris + head pose pitch
-            fused_rx = rx  # X: head pose 미사용 (iris만으로 좌우 정확)
-            fused_ry = self._w_iris * ry + self._w_head * pn  # Y: head pitch로 상하 보조
+            # iris only — 루게릭 환자는 머리를 움직일 수 없으므로 head pose 사용 안 함
+            fused_rx = rx
+            fused_ry = ry
         else:
             fused_rx, fused_ry = rx, ry
 
@@ -409,34 +445,67 @@ class HybridTracker:
             )
             return out
 
+        # --- 셀 판정: SnapshotClassifier 우선, fallback으로 GridMapper ---
         raw_cell = self._mapper.map_to_cell(
             stabilized.x,
             stabilized.y,
             from_screen_normalized=stabilized.space == "screen",
         )
-        screen_x, screen_y = stabilized.x, stabilized.y
-        # CalibrationRefiner 후보정
-        if self._cal_refiner.is_fitted:
-            screen_x, screen_y = self._cal_refiner.correct(screen_x, screen_y)
-            screen_x = max(0.0, min(1.0, screen_x))
-            screen_y = max(0.0, min(1.0, screen_y))
-
-        # 드리프트 보정
-        self._recent_screen.append((screen_x, screen_y))
-        if self._drift_baseline_x is not None and self._recent_screen:
-            n = len(self._recent_screen)
-            moving_avg_x = sum(p[0] for p in self._recent_screen) / n
-            moving_avg_y = sum(p[1] for p in self._recent_screen) / n
-            if (
-                abs(moving_avg_x - self._drift_baseline_x) >= 0.05
-                or abs(moving_avg_y - self._drift_baseline_y) >= 0.05
-            ):
-                self._drift_offset_x = moving_avg_x - self._drift_baseline_x
-                self._drift_offset_y = moving_avg_y - self._drift_baseline_y
-                screen_x = max(0.0, min(1.0, screen_x - self._drift_offset_x))
-                screen_y = max(0.0, min(1.0, screen_y - self._drift_offset_y))
+        if self._snapshot.is_fitted and raw_iris_rx is not None and raw_iris_ry is not None:
+            snap_cell, snap_conf = self._snapshot.classify_stable(
+                float(raw_iris_rx), float(raw_iris_ry)
+            )
+            if snap_cell is not None and snap_conf >= 0.4:
+                raw_cell = snap_cell
+                logger.debug(
+                    "[SNAP] cell=%d conf=%.2f iris=(%.4f,%.4f)",
+                    snap_cell, snap_conf, float(raw_iris_rx), float(raw_iris_ry),
+                )
         cell = self._mapper.stabilize(raw_cell)
         logger.debug("[DIAG] cell=%s stable=%s", cell, self._mapper.stable_cell)
+        # --- Grid Snap: 캘리브레이션 완료 후에만 셀 중심 스냅 ---
+        gr = self._cfg["grid"]
+        snap_rows = int(gr["rows"])
+        snap_cols = int(gr["cols"])
+        if self._calibrated:
+            # 캘리브 완료 → 셀 중심으로 스냅 (환자용 안정적 UI)
+            cell_row, cell_col = divmod(cell, snap_cols)
+            screen_x = (cell_col + 0.5) / snap_cols
+            screen_y = (cell_row + 0.5) / snap_rows
+        else:
+            # 캘리브 전 → 연속 좌표 (빨간 점이 실시간 추적되어야 함)
+            screen_x = stabilized.x if stabilized.x is not None else float(rx_s)
+            screen_y = stabilized.y if stabilized.y is not None else float(ry_s)
+            # CalibrationRefiner 후보정 (캘리브 전에도 적용 가능)
+            if self._cal_refiner.is_fitted:
+                screen_x, screen_y = self._cal_refiner.correct(screen_x, screen_y)
+                screen_x = max(0.0, min(1.0, screen_x))
+                screen_y = max(0.0, min(1.0, screen_y))
+            # 드리프트 보정
+            self._recent_screen.append((screen_x, screen_y))
+            if self._drift_baseline_x is not None and self._recent_screen:
+                n_rs = len(self._recent_screen)
+                moving_avg_x = sum(p[0] for p in self._recent_screen) / n_rs
+                moving_avg_y = sum(p[1] for p in self._recent_screen) / n_rs
+                if (
+                    abs(moving_avg_x - self._drift_baseline_x) >= 0.05
+                    or abs(moving_avg_y - self._drift_baseline_y) >= 0.05
+                ):
+                    self._drift_offset_x = moving_avg_x - self._drift_baseline_x
+                    self._drift_offset_y = moving_avg_y - self._drift_baseline_y
+                    screen_x = max(0.0, min(1.0, screen_x - self._drift_offset_x))
+                    screen_y = max(0.0, min(1.0, screen_y - self._drift_offset_y))
+        logger.debug(
+            "[GAZE-DEBUG] iris_raw=(%.4f,%.4f) fused=(%.4f,%.4f) cell=%s screen=(%.4f,%.4f) calibrated=%s",
+            float(raw_iris_rx) if raw_iris_rx is not None else 0.0,
+            float(raw_iris_ry) if raw_iris_ry is not None else 0.0,
+            fused_rx,
+            fused_ry,
+            cell,
+            screen_x,
+            screen_y,
+            self._calibrated,
+        )
 
         if not self._mark_valid_ready_frame():
             out.update(
@@ -444,6 +513,17 @@ class HybridTracker:
                     "cell": None,
                     "raw_rx": round(float(raw_rx), 4),
                     "raw_ry": round(float(raw_ry), 4),
+                    "diag_iris_rx": (
+                        round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
+                    ),
+                    "diag_iris_ry": (
+                        round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
+                    ),
+                    "diag_gain_y": (
+                        round(float(self.iris_normalizer.y_gain), 2)
+                        if self.iris_normalizer.y_gain is not None
+                        else 8.0
+                    ),
                     "ear": round(ear, 3),
                     "face": True,
                     "blink": bool(is_blink) if used_head_pose_fallback else False,
@@ -460,6 +540,17 @@ class HybridTracker:
             "ry": round(float(ry_s), 4),
             "raw_rx": round(float(raw_rx), 4),
             "raw_ry": round(float(raw_ry), 4),
+            "diag_iris_rx": (
+                round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
+            ),
+            "diag_iris_ry": (
+                round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
+            ),
+            "diag_gain_y": (
+                round(float(self.iris_normalizer.y_gain), 2)
+                if self.iris_normalizer.y_gain is not None
+                else 8.0
+            ),
             "ear": round(ear, 3),
             "face": True,
             "blink": bool(is_blink) if used_head_pose_fallback else False,

@@ -248,7 +248,7 @@ export function usePatientGazeClick({
   const cellMapping = useCellMappingStore(state => state.cellMapping)
   const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const [activationDelayMs, setActivationDelayMs] =
-    useState(ACTIVATION_DELAY_OPTIONS.medium.value)
+    useState(ACTIVATION_DELAY_OPTIONS.short.value)
   const activeElementRef = useRef<HTMLElement | null>(null)
   const targetSwitchTimerRef = useRef<number | null>(null)
   const targetSwitchGraceStartedAtRef = useRef<number | null>(null)
