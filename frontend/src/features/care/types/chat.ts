@@ -23,6 +23,9 @@ export interface ChatMessageDto {
   senderRole: 'PATIENT' | 'GUARDIAN'
   contentType: 'TEXT' | 'PHRASE' | 'EXPRESSION'
   text: string
+  clientMessageId?: string | null
+  phraseId?: number | null
+  exprId?: number | null
   /** 백엔드 필드명 변경 대응: timestamp 또는 createdAt */
   timestamp?: string | number[]
   createdAt?: string | number[]

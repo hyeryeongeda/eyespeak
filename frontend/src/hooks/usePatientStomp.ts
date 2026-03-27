@@ -61,6 +61,7 @@ export interface UsePatientStompReturn {
   sendChat: (params: {
     text: string
     contentType: StompContentType
+    clientMessageId?: string | null
     phraseId?: number | null
     exprId?: number | null
   }) => void
@@ -143,6 +144,7 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
     (params: {
       text: string
       contentType: StompContentType
+      clientMessageId?: string | null
       phraseId?: number | null
       exprId?: number | null
     }) => {
@@ -154,6 +156,7 @@ export function usePatientStomp(callbacks?: PatientStompCallbacks): UsePatientSt
         matchingId: user.matchingId,
         text: params.text,
         contentType: params.contentType,
+        clientMessageId: params.clientMessageId,
         phraseId: params.phraseId,
         exprId: params.exprId,
       })
