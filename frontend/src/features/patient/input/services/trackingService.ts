@@ -1,3 +1,8 @@
+import {
+  getPrimaryTrackingIdFromCell,
+  type PatientCellMapping,
+} from './patientCellMapping'
+
 export const TRACKING_TARGET_ATTRIBUTE = 'data-tracking-id'
 export const LOCAL_GAZE_SELECTION_ATTRIBUTE = 'data-gaze-selection'
 export const LOCAL_GAZE_ONLY_VALUE = 'local'
@@ -159,13 +164,13 @@ export function getInteractiveElementSelectionKey(element: HTMLElement) {
 
 export function getInteractiveElementFromCell(
   cell: number | null,
-  cellMapping: Record<number, string | null> | null,
+  cellMapping: PatientCellMapping | null,
 ): HTMLElement | null {
   if (cell === null || !cellMapping) {
     return null
   }
 
-  const trackingId = cellMapping[cell]
+  const trackingId = getPrimaryTrackingIdFromCell(cell, cellMapping)
   if (!trackingId) {
     return null
   }
@@ -183,13 +188,13 @@ export function getInteractiveElementFromCell(
 
 export function getTrackingTargetIdFromCell<TTarget extends string>(
   cell: number | null,
-  cellMapping: Record<number, string | null> | null,
+  cellMapping: PatientCellMapping | null,
 ): TTarget | null {
   if (cell === null || !cellMapping) {
     return null
   }
 
-  const trackingId = cellMapping[cell]
+  const trackingId = getPrimaryTrackingIdFromCell(cell, cellMapping)
   return (trackingId ?? null) as TTarget | null
 }
 
@@ -198,5 +203,8 @@ function isInteractiveElementDisabled(element: HTMLElement) {
     return true
   }
 
-  return element.getAttribute('aria-disabled') === 'true'
+  return (
+    element.getAttribute('aria-disabled') === 'true' &&
+    element.dataset.gazeCommitDisabled !== 'true'
+  )
 }

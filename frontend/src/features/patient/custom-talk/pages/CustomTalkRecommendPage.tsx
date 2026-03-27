@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect } from 'react'
+import { type CSSProperties, useEffect, useMemo } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
@@ -10,7 +10,9 @@ import {
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import { useCustomTalkStore } from '../store/customTalkStore'
+import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import { createGuardianPromptCellMapping } from '../utils/customTalkGazeMapping'
 import { filterSelectableRecommendedSentences } from '../utils/recommendedSentenceGuards'
 
 const centerStackStyle: CSSProperties = {
@@ -78,11 +80,24 @@ export default function CustomTalkRecommendPage() {
     void loadRecommendedSentences(draft.categoryKey)
   }, [draft.categoryKey, hasCategoryKey, loadRecommendedSentences, recommendedSentences.length])
 
+  const visibleSentences = getVisibleSentences(recommendedSentences)
+  const cellMapping = useMemo(
+    () =>
+      createGuardianPromptCellMapping({
+        topLeft: visibleSentences[0] ? 'custom-talk-recommend-option-1' : null,
+        topRight: visibleSentences[1] ? 'custom-talk-recommend-option-2' : null,
+        bottomLeft: visibleSentences[2] ? 'custom-talk-recommend-option-3' : null,
+        bottomRight: 'custom-talk-recommend-back',
+        namespace: 'custom-talk-recommend',
+      }),
+    [visibleSentences],
+  )
+
+  useCellMapping(cellMapping)
+
   if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
-
-  const visibleSentences = getVisibleSentences(recommendedSentences)
 
   return (
     <CustomTalkGuardianPromptLayout
@@ -95,7 +110,8 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[0])
           }
         },
-        disabled: !visibleSentences[0] || isActionLocked,
+        disabled: !visibleSentences[0],
+        commitDisabled: isActionLocked,
         loading: isRecommendationLoading && !visibleSentences[0],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-1',
@@ -108,7 +124,8 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[1])
           }
         },
-        disabled: !visibleSentences[1] || isActionLocked,
+        disabled: !visibleSentences[1],
+        commitDisabled: isActionLocked,
         loading: isRecommendationLoading && !visibleSentences[1],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-2',
@@ -121,7 +138,8 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[2])
           }
         },
-        disabled: !visibleSentences[2] || isActionLocked,
+        disabled: !visibleSentences[2],
+        commitDisabled: isActionLocked,
         loading: isRecommendationLoading && !visibleSentences[2],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-3',

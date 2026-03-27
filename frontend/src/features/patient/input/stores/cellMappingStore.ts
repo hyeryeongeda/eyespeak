@@ -1,20 +1,21 @@
 import { create } from 'zustand'
+import type { PatientCellMapping } from '../services/patientCellMapping'
 
 interface CellMappingEntry {
   ownerId: string
-  mapping: Record<number, string | null>
+  mapping: PatientCellMapping
 }
 
 export interface CellMappingState {
-  cellMapping: Record<number, string | null> | null
+  cellMapping: PatientCellMapping | null
   mappingEntries: CellMappingEntry[]
   registerCellMapping: (
     ownerId: string,
-    mapping: Record<number, string | null>,
+    mapping: PatientCellMapping,
   ) => void
   updateCellMapping: (
     ownerId: string,
-    mapping: Record<number, string | null>,
+    mapping: PatientCellMapping,
   ) => void
   unregisterCellMapping: (ownerId: string) => void
 }

@@ -1,13 +1,15 @@
-import { type CSSProperties, useEffect } from 'react'
+import { type CSSProperties, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
+import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import {
   getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
 } from '../components/customTalkUi'
+import { createGuardianPromptCellMapping } from '../utils/customTalkGazeMapping'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
@@ -126,11 +128,14 @@ export default function CustomTalkDirectionPage() {
     (chat.activeMessage?.sender === 'guardian' ? chat.activeMessage : null) ??
     getLatestGuardianMessage(chat.state.messages)
   const guardianMessage = currentGuardianMessage?.content.trim() ?? ''
-  const recentMessages = buildRecentMessages(
-    chat.state.messages,
-    currentGuardianMessage?.id ?? null,
+  const recentMessages = useMemo(
+    () =>
+      buildRecentMessages(
+        chat.state.messages,
+        currentGuardianMessage?.id ?? null,
+      ),
+    [chat.state.messages, currentGuardianMessage?.id],
   )
-  const recentMessagesSignature = recentMessages.join('\n')
 
   useEffect(() => {
     void initializeCustomTalk({
@@ -140,12 +145,25 @@ export default function CustomTalkDirectionPage() {
   }, [
     guardianMessage,
     initializeCustomTalk,
-    recentMessagesSignature,
+    recentMessages,
   ])
 
   const categoryCards = buildCategoryCards(visibleCategories)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const cellMapping = useMemo(
+    () =>
+      createGuardianPromptCellMapping({
+        topLeft: categoryCards[0].category ? categoryCards[0].trackingId : null,
+        topRight: categoryCards[1].category ? categoryCards[1].trackingId : null,
+        bottomLeft: categoryCards[2].category ? categoryCards[2].trackingId : null,
+        bottomRight: 'custom-talk-direction-back',
+        namespace: 'custom-talk-direction',
+      }),
+    [categoryCards],
+  )
+
+  useCellMapping(cellMapping)
 
   const handleSelectCategory = (category: CustomTalkCategoryOption | null) => {
     if (!category) {
@@ -163,21 +181,24 @@ export default function CustomTalkDirectionPage() {
         title: categoryCards[0].title,
         tone: categoryCards[0].tone,
         onSelect: () => handleSelectCategory(categoryCards[0].category),
-        disabled: isBusy || categoryCards[0].disabled,
+        disabled: categoryCards[0].disabled,
+        commitDisabled: isBusy,
         trackingId: categoryCards[0].trackingId,
       }}
       topRight={{
         title: categoryCards[1].title,
         tone: categoryCards[1].tone,
         onSelect: () => handleSelectCategory(categoryCards[1].category),
-        disabled: isBusy || categoryCards[1].disabled,
+        disabled: categoryCards[1].disabled,
+        commitDisabled: isBusy,
         trackingId: categoryCards[1].trackingId,
       }}
       bottomLeft={{
         title: categoryCards[2].title,
         tone: categoryCards[2].tone,
         onSelect: () => handleSelectCategory(categoryCards[2].category),
-        disabled: isBusy || categoryCards[2].disabled,
+        disabled: categoryCards[2].disabled,
+        commitDisabled: isBusy,
         trackingId: categoryCards[2].trackingId,
       }}
       bottomRight={{
