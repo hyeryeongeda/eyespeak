@@ -28,8 +28,21 @@ public class ChatMessageResponse {
     private String text;
     private LocalDateTime createdAt;
 
-    /** Message 엔티티 → Response DTO 변환. senderId는 엔티티에 없으므로 파라미터로 받는다. */
-    public static ChatMessageResponse from(Message message, Long senderId) {
+    // 프론트가 전송 시 보낸 UUID. 서버는 DB에 저장하지 않고 echo에 그대로 돌려준다.
+    // 프론트는 이 값으로 optimistic 메시지와 서버 확인본을 1:1 매칭하여 중복 표시를 방지한다.
+    // 히스토리 조회 시에는 null (DB에 저장하지 않으므로 복원 불가).
+    private String clientMessageId;
+
+    // PHRASE 타입일 때 해당 phrase의 ID (아니면 null)
+    private Long phraseId;
+
+    // EXPRESSION 타입일 때 해당 expression의 ID (아니면 null)
+    private Long exprId;
+
+    /**
+     * STOMP echo용 변환. clientMessageId를 포함하여 프론트의 optimistic 메시지 교체를 지원한다.
+     */
+    public static ChatMessageResponse from(Message message, Long senderId, String clientMessageId) {
         return ChatMessageResponse.builder()
                 .messageId(message.getId())
                 .matchingId(message.getMatching().getId())
@@ -38,6 +51,17 @@ public class ChatMessageResponse {
                 .contentType(message.getContentType())
                 .text(message.getContent())
                 .createdAt(message.getCreatedAt())
+                .clientMessageId(clientMessageId)
+                .phraseId(message.getPhrase() != null ? message.getPhrase().getId() : null)
+                .exprId(message.getExpression() != null ? message.getExpression().getId() : null)
                 .build();
+    }
+
+    /**
+     * REST 히스토리 조회용 변환. clientMessageId 없이 호출한다.
+     * 기존 호출부(getMessages)를 변경하지 않기 위한 오버로딩.
+     */
+    public static ChatMessageResponse from(Message message, Long senderId) {
+        return from(message, senderId, null);
     }
 }

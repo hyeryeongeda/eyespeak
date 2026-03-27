@@ -95,8 +95,8 @@ public class ChatService {
         messageRepository.save(message);
         log.info("[Chat] 메시지 저장 완료: messageId={}", message.getId());
 
-        // 4. 응답 DTO 생성
-        ChatMessageResponse response = ChatMessageResponse.from(message, userId);
+        // 4. 응답 DTO 생성 (clientMessageId를 그대로 echo하여 프론트의 optimistic 메시지 교체 지원)
+        ChatMessageResponse response = ChatMessageResponse.from(message, userId, request.getClientMessageId());
 
         // 5. 발신자에게 응답 (메시지 저장 확인)
         messagingTemplate.convertAndSendToUser(

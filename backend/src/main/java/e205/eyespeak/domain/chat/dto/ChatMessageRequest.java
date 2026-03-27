@@ -27,4 +27,9 @@ public class ChatMessageRequest {
     private Long phraseId;
     @JsonProperty("exprId")
     private Long expressionId;
+
+    // 프론트가 UUID를 생성하여 전송하는 식별자.
+    // 서버는 저장하지 않고 STOMP echo에 그대로 돌려주어,
+    // 프론트가 optimistic 메시지와 서버 확인본을 매칭할 수 있게 한다.
+    private String clientMessageId;
 }
