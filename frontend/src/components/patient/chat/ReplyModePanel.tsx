@@ -104,29 +104,6 @@ const panelStyle: CSSProperties = {
   position: 'relative',
 }
 
-const headerStyle: CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  gap: '12px',
-  flexWrap: 'wrap',
-}
-
-const eyebrowStyle: CSSProperties = {
-  margin: 0,
-  color: '#b6b8bf',
-  fontSize: 'clamp(1rem, 1.8vw, 1.25rem)',
-  fontWeight: 700,
-}
-
-const metaRowStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
-}
-
 const metaStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -138,12 +115,16 @@ const metaStyle: CSSProperties = {
   fontWeight: 800,
 }
 
-const infoTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#6d788c',
-  fontSize: '15px',
-  fontWeight: 700,
-  lineHeight: 1.5,
+const srOnlyStyle: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
 }
 
 const gridStyle: CSSProperties = {
@@ -883,6 +864,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     >
       <style>{panelCss}</style>
       {pagerControls ? <div style={floatingPagerWrapStyle}>{pagerControls}</div> : null}
+      <div style={srOnlyStyle}>{`${statusCopy} 대기 ${unresolvedCount}건`}</div>
 
       {recommendationMode === 'category' ? categoryContent : sentenceContent}
     </section>
