@@ -185,11 +185,9 @@ export default function TalkMainPage() {
 
   if (shouldShowInlineReply) {
     return (
-      <div style={pageWrap}>
+      <div style={{ ...pageWrap, padding: 0 }}>
         <ReplyModePanel
           message={chat.activeReplyMessage}
-          messages={chat.state.messages}
-          activeMessageId={chat.activeReplyMessage?.id ?? chat.activeMessage?.id}
           status={chat.state.status}
           recommendationMode={chat.state.recommendationMode}
           categoryState={chat.state.categoryState}
