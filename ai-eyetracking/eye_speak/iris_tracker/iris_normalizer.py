@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 _EPS: Final[float] = 1e-6
 _MIN_LANDMARKS: Final[int] = 478
+_last_raw_ratio_y: Optional[float] = None
 
 Point = Tuple[float, float]
 LandmarksPx = Sequence[Point]
@@ -101,13 +102,14 @@ def compute_iris_position(
     landmarks_px: Optional[LandmarksPx],
     blink_threshold: Optional[float] = None,
     y_gain: Optional[float] = None,
+    feature_weights: Optional[Tuple[float, float, float, float]] = None,
 ) -> Tuple[Optional[float], Optional[float], float, bool]:
     """홍채 상대 위치(0~1)와 평균 EAR·깜빡임 여부를 계산한다.
 
     Args:
         landmarks_px: 픽셀 좌표 리스트(최소 478점). 비어 있거나 부족하면 신뢰 불가.
         blink_threshold: EAR 임계값. ``None``이면 YAML ``blink_ear_threshold`` 사용.
-        y_gain: Y축 amplification gain. ``None``이면 기본 ``7.0``.
+        y_gain: Y축 amplification gain. ``None``이면 기본 ``5.0``.
 
     Returns:
         ``(ratio_x, ratio_y, ear_avg, is_blinking)``.
@@ -121,6 +123,9 @@ def compute_iris_position(
     # - ry = 0.0: 프레임 상단
     # - ry = 1.0: 프레임 하단
     # - 캘리브레이션과 런타임 모두 미러된 프레임을 입력으로 받아야 함
+    global _last_raw_ratio_y
+    _last_raw_ratio_y = None
+
     if blink_threshold is None:
         blink_threshold = _blink_ear_threshold_from_config()
 
@@ -194,11 +199,12 @@ def compute_iris_position(
         ear_y_component = 1.0 - ear_norm
 
         # 가중 복합 (리서치 기반 가중치)
+        w = feature_weights if feature_weights is not None else (0.35, 0.15, 0.30, 0.20)
         ry_ratio = (
-            0.2 * ry_iris
-            + 0.4 * ear_y_component
-            + 0.2 * sclera_ratio
-            + 0.2 * lid_asym_norm
+            w[0] * ry_iris
+            + w[1] * ear_y_component
+            + w[2] * sclera_ratio
+            + w[3] * lid_asym_norm
         )
         ry_ratio = max(0.0, min(1.0, ry_ratio))
 
@@ -222,7 +228,9 @@ def compute_iris_position(
     # --- Iris ratio amplification ---
     _CENTER = 0.5
     _GAIN_X = 4.0
-    _GAIN_Y = y_gain if y_gain is not None else 7.0
+    _GAIN_Y = y_gain if y_gain is not None else 5.0
+
+    _last_raw_ratio_y = ratio_y
 
     logger.debug("[PRE-GAIN] raw_ratio_x=%.4f raw_ratio_y=%.4f", ratio_x, ratio_y)
 
@@ -241,8 +249,9 @@ class IrisNormalizer:
         """
         self.blink_threshold: Optional[float] = blink_threshold
         self._y_gain: Optional[float] = None
-        # 자동 센터 오프셋: 첫 60프레임의 Y 중앙값으로 보정
-        self._y_offset: float = 0.0
+        self._feature_weights: Tuple[float, float, float, float] = (0.35, 0.15, 0.30, 0.20)
+        # PRE-gain 자동 센터: 첫 60프레임 raw 복합 Y 중앙값 기준 오프셋
+        self._y_center_offset: float = 0.0
         self._center_samples: List[float] = []
         self._center_locked: bool = False
         self._AUTO_CENTER_FRAMES: int = 60
@@ -252,9 +261,31 @@ class IrisNormalizer:
         self._y_gain = float(gain)
         logger.info("IrisNormalizer: Y gain set to %.2f", self._y_gain)
 
+    def set_feature_weights(
+        self, w_iris: float, w_ear: float, w_sclera: float, w_lid: float
+    ) -> None:
+        """캘리브레이션에서 계산된 Y축 특징 가중치를 설정한다.
+
+        합계가 1.0이 아니면 자동 정규화한다.
+        """
+        total = w_iris + w_ear + w_sclera + w_lid
+        if total <= 0:
+            logger.warning("set_feature_weights: invalid total %.4f, keeping defaults", total)
+            return
+        self._feature_weights = (
+            w_iris / total,
+            w_ear / total,
+            w_sclera / total,
+            w_lid / total,
+        )
+        logger.info(
+            "IrisNormalizer: feature weights set to iris=%.2f ear=%.2f sclera=%.2f lid=%.2f",
+            *self._feature_weights,
+        )
+
     def reset_center(self) -> None:
         """자동 센터 오프셋을 초기화한다 (재캘리브레이션 시 호출)."""
-        self._y_offset = 0.0
+        self._y_center_offset = 0.0
         self._center_samples.clear()
         self._center_locked = False
         logger.info("IrisNormalizer: auto-center reset")
@@ -263,34 +294,42 @@ class IrisNormalizer:
     def y_gain(self) -> Optional[float]:
         return self._y_gain
 
+    @property
+    def feature_weights(self) -> Tuple[float, float, float, float]:
+        return self._feature_weights
+
     def __call__(
         self, landmarks_px: Optional[LandmarksPx]
     ) -> Tuple[Optional[float], Optional[float], float, bool]:
         """랜드마크에서 비율 좌표와 EAR을 반환한다.
 
-        첫 60프레임 동안 Y축 중앙값을 수집하여 자동 센터 오프셋을 계산한다.
+        첫 60프레임 동안 PRE-gain Y축 중앙값을 수집하여 자동 센터를 계산한다.
         """
         rx, ry, ear, blink = compute_iris_position(
-            landmarks_px, self.blink_threshold, self._y_gain
+            landmarks_px, self.blink_threshold, self._y_gain, self._feature_weights
         )
 
         if rx is not None and ry is not None and not blink:
-            # 자동 센터: 첫 N프레임 수집 → 중앙값으로 오프셋 계산
-            if not self._center_locked:
-                self._center_samples.append(ry)
+            raw_y = _last_raw_ratio_y  # compute_iris_position이 저장한 PRE-gain 값
+
+            if not self._center_locked and raw_y is not None:
+                self._center_samples.append(raw_y)
                 if len(self._center_samples) >= self._AUTO_CENTER_FRAMES:
                     median_y = statistics.median(self._center_samples)
-                    self._y_offset = 0.5 - median_y
+                    # PRE-gain 센터를 0.5로 맞추기 위한 오프셋
+                    self._y_center_offset = 0.5 - median_y
                     self._center_locked = True
                     logger.info(
-                        "Auto-center Y: offset=%.4f (median=%.4f, samples=%d)",
-                        self._y_offset,
+                        "Auto-center Y (PRE-gain): offset=%.4f (median=%.4f, samples=%d)",
+                        self._y_center_offset,
                         median_y,
                         len(self._center_samples),
                     )
 
-            # 오프셋 적용
-            if self._center_locked:
-                ry = max(0.0, min(1.0, ry + self._y_offset))
+            # PRE-gain 보정: raw_y에 오프셋 적용 후 gain 재적용
+            if self._center_locked and raw_y is not None:
+                _GAIN_Y = self._y_gain if self._y_gain is not None else 5.0
+                corrected_raw = raw_y + self._y_center_offset
+                ry = max(0.0, min(1.0, 0.5 + (corrected_raw - 0.5) * _GAIN_Y))
 
         return (rx, ry, ear, blink)

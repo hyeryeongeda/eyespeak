@@ -23,8 +23,8 @@ smoothing:
   gaze_refiner_alpha: 0.3
   one_euro_min_cutoff_x: 0.5
   one_euro_beta_x: 0.2
-  one_euro_min_cutoff_y: 0.25
-  one_euro_beta_y: 0.15
+  one_euro_min_cutoff_y: 0.40
+  one_euro_beta_y: 2.0
   screen_hold_ms: 500
   screen_outlier_distance: 0.5
   screen_fallback_jump_margin: 0.10

@@ -359,22 +359,29 @@ export function usePatientGazeClick({
       return null
     }
 
-    // DEV flag: window.__DEV_GAZE_DISABLE_POINT_HIT_TEST = true で
-    // point-hit-test を完全スキップして cell-mapping のみ使用
-    // 브라우저 콘솔에서 토글 가능, 다음 gaze 업데이트부터 반영
     const disablePointHitTest =
       import.meta.env.DEV &&
       typeof window !== 'undefined' &&
       (window as unknown as Record<string, unknown>).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
 
+    // 1. 메인 페이지 전용 point-hit-test
     if (gazePoint && !disablePointHitTest) {
       const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
       if (patientMainPointTarget) {
         return patientMainPointTarget
       }
+    }
 
+    // 2. Cell mapping 기반 타겟
+    const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
+    const mappedTarget = getMappedGazeTarget(gazeCell, activeCellMapping)
+    if (mappedTarget) {
+      return mappedTarget
+    }
+
+    // 3. 일반 point-hit-test
+    if (gazePoint && !disablePointHitTest) {
       const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
-
       if (element) {
         return {
           element,
@@ -384,18 +391,14 @@ export function usePatientGazeClick({
         }
       }
 
+      // 4. 최후 수단: 가장 가까운 interactive 요소
       const nearest = getNearestInteractiveTargetFromPoint(gazePoint)
       if (nearest) {
         return nearest
       }
     }
 
-    const mappedTarget = getMappedGazeTarget(
-      gazeCell,
-      cellMapping ?? getFallbackPatientMainCellMapping(),
-    )
-
-    return mappedTarget
+    return null
   }, [cellMapping, enabled, gazeCell, gazePoint])
 
   const resolveCurrentGazeTarget = () => {
@@ -638,7 +641,6 @@ export function usePatientGazeClick({
       lastGazeTargetDebugSignatureRef.current = null
       return
     }
-
     const gracePending = targetSwitchTimerRef.current !== null
     const disablePointHitTestFlag =
       typeof window !== 'undefined' &&

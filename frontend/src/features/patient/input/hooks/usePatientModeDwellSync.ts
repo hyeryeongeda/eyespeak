@@ -37,8 +37,8 @@ export function usePatientModeDwellSync({
 
         setGlobalMenuDwellDurationMs(DWELL_TIME_OPTIONS[result.data].value)
       })
-      .catch(() => {
-        // Keep the default global menu dwell time when preset sync fails.
+      .catch((error) => {
+        console.warn('[patient-input] dwell-preset-sync-failed', { error })
       })
 
     return () => {

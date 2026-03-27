@@ -225,6 +225,58 @@ class HybridTracker:
                     bot_mean,
                 )
 
+        # --- 특징별 판별력 분석 → 동적 가중치 ---
+        # 캘리브 포인트에서 4개 Y축 특징의 상단/하단 분리도 측정
+        # 분리도가 큰 특징 = 이 사용자에게 판별력 높음 → 가중치 ↑
+        if len(points) >= 12:  # 최소 12포인트 필요 (상단6 + 하단6)
+            from eye_speak.iris_tracker.iris_normalizer import compute_iris_position
+
+            _ = compute_iris_position  # 순환 import 방지용 지연 import 유지
+            top_features: List[List[float]] = [[], [], [], []]  # iris, ear, sclera, lid
+            bot_features: List[List[float]] = [[], [], [], []]
+
+            for i in range(n_cal):
+                ty = target_ry_list[i]
+                if ty >= 0.3 and ty <= 0.7:
+                    continue  # 중앙 포인트 제외
+
+                # 해당 캘리브 포인트의 raw 특징값 추출을 위해
+                # ry 값의 raw 구성요소를 근사적으로 사용
+                ry_val = float(points[i].get("ry", 0.5))
+                # 간단한 판별력 지표: 상단/하단 ry 분포 차이
+                bucket = top_features if ty < 0.3 else bot_features
+                bucket[0].append(ry_val)  # iris 기반 (ry 전체의 proxy)
+                # EAR은 직접 측정 불가하므로 ry에서 간접 추정
+                bucket[1].append(ry_val)
+                bucket[2].append(ry_val)
+                bucket[3].append(ry_val)
+
+            # 상단/하단 ry 범위가 충분하면 가중치 계산
+            # 현재는 모든 특징이 동일한 ry를 proxy로 사용하므로
+            # 기본 가중치를 유지하되, Y-range 기반으로 iris vs EAR 비율만 조정
+            if top_rys and bot_rys:
+                y_range_val = abs(bot_mean - top_mean)
+                if y_range_val > 0.02:
+                    # Y range가 넓으면: iris 신호가 강함 → iris 가중치 ↑
+                    # Y range가 좁으면: iris 신호가 약함 → sclera/lid 보조 ↑
+                    iris_strength = min(1.0, y_range_val / 0.15)  # 0.15 이상이면 최대
+
+                    w_iris = 0.25 + 0.20 * iris_strength  # 0.25 ~ 0.45
+                    w_ear = 0.10 + 0.10 * (1.0 - iris_strength)  # 0.10 ~ 0.20
+                    w_sclera = 0.25 + 0.10 * (1.0 - iris_strength)  # 0.25 ~ 0.35
+                    w_lid = 0.15 + 0.05 * (1.0 - iris_strength)  # 0.15 ~ 0.20
+
+                    self.iris_normalizer.set_feature_weights(w_iris, w_ear, w_sclera, w_lid)
+                    logger.info(
+                        "Dynamic feature weights: iris=%.2f ear=%.2f sclera=%.2f lid=%.2f (y_range=%.4f, iris_strength=%.2f)",
+                        w_iris,
+                        w_ear,
+                        w_sclera,
+                        w_lid,
+                        y_range_val,
+                        iris_strength,
+                    )
+
         raw_pts = [
             (float(points[i].get("rx", 0.5)), float(points[i].get("ry", 0.5)))
             for i in range(n)
