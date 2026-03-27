@@ -1,4 +1,4 @@
-export type RecommendationCategoryKey = 'mood' | 'schedule' | 'frequent' | 'recent'
+export type RecommendationCategoryKey = 'mood' | 'schedule' | 'frequent' | 'recent' | string
 
 export type RecommendationComposeStep = 'subject' | 'object' | 'predicate' | 'punctuation'
 
@@ -23,6 +23,16 @@ export interface RecommendationCategoryDto {
 
 export interface RecommendationCategoryListResponseDto {
   categories: RecommendationCategoryDto[]
+}
+
+export interface ReplyCategoriesRequestDto {
+  message: string
+}
+
+export interface ReplyCategoriesResponseDto {
+  categories: string[]
+  sentimentMap: Record<string, string>
+  intentMap: Record<string, string>
 }
 
 export interface RecommendationSentencesRequestDto {

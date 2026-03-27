@@ -1,6 +1,8 @@
 import { apiClient } from './apiClient'
 import { API_ENDPOINTS } from './apiEndpoints'
 import type {
+  ReplyCategoriesRequestDto,
+  ReplyCategoriesResponseDto,
   RecommendationCategoryListResponseDto,
   RecommendationComposeRequestDto,
   RecommendationComposeResponseDto,
@@ -20,6 +22,17 @@ export function getRecommendationCategoriesApi(accessToken?: string | null) {
   return apiClient.get<RecommendationCategoryListResponseDto>(API_ENDPOINTS.RECOMMENDATION_CATEGORIES, {
     accessToken,
   })
+}
+
+export function getReplyCategoriesApi(
+  request: ReplyCategoriesRequestDto,
+  accessToken?: string | null,
+) {
+  return apiClient.post<ReplyCategoriesResponseDto, ReplyCategoriesRequestDto>(
+    API_ENDPOINTS.RECOMMENDATION_REPLY_CATEGORIES,
+    request,
+    { accessToken },
+  )
 }
 
 export function getRecommendationSentencesApi(

@@ -34,6 +34,7 @@ import { getActiveAiApiMode } from './aiServiceConfig'
 import { getActiveApiMode } from '../config/env'
 import {
   composeRecommendationApi,
+  getReplyCategoriesApi,
   getRecommendationCategoriesApi,
   getRecommendationRepliesApi,
   getRecommendationSentencesApi,
@@ -93,38 +94,6 @@ function mapRecommendedReplies(replies: RecommendationReplyDto[]): PatientSugges
     source: mapReplySource(reply.source),
     rank: reply.rank,
   }))
-}
-
-function mapRecommendationCategories(
-  input: Array<{
-    key: string
-    title?: string
-    description?: string
-    hint?: string | null
-  }>,
-): PatientRecommendationCategory[] {
-  return input.reduce<PatientRecommendationCategory[]>((categories, category) => {
-      const key = category.key as CustomCategoryKey
-
-      if (!knownCategoryKeys.has(key)) {
-        return categories
-      }
-
-      const fallback = customTalkCategoryMap.get(key)
-
-      if (!fallback) {
-        return categories
-      }
-
-      categories.push({
-        key,
-        title: category.title?.trim() || fallback.title,
-        description: category.description?.trim() || fallback.description,
-        hint: category.hint?.trim() || fallback.hint,
-      })
-
-      return categories
-    }, [])
 }
 
 function mapRecommendationCategoryFromPool(
@@ -410,16 +379,21 @@ export async function fetchSuggestedReplyCategories(input: {
   message: PatientChatMessage
   history: PatientChatMessage[]
 }) {
-  void input.message
-  void input.history
-
   if (getActiveAiApiMode() !== 'real') {
     return CUSTOM_TALK_CATEGORY_POOL.map(mapRecommendationCategoryFromPool)
   }
 
-  const response = await getRecommendationCategoriesApi(getAccessToken())
+  const response = await getReplyCategoriesApi(
+    { message: input.message.content },
+    getAccessToken(),
+  )
 
-  return mapRecommendationCategories(response.categories)
+  return response.categories.map(cat => ({
+    key: cat as RecommendationCategoryKey,
+    title: cat,
+    description: response.sentimentMap[cat] ?? '중립',
+    hint: response.intentMap[cat] ?? '기타',
+  }))
 }
 
 export async function fetchSuggestedSentences(input: {
