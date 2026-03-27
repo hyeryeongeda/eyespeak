@@ -77,14 +77,12 @@ export function useDwellFeedback<TTarget extends string>(
   const [containerElement, setContainerElementState] = useState<HTMLElement | null>(null)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
-  const selectionState = useGazeSelectionStore(state => ({
-    inputSource: state.inputSource,
-    hoveredTargetId: state.hoveredTargetId,
-    activeTargetId: state.activeTargetId,
-    phase: state.phase,
-    progress: state.progress,
-    remainingMs: state.remainingMs,
-  }))
+  const selectionInputSource = useGazeSelectionStore(state => state.inputSource)
+  const selectionHoveredTargetId = useGazeSelectionStore(state => state.hoveredTargetId)
+  const selectionActiveTargetId = useGazeSelectionStore(state => state.activeTargetId)
+  const selectionPhase = useGazeSelectionStore(state => state.phase)
+  const selectionProgress = useGazeSelectionStore(state => state.progress)
+  const selectionRemainingMs = useGazeSelectionStore(state => state.remainingMs)
 
   const isFeedbackEnabled =
     enabled &&
@@ -97,25 +95,25 @@ export function useDwellFeedback<TTarget extends string>(
 
   const hoveredTargetId =
     isFeedbackEnabled &&
-    isTrackedTargetInsideContainer(selectionState.hoveredTargetId, containerElement)
-      ? (selectionState.hoveredTargetId as TTarget)
+    isTrackedTargetInsideContainer(selectionHoveredTargetId, containerElement)
+      ? (selectionHoveredTargetId as TTarget)
       : null
   const activeTargetId =
     isFeedbackEnabled &&
-    isTrackedTargetInsideContainer(selectionState.activeTargetId, containerElement)
-      ? (selectionState.activeTargetId as TTarget)
+    isTrackedTargetInsideContainer(selectionActiveTargetId, containerElement)
+      ? (selectionActiveTargetId as TTarget)
       : null
 
   return {
     containerRef,
     setContainerElement,
     hoveredTargetId,
-    inputSource: hoveredTargetId ? selectionState.inputSource : null,
+    inputSource: hoveredTargetId ? selectionInputSource : null,
     enabled: isFeedbackEnabled,
     activeTargetId,
-    phase: activeTargetId ? selectionState.phase : 'idle',
-    progress: activeTargetId ? selectionState.progress : 0,
-    remainingMs: activeTargetId ? selectionState.remainingMs : 0,
+    phase: activeTargetId ? selectionPhase : 'idle',
+    progress: activeTargetId ? selectionProgress : 0,
+    remainingMs: activeTargetId ? selectionRemainingMs : 0,
   }
 }
 

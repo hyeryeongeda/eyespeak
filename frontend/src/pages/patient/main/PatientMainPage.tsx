@@ -436,9 +436,7 @@ export default function PatientMainPage() {
           <div
             className="patient-main-grid"
             style={featureGridStyle}
-            ref={element => {
-              dwellFeedback.containerRef.current = element
-            }}
+            ref={dwellFeedback.setContainerElement}
           >
             <FeatureCard
               className="patient-main-card patient-main-full"
