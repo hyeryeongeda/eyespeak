@@ -557,8 +557,9 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
 5. {diversity_rule}
 6. 질문과 모순되는 답변 금지
 7. 여러 주제를 한 문장에 섞지 마세요
-8. "고마워", "잘 됐다", "괜찮아", "다행이다" 같은 범용 감정 표현은 질문에 직접 관련된 구체적 답변이 있으면 제외하세요. 예: "필요한 거 있어?"에는 "물 좀 줘"가 "고마워"보다 적절합니다.
-9. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
+8. 질문의 핵심 키워드와 관련된 답변만 고르세요. 예: "손녀 보고 싶어?"에는 손녀/예승이 관련 답변만, "주스 마실래?"에는 주스 관련 답변만. 질문과 무관한 음식, 통증, 야구 등 다른 주제의 답변은 절대 포함하지 마세요.
+9. "고마워", "잘 됐다", "괜찮아", "다행이다", "네가 있어서 좋다", "가족이 있어서 버텨", "빨리 낫고 싶어" 같은 범용 감정 표현은 제외하세요.
+10. 번호나 기호 없이 줄바꿈으로만 3개 출력"""
     try:
         resp = llm_client.chat.completions.create(
             model="gpt-4.1-mini",
@@ -746,7 +747,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
         return result
 
     # 2) 닫힌 질문 자동 판단
-    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "해줄까", "볼까", "들을래", "할게", "갈까", "있어?", "없어?", "했니", "왔어", "갔어", "봤어", "잤어", "일어났어"]
+    closed_patterns = ["할래", "줄까", "할까", "했어", "먹었어", "아파", "괜찮아", "좋아", "싫어", "할거야", "볼래", "마실래", "갈래", "해도 돼", "가도 돼", "있어도 돼", "해줄까", "볼까", "들을래", "할게", "갈까", "있어?", "없어?", "했니", "왔어", "갔어", "봤어", "잤어", "일어났어", "싶어?", "안 돼?", "될까", "줄래", "해줘", "보고싶어", "그래?", "그랬어?", "맞아?", "아니야?"]
     is_closed = any(p in question for p in closed_patterns)
 
     if is_closed:
@@ -913,6 +914,31 @@ def recommend():
             sentiment_filter = "중립"
 
     candidates = _search_sentences_mixed(search_question, user_data["user_db"], sentiment_filter, intent_filter=intent_filter, k_total=10)
+
+    # 질문 키워드 기반 후보 필터링 — 관련 없는 주제 제거
+    _QUESTION_KEYWORDS = {
+        "주스": ["주스", "오렌지", "마시"],
+        "초코우유": ["초코", "우유", "마시"],
+        "우유": ["우유", "마시"],
+        "손녀": ["예승", "손녀", "불러", "보고 싶", "데려"],
+        "예승": ["예승", "손녀", "불러", "보고 싶", "데려"],
+        "간식": ["간식", "만들", "주방"],
+        "야구": ["야구", "롯데", "전준우", "홈런", "이겼", "졌"],
+        "트로트": ["트로트", "나훈아", "임영웅", "노래", "틀어"],
+        "먹고": ["먹", "죽", "국밥", "밥", "국", "음식"],
+        "아파": ["아파", "아프", "통증", "어깨", "다리", "허리"],
+    }
+    q_lower = question
+    matched_keywords = []
+    for trigger, keywords in _QUESTION_KEYWORDS.items():
+        if trigger in q_lower:
+            matched_keywords.extend(keywords)
+    if matched_keywords:
+        relevant = [c for c in candidates if any(kw in c["text"] for kw in matched_keywords)]
+        irrelevant = [c for c in candidates if not any(kw in c["text"] for kw in matched_keywords)]
+        # 관련 있는 것 먼저, 부족하면 나머지로 채움
+        candidates = (relevant + irrelevant)[:10]
+        print(f"[recommend] 키워드 필터: {matched_keywords}, 관련후보: {len(relevant)}개")
 
     # 초대/방문 질문에서만 고정 응답 풀 적용
     invite_keywords = ["오라고", "부를까", "초대", "놀러", "올래", "데려"]
