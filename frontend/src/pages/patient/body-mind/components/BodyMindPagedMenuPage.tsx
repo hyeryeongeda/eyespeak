@@ -38,6 +38,10 @@ function HiddenSlot() {
   return <div aria-hidden style={hiddenSlotStyle} />
 }
 
+function getBodyMindTrackingId(key: string) {
+  return `body-mind-${key}`
+}
+
 export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption<string>>({
   code,
   title,
@@ -87,6 +91,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
             title={option.label}
             description={option.description}
             tone={option.tone}
+            trackingId={getBodyMindTrackingId(option.key)}
             selected={selectedKey === option.key}
             onSelect={() => onSelectOption(option)}
           />
@@ -97,6 +102,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
               title={nextTitle}
               description={nextDescription}
               tone="mint"
+              trackingId="body-mind-next"
               onSelect={() => onPageChange(pageIndex + 1)}
             />
           ) : topRightOption ? (
@@ -104,6 +110,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
               title={topRightOption.label}
               description={topRightOption.description}
               tone={topRightOption.tone}
+              trackingId={getBodyMindTrackingId(topRightOption.key)}
               selected={selectedKey === topRightOption.key}
               onSelect={() => onSelectOption(topRightOption)}
             />
@@ -116,6 +123,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
             title={backTitle}
             description={pageIndex > 0 ? previousPageDescription : rootBackDescription}
             tone="slate"
+            trackingId="body-mind-back"
             onSelect={handleBack}
           />
         }
