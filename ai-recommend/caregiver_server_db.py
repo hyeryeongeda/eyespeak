@@ -771,19 +771,76 @@ DEMO_FIXED = {
 }
 
 
+# 동의어/변형 질문 → 원본 질문 매핑 (같은 응답 반환)
+DEMO_ALIASES = {
+    # 손녀 관련 변형
+    "예승이 보고 싶어?": "손녀 보고 싶어?",
+    "손녀딸 보고 싶어?": "손녀 보고 싶어?",
+    "예승이 안 보고 싶어?": "손녀딸 안 보고 싶어?",
+    "손녀 안 보고 싶어?": "손녀딸 안 보고 싶어?",
+    "예승이 보고싶어?": "손녀 보고 싶어?",
+    "손녀딸 보고싶어?": "손녀 보고 싶어?",
+    # 놀러오라고 변형
+    "초대할까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    "오라고 할까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    "예승이 부를까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    "예승이 오라고 할까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    "손녀 부를까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    "손녀딸 부를까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    "예승이 놀러오라고 할까?": "손녀딸이 보고싶대. 놀러오라고 할까?",
+    # 주스 변형
+    "주스 마실래?": "오렌지 주스 마실래?",
+    "오렌지주스 마실래?": "오렌지 주스 마실래?",
+    "주스 줄까?": "오렌지 주스 마실래?",
+    "오렌지 주스 줄까?": "오렌지 주스 마실래?",
+    # 초코우유 변형
+    "초코 우유 마실래?": "초코우유 마실래?",
+    "초코우유 줄까?": "초코우유 마실래?",
+    "초코 우유 줄까?": "초코우유 마실래?",
+    # 먹고 싶은 거 변형
+    "먹고 싶은 거 있어?": "혹시 먹고 싶은 거 있어?",
+    "뭐 먹고 싶어?": "혹시 먹고 싶은 거 있어?",
+    "배고파?": "혹시 먹고 싶은 거 있어?",
+    "밥 먹을래?": "혹시 먹고 싶은 거 있어?",
+    "뭐 먹을래?": "혹시 먹고 싶은 거 있어?",
+    # 필요한 거 변형
+    "필요한 거 있어?": "뭐 필요한 거 있어?",
+    "뭐 필요해?": "뭐 필요한 거 있어?",
+    "도움 필요해?": "뭐 필요한 거 있어?",
+    "혹시 필요한 거 있어?": "뭐 필요한 거 있어?",
+    # 간식 만들러 갈게 변형
+    "주방에 갈게": "알겠어. 손녀 줄 간식 만들러 주방에 잠시 갈게.",
+    "잠깐 갈게": "알겠어. 손녀 줄 간식 만들러 주방에 잠시 갈게.",
+    "간식 만들러 갈게": "알겠어. 손녀 줄 간식 만들러 주방에 잠시 갈게.",
+    "주방 갈게": "알겠어. 손녀 줄 간식 만들러 주방에 잠시 갈게.",
+}
+
+# 별칭도 DEMO_FIXED에 통합
+for alias, original in DEMO_ALIASES.items():
+    if original in DEMO_FIXED and alias not in DEMO_FIXED:
+        DEMO_FIXED[alias] = DEMO_FIXED[original]
+
+
 def _normalize_question(q: str) -> str:
     """문장 부호 제거 + 공백 정리"""
     return q.strip().rstrip('"').lstrip('"').rstrip("?.!。，,").strip()
 
 
-# 문장 부호 제거된 키로 빠른 조회용 딕셔너리
+def _normalize_nospace(q: str) -> str:
+    """문장 부호 + 공백 모두 제거"""
+    return _normalize_question(q).replace(" ", "")
+
+
+# 빠른 조회용 딕셔너리 (문장부호 제거 / 공백도 제거)
 _DEMO_NORMALIZED = {_normalize_question(k): v for k, v in DEMO_FIXED.items()}
+_DEMO_NOSPACE = {_normalize_nospace(k): v for k, v in DEMO_FIXED.items()}
 
 
 def _get_demo_fixed(question: str, key: str = None):
-    """시연 질문 고정 매핑에서 조회. 문장 부호 무시. 없으면 None 반환."""
+    """시연 질문 고정 매핑에서 조회. 문장 부호/공백 무시. 없으면 None 반환."""
     q = _normalize_question(question)
-    entry = DEMO_FIXED.get(question.strip()) or _DEMO_NORMALIZED.get(q)
+    q_ns = _normalize_nospace(question)
+    entry = DEMO_FIXED.get(question.strip()) or _DEMO_NORMALIZED.get(q) or _DEMO_NOSPACE.get(q_ns)
     if not entry:
         return None
     if key is None:
