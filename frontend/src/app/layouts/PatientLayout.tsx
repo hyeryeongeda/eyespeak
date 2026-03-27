@@ -395,8 +395,6 @@ function PatientLayoutShell() {
           <ReplyModePanel
             overlay
             message={chat.activeReplyMessage}
-            messages={chat.state.messages}
-            activeMessageId={chat.activeReplyMessage?.id ?? chat.activeMessage?.id}
             status={chat.state.status}
             recommendationMode={chat.state.recommendationMode}
             categoryState={chat.state.categoryState}

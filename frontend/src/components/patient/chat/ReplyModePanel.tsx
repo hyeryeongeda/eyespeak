@@ -1,5 +1,4 @@
 import { useMemo, type CSSProperties } from 'react'
-import ChatMessageList from './ChatMessageList'
 import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
@@ -22,8 +21,6 @@ import type { RecommendationCategoryKey } from '../../../types/recommendation'
 
 interface ReplyModePanelProps {
   message: PatientChatMessage | null
-  messages: PatientChatMessage[]
-  activeMessageId?: string | null
   status: PatientChatSessionStatus
   recommendationMode: PatientChatRecommendationMode
   categoryState: PatientChatCategoryState
@@ -84,50 +81,27 @@ const CATEGORY_PAGE_SIZE = 3
 const overlayWrapStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
-  padding: 'clamp(12px, 2vw, 24px)',
-  background:
-    'linear-gradient(180deg, rgba(245, 247, 252, 0.9) 0%, rgba(232, 236, 244, 0.92) 100%)',
-  backdropFilter: 'blur(10px)',
+  padding: 0,
+  background: 'linear-gradient(180deg, #f4f7fb 0%, #edf2f7 100%)',
   display: 'flex',
   alignItems: 'stretch',
-  justifyContent: 'center',
+  justifyContent: 'stretch',
   zIndex: 1120,
+  overflow: 'hidden',
 }
 
 const panelStyle: CSSProperties = {
-  width: 'min(1100px, 100%)',
-  minHeight: '100%',
-  padding: 'clamp(18px, 2.8vw, 32px)',
-  borderRadius: '34px',
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  boxShadow: '0 28px 60px rgba(53, 71, 95, 0.12)',
+  width: '100%',
+  minHeight: '100dvh',
+  height: '100%',
+  padding: '12px',
+  background: 'linear-gradient(180deg, #f4f7fb 0%, #edf2f7 100%)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-  boxSizing: 'border-box',
-}
-
-const headerStyle: CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
   gap: '12px',
-  flexWrap: 'wrap',
-}
-
-const eyebrowStyle: CSSProperties = {
-  margin: 0,
-  color: '#b6b8bf',
-  fontSize: 'clamp(1rem, 1.8vw, 1.25rem)',
-  fontWeight: 700,
-}
-
-const metaRowStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
-  flexWrap: 'wrap',
-  justifyContent: 'flex-end',
+  boxSizing: 'border-box',
+  overflow: 'hidden',
+  position: 'relative',
 }
 
 const metaStyle: CSSProperties = {
@@ -141,12 +115,16 @@ const metaStyle: CSSProperties = {
   fontWeight: 800,
 }
 
-const infoTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#6d788c',
-  fontSize: '15px',
-  fontWeight: 700,
-  lineHeight: 1.5,
+const srOnlyStyle: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
 }
 
 const gridStyle: CSSProperties = {
@@ -154,32 +132,34 @@ const gridStyle: CSSProperties = {
   minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'minmax(160px, 1fr) auto minmax(160px, 1fr)',
-  gap: '14px',
+  gridTemplateRows: 'minmax(0, 1.08fr) minmax(84px, 0.34fr) minmax(0, 1fr)',
+  gap: '12px',
 }
 
 const categoryGridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(220px, 0.95fr) minmax(320px, 1.2fr) minmax(220px, 0.95fr)',
-  gridTemplateRows: 'minmax(180px, 1fr) minmax(180px, 1fr)',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.95fr) minmax(0, 1fr)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
   gridTemplateAreas: `
     "top-left center top-right"
     "bottom-left center bottom-right"
   `,
-  gap: '14px',
+  gap: '12px',
 }
 
 const cardBaseStyle: CSSProperties = {
-  borderRadius: '22px',
+  borderRadius: '20px',
   border: '1px solid #d6dee8',
   backgroundColor: '#ffffff',
-  boxShadow: '0 10px 28px rgba(41, 57, 79, 0.06)',
+  boxShadow: '0 8px 24px rgba(41, 57, 79, 0.06)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '20px',
+  minWidth: 0,
+  minHeight: 0,
+  padding: '18px',
   textAlign: 'center',
   boxSizing: 'border-box',
   position: 'relative',
@@ -204,22 +184,25 @@ function getSuggestionCardStyle(selected: boolean, disabled: boolean): CSSProper
 const guardianMessageWrapStyle: CSSProperties = {
   ...cardBaseStyle,
   gridColumn: '1 / -1',
-  minHeight: '96px',
+  minHeight: 0,
   alignItems: 'stretch',
   justifyContent: 'center',
-  padding: '0 20px',
-  backgroundColor: '#fbfcff',
+  padding: '0 24px',
+  background: 'linear-gradient(180deg, #f8fbff 0%, #f1f5fb 100%)',
 }
 
 const guardianMessageStyle: CSSProperties = {
   margin: 0,
   color: '#39445b',
-  fontSize: 'clamp(1.5rem, 2.6vw, 2rem)',
+  fontSize: 'clamp(1.5rem, 2.3vw, 2.2rem)',
   fontWeight: 800,
   lineHeight: 1.4,
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'center',
   minHeight: '100%',
+  textAlign: 'center',
+  wordBreak: 'keep-all',
 }
 
 const helperButtonStyle: CSSProperties = {
@@ -227,7 +210,7 @@ const helperButtonStyle: CSSProperties = {
   appearance: 'none',
   cursor: 'pointer',
   color: '#151515',
-  fontSize: 'clamp(1.9rem, 3.6vw, 3rem)',
+  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
   fontWeight: 900,
   letterSpacing: '-0.04em',
 }
@@ -249,15 +232,18 @@ const fallbackButtonStyle: CSSProperties = {
 
 const inlineWrapStyle: CSSProperties = {
   width: '100%',
+  height: '100%',
+  flex: 1,
+  minHeight: 0,
 }
 
 const categoryCenterPanelStyle: CSSProperties = {
   gridArea: 'center',
   minHeight: 0,
-  borderRadius: '22px',
+  borderRadius: '20px',
   border: '1px solid #d6dee8',
   background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f8fbff 100%)',
-  boxShadow: '0 16px 34px rgba(41, 57, 79, 0.08)',
+  boxShadow: '0 8px 24px rgba(41, 57, 79, 0.08)',
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
@@ -276,6 +262,32 @@ const categoryCenterBodyStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'flex',
+  padding: '16px',
+}
+
+const categoryCenterMessageWrapStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  alignSelf: 'stretch',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px',
+  borderRadius: '24px',
+  background: 'linear-gradient(180deg, #ffffff 0%, #f2f6fc 100%)',
+  border: '1px solid #dde6f0',
+  boxShadow: '0 8px 20px rgba(53, 71, 95, 0.08)',
+}
+
+const categoryCenterMessageTextStyle: CSSProperties = {
+  margin: 0,
+  color: '#22324a',
+  fontSize: 'clamp(1.5rem, 2.2vw, 2.15rem)',
+  fontWeight: 800,
+  lineHeight: 1.5,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'keep-all',
+  textAlign: 'center',
 }
 
 function getCategoryCardStyle(
@@ -313,7 +325,7 @@ function getCategoryCardStyle(
 const categoryTitleStyle: CSSProperties = {
   margin: 0,
   color: '#1f3047',
-  fontSize: 'clamp(2.25rem, 3.3vw, 3rem)',
+  fontSize: 'clamp(1.9rem, 2.7vw, 3rem)',
   fontWeight: 900,
   lineHeight: 1.2,
   wordBreak: 'keep-all',
@@ -337,7 +349,7 @@ const pagerWrapStyle: CSSProperties = {
 const pagerButtonStyle: CSSProperties = {
   appearance: 'none',
   border: '1px solid #d6dee8',
-  backgroundColor: '#ffffff',
+  backgroundColor: 'rgba(255, 255, 255, 0.96)',
   borderRadius: '999px',
   minHeight: '38px',
   padding: '0 14px',
@@ -346,6 +358,13 @@ const pagerButtonStyle: CSSProperties = {
   fontWeight: 800,
   cursor: 'pointer',
   position: 'relative',
+}
+
+const floatingPagerWrapStyle: CSSProperties = {
+  position: 'absolute',
+  top: '12px',
+  right: '12px',
+  zIndex: 2,
 }
 
 const panelCss = `
@@ -531,8 +550,6 @@ function CategoryActionCard({
 export default function ReplyModePanel(props: ReplyModePanelProps) {
   const {
     message,
-    messages,
-    activeMessageId = null,
     status,
     recommendationMode,
     categoryState,
@@ -758,10 +775,9 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       <section style={categoryCenterPanelStyle} aria-label="읽기 전용 채팅 영역">
         <div style={categoryCenterHeaderStyle}>보호자 메시지 읽기</div>
         <div style={categoryCenterBodyStyle}>
-          <ChatMessageList
-            messages={messages}
-            activeMessageId={activeMessageId ?? message.id}
-          />
+          <div style={categoryCenterMessageWrapStyle} aria-live="polite">
+            <p style={categoryCenterMessageTextStyle}>{message.content || '?댁슜 ?놁쓬'}</p>
+          </div>
         </div>
       </section>
 
@@ -847,17 +863,8 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       }}
     >
       <style>{panelCss}</style>
-      <div style={headerStyle}>
-        <div>
-          <p style={eyebrowStyle}>추천 응답</p>
-          <p style={infoTextStyle}>{statusCopy}</p>
-        </div>
-
-        <div style={metaRowStyle}>
-          {pagerControls}
-          <span style={metaStyle}>대기 {unresolvedCount}건</span>
-        </div>
-      </div>
+      {pagerControls ? <div style={floatingPagerWrapStyle}>{pagerControls}</div> : null}
+      <div style={srOnlyStyle}>{`${statusCopy} 대기 ${unresolvedCount}건`}</div>
 
       {recommendationMode === 'category' ? categoryContent : sentenceContent}
     </section>
