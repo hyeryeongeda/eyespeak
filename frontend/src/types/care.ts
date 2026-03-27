@@ -155,7 +155,7 @@ export interface ActivationDelaySetting {
 
 export const ACTIVATION_DELAY_OPTIONS: Record<ActivationDelayPreset, ActivationDelaySetting> = {
   none: { preset: 'none', value: 0 },
-  short: { preset: 'short', value: 600 },
+  short: { preset: 'short', value: 500 },
   medium: { preset: 'medium', value: 1000 },
   long: { preset: 'long', value: 1600 },
 }
@@ -173,6 +173,7 @@ export interface ActivationDelayRequestDto {
 // ms → preset 역매핑
 export const ACTIVATION_DELAY_MS_TO_PRESET: Record<number, ActivationDelayPreset> = {
   0: 'none',
+  500: 'short',
   600: 'short',
   1000: 'medium',
   1600: 'long',
