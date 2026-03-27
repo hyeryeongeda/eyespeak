@@ -24,7 +24,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     }
   }, [transcript])
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const content = text.trim()
     if (!content) return
@@ -33,7 +33,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
     setText('')
 
     if (isListening) {
-      await stopListening()
+      stopListening()
     }
   }
 
