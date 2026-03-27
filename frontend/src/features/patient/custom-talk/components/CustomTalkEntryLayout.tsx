@@ -8,7 +8,6 @@ import type { CustomTalkStageActionCard } from './CustomTalkStageLayout'
 
 type CustomTalkEntryActionCard = CustomTalkStageActionCard & {
   trackingId?: string
-  commitDisabled?: boolean
   loading?: boolean
   loadingLabel?: string
 }
@@ -202,7 +201,7 @@ const layoutCss = `
     overflow-x: hidden;
   }
 
-  .custom-talk-entry-card:hover:not([aria-disabled='true']) {
+  .custom-talk-entry-card:hover:not(:disabled) {
     transform: translateY(-4px);
     box-shadow: 0 26px 56px rgba(53, 77, 103, 0.14);
   }
@@ -273,15 +272,6 @@ const layoutCss = `
 
 `
 
-const entryCellByArea: Record<string, number> = {
-  'top-left': 0,
-  'top-center': 1,
-  'top-right': 2,
-  'bottom-left': 3,
-  'bottom-center': 4,
-  'bottom-right': 5,
-}
-
 function ActionCard({
   gridArea,
   card,
@@ -292,9 +282,6 @@ function ActionCard({
   dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
   const isLoading = card.loading ?? false
-  const isUnavailable = card.disabled ?? false
-  const isCommitDisabled = card.commitDisabled ?? false
-  const isInteractionBlocked = isUnavailable || isCommitDisabled
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(dwellFeedback ?? {
     activeTargetId: null,
     phase: 'idle',
@@ -306,25 +293,10 @@ function ActionCard({
     <button
       type="button"
       className="custom-talk-entry-card"
-      style={getCardStyle(gridArea, card.tone, isInteractionBlocked, isLoading)}
-      aria-disabled={isInteractionBlocked || undefined}
-      tabIndex={isInteractionBlocked ? -1 : undefined}
-      onClick={event => {
-        if (isInteractionBlocked) {
-          event.preventDefault()
-          event.stopPropagation()
-          return
-        }
-
-        card.onSelect()
-      }}
-      data-tracking-id={card.trackingId}
-      data-gaze-selectable={card.trackingId ? 'true' : undefined}
-      data-gaze-commit-disabled={isInteractionBlocked ? 'true' : undefined}
-      data-gaze-disabled-reason={
-        isCommitDisabled ? 'busy' : isUnavailable ? 'unavailable' : undefined
-      }
-      data-cell={card.trackingId ? entryCellByArea[gridArea] : undefined}
+      style={getCardStyle(gridArea, card.tone, card.disabled ?? false, isLoading)}
+      disabled={card.disabled}
+      onClick={card.onSelect}
+      data-tracking-id={card.disabled ? undefined : card.trackingId}
       aria-busy={isLoading || undefined}
     >
       {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}
@@ -382,8 +354,6 @@ export default function CustomTalkEntryLayout({
   dwellFeedback,
   gridTemplateRows,
 }: CustomTalkEntryLayoutProps) {
-  const setContainerElement = dwellFeedback?.setContainerElement
-
   return (
     <main className="custom-talk-entry-page" style={pageWrap} aria-label={title}>
       <style>{layoutCss}</style>
@@ -393,7 +363,11 @@ export default function CustomTalkEntryLayout({
           ...gridStyle,
           gridTemplateRows: gridTemplateRows ?? gridStyle.gridTemplateRows,
         }}
-        ref={setContainerElement}
+        ref={element => {
+          if (dwellFeedback) {
+            dwellFeedback.containerRef.current = element
+          }
+        }}
       >
         <ActionCard gridArea="top-left" card={topLeft} dwellFeedback={dwellFeedback} />
         <ActionCard gridArea="top-center" card={topCenter} dwellFeedback={dwellFeedback} />

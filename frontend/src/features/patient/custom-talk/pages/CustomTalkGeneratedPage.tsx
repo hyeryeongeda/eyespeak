@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo } from 'react'
+import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
@@ -9,9 +9,7 @@ import {
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import { useCustomTalkStore } from '../store/customTalkStore'
-import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
-import { createEntryCellMapping } from '../utils/customTalkGazeMapping'
 import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
@@ -82,21 +80,6 @@ export default function CustomTalkGeneratedPage() {
     status === 'loading' || status === 'refreshing' || status === 'submitting'
   const isGeneratedLoading = status === 'loading' || status === 'refreshing'
   const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
-  const visibleGeneratedSentences = getVisibleGeneratedSentences(generatedSentences)
-  const cellMapping = useMemo(
-    () =>
-      createEntryCellMapping({
-        topLeft: visibleGeneratedSentences[0] ? 'custom-talk-generated-option-1' : null,
-        topCenter: visibleGeneratedSentences[1] ? 'custom-talk-generated-option-2' : null,
-        topRight: visibleGeneratedSentences[2] ? 'custom-talk-generated-option-3' : null,
-        bottomLeft: 'custom-talk-generated-keyboard',
-        bottomCenter: 'custom-talk-generated-refresh',
-        bottomRight: 'custom-talk-generated-back',
-      }),
-    [visibleGeneratedSentences],
-  )
-
-  useCellMapping(cellMapping)
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onAfterNavigate: resetCustomTalkSession,
@@ -117,6 +100,9 @@ export default function CustomTalkGeneratedPage() {
   if (!hasComposeValue) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE} replace />
   }
+
+  const visibleGeneratedSentences = getVisibleGeneratedSentences(generatedSentences)
+
   return (
     <CustomTalkEntryLayout
       title="생성 문장 선택"
@@ -129,8 +115,7 @@ export default function CustomTalkGeneratedPage() {
             void selectGeneratedSentence(visibleGeneratedSentences[0])
           }
         },
-        disabled: !visibleGeneratedSentences[0],
-        commitDisabled: isBusy,
+        disabled: !visibleGeneratedSentences[0] || isBusy,
         loading: isGeneratedLoading && !visibleGeneratedSentences[0],
         loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-1',
@@ -144,8 +129,7 @@ export default function CustomTalkGeneratedPage() {
             void selectGeneratedSentence(visibleGeneratedSentences[1])
           }
         },
-        disabled: !visibleGeneratedSentences[1],
-        commitDisabled: isBusy,
+        disabled: !visibleGeneratedSentences[1] || isBusy,
         loading: isGeneratedLoading && !visibleGeneratedSentences[1],
         loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-2',
@@ -159,8 +143,7 @@ export default function CustomTalkGeneratedPage() {
             void selectGeneratedSentence(visibleGeneratedSentences[2])
           }
         },
-        disabled: !visibleGeneratedSentences[2],
-        commitDisabled: isBusy,
+        disabled: !visibleGeneratedSentences[2] || isBusy,
         loading: isGeneratedLoading && !visibleGeneratedSentences[2],
         loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-3',
@@ -173,7 +156,7 @@ export default function CustomTalkGeneratedPage() {
           openKeyboard('generated', previewText)
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
-        commitDisabled: isBusy,
+        disabled: isBusy,
         trackingId: 'custom-talk-generated-keyboard',
       }}
       bottomCenter={{
@@ -183,7 +166,7 @@ export default function CustomTalkGeneratedPage() {
         onSelect: () => {
           void buildGeneratedSentences()
         },
-        commitDisabled: isBusy,
+        disabled: isBusy,
         trackingId: 'custom-talk-generated-refresh',
       }}
       bottomRight={{
@@ -191,7 +174,7 @@ export default function CustomTalkGeneratedPage() {
         description: '',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE),
-        commitDisabled: isBusy,
+        disabled: isBusy,
         trackingId: 'custom-talk-generated-back',
       }}
       dwellFeedback={dwellFeedback}

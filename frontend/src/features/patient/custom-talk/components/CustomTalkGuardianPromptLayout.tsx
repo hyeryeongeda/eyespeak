@@ -13,7 +13,6 @@ export interface CustomTalkGuardianPromptCard {
   tone: CustomTalkGuardianPromptTone
   onSelect: () => void
   disabled?: boolean
-  commitDisabled?: boolean
   trackingId?: string
   loading?: boolean
   loadingLabel?: string
@@ -21,7 +20,6 @@ export interface CustomTalkGuardianPromptCard {
 
 interface CustomTalkGuardianPromptLayoutProps {
   title: string
-  assistiveText?: string | null
   centerChildren: ReactNode
   topLeft: CustomTalkGuardianPromptCard
   topRight: CustomTalkGuardianPromptCard
@@ -33,31 +31,42 @@ interface CustomTalkGuardianPromptLayoutProps {
 const pageWrapStyle: CSSProperties = {
   height: 'calc(100dvh - var(--sat, 0px) - var(--sab, 0px))',
   width: '100%',
-  padding: '4px',
+  padding: '20px 18px 24px',
   boxSizing: 'border-box',
-  backgroundColor: '#ffffff',
+  background: 'linear-gradient(180deg, #f6f4f1 0%, #f8f7f4 100%)',
   overflow: 'hidden',
 }
 
 const contentStyle: CSSProperties = {
   width: '100%',
+  maxWidth: '1180px',
   height: '100%',
+  margin: '0 auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: '0',
+  gap: '18px',
+}
+
+const titleStyle: CSSProperties = {
+  margin: 0,
+  color: '#c4c0b9',
+  fontSize: 'clamp(1.6rem, 2.1vw, 2.2rem)',
+  fontWeight: 700,
+  lineHeight: 1.1,
+  letterSpacing: '-0.02em',
 }
 
 const gridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(180px, 0.66fr) minmax(0, 1fr)',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 0.98fr) minmax(0, 1fr)',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
   gridTemplateAreas: `
     "top-left center top-right"
     "bottom-left center bottom-right"
   `,
-  gap: '12px',
+  gap: '18px 14px',
 }
 
 const cardBaseStyle: CSSProperties = {
@@ -109,7 +118,7 @@ const cardTitleStyle: CSSProperties = {
   margin: 0,
   maxWidth: '12ch',
   color: '#111111',
-  fontSize: 'clamp(1.9rem, 3.4vmin, 3rem)',
+  fontSize: 'clamp(2.25rem, 4.1vmin, 3.5rem)',
   fontWeight: 900,
   lineHeight: 1.28,
   letterSpacing: '-0.03em',
@@ -159,20 +168,8 @@ const loadingLabelStyle: CSSProperties = {
   fontWeight: 800,
 }
 
-const srOnlyStyle: CSSProperties = {
-  position: 'absolute',
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: 'hidden',
-  clip: 'rect(0, 0, 0, 0)',
-  whiteSpace: 'nowrap',
-  border: 0,
-}
-
 const layoutCss = `
-  .custom-talk-guardian-prompt-card:hover:not([aria-disabled='true']) {
+  .custom-talk-guardian-prompt-card:hover:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 16px 34px rgba(76, 91, 108, 0.11);
   }
@@ -184,7 +181,7 @@ const layoutCss = `
 
   @media (max-width: 900px) {
     .custom-talk-guardian-prompt-page {
-      padding: 4px !important;
+      padding: 18px 14px 20px !important;
     }
 
     .custom-talk-guardian-prompt-grid {
@@ -222,13 +219,6 @@ const layoutCss = `
   }
 `
 
-const guardianPromptCellByArea: Record<string, number> = {
-  'top-left': 0,
-  'top-right': 2,
-  'bottom-left': 3,
-  'bottom-right': 5,
-}
-
 function ActionCard({
   gridArea,
   card,
@@ -239,9 +229,6 @@ function ActionCard({
   dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
   const isLoading = card.loading ?? false
-  const isUnavailable = card.disabled ?? false
-  const isCommitDisabled = card.commitDisabled ?? false
-  const isInteractionBlocked = isUnavailable || isCommitDisabled
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(
     dwellFeedback ?? {
       activeTargetId: null,
@@ -256,25 +243,10 @@ function ActionCard({
     <button
       type="button"
       className="custom-talk-guardian-prompt-card"
-      style={getCardStyle(gridArea, card.tone, isInteractionBlocked, isLoading)}
-      aria-disabled={isInteractionBlocked || undefined}
-      tabIndex={isInteractionBlocked ? -1 : undefined}
-      onClick={event => {
-        if (isInteractionBlocked) {
-          event.preventDefault()
-          event.stopPropagation()
-          return
-        }
-
-        card.onSelect()
-      }}
-      data-tracking-id={card.trackingId}
-      data-gaze-selectable={card.trackingId ? 'true' : undefined}
-      data-gaze-commit-disabled={isInteractionBlocked ? 'true' : undefined}
-      data-gaze-disabled-reason={
-        isCommitDisabled ? 'busy' : isUnavailable ? 'unavailable' : undefined
-      }
-      data-cell={card.trackingId ? guardianPromptCellByArea[gridArea] : undefined}
+      style={getCardStyle(gridArea, card.tone, card.disabled ?? false, isLoading)}
+      disabled={card.disabled}
+      onClick={card.onSelect}
+      data-tracking-id={card.disabled ? undefined : card.trackingId}
       aria-busy={isLoading || undefined}
     >
       {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}
@@ -294,7 +266,6 @@ function ActionCard({
 
 export default function CustomTalkGuardianPromptLayout({
   title,
-  assistiveText,
   centerChildren,
   topLeft,
   topRight,
@@ -302,8 +273,6 @@ export default function CustomTalkGuardianPromptLayout({
   bottomRight,
   dwellFeedback,
 }: CustomTalkGuardianPromptLayoutProps) {
-  const setContainerElement = dwellFeedback?.setContainerElement
-
   return (
     <main
       className="custom-talk-guardian-prompt-page"
@@ -312,16 +281,15 @@ export default function CustomTalkGuardianPromptLayout({
     >
       <style>{layoutCss}</style>
       <div style={contentStyle}>
-        <h1 style={srOnlyStyle}>{title}</h1>
-        {assistiveText ? (
-          <p style={srOnlyStyle} aria-live="polite">
-            {assistiveText}
-          </p>
-        ) : null}
+        <h1 style={titleStyle}>{title}</h1>
         <div
           className="custom-talk-guardian-prompt-grid"
           style={gridStyle}
-          ref={setContainerElement}
+          ref={element => {
+            if (dwellFeedback) {
+              dwellFeedback.containerRef.current = element
+            }
+          }}
         >
           <ActionCard gridArea="top-left" card={topLeft} dwellFeedback={dwellFeedback} />
           <ActionCard gridArea="top-right" card={topRight} dwellFeedback={dwellFeedback} />

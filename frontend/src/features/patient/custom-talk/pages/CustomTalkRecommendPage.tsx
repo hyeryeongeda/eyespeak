@@ -1,13 +1,16 @@
-import { type CSSProperties, useEffect, useMemo } from 'react'
+import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
+import {
+  getCustomTalkNoticeStyle,
+  customTalkLoadingNoticeStyle,
+  customTalkSuccessNoticeStyle,
+} from '../components/customTalkUi'
 import { useCustomTalkStore } from '../store/customTalkStore'
-import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
-import { createGuardianPromptCellMapping } from '../utils/customTalkGazeMapping'
 import { filterSelectableRecommendedSentences } from '../utils/recommendedSentenceGuards'
 
 const centerStackStyle: CSSProperties = {
@@ -21,6 +24,13 @@ const centerStackStyle: CSSProperties = {
 const promptPanelSlotStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
+}
+
+const noticeStackStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  flexShrink: 0,
 }
 
 function getVisibleSentences(sentences: string[]) {
@@ -55,12 +65,6 @@ export default function CustomTalkRecommendPage() {
     status === 'submitting' ||
     status === 'completed'
   const isRecommendationLoading = status === 'loading' || status === 'refreshing'
-  const assistiveText =
-    errorMessage ??
-    completionMessage ??
-    (status === 'loading' || status === 'refreshing'
-      ? '추천 문장을 불러오는 중입니다.'
-      : null)
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onAfterNavigate: resetCustomTalkSession,
@@ -74,29 +78,15 @@ export default function CustomTalkRecommendPage() {
     void loadRecommendedSentences(draft.categoryKey)
   }, [draft.categoryKey, hasCategoryKey, loadRecommendedSentences, recommendedSentences.length])
 
-  const visibleSentences = getVisibleSentences(recommendedSentences)
-  const cellMapping = useMemo(
-    () =>
-      createGuardianPromptCellMapping({
-        topLeft: visibleSentences[0] ? 'custom-talk-recommend-option-1' : null,
-        topRight: visibleSentences[1] ? 'custom-talk-recommend-option-2' : null,
-        bottomLeft: visibleSentences[2] ? 'custom-talk-recommend-option-3' : null,
-        bottomRight: 'custom-talk-recommend-back',
-        namespace: 'custom-talk-recommend',
-      }),
-    [visibleSentences],
-  )
-
-  useCellMapping(cellMapping)
-
   if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
 
+  const visibleSentences = getVisibleSentences(recommendedSentences)
+
   return (
     <CustomTalkGuardianPromptLayout
       title="보호자 선발화-답변"
-      assistiveText={assistiveText}
       topLeft={{
         title: visibleSentences[0] ?? '추천 문장 준비 중',
         tone: 'sky',
@@ -105,8 +95,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[0])
           }
         },
-        disabled: !visibleSentences[0],
-        commitDisabled: isActionLocked,
+        disabled: !visibleSentences[0] || isActionLocked,
         loading: isRecommendationLoading && !visibleSentences[0],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-1',
@@ -119,8 +108,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[1])
           }
         },
-        disabled: !visibleSentences[1],
-        commitDisabled: isActionLocked,
+        disabled: !visibleSentences[1] || isActionLocked,
         loading: isRecommendationLoading && !visibleSentences[1],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-2',
@@ -133,8 +121,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[2])
           }
         },
-        disabled: !visibleSentences[2],
-        commitDisabled: isActionLocked,
+        disabled: !visibleSentences[2] || isActionLocked,
         loading: isRecommendationLoading && !visibleSentences[2],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-3',
@@ -155,6 +142,22 @@ export default function CustomTalkRecommendPage() {
               mode="entry"
             />
           </div>
+
+          {status === 'loading' || errorMessage || completionMessage ? (
+            <div style={noticeStackStyle}>
+              {status === 'loading' ? (
+                <div style={customTalkLoadingNoticeStyle}>
+                  추천 문장을 불러오는 중입니다.
+                </div>
+              ) : null}
+              {errorMessage ? (
+                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
+              ) : null}
+              {completionMessage ? (
+                <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       }
     />
