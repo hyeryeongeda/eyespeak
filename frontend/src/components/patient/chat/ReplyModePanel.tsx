@@ -572,15 +572,28 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
   } = props
 
   const isSending = status === 'sending'
-  const suggestionCards = message ? buildSuggestionCards(message, suggestions) : []
-  const topCards = suggestionCards.slice(0, 3)
+  const suggestionCards = useMemo(
+    () => (message ? buildSuggestionCards(message, suggestions) : []),
+    [message, suggestions],
+  )
+  const topCards = useMemo(() => suggestionCards.slice(0, 3), [suggestionCards])
   const bottomSuggestionCard = suggestionCards[3] ?? null
   const totalCategoryPages = Math.max(1, Math.ceil(categories.length / CATEGORY_PAGE_SIZE))
   const safeCategoryPage = Math.min(categoryPage, Math.max(totalCategoryPages - 1, 0))
-  const visibleCategories = categories.slice(
-    safeCategoryPage * CATEGORY_PAGE_SIZE,
-    safeCategoryPage * CATEGORY_PAGE_SIZE + CATEGORY_PAGE_SIZE,
+  const visibleCategories = useMemo(
+    () =>
+      categories.slice(
+        safeCategoryPage * CATEGORY_PAGE_SIZE,
+        safeCategoryPage * CATEGORY_PAGE_SIZE + CATEGORY_PAGE_SIZE,
+      ),
+    [categories, safeCategoryPage],
   )
+  const firstVisibleCategory = visibleCategories[0] ?? null
+  const secondVisibleCategory = visibleCategories[1] ?? null
+  const thirdVisibleCategory = visibleCategories[2] ?? null
+  const firstTopCard = topCards[0] ?? null
+  const secondTopCard = topCards[1] ?? null
+  const thirdTopCard = topCards[2] ?? null
   const statusCopy = getStatusCopy({
     recommendationMode,
     categoryState,
@@ -599,19 +612,19 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
   const cellMapping = useMemo<Record<number, ReplyTrackingId | null>>(() => {
     if (recommendationMode === 'category') {
       return {
-        0: visibleCategories[0] && !isSending ? 'reply-category-1' : null,
+        0: firstVisibleCategory && !isSending ? 'reply-category-1' : null,
         1: null,
-        2: visibleCategories[1] && !isSending ? 'reply-category-2' : null,
-        3: visibleCategories[2] && !isSending ? 'reply-category-3' : null,
+        2: secondVisibleCategory && !isSending ? 'reply-category-2' : null,
+        3: thirdVisibleCategory && !isSending ? 'reply-category-3' : null,
         4: null,
         5: !isSending ? 'reply-back' : null,
       }
     }
 
     return {
-      0: topCards[0] && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-1' : null,
-      1: topCards[1] && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
-      2: topCards[2] && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
+      0: firstTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-1' : null,
+      1: secondTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
+      2: thirdTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
       3:
         bottomSuggestionCard && !isSending && suggestionState !== 'loading'
           ? 'reply-suggestion-4'
@@ -621,11 +634,15 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     }
   }, [
     bottomSuggestionCard,
+    firstTopCard,
+    firstVisibleCategory,
     isSending,
     recommendationMode,
+    secondTopCard,
+    secondVisibleCategory,
     suggestionState,
-    topCards,
-    visibleCategories,
+    thirdTopCard,
+    thirdVisibleCategory,
   ])
 
   useCellMapping(cellMapping)
@@ -635,11 +652,11 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     priority: 320,
     onPositiveAction:
       recommendationMode === 'category'
-        ? !isSending && visibleCategories[0]
-          ? () => onSelectCategory(visibleCategories[0].key)
+        ? !isSending && firstVisibleCategory
+          ? () => onSelectCategory(firstVisibleCategory.key)
           : undefined
-        : !isSending && topCards[0] && suggestionState !== 'loading'
-          ? () => onSelectSuggestion(topCards[0].suggestion)
+        : !isSending && firstTopCard && suggestionState !== 'loading'
+          ? () => onSelectSuggestion(firstTopCard.suggestion)
           : suggestionState === 'failed'
             ? onRetrySuggestions
             : undefined,
@@ -747,12 +764,12 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       <CategoryActionCard
         gridArea="top-left"
         tone="sky"
-        category={visibleCategories[0] ?? null}
+        category={firstVisibleCategory}
         trackingId="reply-category-1"
         disabled={isSending || categoryState === 'loading'}
         onSelect={() => {
-          if (visibleCategories[0]) {
-            void onSelectCategory(visibleCategories[0].key)
+          if (firstVisibleCategory) {
+            void onSelectCategory(firstVisibleCategory.key)
           }
         }}
         dwellFeedback={dwellFeedback}
@@ -761,12 +778,12 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       <CategoryActionCard
         gridArea="top-right"
         tone="sand"
-        category={visibleCategories[1] ?? null}
+        category={secondVisibleCategory}
         trackingId="reply-category-2"
         disabled={isSending || categoryState === 'loading'}
         onSelect={() => {
-          if (visibleCategories[1]) {
-            void onSelectCategory(visibleCategories[1].key)
+          if (secondVisibleCategory) {
+            void onSelectCategory(secondVisibleCategory.key)
           }
         }}
         dwellFeedback={dwellFeedback}
@@ -784,12 +801,12 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       <CategoryActionCard
         gridArea="bottom-left"
         tone="mint"
-        category={visibleCategories[2] ?? null}
+        category={thirdVisibleCategory}
         trackingId="reply-category-3"
         disabled={isSending || categoryState === 'loading'}
         onSelect={() => {
-          if (visibleCategories[2]) {
-            void onSelectCategory(visibleCategories[2].key)
+          if (thirdVisibleCategory) {
+            void onSelectCategory(thirdVisibleCategory.key)
           }
         }}
         dwellFeedback={dwellFeedback}
