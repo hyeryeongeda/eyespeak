@@ -27,6 +27,9 @@ function dtoToPatientChatMessage(dto: ChatMessageDto): PatientChatMessage {
     status: 'replied',
     meta: {
       contentType: dto.contentType,
+      clientMessageId: dto.clientMessageId ?? null,
+      phraseId: dto.phraseId ?? null,
+      exprId: dto.exprId ?? null,
       historySource: 'rest',
     },
   }

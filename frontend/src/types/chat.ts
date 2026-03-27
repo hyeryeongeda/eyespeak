@@ -92,6 +92,7 @@ export interface PatientChatMessageMeta {
   suggestionMode?: PatientChatSuggestionMode
   sttConfidence?: number
   contentType?: 'TEXT' | 'PHRASE' | 'EXPRESSION'
+  clientMessageId?: string | null
   phraseId?: number | null
   exprId?: number | null
   isOptimistic?: boolean

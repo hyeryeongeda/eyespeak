@@ -39,6 +39,7 @@ import type {
   PatientSuggestedResponse,
 } from '../types/chat'
 import type { RecommendationCategoryKey } from '../types/recommendation'
+import { createClientMessageId } from '../utils/clientMessageId'
 
 type PatientChatAction =
   | { type: 'SET_ROUTE_CONTEXT'; route: PatientChatRouteContext }
@@ -154,6 +155,11 @@ function getMessageContentType(message: PatientChatMessage) {
   return message.meta?.contentType ?? 'TEXT'
 }
 
+function getMessageClientMessageId(message: PatientChatMessage) {
+  const clientMessageId = message.meta?.clientMessageId?.trim()
+  return clientMessageId ? clientMessageId : null
+}
+
 function isTimestampWithinWindow(
   currentMessage: PatientChatMessage,
   nextMessage: PatientChatMessage,
@@ -221,77 +227,142 @@ function mergeMessagePair(
   }
 }
 
-function isSamePatientMessage(
+function getOptimisticPatientEchoPair(
   currentMessage: PatientChatMessage,
   nextMessage: PatientChatMessage,
 ) {
-  if (currentMessage.sender !== nextMessage.sender) {
+  if (currentMessage.sender !== 'patient' || nextMessage.sender !== 'patient') {
+    return null
+  }
+
+  const currentIsOptimistic = currentMessage.meta?.isOptimistic === true
+  const nextIsOptimistic = nextMessage.meta?.isOptimistic === true
+
+  if (currentIsOptimistic === nextIsOptimistic) {
+    return null
+  }
+
+  return {
+    optimistic: currentIsOptimistic ? currentMessage : nextMessage,
+    confirmed: currentIsOptimistic ? nextMessage : currentMessage,
+  }
+}
+
+function hasCompatibleEchoReplyTarget(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair) {
+    return (currentMessage.replyToId ?? null) === (nextMessage.replyToId ?? null)
+  }
+
+  const optimisticReplyToId = pair.optimistic.replyToId ?? null
+  const confirmedReplyToId = pair.confirmed.replyToId ?? null
+
+  return optimisticReplyToId === confirmedReplyToId || confirmedReplyToId == null
+}
+
+function matchesOptimisticMessageByClientMessageId(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair) {
     return false
   }
 
-  if (currentMessage.content !== nextMessage.content) {
+  const optimisticClientMessageId = getMessageClientMessageId(pair.optimistic)
+  const confirmedClientMessageId = getMessageClientMessageId(pair.confirmed)
+
+  return (
+    optimisticClientMessageId != null &&
+    confirmedClientMessageId != null &&
+    optimisticClientMessageId === confirmedClientMessageId
+  )
+}
+
+function matchesOptimisticMessageByStructuredContent(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair || !hasCompatibleEchoReplyTarget(currentMessage, nextMessage)) {
     return false
   }
 
-  const currentReplyToId = currentMessage.replyToId ?? null
-  const nextReplyToId = nextMessage.replyToId ?? null
-  const isOptimisticPatientEchoPair =
-    currentMessage.sender === 'patient' &&
-    nextMessage.sender === 'patient' &&
-    currentMessage.meta?.isOptimistic !== nextMessage.meta?.isOptimistic &&
-    (currentMessage.meta?.isOptimistic === true || nextMessage.meta?.isOptimistic === true)
-  const optimisticReplyToId =
-    currentMessage.meta?.isOptimistic === true
-      ? currentReplyToId
-      : nextMessage.meta?.isOptimistic === true
-        ? nextReplyToId
-        : null
-  const echoedReplyToId =
-    currentMessage.meta?.isOptimistic === true
-      ? nextReplyToId
-      : nextMessage.meta?.isOptimistic === true
-        ? currentReplyToId
-        : null
-  const allowsMissingReplyTargetOnEcho =
-    isOptimisticPatientEchoPair &&
-    optimisticReplyToId != null &&
-    echoedReplyToId == null
-
-  if (!allowsMissingReplyTargetOnEcho && currentReplyToId !== nextReplyToId) {
+  if (getMessageContentType(pair.optimistic) !== getMessageContentType(pair.confirmed)) {
     return false
   }
 
-  if (getMessageContentType(currentMessage) !== getMessageContentType(nextMessage)) {
+  const matchesExpressionId =
+    pair.optimistic.meta?.exprId != null &&
+    pair.optimistic.meta.exprId === (pair.confirmed.meta?.exprId ?? null)
+  const matchesPhraseId =
+    pair.optimistic.meta?.phraseId != null &&
+    pair.optimistic.meta.phraseId === (pair.confirmed.meta?.phraseId ?? null)
+
+  if (!matchesExpressionId && !matchesPhraseId) {
     return false
   }
 
-  if ((currentMessage.meta?.phraseId ?? null) !== (nextMessage.meta?.phraseId ?? null)) {
+  return isTimestampWithinWindow(
+    pair.optimistic,
+    pair.confirmed,
+    OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS,
+    { includeUtcFallback: true },
+  )
+}
+
+function matchesOptimisticMessageByLegacyFallback(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair || !hasCompatibleEchoReplyTarget(currentMessage, nextMessage)) {
     return false
   }
 
-  if ((currentMessage.meta?.exprId ?? null) !== (nextMessage.meta?.exprId ?? null)) {
+  if (pair.optimistic.content !== pair.confirmed.content) {
     return false
   }
 
-  const currentTimestamp = getMessageTimestamp(currentMessage)
-  const nextTimestamp = getMessageTimestamp(nextMessage)
+  const currentTimestamp = getMessageTimestamp(pair.optimistic)
+  const nextTimestamp = getMessageTimestamp(pair.confirmed)
 
   if (currentTimestamp === 0 || nextTimestamp === 0) {
     return true
   }
 
-  if (isOptimisticPatientEchoPair) {
-    // Server echoes can arrive without timezone info, so compare against a broader
-    // window and also treat timezone-less timestamps as UTC candidates.
-    return isTimestampWithinWindow(
-      currentMessage,
-      nextMessage,
-      OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS,
-      { includeUtcFallback: true },
-    )
+  return isTimestampWithinWindow(
+    pair.optimistic,
+    pair.confirmed,
+    LOCAL_OUTGOING_MATCH_WINDOW_MS,
+    { includeUtcFallback: true },
+  )
+}
+
+function getOptimisticPatientMatchStrategy(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  if (matchesOptimisticMessageByClientMessageId(currentMessage, nextMessage)) {
+    return 'clientMessageId'
   }
 
-  return Math.abs(currentTimestamp - nextTimestamp) <= LOCAL_OUTGOING_MATCH_WINDOW_MS
+  if (matchesOptimisticMessageByStructuredContent(currentMessage, nextMessage)) {
+    return 'structuredContent'
+  }
+
+  if (matchesOptimisticMessageByLegacyFallback(currentMessage, nextMessage)) {
+    return 'legacyFallback'
+  }
+
+  return null
 }
 
 function shouldReconcileOptimisticMessage(
@@ -302,7 +373,7 @@ function shouldReconcileOptimisticMessage(
     return false
   }
 
-  return isSamePatientMessage(currentMessage, nextMessage)
+  return getOptimisticPatientMatchStrategy(currentMessage, nextMessage) !== null
 }
 
 function shouldIgnoreLateOptimisticMessage(
@@ -313,7 +384,21 @@ function shouldIgnoreLateOptimisticMessage(
     return false
   }
 
-  return isSamePatientMessage(currentMessage, nextMessage)
+  return getOptimisticPatientMatchStrategy(currentMessage, nextMessage) !== null
+}
+
+function findLastMatchingMessageIndex(
+  messages: PatientChatMessage[],
+  nextMessage: PatientChatMessage,
+  predicate: (currentMessage: PatientChatMessage, nextMessage: PatientChatMessage) => boolean,
+) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (predicate(messages[index], nextMessage)) {
+      return index
+    }
+  }
+
+  return -1
 }
 
 function sortPatientMessages(messages: PatientChatMessage[]) {
@@ -349,8 +434,10 @@ function mergePatientMessages(
       return
     }
 
-    const optimisticIndex = mergedMessages.findIndex(message =>
-      shouldReconcileOptimisticMessage(message, nextMessage),
+    const optimisticIndex = findLastMatchingMessageIndex(
+      mergedMessages,
+      nextMessage,
+      shouldReconcileOptimisticMessage,
     )
 
     if (optimisticIndex >= 0) {
@@ -361,8 +448,10 @@ function mergePatientMessages(
       return
     }
 
-    const staleOptimisticIndex = mergedMessages.findIndex(message =>
-      shouldIgnoreLateOptimisticMessage(message, nextMessage),
+    const staleOptimisticIndex = findLastMatchingMessageIndex(
+      mergedMessages,
+      nextMessage,
+      shouldIgnoreLateOptimisticMessage,
     )
 
     if (staleOptimisticIndex >= 0) {
@@ -949,6 +1038,7 @@ function toPatientChatMessage(payload: StompChatInbound): PatientChatMessage {
     status: 'received',
     meta: {
       contentType: payload.contentType,
+      clientMessageId: payload.clientMessageId ?? null,
       phraseId: payload.phraseId,
       exprId: payload.exprId,
       historySource: 'stomp',
@@ -970,6 +1060,7 @@ function createOutgoingPatientMessage(
     replyToId: input.replyToId,
     meta: {
       contentType: input.contentType ?? 'TEXT',
+      clientMessageId: input.clientMessageId ?? null,
       phraseId: input.phraseId ?? null,
       exprId: input.exprId ?? null,
       isOptimistic: true,
@@ -1106,10 +1197,12 @@ export function PatientIncomingChatProvider({
 
       const currentState = stateRef.current
       const resolvedReplyToId = input.replyToId ?? getPreferredReplyTargetId(currentState)
+      const clientMessageId = input.clientMessageId ?? createClientMessageId()
 
       const outgoingMessage = createOutgoingPatientMessage(
         {
           ...input,
+          clientMessageId,
           text,
           replyToId: resolvedReplyToId ?? undefined,
         },
@@ -1128,6 +1221,7 @@ export function PatientIncomingChatProvider({
           sendChat({
             text,
             contentType: input.contentType ?? 'TEXT',
+            clientMessageId,
             phraseId: input.phraseId,
             exprId: input.exprId,
           })

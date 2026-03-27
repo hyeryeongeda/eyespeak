@@ -10,6 +10,7 @@ export interface DispatchPatientChatInput {
   text: string
   type?: DispatchablePatientChatType
   contentType?: StompContentType
+  clientMessageId?: string
   phraseId?: number | null
   exprId?: number | null
   replyToId?: string
