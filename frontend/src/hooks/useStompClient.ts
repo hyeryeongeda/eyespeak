@@ -70,15 +70,21 @@ export function useStompClient(enabled = true): UseStompClientReturn {
   const [status, setStatus] = useState<StompConnectionStatus>('disconnected')
   const [client, setClient] = useState<EyeSpeakStompClient | null>(null)
   const clientRef = useRef<EyeSpeakStompClient | null>(null)
+  // 세대 카운터: 구 클라이언트의 콜백이 새 클라이언트의 상태를 덮어쓰는 것을 방지
+  const genRef = useRef(0)
 
   // cleanup 함수 — useEffect 와 reconnect 양쪽에서 사용
   const cleanup = useCallback(async () => {
-    if (clientRef.current) {
-      try {
-        await clientRef.current.deactivate()
-      } catch {
-        // deactivate 실패는 무시 (이미 끊어진 상태 등)
-      }
+    const clientToCleanup = clientRef.current
+    if (!clientToCleanup) return
+
+    try {
+      await clientToCleanup.deactivate()
+    } catch {
+      // deactivate 실패는 무시 (이미 끊어진 상태 등)
+    }
+    // deactivate 사이에 새 클라이언트가 생성되었으면 덮어쓰지 않는다
+    if (clientRef.current === clientToCleanup) {
       clientRef.current = null
       setClient(null)
     }
@@ -92,8 +98,9 @@ export function useStompClient(enabled = true): UseStompClientReturn {
     }
 
     const wsUrl = buildWsUrl()
+    const gen = ++genRef.current
     // 디버그: 연결 시도 URL 확인 (Android 디버깅용, 추후 제거)
-    console.log('[STOMP] 연결 시도 URL:', wsUrl)
+    console.log('[STOMP] 연결 시도 URL:', wsUrl, 'gen:', gen)
     console.log('[STOMP] isNative:', Capacitor.isNativePlatform(), 'platform:', Capacitor.getPlatform())
 
     const stompClient = createStompClient(
@@ -104,13 +111,17 @@ export function useStompClient(enabled = true): UseStompClientReturn {
       },
       {
         onStatusChange: (newStatus) => {
-          console.log('[STOMP] 상태 변경:', newStatus)
+          // 구 클라이언트의 콜백이면 무시 (토큰 갱신 등으로 새 클라이언트가 생성된 경우)
+          if (genRef.current !== gen) return
+          console.log('[STOMP] 상태 변경:', newStatus, 'gen:', gen)
           setStatus(newStatus)
         },
         onStompError: (frame) => {
+          if (genRef.current !== gen) return
           console.error('[STOMP] 에러:', frame.headers.message ?? frame.body)
         },
         onWebSocketError: (event) => {
+          if (genRef.current !== gen) return
           console.error('[STOMP] WebSocket 에러:', event)
         },
       },
