@@ -94,14 +94,23 @@ const panelStyle: CSSProperties = {
   width: '100%',
   minHeight: '100dvh',
   height: '100%',
-  padding: '12px',
-  background: 'linear-gradient(180deg, #f4f7fb 0%, #edf2f7 100%)',
+  padding: '20px 18px 24px',
+  background: 'linear-gradient(180deg, #f6f4f1 0%, #f8f7f4 100%)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  gap: '18px',
   boxSizing: 'border-box',
   overflow: 'hidden',
   position: 'relative',
+}
+
+const screenTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#c4c0b9',
+  fontSize: 'clamp(1.4rem, 1.9vw, 2rem)',
+  fontWeight: 700,
+  lineHeight: 1.1,
+  letterSpacing: '-0.02em',
 }
 
 const metaStyle: CSSProperties = {
@@ -127,20 +136,11 @@ const srOnlyStyle: CSSProperties = {
   border: 0,
 }
 
-const gridStyle: CSSProperties = {
-  flex: 1,
-  minHeight: 0,
-  display: 'grid',
-  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'minmax(0, 1.08fr) minmax(84px, 0.34fr) minmax(0, 1fr)',
-  gap: '12px',
-}
-
 const categoryGridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.95fr) minmax(0, 1fr)',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 0.98fr) minmax(0, 1fr)',
   gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
   gridTemplateAreas: `
     "top-left center top-right"
@@ -150,10 +150,10 @@ const categoryGridStyle: CSSProperties = {
 }
 
 const cardBaseStyle: CSSProperties = {
-  borderRadius: '20px',
-  border: '1px solid #d6dee8',
+  borderRadius: '18px',
+  border: '1px solid #d9dee5',
   backgroundColor: '#ffffff',
-  boxShadow: '0 8px 24px rgba(41, 57, 79, 0.06)',
+  boxShadow: '0 10px 26px rgba(76, 91, 108, 0.06)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -163,71 +163,6 @@ const cardBaseStyle: CSSProperties = {
   textAlign: 'center',
   boxSizing: 'border-box',
   position: 'relative',
-}
-
-function getSuggestionCardStyle(selected: boolean, disabled: boolean): CSSProperties {
-  return {
-    ...cardBaseStyle,
-    appearance: 'none',
-    cursor: disabled ? 'default' : 'pointer',
-    color: '#131313',
-    fontSize: 'clamp(2rem, 4vw, 3.2rem)',
-    fontWeight: 900,
-    letterSpacing: '-0.04em',
-    opacity: disabled ? 0.58 : 1,
-    border: selected ? '2px solid #7e9dcc' : cardBaseStyle.border,
-    background: selected ? 'linear-gradient(180deg, #f6faff 0%, #ebf3ff 100%)' : '#ffffff',
-    transform: selected ? 'translateY(-2px)' : 'none',
-  }
-}
-
-const guardianMessageWrapStyle: CSSProperties = {
-  ...cardBaseStyle,
-  gridColumn: '1 / -1',
-  minHeight: 0,
-  alignItems: 'stretch',
-  justifyContent: 'center',
-  padding: '0 24px',
-  background: 'linear-gradient(180deg, #f8fbff 0%, #f1f5fb 100%)',
-}
-
-const guardianMessageStyle: CSSProperties = {
-  margin: 0,
-  color: '#39445b',
-  fontSize: 'clamp(1.5rem, 2.3vw, 2.2rem)',
-  fontWeight: 800,
-  lineHeight: 1.4,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  minHeight: '100%',
-  textAlign: 'center',
-  wordBreak: 'keep-all',
-}
-
-const helperButtonStyle: CSSProperties = {
-  ...cardBaseStyle,
-  appearance: 'none',
-  cursor: 'pointer',
-  color: '#151515',
-  fontSize: 'clamp(1.8rem, 3vw, 2.8rem)',
-  fontWeight: 900,
-  letterSpacing: '-0.04em',
-}
-
-const refreshButtonStyle: CSSProperties = {
-  ...helperButtonStyle,
-  backgroundColor: '#ffffff',
-}
-
-const backButtonStyle: CSSProperties = {
-  ...helperButtonStyle,
-  backgroundColor: '#ffffff',
-}
-
-const fallbackButtonStyle: CSSProperties = {
-  ...helperButtonStyle,
-  backgroundColor: '#ffffff',
 }
 
 const inlineWrapStyle: CSSProperties = {
@@ -240,29 +175,20 @@ const inlineWrapStyle: CSSProperties = {
 const categoryCenterPanelStyle: CSSProperties = {
   gridArea: 'center',
   minHeight: 0,
-  borderRadius: '20px',
-  border: '1px solid #d6dee8',
-  background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #f8fbff 100%)',
-  boxShadow: '0 8px 24px rgba(41, 57, 79, 0.08)',
+  borderRadius: '18px',
+  border: '1px solid #d8dade',
+  background: 'linear-gradient(180deg, #e8e7e6 0%, #e2e2e2 100%)',
+  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.52)',
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-}
-
-const categoryCenterHeaderStyle: CSSProperties = {
-  padding: '14px 18px',
-  borderBottom: '1px solid #e8eef5',
-  color: '#7a889d',
-  fontSize: '13px',
-  fontWeight: 800,
-  letterSpacing: '0.02em',
 }
 
 const categoryCenterBodyStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'flex',
-  padding: '16px',
+  padding: '18px',
 }
 
 const categoryCenterMessageWrapStyle: CSSProperties = {
@@ -272,17 +198,19 @@ const categoryCenterMessageWrapStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '24px',
-  borderRadius: '24px',
-  background: 'linear-gradient(180deg, #ffffff 0%, #f2f6fc 100%)',
-  border: '1px solid #dde6f0',
-  boxShadow: '0 8px 20px rgba(53, 71, 95, 0.08)',
+  padding: '18px',
 }
 
 const categoryCenterMessageTextStyle: CSSProperties = {
   margin: 0,
-  color: '#22324a',
-  fontSize: 'clamp(1.5rem, 2.2vw, 2.15rem)',
+  maxWidth: '84%',
+  padding: '16px 22px',
+  borderRadius: '6px',
+  color: '#4a4f56',
+  backgroundColor: '#ffffff',
+  border: '1px solid rgba(219, 223, 228, 0.92)',
+  boxShadow: '0 10px 22px rgba(110, 116, 124, 0.08)',
+  fontSize: 'clamp(1rem, 1.35vmax, 1.2rem)',
   fontWeight: 800,
   lineHeight: 1.5,
   whiteSpace: 'pre-wrap',
@@ -297,10 +225,10 @@ function getCategoryCardStyle(
   selected: boolean,
 ): CSSProperties {
   const backgrounds: Record<CategoryTone, string> = {
-    sky: 'linear-gradient(180deg, #eef1ff 0%, #e6ebff 100%)',
-    sand: 'linear-gradient(180deg, #fff7d8 0%, #fff1b8 100%)',
-    mint: 'linear-gradient(180deg, #f0f7f4 0%, #ebf6f4 100%)',
-    slate: 'linear-gradient(180deg, #f7f8fc 0%, #edf1f7 100%)',
+    sky: 'linear-gradient(180deg, #f0f1ff 0%, #eaecff 100%)',
+    sand: 'linear-gradient(180deg, #fff5c9 0%, #fff1b6 100%)',
+    mint: 'linear-gradient(180deg, #f3fbfb 0%, #eef8f8 100%)',
+    slate: 'linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%)',
   }
 
   return {
@@ -311,33 +239,32 @@ function getCategoryCardStyle(
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
-    gap: '10px',
-    padding: '22px 20px',
+    gap: '8px',
+    padding: '22px 18px',
     background: backgrounds[tone],
     opacity: disabled ? 0.58 : 1,
-    border: selected ? '2px solid #7e9dcc' : cardBaseStyle.border,
+    border:
+      selected
+        ? '2px solid #7e9dcc'
+        : tone === 'slate'
+          ? '1px solid #d5dbe2'
+          : cardBaseStyle.border,
     boxShadow: selected
       ? '0 18px 40px rgba(94, 121, 165, 0.16)'
-      : '0 10px 28px rgba(41, 57, 79, 0.06)',
+      : '0 10px 26px rgba(76, 91, 108, 0.06)',
   }
 }
 
 const categoryTitleStyle: CSSProperties = {
   margin: 0,
-  color: '#1f3047',
-  fontSize: 'clamp(1.9rem, 2.7vw, 3rem)',
+  maxWidth: '12ch',
+  color: '#111111',
+  fontSize: 'clamp(2.25rem, 4.1vmin, 3.5rem)',
   fontWeight: 900,
-  lineHeight: 1.2,
+  lineHeight: 1.28,
+  letterSpacing: '-0.03em',
   wordBreak: 'keep-all',
-}
-
-const categoryDescriptionStyle: CSSProperties = {
-  margin: 0,
-  maxWidth: '14ch',
-  color: '#6f8095',
-  fontSize: 'clamp(0.92rem, 1.05vw, 1rem)',
-  fontWeight: 700,
-  lineHeight: 1.5,
+  whiteSpace: 'pre-wrap',
 }
 
 const pagerWrapStyle: CSSProperties = {
@@ -370,18 +297,19 @@ const floatingPagerWrapStyle: CSSProperties = {
 const panelCss = `
   .reply-mode-button:hover:not(:disabled),
   .reply-mode-button:focus-visible:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 20px 42px rgba(53, 77, 103, 0.14);
+    transform: translateY(-3px);
+    box-shadow: 0 16px 34px rgba(76, 91, 108, 0.11);
     outline: none;
   }
 
   @media (max-width: 940px) {
-    .reply-mode-category-grid {
+    .reply-mode-category-grid,
+    .reply-mode-sentence-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      grid-template-rows: repeat(3, minmax(150px, auto)) !important;
+      grid-template-rows: minmax(240px, 0.9fr) minmax(0, 1fr) minmax(0, 1fr) !important;
       grid-template-areas:
-        "top-left top-right"
         "center center"
+        "top-left top-right"
         "bottom-left bottom-right" !important;
     }
   }
@@ -539,10 +467,41 @@ function CategoryActionCard({
       data-tracking-id={isDisabled ? undefined : trackingId}
     >
       <DwellOnTarget trackingId={isDisabled ? undefined : trackingId} dwellFeedback={dwellFeedback} />
-      <h2 style={categoryTitleStyle}>{category?.title ?? '준비 중'}</h2>
-      <p style={categoryDescriptionStyle}>
-        {category ? category.hint?.trim() || category.description || '' : '카테고리를 불러오는 중입니다.'}
-      </p>
+      <h2 style={categoryTitleStyle}>{category?.title ?? '카테고리'}</h2>
+    </button>
+  )
+}
+
+function SuggestionActionCard({
+  gridArea,
+  tone,
+  label,
+  trackingId,
+  disabled,
+  selected,
+  onSelect,
+  dwellFeedback,
+}: {
+  gridArea: CSSProperties['gridArea']
+  tone: CategoryTone
+  label: string
+  trackingId: ReplyTrackingId
+  disabled: boolean
+  selected: boolean
+  onSelect: () => void
+  dwellFeedback: ReturnType<typeof useDwellFeedback<ReplyTrackingId>>
+}) {
+  return (
+    <button
+      type="button"
+      className="reply-mode-button"
+      style={getCategoryCardStyle(gridArea, tone, disabled, selected)}
+      disabled={disabled}
+      onClick={onSelect}
+      data-tracking-id={disabled ? undefined : trackingId}
+    >
+      <DwellOnTarget trackingId={disabled ? undefined : trackingId} dwellFeedback={dwellFeedback} />
+      <h2 style={categoryTitleStyle}>{label}</h2>
     </button>
   )
 }
@@ -577,7 +536,6 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     [message, suggestions],
   )
   const topCards = useMemo(() => suggestionCards.slice(0, 3), [suggestionCards])
-  const bottomSuggestionCard = suggestionCards[3] ?? null
   const totalCategoryPages = Math.max(1, Math.ceil(categories.length / CATEGORY_PAGE_SIZE))
   const safeCategoryPage = Math.min(categoryPage, Math.max(totalCategoryPages - 1, 0))
   const visibleCategories = useMemo(
@@ -623,17 +581,13 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
 
     return {
       0: firstTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-1' : null,
-      1: secondTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
-      2: thirdTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
-      3:
-        bottomSuggestionCard && !isSending && suggestionState !== 'loading'
-          ? 'reply-suggestion-4'
-          : null,
-      4: !isSending ? 'reply-refresh' : null,
+      1: null,
+      2: secondTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
+      3: thirdTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
+      4: null,
       5: !isSending ? 'reply-back' : null,
     }
   }, [
-    bottomSuggestionCard,
     firstTopCard,
     firstVisibleCategory,
     isSending,
@@ -668,84 +622,64 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
   }
 
   const sentenceContent = (
-    <div style={gridStyle} className="reply-mode-sentence-grid">
-      {topCards.map((card, index) => {
-        const trackingId = (`reply-suggestion-${index + 1}`) as ReplyTrackingId
-
-        return (
-          <button
-            key={card.id}
-            type="button"
-            className="reply-mode-button"
-            style={getSuggestionCardStyle(
-              selectedSuggestionId === card.id,
-              isSending || suggestionState === 'loading',
-            )}
-            disabled={isSending || suggestionState === 'loading'}
-            onClick={() => onSelectSuggestion(card.suggestion)}
-            data-tracking-id={isSending || suggestionState === 'loading' ? undefined : trackingId}
-          >
-            <DwellOnTarget
-              trackingId={isSending || suggestionState === 'loading' ? undefined : trackingId}
-              dwellFeedback={dwellFeedback}
-            />
-            {suggestionState === 'loading' ? '...' : card.label}
-          </button>
-        )
-      })}
-
-      <div style={guardianMessageWrapStyle}>
-        <p style={guardianMessageStyle}>{message.content || '내용 없음'}</p>
-      </div>
-
-      <button
-        type="button"
-        className="reply-mode-button"
-        style={fallbackButtonStyle}
-        disabled={!bottomSuggestionCard || isSending || suggestionState === 'loading'}
-        onClick={() => {
-          if (bottomSuggestionCard) {
-            onSelectSuggestion(bottomSuggestionCard.suggestion)
+    <div style={categoryGridStyle} className="reply-mode-sentence-grid">
+      <SuggestionActionCard
+        gridArea="top-left"
+        tone="sky"
+        label={suggestionState === 'loading' ? '답변 준비 중' : firstTopCard?.label ?? '답변1'}
+        trackingId="reply-suggestion-1"
+        disabled={!firstTopCard || isSending || suggestionState === 'loading'}
+        selected={selectedSuggestionId === firstTopCard?.id}
+        onSelect={() => {
+          if (firstTopCard) {
+            onSelectSuggestion(firstTopCard.suggestion)
           }
         }}
-        data-tracking-id={
-          !bottomSuggestionCard || isSending || suggestionState === 'loading'
-            ? undefined
-            : 'reply-suggestion-4'
-        }
-      >
-        <DwellOnTarget
-          trackingId={
-            !bottomSuggestionCard || isSending || suggestionState === 'loading'
-              ? undefined
-              : 'reply-suggestion-4'
+        dwellFeedback={dwellFeedback}
+      />
+
+      <SuggestionActionCard
+        gridArea="top-right"
+        tone="mint"
+        label={suggestionState === 'loading' ? '답변 준비 중' : secondTopCard?.label ?? '답변2'}
+        trackingId="reply-suggestion-2"
+        disabled={!secondTopCard || isSending || suggestionState === 'loading'}
+        selected={selectedSuggestionId === secondTopCard?.id}
+        onSelect={() => {
+          if (secondTopCard) {
+            onSelectSuggestion(secondTopCard.suggestion)
           }
-          dwellFeedback={dwellFeedback}
-        />
-        {suggestionState === 'loading'
-          ? '...'
-          : bottomSuggestionCard?.label ?? '잘 모르겠어요'}
-      </button>
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <section style={categoryCenterPanelStyle} aria-label="읽기 전용 채팅 영역">
+        <div style={categoryCenterBodyStyle}>
+          <div style={categoryCenterMessageWrapStyle} aria-live="polite">
+            <p style={categoryCenterMessageTextStyle}>{message.content || '내용 없음'}</p>
+          </div>
+        </div>
+      </section>
+
+      <SuggestionActionCard
+        gridArea="bottom-left"
+        tone="sand"
+        label={suggestionState === 'loading' ? '답변 준비 중' : thirdTopCard?.label ?? '답변3'}
+        trackingId="reply-suggestion-3"
+        disabled={!thirdTopCard || isSending || suggestionState === 'loading'}
+        selected={selectedSuggestionId === thirdTopCard?.id}
+        onSelect={() => {
+          if (thirdTopCard) {
+            onSelectSuggestion(thirdTopCard.suggestion)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
 
       <button
         type="button"
         className="reply-mode-button"
-        style={refreshButtonStyle}
-        disabled={isSending}
-        onClick={onRetrySuggestions}
-        data-tracking-id={isSending ? undefined : 'reply-refresh'}
-      >
-        <DwellOnTarget
-          trackingId={isSending ? undefined : 'reply-refresh'}
-          dwellFeedback={dwellFeedback}
-        />
-        다시 추천
-      </button>
-
-      <button
-        type="button"
-        className="reply-mode-button"
-        style={backButtonStyle}
+        style={getCategoryCardStyle('bottom-right', 'slate', isSending, false)}
         disabled={isSending}
         onClick={onClose}
         data-tracking-id={isSending ? undefined : 'reply-back'}
@@ -754,7 +688,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
           trackingId={isSending ? undefined : 'reply-back'}
           dwellFeedback={dwellFeedback}
         />
-        뒤로가기
+        <h2 style={categoryTitleStyle}>뒤로가기</h2>
       </button>
     </div>
   )
@@ -777,7 +711,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
 
       <CategoryActionCard
         gridArea="top-right"
-        tone="sand"
+        tone="mint"
         category={secondVisibleCategory}
         trackingId="reply-category-2"
         disabled={isSending || categoryState === 'loading'}
@@ -790,17 +724,16 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       />
 
       <section style={categoryCenterPanelStyle} aria-label="읽기 전용 채팅 영역">
-        <div style={categoryCenterHeaderStyle}>보호자 메시지 읽기</div>
         <div style={categoryCenterBodyStyle}>
           <div style={categoryCenterMessageWrapStyle} aria-live="polite">
-            <p style={categoryCenterMessageTextStyle}>{message.content || '?댁슜 ?놁쓬'}</p>
+            <p style={categoryCenterMessageTextStyle}>{message.content || '내용 없음'}</p>
           </div>
         </div>
       </section>
 
       <CategoryActionCard
         gridArea="bottom-left"
-        tone="mint"
+        tone="sand"
         category={thirdVisibleCategory}
         trackingId="reply-category-3"
         disabled={isSending || categoryState === 'loading'}
@@ -825,7 +758,6 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
           dwellFeedback={dwellFeedback}
         />
         <h2 style={categoryTitleStyle}>뒤로가기</h2>
-        <p style={categoryDescriptionStyle}>이전 화면으로 돌아갑니다.</p>
       </button>
     </div>
   )
@@ -882,6 +814,9 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
       <style>{panelCss}</style>
       {pagerControls ? <div style={floatingPagerWrapStyle}>{pagerControls}</div> : null}
       <div style={srOnlyStyle}>{`${statusCopy} 대기 ${unresolvedCount}건`}</div>
+      <h1 style={screenTitleStyle}>
+        {recommendationMode === 'category' ? '보호자 선발화-카테고리' : '보호자 선발화-답변'}
+      </h1>
 
       {recommendationMode === 'category' ? categoryContent : sentenceContent}
     </section>

@@ -29,6 +29,7 @@ import FavoritesActionCard from './components/FavoritesActionCard'
 import FavoritesErrorState from './components/FavoritesErrorState'
 import FavoritesPaginationCard from './components/FavoritesPaginationCard'
 import FavoritesSplitState from './components/FavoritesSplitState'
+import { getFavoriteTileMeta } from './favoritesUi'
 
 const pageWrapStyle: CSSProperties = {
   minHeight: 'calc(100dvh + var(--sat, 0px) + var(--sab, 0px))',
@@ -37,8 +38,8 @@ const pageWrapStyle: CSSProperties = {
   marginRight: 'calc(var(--sar, 0px) * -1)',
   marginBottom: 'calc(var(--sab, 0px) * -1)',
   marginLeft: 'calc(var(--sal, 0px) * -1)',
-  padding: 0,
-  background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
+  padding: '4px',
+  background: 'linear-gradient(180deg, #f5fafc 0%, #edf4f7 100%)',
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
@@ -56,7 +57,7 @@ const gridStyle: CSSProperties = {
     "slot-1 slot-2 pagination"
     "slot-3 slot-4 back"
   `,
-  gap: 0,
+  gap: '12px',
 }
 
 const slotWrapStyle: CSSProperties = {
@@ -78,7 +79,7 @@ const bottomBarStyle: CSSProperties = {
   alignItems: 'stretch',
   gap: '12px',
   marginTop: '12px',
-  padding: '0 16px 16px',
+  padding: '0 4px 4px',
 }
 
 const backBtnStyle: CSSProperties = {
@@ -433,24 +434,31 @@ export default function FavoritesPage() {
         </>
       ) : (
         <section style={gridStyle} aria-label="즐겨찾기 목록">
-          {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => (
-            <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
-              {currentItems[index] ? (
-                <FavoriteCard
-                  key={currentItems[index].id}
-                  id={currentItems[index].id}
-                  text={currentItems[index].text}
-                  category={currentItems[index].category}
-                  disabled={status === 'selecting' || status === 'transitioning'}
-                  onSelect={() => handleSelect(currentItems[index])}
-                  trackingId={getFavoriteTrackingId(currentItems[index].id)}
-                  dwellFeedback={dwellFeedback}
-                />
-              ) : (
-                <div aria-hidden style={placeholderStyle} />
-              )}
-            </div>
-          ))}
+          {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => {
+            const item = currentItems[index]
+            const tileMeta = item ? getFavoriteTileMeta(item) : null
+
+            return (
+              <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
+                {item && tileMeta ? (
+                  <FavoriteCard
+                    key={item.id}
+                    id={item.id}
+                    text={item.text}
+                    category={item.category}
+                    description={tileMeta.description}
+                    tone={tileMeta.tone}
+                    disabled={status === 'selecting' || status === 'transitioning'}
+                    onSelect={() => handleSelect(item)}
+                    trackingId={getFavoriteTrackingId(item.id)}
+                    dwellFeedback={dwellFeedback}
+                  />
+                ) : (
+                  <div aria-hidden style={placeholderStyle} />
+                )}
+              </div>
+            )
+          })}
           <div style={{ ...slotWrapStyle, gridArea: 'pagination' }}>
             <FavoritesPaginationCard
               pageIndex={pageIndex}
@@ -464,8 +472,9 @@ export default function FavoritesPage() {
           </div>
           <div style={{ ...slotWrapStyle, gridArea: 'back' }}>
             <FavoritesActionCard
-              primaryText="뒤로가기"
-              description="이전 화면으로 이동"
+              primaryText="← 뒤로가기"
+              description="대화 메인으로 이동"
+              tone="slate"
               onClick={handleBack}
               trackingId={TRACKING_BACK_BUTTON}
               dwellFeedback={dwellFeedback}

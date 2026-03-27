@@ -10,18 +10,30 @@ interface UseTrackingOptions {
   enabled?: boolean
 }
 
-interface TrackingState<TTarget extends string> {
+interface InputTrackingState<TTarget extends string> {
   hoveredTargetId: TTarget | null
   isPointerInside: boolean
   pointerType: string | null
   inputSource: 'pointer' | 'gaze' | null
 }
 
-const INITIAL_TRACKING_STATE = {
+interface TrackingState<TTarget extends string>
+  extends InputTrackingState<TTarget> {
+  pointerHoveredTargetId: TTarget | null
+  gazeHoveredTargetId: TTarget | null
+}
+
+const INITIAL_INPUT_TRACKING_STATE = {
   hoveredTargetId: null,
   isPointerInside: false,
   pointerType: null,
   inputSource: null,
+} as const
+
+const INITIAL_TRACKING_STATE = {
+  ...INITIAL_INPUT_TRACKING_STATE,
+  pointerHoveredTargetId: null,
+  gazeHoveredTargetId: null,
 } as const
 
 export function useTracking<TTarget extends string>({
@@ -29,9 +41,9 @@ export function useTracking<TTarget extends string>({
   enabled = true,
 }: UseTrackingOptions): TrackingState<TTarget> {
   const [trackingState, setTrackingState] =
-    useState<TrackingState<TTarget>>(INITIAL_TRACKING_STATE)
+    useState<InputTrackingState<TTarget>>(INITIAL_INPUT_TRACKING_STATE)
   const [gazeTrackingState, setGazeTrackingState] =
-    useState<TrackingState<TTarget>>(INITIAL_TRACKING_STATE)
+    useState<InputTrackingState<TTarget>>(INITIAL_INPUT_TRACKING_STATE)
 
   useEffect(() => {
     if (!enabled) {
@@ -39,7 +51,7 @@ export function useTracking<TTarget extends string>({
     }
 
     const resetTracking = () => {
-      setTrackingState(INITIAL_TRACKING_STATE)
+      setTrackingState(INITIAL_INPUT_TRACKING_STATE)
     }
 
     const handlePointerMove = (event: PointerEvent) => {
@@ -99,14 +111,14 @@ export function useTracking<TTarget extends string>({
       const container = containerRef.current
 
       if (!gazePoint || !container) {
-        setGazeTrackingState(INITIAL_TRACKING_STATE)
+        setGazeTrackingState(INITIAL_INPUT_TRACKING_STATE)
         return
       }
 
       const isPointerInside = isPointInsideElement(gazePoint.clientX, gazePoint.clientY, container)
 
       if (!isPointerInside) {
-        setGazeTrackingState(INITIAL_TRACKING_STATE)
+        setGazeTrackingState(INITIAL_INPUT_TRACKING_STATE)
         return
       }
 
@@ -139,7 +151,15 @@ export function useTracking<TTarget extends string>({
     return INITIAL_TRACKING_STATE
   }
 
-  return gazeTrackingState.isPointerInside ? gazeTrackingState : trackingState
+  const activeTrackingState = gazeTrackingState.isPointerInside ? gazeTrackingState : trackingState
+  const pointerHoveredTargetId =
+    trackingState.pointerType === 'mouse' ? trackingState.hoveredTargetId : null
+
+  return {
+    ...activeTrackingState,
+    pointerHoveredTargetId,
+    gazeHoveredTargetId: gazeTrackingState.hoveredTargetId,
+  }
 }
 
 export default useTracking

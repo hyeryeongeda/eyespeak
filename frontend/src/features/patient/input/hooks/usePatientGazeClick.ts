@@ -35,7 +35,7 @@ interface GazeTarget {
   cell: number | null
 }
 
-type PatientSelectionCommitSource = 'dwell'
+type PatientSelectionCommitSource = 'gaze-dwell' | 'pointer-dwell'
 
 interface SelectionCooldownEntry {
   element: HTMLElement | null
@@ -258,7 +258,9 @@ export function usePatientGazeClick({
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
   const commitDelayTimerRef = useRef<number | null>(null)
+  const lastMousePointRef = useRef<{ clientX: number; clientY: number } | null>(null)
   const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
+  const [mouseTarget, setMouseTarget] = useState<GazeTarget | null>(null)
   const [stableGazeTarget, setStableGazeTarget] = useState<GazeTarget | null>(null)
 
   const clearConfirmedTimer = () => {
@@ -447,12 +449,41 @@ export function usePatientGazeClick({
     return null
   }
 
+  const resolveCurrentMouseTarget = () => {
+    if (mouseTarget?.element && mouseTarget.element.isConnected) {
+      return mouseTarget
+    }
+
+    const latestMousePoint = lastMousePointRef.current
+
+    if (!latestMousePoint) {
+      return null
+    }
+
+    const element = getInteractiveElementFromPoint(
+      latestMousePoint.clientX,
+      latestMousePoint.clientY,
+    )
+
+    if (!element) {
+      return null
+    }
+
+    return {
+      element,
+      key: getInteractiveElementSelectionKey(element),
+      source: 'point-hit-test' as const,
+      cell: null,
+    }
+  }
+
   const commitSelection = (source: PatientSelectionCommitSource) => {
     const { isGlobalMenuOpen, trackingStatus } = usePatientModeStore.getState()
 
     if (import.meta.env.DEV) {
       console.info('[patient-input] selection-commit-attempt', {
         source,
+        mouseTargetKey: mouseTarget?.key ?? null,
         stableTargetKey: stableGazeTarget?.key ?? null,
         rawTargetKey: rawGazeTarget?.key ?? null,
         globalMenuOpen: isGlobalMenuOpen,
@@ -482,7 +513,10 @@ export function usePatientGazeClick({
       return false
     }
 
-    const resolvedTarget = resolveCurrentGazeTarget()
+    const resolvedTarget =
+      source === 'pointer-dwell'
+        ? resolveCurrentMouseTarget()
+        : resolveCurrentGazeTarget()
 
     if (!resolvedTarget) {
       activeElementRef.current = null
@@ -540,7 +574,10 @@ export function usePatientGazeClick({
       })
     }
 
-    submitActiveEyeTrackingSelectionFeedback()
+    if (source === 'gaze-dwell') {
+      submitActiveEyeTrackingSelectionFeedback()
+    }
+
     markSelectionConfirmed(resolvedTarget.element)
     startSelectionCooldown(resolvedTarget.key, resolvedTarget.element)
     commitDelayTimerRef.current = window.setTimeout(() => {
@@ -551,8 +588,14 @@ export function usePatientGazeClick({
           targetKey: resolvedTarget.key,
           tagName: el.tagName,
         })
-        const pt = useGazeInputStore.getState().point
-        const fallback = document.elementFromPoint(pt?.clientX ?? 0, pt?.clientY ?? 0)
+        const fallbackPoint =
+          source === 'pointer-dwell'
+            ? lastMousePointRef.current
+            : useGazeInputStore.getState().point
+        const fallback = document.elementFromPoint(
+          fallbackPoint?.clientX ?? 0,
+          fallbackPoint?.clientY ?? 0,
+        )
         if (fallback && fallback instanceof HTMLElement) {
           console.info('[patient-input] click-fallback', { tagName: fallback.tagName })
           fallback.click()
@@ -574,6 +617,75 @@ export function usePatientGazeClick({
 
     return true
   }
+
+  useEffect(() => {
+    if (!enabled || typeof window === 'undefined') {
+      lastMousePointRef.current = null
+      setMouseTarget(null)
+      return
+    }
+
+    const resetMouseTarget = () => {
+      lastMousePointRef.current = null
+      setMouseTarget(null)
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'mouse') {
+        return
+      }
+
+      lastMousePointRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      }
+
+      const element = getInteractiveElementFromPoint(event.clientX, event.clientY)
+
+      if (!element) {
+        setMouseTarget(current => (current === null ? current : null))
+        return
+      }
+
+      const nextTarget = {
+        element,
+        key: getInteractiveElementSelectionKey(element),
+        source: 'point-hit-test' as const,
+        cell: null,
+      }
+
+      setMouseTarget(current => {
+        if (
+          current?.element === nextTarget.element &&
+          current?.key === nextTarget.key
+        ) {
+          return current
+        }
+
+        return nextTarget
+      })
+    }
+
+    const handleMouseOut = (event: MouseEvent) => {
+      if (event.relatedTarget !== null) {
+        return
+      }
+
+      resetMouseTarget()
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointercancel', resetMouseTarget)
+    window.addEventListener('blur', resetMouseTarget)
+    document.addEventListener('mouseout', handleMouseOut)
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointercancel', resetMouseTarget)
+      window.removeEventListener('blur', resetMouseTarget)
+      document.removeEventListener('mouseout', handleMouseOut)
+    }
+  }, [enabled])
 
   useEffect(() => {
     const clearTargetSwitchTimer = () => {
@@ -700,7 +812,7 @@ export function usePatientGazeClick({
   ])
 
   useEffect(() => {
-    const nextHighlightedElement = stableGazeTarget?.element ?? null
+    const nextHighlightedElement = mouseTarget?.element ?? stableGazeTarget?.element ?? null
     const previousHighlightedElement = highlightedElementRef.current
 
     if (previousHighlightedElement && previousHighlightedElement !== nextHighlightedElement) {
@@ -720,7 +832,7 @@ export function usePatientGazeClick({
         highlightedElementRef.current = null
       }
     }
-  }, [stableGazeTarget])
+  }, [mouseTarget, stableGazeTarget])
 
   useEffect(() => {
     return () => {
@@ -825,7 +937,7 @@ export function usePatientGazeClick({
     hoveredTargetId: stableGazeTarget?.key ?? null,
     dwellDurationMs,
     activationDelayMs,
-    disabled: !enabled || !stableGazeTarget,
+    disabled: !enabled || !stableGazeTarget || mouseTarget !== null,
     onCommit: () => {
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
         console.info('[patient-input] skipped dwell commit because the global menu is open', {
@@ -841,7 +953,31 @@ export function usePatientGazeClick({
         activationDelayMs,
       })
 
-      commitSelection('dwell')
+      commitSelection('gaze-dwell')
+    },
+  })
+
+  useDwell<string>({
+    hoveredTargetId: mouseTarget?.key ?? null,
+    dwellDurationMs,
+    activationDelayMs,
+    disabled: !enabled || !mouseTarget,
+    onCommit: () => {
+      if (usePatientModeStore.getState().isGlobalMenuOpen) {
+        console.info('[patient-input] skipped pointer dwell commit because the global menu is open', {
+          targetKey: mouseTarget?.key ?? null,
+        })
+
+        return
+      }
+
+      console.info('[patient-input] pointer dwell commit', {
+        targetKey: mouseTarget?.key ?? null,
+        dwellDurationMs,
+        activationDelayMs,
+      })
+
+      commitSelection('pointer-dwell')
     },
   })
 }

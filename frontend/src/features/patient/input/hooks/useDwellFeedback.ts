@@ -73,19 +73,24 @@ export function useDwellFeedback<TTarget extends string>(
     !isGlobalMenuOpen &&
     isPatientTrackingAvailable(trackingStatus)
 
-  const { hoveredTargetId, inputSource } = useTracking<TTarget>({
+  const { gazeHoveredTargetId, pointerHoveredTargetId } = useTracking<TTarget>({
     containerRef,
     enabled: isFeedbackEnabled,
   })
 
-  const gazeHoveredTargetId = inputSource === 'gaze' ? hoveredTargetId : null
+  const hoveredTargetId = pointerHoveredTargetId ?? gazeHoveredTargetId
+  const inputSource = pointerHoveredTargetId
+    ? 'pointer'
+    : gazeHoveredTargetId
+      ? 'gaze'
+      : null
   const handleCommit = useCallback((_targetId: TTarget) => {}, [])
 
   const dwellState = useDwell<TTarget>({
-    hoveredTargetId: gazeHoveredTargetId,
+    hoveredTargetId,
     dwellDurationMs,
     activationDelayMs,
-    disabled: !isFeedbackEnabled || !gazeHoveredTargetId,
+    disabled: !isFeedbackEnabled || !hoveredTargetId,
     onCommit: handleCommit,
   })
 
