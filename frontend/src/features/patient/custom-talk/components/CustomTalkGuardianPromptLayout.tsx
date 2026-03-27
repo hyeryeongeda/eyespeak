@@ -21,6 +21,7 @@ export interface CustomTalkGuardianPromptCard {
 
 interface CustomTalkGuardianPromptLayoutProps {
   title: string
+  assistiveText?: string | null
   centerChildren: ReactNode
   topLeft: CustomTalkGuardianPromptCard
   topRight: CustomTalkGuardianPromptCard
@@ -32,42 +33,31 @@ interface CustomTalkGuardianPromptLayoutProps {
 const pageWrapStyle: CSSProperties = {
   height: 'calc(100dvh - var(--sat, 0px) - var(--sab, 0px))',
   width: '100%',
-  padding: '20px 18px 24px',
+  padding: '4px',
   boxSizing: 'border-box',
-  background: 'linear-gradient(180deg, #f6f4f1 0%, #f8f7f4 100%)',
+  backgroundColor: '#ffffff',
   overflow: 'hidden',
 }
 
 const contentStyle: CSSProperties = {
   width: '100%',
-  maxWidth: '1180px',
   height: '100%',
-  margin: '0 auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-}
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: '#c4c0b9',
-  fontSize: 'clamp(1.6rem, 2.1vw, 2.2rem)',
-  fontWeight: 700,
-  lineHeight: 1.1,
-  letterSpacing: '-0.02em',
+  gap: '0',
 }
 
 const gridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 0.98fr) minmax(0, 1fr)',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(180px, 0.66fr) minmax(0, 1fr)',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
   gridTemplateAreas: `
     "top-left center top-right"
     "bottom-left center bottom-right"
   `,
-  gap: '18px 14px',
+  gap: '12px',
 }
 
 const cardBaseStyle: CSSProperties = {
@@ -119,7 +109,7 @@ const cardTitleStyle: CSSProperties = {
   margin: 0,
   maxWidth: '12ch',
   color: '#111111',
-  fontSize: 'clamp(2.25rem, 4.1vmin, 3.5rem)',
+  fontSize: 'clamp(1.9rem, 3.4vmin, 3rem)',
   fontWeight: 900,
   lineHeight: 1.28,
   letterSpacing: '-0.03em',
@@ -169,6 +159,18 @@ const loadingLabelStyle: CSSProperties = {
   fontWeight: 800,
 }
 
+const srOnlyStyle: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
 const layoutCss = `
   .custom-talk-guardian-prompt-card:hover:not([aria-disabled='true']) {
     transform: translateY(-3px);
@@ -182,7 +184,7 @@ const layoutCss = `
 
   @media (max-width: 900px) {
     .custom-talk-guardian-prompt-page {
-      padding: 18px 14px 20px !important;
+      padding: 4px !important;
     }
 
     .custom-talk-guardian-prompt-grid {
@@ -292,6 +294,7 @@ function ActionCard({
 
 export default function CustomTalkGuardianPromptLayout({
   title,
+  assistiveText,
   centerChildren,
   topLeft,
   topRight,
@@ -309,7 +312,12 @@ export default function CustomTalkGuardianPromptLayout({
     >
       <style>{layoutCss}</style>
       <div style={contentStyle}>
-        <h1 style={titleStyle}>{title}</h1>
+        <h1 style={srOnlyStyle}>{title}</h1>
+        {assistiveText ? (
+          <p style={srOnlyStyle} aria-live="polite">
+            {assistiveText}
+          </p>
+        ) : null}
         <div
           className="custom-talk-guardian-prompt-grid"
           style={gridStyle}

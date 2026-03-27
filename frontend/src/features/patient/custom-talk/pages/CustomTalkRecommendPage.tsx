@@ -4,11 +4,6 @@ import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
-} from '../components/customTalkUi'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useCellMapping } from '../../input/hooks/useCellMapping'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
@@ -26,13 +21,6 @@ const centerStackStyle: CSSProperties = {
 const promptPanelSlotStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
-}
-
-const noticeStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  flexShrink: 0,
 }
 
 function getVisibleSentences(sentences: string[]) {
@@ -67,6 +55,12 @@ export default function CustomTalkRecommendPage() {
     status === 'submitting' ||
     status === 'completed'
   const isRecommendationLoading = status === 'loading' || status === 'refreshing'
+  const assistiveText =
+    errorMessage ??
+    completionMessage ??
+    (status === 'loading' || status === 'refreshing'
+      ? '추천 문장을 불러오는 중입니다.'
+      : null)
 
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onAfterNavigate: resetCustomTalkSession,
@@ -102,6 +96,7 @@ export default function CustomTalkRecommendPage() {
   return (
     <CustomTalkGuardianPromptLayout
       title="보호자 선발화-답변"
+      assistiveText={assistiveText}
       topLeft={{
         title: visibleSentences[0] ?? '추천 문장 준비 중',
         tone: 'sky',
@@ -160,22 +155,6 @@ export default function CustomTalkRecommendPage() {
               mode="entry"
             />
           </div>
-
-          {status === 'loading' || errorMessage || completionMessage ? (
-            <div style={noticeStackStyle}>
-              {status === 'loading' ? (
-                <div style={customTalkLoadingNoticeStyle}>
-                  추천 문장을 불러오는 중입니다.
-                </div>
-              ) : null}
-              {errorMessage ? (
-                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-              ) : null}
-              {completionMessage ? (
-                <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       }
     />
