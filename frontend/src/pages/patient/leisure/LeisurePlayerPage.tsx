@@ -44,6 +44,7 @@ function getPlayerStatusText(status: LeisurePlayerStatus) {
 
 const playerPanelStyle: CSSProperties = {
   flex: 1,
+  width: '100%',
   minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 2.45fr) minmax(220px, 0.95fr)',
@@ -516,6 +517,10 @@ export default function LeisurePlayerPage() {
       return
     }
 
+    if (chat.state.isMediaPausedByInterrupt) {
+      return
+    }
+
     if (
       resumeContext.routeKind !== 'player' ||
       !resumeContext.fromLeisure ||
@@ -545,7 +550,14 @@ export default function LeisurePlayerPage() {
     pausedSnapshotRef.current = null
     handledInterruptMessageIdRef.current = null
     clearResumeContext()
-  }, [applyPlaybackSnapshot, clearResumeContext, content, currentPlayerPath, resumeContext])
+  }, [
+    applyPlaybackSnapshot,
+    chat.state.isMediaPausedByInterrupt,
+    clearResumeContext,
+    content,
+    currentPlayerPath,
+    resumeContext,
+  ])
 
   useEffect(() => {
     if (!resumeContext || !resumeContext.fromLeisure) {
@@ -752,6 +764,7 @@ export default function LeisurePlayerPage() {
                   <div style={pausedBadgeStyle}>채팅 인터럽트로 일시정지</div>
                 ) : null}
                 <iframe
+                  key={content.id}
                   ref={iframeRef}
                   title={content.title}
                   src={playerSrc}

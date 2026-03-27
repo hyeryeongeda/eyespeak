@@ -109,7 +109,7 @@ def compute_iris_position(
     Args:
         landmarks_px: 픽셀 좌표 리스트(최소 478점). 비어 있거나 부족하면 신뢰 불가.
         blink_threshold: EAR 임계값. ``None``이면 YAML ``blink_ear_threshold`` 사용.
-        y_gain: Y축 amplification gain. ``None``이면 기본 ``7.0``.
+        y_gain: Y축 amplification gain. ``None``이면 기본 ``5.0``.
 
     Returns:
         ``(ratio_x, ratio_y, ear_avg, is_blinking)``.
@@ -328,7 +328,7 @@ class IrisNormalizer:
 
             # PRE-gain 보정: raw_y에 오프셋 적용 후 gain 재적용
             if self._center_locked and raw_y is not None:
-                _GAIN_Y = self._y_gain if self._y_gain is not None else 7.0
+                _GAIN_Y = self._y_gain if self._y_gain is not None else 5.0
                 corrected_raw = raw_y + self._y_center_offset
                 ry = max(0.0, min(1.0, 0.5 + (corrected_raw - 0.5) * _GAIN_Y))
 

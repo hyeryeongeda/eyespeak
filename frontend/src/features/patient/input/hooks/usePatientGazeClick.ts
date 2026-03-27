@@ -11,10 +11,6 @@ import {
   getInteractiveElementSelectionKey,
   isInteractiveElementEligibleForGlobalGazeSelection,
 } from '../services/trackingService'
-import {
-  PATIENT_DOUBLE_BLINK_EVENT,
-  type PatientDoubleBlinkDetail,
-} from '../services/patientModeBridge'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 import { useCellMappingStore } from '../stores/cellMappingStore'
 import { usePatientModeStore } from '../stores/patientModeStore'
@@ -27,10 +23,9 @@ interface UsePatientGazeClickOptions {
   enabled?: boolean
 }
 
-const DOUBLE_BLINK_COMMIT_GUARD_MS = 400
 const GAZE_TARGET_SWITCH_GRACE_MS = 500
 const SELECTION_CONFIRM_FEEDBACK_MS = 3000
-const SELECTION_COMMIT_DELAY_MS = 280
+const SELECTION_COMMIT_DELAY_MS = 0
 const TARGET_RESELECTION_COOLDOWN_MS = 2000
 
 interface GazeTarget {
@@ -40,7 +35,7 @@ interface GazeTarget {
   cell: number | null
 }
 
-type PatientSelectionCommitSource = 'dwell' | 'double-blink'
+type PatientSelectionCommitSource = 'dwell'
 
 interface SelectionCooldownEntry {
   element: HTMLElement | null
@@ -253,9 +248,8 @@ export function usePatientGazeClick({
   const cellMapping = useCellMappingStore(state => state.cellMapping)
   const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const [activationDelayMs, setActivationDelayMs] =
-    useState(ACTIVATION_DELAY_OPTIONS.medium.value)
+    useState(ACTIVATION_DELAY_OPTIONS.short.value)
   const activeElementRef = useRef<HTMLElement | null>(null)
-  const lastDoubleBlinkAtRef = useRef(0)
   const targetSwitchTimerRef = useRef<number | null>(null)
   const targetSwitchGraceStartedAtRef = useRef<number | null>(null)
   const targetSwitchPendingKeyRef = useRef<string | null>(null)
@@ -776,38 +770,6 @@ export function usePatientGazeClick({
   // ])
 
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined') {
-      return
-    }
-
-    const handleDoubleBlink = (event: Event) => {
-      const doubleBlinkEvent = event as CustomEvent<PatientDoubleBlinkDetail>
-      lastDoubleBlinkAtRef.current = Date.now()
-
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] double blink confirmed', {
-          source: doubleBlinkEvent.detail?.source ?? 'unknown',
-        })
-      }
-
-      if (commitSelection('double-blink')) {
-        doubleBlinkEvent.preventDefault()
-        return
-      }
-
-      if (import.meta.env.DEV) {
-        console.info('[patient-input] double blink fell through because confirmSelection did not commit')
-      }
-    }
-
-    window.addEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink as EventListener)
-
-    return () => {
-      window.removeEventListener(PATIENT_DOUBLE_BLINK_EVENT, handleDoubleBlink as EventListener)
-    }
-  }, [enabled, rawGazeTarget, stableGazeTarget])
-
-  useEffect(() => {
     if (!enabled) {
       return
     }
@@ -865,16 +827,6 @@ export function usePatientGazeClick({
     activationDelayMs,
     disabled: !enabled || !stableGazeTarget,
     onCommit: () => {
-      const now = Date.now()
-
-      if (now - lastDoubleBlinkAtRef.current <= DOUBLE_BLINK_COMMIT_GUARD_MS) {
-        console.info('[patient-input] skipped dwell commit because a double blink just fired', {
-          targetKey: stableGazeTarget?.key ?? null,
-        })
-
-        return
-      }
-
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
         console.info('[patient-input] skipped dwell commit because the global menu is open', {
           targetKey: stableGazeTarget?.key ?? null,

@@ -28,6 +28,7 @@ export interface UseChatHistoryReturn {
   isLoading: boolean
   hasMore: boolean
   loadInitial: () => Promise<void>
+  reload: () => Promise<void>
   loadMore: () => Promise<void>
 }
 
@@ -81,5 +82,26 @@ export function useChatHistory(): UseChatHistoryReturn {
     }
   }, [user?.matchingId, user?.accessToken, isLoading, hasMore])
 
-  return { messages, isLoading, hasMore, loadInitial, loadMore }
+  const reload = useCallback(async () => {
+    if (!user?.matchingId || !user.accessToken) return
+
+    initialLoadedRef.current = false
+    cursorRef.current = null
+    setHasMore(true)
+    setIsLoading(true)
+    try {
+      const response = await fetchChatHistory(user.matchingId, user.accessToken)
+      const converted = response.messages.map(dtoToChatMessage).reverse()
+      setMessages(converted)
+      setHasMore(response.hasNext)
+      cursorRef.current = response.nextCursor
+      initialLoadedRef.current = true
+    } catch {
+      setHasMore(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user?.matchingId, user?.accessToken])
+
+  return { messages, isLoading, hasMore, loadInitial, reload, loadMore }
 }

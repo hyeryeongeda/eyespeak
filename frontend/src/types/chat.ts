@@ -1,3 +1,5 @@
+import type { RecommendationCategoryKey } from './recommendation'
+
 export type PatientChatMessageSender = 'guardian' | 'patient'
 
 export type PatientChatMessageType =
@@ -21,6 +23,8 @@ export type PatientChatSessionStatus =
   | 'unread'
   | 'incoming_interrupt'
   | 'reply_mode'
+  | 'category_loading'
+  | 'category_ready'
   | 'suggestion_loading'
   | 'suggestion_ready'
   | 'suggestion_failed'
@@ -28,6 +32,7 @@ export type PatientChatSessionStatus =
   | 'manual_input_typing'
   | 'sending'
   | 'sent'
+  | 'reply_completion_pending'
   | 'send_failed'
   | 'conversation_active'
   | 'timeout'
@@ -39,6 +44,7 @@ export type PatientChatInterruptState =
   | 'none'
   | 'incoming_interrupt'
   | 'reply_mode'
+  | 'completion_pending'
   | 'deferred'
   | 'restoring'
   | 'restored'
@@ -51,6 +57,10 @@ export type PatientChatFallbackState =
   | 'send_failed'
 
 export type PatientChatSuggestionState = 'idle' | 'loading' | 'ready' | 'failed'
+
+export type PatientChatRecommendationMode = 'category' | 'sentence'
+
+export type PatientChatCategoryState = 'idle' | 'loading' | 'ready' | 'failed'
 
 export type PatientChatSuggestionMode = 'success' | 'failure' | 'empty'
 
@@ -82,6 +92,7 @@ export interface PatientChatMessageMeta {
   suggestionMode?: PatientChatSuggestionMode
   sttConfidence?: number
   contentType?: 'TEXT' | 'PHRASE' | 'EXPRESSION'
+  clientMessageId?: string | null
   phraseId?: number | null
   exprId?: number | null
   isOptimistic?: boolean
@@ -103,21 +114,33 @@ export interface PatientSuggestedResponse {
   id: string
   label: string
   intentKey: string
-  source: 'rule' | 'context' | 'fallback'
+  source: 'rule' | 'context' | 'fallback' | 'category'
   rank: number
+}
+
+export interface PatientRecommendationCategory {
+  key: RecommendationCategoryKey
+  title: string
+  description?: string
+  hint?: string | null
 }
 
 export interface PatientChatSessionState {
   status: PatientChatSessionStatus
   interruptState: PatientChatInterruptState
   fallbackState: PatientChatFallbackState
+  recommendationMode: PatientChatRecommendationMode
+  categoryState: PatientChatCategoryState
   suggestionState: PatientChatSuggestionState
   messages: PatientChatMessage[]
+  categories: PatientRecommendationCategory[]
   suggestions: PatientSuggestedResponse[]
   currentRoute: PatientChatRouteContext | null
   previousRoute: PatientChatRouteContext | null
   activeMessageId: string | null
   activeReplyMessageId: string | null
+  selectedCategoryKey: RecommendationCategoryKey | null
+  categoryPage: number
   manualInputMode: PatientChatManualInputMode | null
   manualDraft: string
   suggestionError: string | null

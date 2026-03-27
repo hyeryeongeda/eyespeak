@@ -1,56 +1,35 @@
 package e205.eyespeak.global.websocket;
 
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
- * [Unit 3] WebSocket 세션 저장소 — "누가 지금 온라인인가?" 를 추적
+ * WebSocket 온라인 상태 판별기
  *
- * 보호자가 채팅 화면에 있는지(WebSocket 연결) 없는지(끊김)에 따라
- * 메시지 전달 방식이 달라진다:
- *   - 온라인 → WebSocket으로 즉시 전달
- *   - 오프라인 → FCM 푸시 알림으로 전달
+ * Spring이 내부적으로 관리하는 SimpUserRegistry에 위임하여
+ * 유저의 온라인/오프라인 상태를 판별한다.
  *
- * WebSocketEventListener가 연결/해제 이벤트를 감지하여
- * 이 클래스의 addSession()/removeSession()을 호출한다.
+ * 기존에는 ConcurrentHashMap 3개를 직접 관리했으나,
+ * 수동 세션 관리로 인해 재연결 race condition과
+ * 단기 세션 즉시 종료 시 메시지 유실 버그가 발생했다.
+ *
+ * SimpUserRegistry는 Spring이 SessionConnectedEvent/SessionDisconnectEvent를
+ * 통해 자동으로 세션을 추적하며, 유저당 여러 세션을 Set으로 관리하여
+ * 모든 세션이 끊어졌을 때만 오프라인으로 판별한다.
  */
 @Component
+@RequiredArgsConstructor
 public class WebSocketSessionManager {
 
-    // ConcurrentHashMap: 여러 유저가 동시에 접속/해제해도 데이터가 꼬이지 않는 안전한 Map
-    // key: userId(String), value: StompPrincipal(userId, role)
-    private final ConcurrentHashMap<String, StompPrincipal> sessions = new ConcurrentHashMap<>();
-
-    // sessionId → userId 역방향 매핑
-    // DISCONNECT 이벤트에서 Principal이 null일 때 sessionId로 userId를 역추적하기 위함
-    private final ConcurrentHashMap<String, String> sessionIdToUserId = new ConcurrentHashMap<>();
-
-    public void addSession(String userId, String sessionId, StompPrincipal principal) {
-        sessions.put(userId, principal);
-        sessionIdToUserId.put(sessionId, userId);
-    }
-
-    public void removeSession(String userId) {
-        sessions.remove(userId);
-    }
+    private final SimpUserRegistry simpUserRegistry;
 
     /**
-     * sessionId로 세션 제거 — DISCONNECT 이벤트에서 항상 사용.
-     * sessionId는 Principal과 달리 DISCONNECT 이벤트에 항상 존재한다.
-     */
-    public void removeSessionBySessionId(String sessionId) {
-        String userId = sessionIdToUserId.remove(sessionId);
-        if (userId != null) {
-            sessions.remove(userId);
-        }
-    }
-
-    /**
-     * 채팅 메시지 전송 시 이 메서드로 상대방이 온라인인지 확인하여
-     * WebSocket / FCM 분기를 결정한다.
+     * 유저가 현재 WebSocket에 연결되어 있는지 확인한다.
+     * SimpUserRegistry에 해당 유저가 존재하고, 활성 세션이 1개 이상이면 온라인.
      */
     public boolean isOnline(String userId) {
-        return sessions.containsKey(userId);
+        var user = simpUserRegistry.getUser(userId);
+        return user != null && !user.getSessions().isEmpty();
     }
 }

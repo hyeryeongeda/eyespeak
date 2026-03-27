@@ -1,9 +1,10 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
-  customTalkErrorNoticeStyle,
+  getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
   customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
@@ -70,13 +71,19 @@ export default function CustomTalkGeneratedPage() {
   const buildGeneratedSentences = useCustomTalkStore(state => state.buildGeneratedSentences)
   const selectGeneratedSentence = useCustomTalkStore(state => state.selectGeneratedSentence)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
+  const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
   const hasComposeValue = Boolean(
     draft.subject || draft.object || draft.predicate || draft.punctuation,
   )
   const hasCategoryKey = Boolean(draft.categoryKey)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
-  const previewText = buildCustomTalkDraftPreview(draft)
+  const isGeneratedLoading = status === 'loading' || status === 'refreshing'
+  const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
+
+  useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
+    onAfterNavigate: resetCustomTalkSession,
+  })
 
   useEffect(() => {
     if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {
@@ -109,6 +116,8 @@ export default function CustomTalkGeneratedPage() {
           }
         },
         disabled: !visibleGeneratedSentences[0] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[0],
+        loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-1',
       }}
       topCenter={{
@@ -121,6 +130,8 @@ export default function CustomTalkGeneratedPage() {
           }
         },
         disabled: !visibleGeneratedSentences[1] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[1],
+        loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-2',
       }}
       topRight={{
@@ -133,6 +144,8 @@ export default function CustomTalkGeneratedPage() {
           }
         },
         disabled: !visibleGeneratedSentences[2] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[2],
+        loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-3',
       }}
       bottomLeft={{
@@ -174,7 +187,9 @@ export default function CustomTalkGeneratedPage() {
           {status === 'loading' ? (
             <div style={customTalkLoadingNoticeStyle}>생성 문장을 준비하는 중입니다.</div>
           ) : null}
-          {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
+          {errorMessage ? (
+            <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
+          ) : null}
           {completionMessage ? (
             <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
           ) : null}

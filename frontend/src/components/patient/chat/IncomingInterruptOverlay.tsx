@@ -12,103 +12,6 @@ interface IncomingInterruptOverlayProps {
   onLater: () => void
 }
 
-const defaultBackdropStyle: CSSProperties = {
-  position: 'fixed',
-  inset: 0,
-  padding: '24px',
-  backgroundColor: 'rgba(24, 38, 56, 0.3)',
-  backdropFilter: 'blur(6px)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1100,
-}
-
-const defaultPanelStyle: CSSProperties = {
-  width: 'min(680px, 100%)',
-  padding: '28px',
-  borderRadius: '28px',
-  backgroundColor: 'rgba(255, 255, 255, 0.96)',
-  border: '1px solid #d9e3eb',
-  boxShadow: '0 30px 64px rgba(53, 71, 95, 0.22)',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '18px',
-}
-
-const badgeStyle: CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  width: 'fit-content',
-  padding: '8px 14px',
-  borderRadius: '999px',
-  backgroundColor: '#eef5ff',
-  color: '#5f7fae',
-  fontSize: '13px',
-  fontWeight: 800,
-}
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: '#223247',
-  fontSize: 'clamp(1.8rem, 3vw, 2.4rem)',
-  fontWeight: 900,
-  letterSpacing: '-0.03em',
-}
-
-const messageBoxStyle: CSSProperties = {
-  padding: '18px 20px',
-  borderRadius: '22px',
-  backgroundColor: '#f5f8fb',
-  border: '1px solid #dbe4eb',
-}
-
-const messageTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#2a3b51',
-  fontSize: '20px',
-  lineHeight: 1.5,
-  fontWeight: 800,
-}
-
-const descriptionStyle: CSSProperties = {
-  margin: 0,
-  color: '#66778d',
-  fontSize: '15px',
-  fontWeight: 600,
-  lineHeight: 1.55,
-}
-
-const buttonRowStyle: CSSProperties = {
-  display: 'flex',
-  gap: '12px',
-  flexWrap: 'wrap',
-}
-
-const buttonBaseStyle: CSSProperties = {
-  minWidth: '148px',
-  height: '54px',
-  padding: '0 20px',
-  borderRadius: '999px',
-  fontSize: '16px',
-  fontWeight: 800,
-  cursor: 'pointer',
-}
-
-const primaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: '1px solid #5f8cc9',
-  background: 'linear-gradient(135deg, #e8f2ff 0%, #dbe9ff 100%)',
-  color: '#23364c',
-}
-
-const secondaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: '1px solid #d3dde7',
-  backgroundColor: '#ffffff',
-  color: '#3a4d66',
-}
-
 const leisureBackdropStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
@@ -174,17 +77,18 @@ const noLabelStyle: CSSProperties = {
 }
 
 const centerPanelWrapStyle: CSSProperties = {
-  flex: '0 1 370px',
-  maxWidth: '370px',
+  flex: '1 1 0',
+  minWidth: 'clamp(140px, 20vw, 220px)',
   width: '100%',
   display: 'flex',
-  alignItems: 'center',
+  alignItems: 'stretch',
   justifyContent: 'center',
 }
 
 const centerPanelStyle: CSSProperties = {
   width: '100%',
-  minHeight: '440px',
+  height: '100%',
+  minHeight: 0,
   borderRadius: '22px',
   border: '1px solid rgba(205, 217, 232, 0.96)',
   backgroundColor: 'rgba(255, 255, 255, 0.97)',
@@ -226,6 +130,11 @@ const leisureHeadlineStyle: CSSProperties = {
   textAlign: 'center',
   fontWeight: 900,
   letterSpacing: '-0.03em',
+  wordBreak: 'keep-all',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '8px',
 }
 
 const messagePreviewWrapStyle: CSSProperties = {
@@ -351,55 +260,7 @@ function DecisionIcon({
   )
 }
 
-function isLeisureInterrupt(currentRoute: PatientChatRouteContext | null) {
-  return currentRoute?.kind === 'leisure' || currentRoute?.kind === 'leisure_player'
-}
-
-function renderDefaultInterrupt({
-  message,
-  unreadCount,
-  currentRoute,
-  pausedByInterrupt,
-  onReplyNow,
-  onLater,
-}: Omit<IncomingInterruptOverlayProps, 'visible'>) {
-  return (
-    <div
-      style={defaultBackdropStyle}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="incoming-chat-title"
-    >
-      <div style={defaultPanelStyle}>
-        <span style={badgeStyle}>
-          보호자 새 메시지 · {currentRoute?.label ?? '현재 화면'}
-          {unreadCount > 1 ? ` · 미응답 ${unreadCount}건` : ''}
-        </span>
-        <h2 id="incoming-chat-title" style={titleStyle}>
-          지금 응답이 필요합니다.
-        </h2>
-        <div style={messageBoxStyle}>
-          <p style={messageTextStyle}>{message?.content || '내용 없음'}</p>
-        </div>
-        <p style={descriptionStyle}>
-          {pausedByInterrupt
-            ? '재생 중인 화면은 잠시 멈춘 상태입니다. 응답 화면으로 이동해 답장을 보낼 수 있습니다.'
-            : '현재 화면을 유지한 채 채팅 응답 모드로 진입하거나 나중에 확인할 수 있습니다.'}
-        </p>
-        <div style={buttonRowStyle}>
-          <button type="button" style={primaryButtonStyle} onClick={onReplyNow}>
-            지금 응답하기
-          </button>
-          <button type="button" style={secondaryButtonStyle} onClick={onLater}>
-            나중에 보기
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function renderLeisureInterrupt({
+function renderIncomingInterrupt({
   message,
   unreadCount,
   pausedByInterrupt,
@@ -435,9 +296,8 @@ function renderLeisureInterrupt({
 
             <div style={centerPanelBodyStyle}>
               <p style={leisureHeadlineStyle}>
-                보호자에게서 문자가 왔습니다!
-                <br />
-                채팅으로 이동할까요?
+                <span>보호자에게서 문자가 왔습니다!</span>
+                <span>채팅으로 이동할까요?</span>
               </p>
 
               <div style={messagePreviewWrapStyle}>
@@ -478,7 +338,6 @@ export default function IncomingInterruptOverlay({
   visible,
   message,
   unreadCount,
-  currentRoute,
   pausedByInterrupt,
   onReplyNow,
   onLater,
@@ -494,20 +353,9 @@ export default function IncomingInterruptOverlay({
     return null
   }
 
-  if (isLeisureInterrupt(currentRoute)) {
-    return renderLeisureInterrupt({
-      message,
-      unreadCount,
-      pausedByInterrupt,
-      onReplyNow,
-      onLater,
-    })
-  }
-
-  return renderDefaultInterrupt({
+  return renderIncomingInterrupt({
     message,
     unreadCount,
-    currentRoute,
     pausedByInterrupt,
     onReplyNow,
     onLater,

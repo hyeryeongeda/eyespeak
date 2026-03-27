@@ -2,7 +2,10 @@ import axios from 'axios'
 import type { AxiosError } from 'axios'
 import { getApiBaseUrl, getApiWithCredentials } from '../config/env'
 import { ApiError, type ApiRequestOptions } from '../types/api'
+import type { AuthResponseDto, AuthSession } from '../types/auth'
 import { applyActiveAuthSession, getActiveAuthSession } from './authSessionRegistry'
+import { API_ENDPOINTS } from './apiEndpoints'
+import { mapAuthResponseToSession } from './authSessionMapper'
 
 const DEFAULT_WITH_CREDENTIALS = getApiWithCredentials()
 
@@ -16,7 +19,13 @@ const axiosInstance = axios.create({
   },
 })
 
-type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody>
+type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody> & {
+  skipAuthRefresh?: boolean
+}
+
+const AUTH_REFRESH_FAILED = Symbol('AUTH_REFRESH_FAILED')
+
+let activeSessionRefreshPromise: Promise<AuthSession | null> | null = null
 
 function shouldInvalidateActiveSession(
   error: ApiError,
@@ -31,6 +40,29 @@ function shouldInvalidateActiveSession(
   }
 
   return getActiveAuthSession() !== null
+}
+
+function isAuthRefreshRequest(options: InternalRequestOptions) {
+  return options.url === API_ENDPOINTS.AUTH_REFRESH
+}
+
+function shouldAttemptAuthRefresh(
+  error: ApiError,
+  options: InternalRequestOptions,
+) {
+  if (options.skipAuthRefresh) {
+    return false
+  }
+
+  if (error.statusCode !== 401) {
+    return false
+  }
+
+  if (isAuthRefreshRequest(options)) {
+    return false
+  }
+
+  return typeof getActiveAuthSession()?.refreshToken === 'string'
 }
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
@@ -112,9 +144,66 @@ function buildHeaders(
   return Object.keys(nextHeaders).length > 0 ? nextHeaders : undefined
 }
 
+async function refreshActiveSession() {
+  if (activeSessionRefreshPromise) {
+    return activeSessionRefreshPromise
+  }
+
+  const currentSession = getActiveAuthSession()
+
+  if (!currentSession?.refreshToken) {
+    applyActiveAuthSession(null)
+    return null
+  }
+
+  activeSessionRefreshPromise = (async () => {
+    try {
+      const response = await axiosInstance.request({
+        method: 'POST',
+        url: API_ENDPOINTS.AUTH_REFRESH,
+        data: {
+          refreshToken: currentSession.refreshToken,
+        },
+        withCredentials: DEFAULT_WITH_CREDENTIALS,
+      })
+
+      const nextSession = mapAuthResponseToSession(
+        unwrapApiEnvelope<AuthResponseDto>(response.data),
+        currentSession.authMode,
+      )
+
+      applyActiveAuthSession(nextSession)
+      return nextSession
+    } catch {
+      applyActiveAuthSession(null)
+      return null
+    } finally {
+      activeSessionRefreshPromise = null
+    }
+  })()
+
+  return activeSessionRefreshPromise
+}
+
+async function retryRequestWithRefreshedSession<TResponse, TBody = unknown>(
+  options: InternalRequestOptions<TBody>,
+): Promise<TResponse | typeof AUTH_REFRESH_FAILED> {
+  const refreshedSession = await refreshActiveSession()
+
+  if (!refreshedSession?.accessToken) {
+    return AUTH_REFRESH_FAILED
+  }
+
+  return callTransport<TResponse, TBody>({
+    ...options,
+    accessToken: refreshedSession.accessToken,
+    skipAuthRefresh: true,
+  })
+}
+
 async function callTransport<TResponse, TBody = unknown>(
   options: InternalRequestOptions<TBody>,
-) {
+): Promise<TResponse> {
   try {
     const response = await axiosInstance.request({
       method: options.method,
@@ -129,6 +218,15 @@ async function callTransport<TResponse, TBody = unknown>(
     return unwrapApiEnvelope<TResponse>(response.data)
   } catch (error) {
     const apiError = toApiError(error)
+
+    if (shouldAttemptAuthRefresh(apiError, options)) {
+      const retryResult: TResponse | typeof AUTH_REFRESH_FAILED =
+        await retryRequestWithRefreshedSession<TResponse, TBody>(options)
+
+      if (retryResult !== AUTH_REFRESH_FAILED) {
+        return retryResult
+      }
+    }
 
     if (shouldInvalidateActiveSession(apiError, options)) {
       applyActiveAuthSession(null)

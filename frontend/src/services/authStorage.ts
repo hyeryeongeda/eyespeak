@@ -154,12 +154,49 @@ function shouldPersistAuthSession(role: UserRole) {
   return role === 'guardian' || role === 'patient'
 }
 
+function getPersistentStorageValue(key: string) {
+  if (!isBrowser()) {
+    return null
+  }
+
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function setPersistentStorageValue(key: string, value: string) {
+  if (!isBrowser()) {
+    return
+  }
+
+  try {
+    localStorage.setItem(key, value)
+  } catch {
+    // Ignore storage quota or privacy-mode write failures and keep in-memory session only.
+  }
+}
+
+function removePersistentStorageValue(key: string) {
+  if (!isBrowser()) {
+    return
+  }
+
+  try {
+    localStorage.removeItem(key)
+  } catch {
+    // Ignore storage cleanup failures.
+  }
+}
+
 function getSessionStorageValue() {
   if (!isBrowser()) {
     return null
   }
 
   return (
+    getPersistentStorageValue(AUTH_SESSION_STORAGE_KEY) ??
     sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY) ??
     sessionStorage.getItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
   )
@@ -206,7 +243,8 @@ export function persistAuthSession(session: AuthSession) {
   }
 
   if (shouldPersistAuthSession(session.role)) {
-    sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
+    setPersistentStorageValue(AUTH_SESSION_STORAGE_KEY, JSON.stringify(session))
+    sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
     sessionStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
   } else {
     clearStoredAuthSession()
@@ -220,6 +258,7 @@ export function clearStoredAuthSession() {
     return
   }
 
+  removePersistentStorageValue(AUTH_SESSION_STORAGE_KEY)
   sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY)
   sessionStorage.removeItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
 }

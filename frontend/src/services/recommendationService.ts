@@ -13,7 +13,11 @@ import type {
   CustomTalkContextSummary,
   CustomTalkDraft,
 } from '../features/patient/custom-talk/types'
-import type { PatientChatMessage, PatientSuggestedResponse } from '../types/chat'
+import type {
+  PatientChatMessage,
+  PatientRecommendationCategory,
+  PatientSuggestedResponse,
+} from '../types/chat'
 import type { AudioPlaybackHandle } from '../types/tts'
 import type {
   RecommendationCategoryKey,
@@ -30,6 +34,7 @@ import { getActiveAiApiMode } from './aiServiceConfig'
 import { getActiveApiMode } from '../config/env'
 import {
   composeRecommendationApi,
+  getReplyCategoriesApi,
   getRecommendationCategoriesApi,
   getRecommendationRepliesApi,
   getRecommendationSentencesApi,
@@ -91,6 +96,58 @@ function mapRecommendedReplies(replies: RecommendationReplyDto[]): PatientSugges
   }))
 }
 
+function mapRecommendationCategoryFromPool(
+  category: CustomTalkCategoryOption,
+): PatientRecommendationCategory {
+  return {
+    key: category.key,
+    title: category.title,
+    description: category.description,
+    hint: category.hint,
+  }
+}
+
+function mapRecentConversation(messages: PatientChatMessage[], activeMessageId?: string) {
+  const recentMessages = messages
+    .filter(message => message.id !== activeMessageId)
+    .slice(-6)
+    .map(message => {
+      const content = message.content.trim()
+
+      return content ? `${message.sender}: ${content}` : ''
+    })
+    .filter(Boolean)
+
+  return recentMessages.length > 0 ? recentMessages : undefined
+}
+
+function mapRecommendedSentences(
+  messageId: string,
+  categoryKey: RecommendationCategoryKey,
+  sentences: string[],
+): PatientSuggestedResponse[] {
+  const seenLabels = new Set<string>()
+
+  return sentences
+    .map(sentence => sentence.trim())
+    .filter(label => {
+      if (!label || seenLabels.has(label)) {
+        return false
+      }
+
+      seenLabels.add(label)
+      return true
+    })
+    .slice(0, 4)
+    .map((label, index) => ({
+      id: `${messageId}-${categoryKey}-${index + 1}`,
+      label,
+      intentKey: categoryKey,
+      source: 'category' as const,
+      rank: index + 1,
+    }))
+}
+
 function mapVisibleCategories(
   input: Array<{ key: string; title?: string; description?: string; hint?: string | null }>,
 ): CustomTalkCategoryOption[] {
@@ -144,6 +201,24 @@ function normalizeUtteranceText(text: string) {
   return text.trim()
 }
 
+const QUIET_PATIENT_CHAT_SEND_ERROR =
+  '지금은 바로 반영되지 않았습니다. 잠시 후 다시 시도해 주세요.'
+
+function normalizePatientChatDispatchError(error?: string) {
+  if (!error) {
+    return QUIET_PATIENT_CHAT_SEND_ERROR
+  }
+
+  if (
+    error.includes('실시간 채팅 연결이 아직 준비되지 않았습니다') ||
+    error.includes('실시간 채팅 전송에 실패했습니다')
+  ) {
+    return QUIET_PATIENT_CHAT_SEND_ERROR
+  }
+
+  return error
+}
+
 function mapCustomTalkSourceToMessageType(
   source: 'recommended' | 'generated' | 'manual',
 ): 'text' | 'manual_text' | 'word_combination' {
@@ -184,6 +259,10 @@ async function sendPatientChatNow(input: {
     phraseId: input.phraseId,
     exprId: input.exprId,
   })
+
+  if (!result.success || !result.message) {
+    throw new Error(normalizePatientChatDispatchError(result.error))
+  }
 
   if (!result.success || !result.message) {
     throw new Error(result.error ?? '실시간 채팅 전송에 실패했습니다.')
@@ -294,6 +373,59 @@ export async function fetchComposeWords(input: {
   )
 
   return response.words
+}
+
+export async function fetchSuggestedReplyCategories(input: {
+  message: PatientChatMessage
+  history: PatientChatMessage[]
+}) {
+  if (getActiveAiApiMode() !== 'real') {
+    return CUSTOM_TALK_CATEGORY_POOL.map(mapRecommendationCategoryFromPool)
+  }
+
+  const response = await getReplyCategoriesApi(
+    { message: input.message.content },
+    getAccessToken(),
+  )
+
+  return response.categories.map(cat => ({
+    key: cat as RecommendationCategoryKey,
+    title: cat,
+    description: response.sentimentMap[cat] ?? '중립',
+    hint: response.intentMap[cat] ?? '기타',
+  }))
+}
+
+export async function fetchSuggestedSentences(input: {
+  categoryKey: RecommendationCategoryKey
+  message: PatientChatMessage
+  history: PatientChatMessage[]
+}) {
+  if (getActiveAiApiMode() !== 'real') {
+    if (input.message.meta?.suggestionMode === 'failure') {
+      throw new Error('추천 문장을 불러오지 못했습니다. 다시 시도해 주세요.')
+    }
+
+    if (input.message.meta?.suggestionMode === 'empty') {
+      return []
+    }
+
+    const sentences = await fetchRecommendedCustomSentencesMock({
+      categoryKey: input.categoryKey as CustomCategoryKey,
+    })
+
+    return mapRecommendedSentences(input.message.id, input.categoryKey, sentences)
+  }
+
+  const recentMessages = mapRecentConversation(input.history, input.message.id)
+  const request = {
+    categoryKey: input.categoryKey,
+    guardianMessage: normalizeOptionalText(input.message.content),
+    recentMessages,
+  }
+  const response = await getRecommendationSentencesApi(request, getAccessToken())
+
+  return mapRecommendedSentences(input.message.id, input.categoryKey, response.sentences)
 }
 
 export async function fetchGeneratedCustomSentences(input: {

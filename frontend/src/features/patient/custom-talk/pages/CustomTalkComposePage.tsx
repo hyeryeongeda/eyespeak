@@ -3,9 +3,8 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
-  customTalkErrorNoticeStyle,
+  getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
 } from '../components/customTalkUi'
 import type { ComposeStep } from '../types'
 import { useCustomTalkStore } from '../store/customTalkStore'
@@ -87,7 +86,6 @@ export default function CustomTalkComposePage() {
   const composeOptions = useCustomTalkStore(state => state.composeOptions)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
-  const completionMessage = useCustomTalkStore(state => state.completionMessage)
   const refreshComposeStep = useCustomTalkStore(state => state.refreshComposeStep)
   const selectComposeWord = useCustomTalkStore(state => state.selectComposeWord)
   const skipComposeStep = useCustomTalkStore(state => state.skipComposeStep)
@@ -217,9 +215,8 @@ export default function CustomTalkComposePage() {
               {composeStepLabelMap[composeStep]} 추천을 불러오는 중입니다.
             </div>
           ) : null}
-          {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
-          {completionMessage ? (
-            <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
+          {errorMessage ? (
+            <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
           ) : null}
         </div>
       }

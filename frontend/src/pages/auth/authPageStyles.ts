@@ -8,6 +8,7 @@ export const pageWrapper: CSSProperties = {
   overflowY: 'auto',
   background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'flex-start',
   boxSizing: 'border-box',

@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+.git
+mlruns/
+onnx_model/
+export_onnx.py
+*.md

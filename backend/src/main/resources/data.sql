@@ -6,44 +6,44 @@
 -- ============================
 -- TIME_SLOT (7행, 고정 ID)
 -- ============================
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (1, '기상/아침', '06:00:00', '09:00:00');
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (2, '오전', '09:00:00', '12:00:00');
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (3, '점심/낮', '12:00:00', '15:00:00');
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (4, '오후', '15:00:00', '18:00:00');
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (5, '저녁', '18:00:00', '21:00:00');
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (6, '취침 준비', '21:00:00', '00:00:00');
-INSERT INTO time_slot (id, name, start_time, end_time) VALUES (7, '야간', '00:00:00', '06:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (1, '기상/아침', '06:00:00', '09:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (2, '오전', '09:00:00', '12:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (3, '점심/낮', '12:00:00', '15:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (4, '오후', '15:00:00', '18:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (5, '저녁', '18:00:00', '21:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (6, '취침 준비', '21:00:00', '00:00:00');
+INSERT IGNORE INTO time_slot (id, name, start_time, end_time) VALUES (7, '야간', '00:00:00', '06:00:00');
 
 -- ============================
 -- ACTIVITY_TAG (11행, 고정 ID)
 -- ============================
-INSERT INTO activity_tag (id, name, order_index) VALUES (1, '경관식/수분 섭취', 1);
-INSERT INTO activity_tag (id, name, order_index) VALUES (2, '약물 투여', 2);
-INSERT INTO activity_tag (id, name, order_index) VALUES (3, '구강 케어', 3);
-INSERT INTO activity_tag (id, name, order_index) VALUES (4, '체위 변경', 4);
-INSERT INTO activity_tag (id, name, order_index) VALUES (5, '흡인/호흡 케어', 5);
-INSERT INTO activity_tag (id, name, order_index) VALUES (6, '배변/배뇨 케어', 6);
-INSERT INTO activity_tag (id, name, order_index) VALUES (7, '재활/ROM 운동', 7);
-INSERT INTO activity_tag (id, name, order_index) VALUES (8, '세면/위생', 8);
-INSERT INTO activity_tag (id, name, order_index) VALUES (9, '영상 시청', 9);
-INSERT INTO activity_tag (id, name, order_index) VALUES (10, '외부인 방문', 10);
-INSERT INTO activity_tag (id, name, order_index) VALUES (11, '휴식/수면', 11);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (1, '경관식/수분 섭취', 1);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (2, '약물 투여', 2);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (3, '구강 케어', 3);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (4, '체위 변경', 4);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (5, '흡인/호흡 케어', 5);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (6, '배변/배뇨 케어', 6);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (7, '재활/ROM 운동', 7);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (8, '세면/위생', 8);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (9, '영상 시청', 9);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (10, '외부인 방문', 10);
+INSERT IGNORE INTO activity_tag (id, name, order_index) VALUES (11, '휴식/수면', 11);
 
 -- ============================
 -- CATEGORY (11행, AUTO_INCREMENT)
 -- depth=0 최상위, parent_id=NULL
 -- ============================
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('석션 (가래/침)', 0, 1, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('호흡', 0, 2, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('통증', 0, 3, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('자세', 0, 4, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('체온/환경', 0, 5, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('구강/식사', 0, 6, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('배변/배뇨', 0, 7, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('수면/피로', 0, 8, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('감정/심리', 0, 9, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('의료기기', 0, 10, NOW());
-INSERT INTO category (name, depth, order_index, created_at) VALUES ('피부/위생/여가', 0, 11, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('석션 (가래/침)', 0, 1, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('호흡', 0, 2, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('통증', 0, 3, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('자세', 0, 4, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('체온/환경', 0, 5, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('구강/식사', 0, 6, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('배변/배뇨', 0, 7, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('수면/피로', 0, 8, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('감정/심리', 0, 9, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('의료기기', 0, 10, NOW());
+INSERT IGNORE INTO category (name, depth, order_index, created_at) VALUES ('피부/위생/여가', 0, 11, NOW());
 
 -- ============================
 -- PHRASE (카테고리별 표현)
@@ -51,145 +51,212 @@ INSERT INTO category (name, depth, order_index, created_at) VALUES ('피부/위�
 -- ============================
 
 -- 1. 석션 (가래/침)
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '가래 빼줘', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '침 빼줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '더 해줘', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '끈적해/안나와', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '그만/됐어', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '침 흘러', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (1, '기침유발기 해줘', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '가래 빼줘', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '침 빼줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '더 해줘', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '끈적해/안나와', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '그만/됐어', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '침 흘러', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (1, '기침유발기 해줘', 7, NOW());
 
 -- 2. 호흡
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '호흡기 불편해', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '공기 더 넣어줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '가슴이 아파', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '산소포화도 확인해줘', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '숨쉬기 편해졌어', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '공기 줄여줘', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (2, '호흡기 이상해', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '호흡기 불편해', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '공기 더 넣어줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '가슴이 아파', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '산소포화도 확인해줘', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '숨쉬기 편해졌어', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '공기 줄여줘', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (2, '호흡기 이상해', 7, NOW());
 
 -- 3. 통증
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '뻣뻣해/굳었어', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '저려/감각없어', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '주물러줘', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '뜨거워', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '쥐났어/근육떨려', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '관절운동해줘', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (3, '붓었어', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '뻣뻣해/굳었어', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '저려/감각없어', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '주물러줘', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '뜨거워', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '쥐났어/근육떨려', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '관절운동해줘', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (3, '붓었어', 7, NOW());
 
 -- 4. 자세
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '왼쪽으로 돌려줘', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '오른쪽으로 돌려줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '머리(등) 높여/낮춰줘', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '앉히줘', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '기다려/잠깐', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '눕히줘', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '베개 조절해줘', 7, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (4, '다리(팔) 올려줘', 8, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '왼쪽으로 돌려줘', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '오른쪽으로 돌려줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '머리(등) 높여/낮춰줘', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '앉히줘', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '기다려/잠깐', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '눕히줘', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '베개 조절해줘', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (4, '다리(팔) 올려줘', 8, NOW());
 
 -- 5. 체온/환경
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '더워', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '추워', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '땀 닦아줘', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '이불 덮어줘/벗겨줘', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '바람 쐬고 싶어', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '환기해줘', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (5, '에어컨/히터', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '더워', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '추워', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '땀 닦아줘', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '이불 덮어줘/벗겨줘', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '바람 쐬고 싶어', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '환기해줘', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (5, '에어컨/히터', 7, NOW());
 
 -- 6. 구강/식사
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '입 안 적셔줘', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '경관식 멈춰줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '토할 것 같아', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '경관식 속도 줄여줘', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '배 불러/그만', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '배 고파', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '입술 발라줘', 7, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (6, '물 적셔줘', 8, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '입 안 적셔줘', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '경관식 멈춰줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '토할 것 같아', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '경관식 속도 줄여줘', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '배 불러/그만', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '배 고파', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '입술 발라줘', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (6, '물 적셔줘', 8, NOW());
 
 -- 7. 배변/배뇨
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (7, '소변 마려워', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (7, '기저귀 갈아줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (7, '변비야', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (7, '가스 찼어', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (7, '소변줄 불편해', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (7, '소변 마려워', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (7, '기저귀 갈아줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (7, '변비야', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (7, '가스 찼어', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (7, '소변줄 불편해', 5, NOW());
 
 -- 8. 수면/피로
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (8, '잠이 안 와', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (8, '머리 아파', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (8, '불 꺼줘/켜줘', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (8, '조용히 해줘', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (8, '졸려', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (8, '잠이 안 와', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (8, '머리 아파', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (8, '불 꺼줘/켜줘', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (8, '조용히 해줘', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (8, '졸려', 5, NOW());
 
 -- 9. 감정/심리
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '무서워/불안해', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '답답해', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '괜찮아/좋아', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '고마워', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '가족 보고 싶어', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '외로워/심심해', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '울고 싶어', 7, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (9, '사랑해', 8, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '무서워/불안해', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '답답해', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '괜찮아/좋아', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '고마워', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '가족 보고 싶어', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '외로워/심심해', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '울고 싶어', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (9, '사랑해', 8, NOW());
 
 -- 10. 의료기기
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (10, '호흡기 이상해', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (10, '산소포화도 확인해줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (10, '목관(기관) 주변 불편해', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (10, '위루관 주변 아파', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (10, '약 줘', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (10, '호흡기 이상해', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (10, '산소포화도 확인해줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (10, '목관(기관) 주변 불편해', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (10, '위루관 주변 아파', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (10, '약 줘', 5, NOW());
 
 -- 11. 피부/위생/여가
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '가려워', 1, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '닦아줘/씻어줘', 2, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '눈 닦아줘', 3, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '피부 쓸려/따가워', 4, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '입술 발라줘', 5, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '코 풀어줘', 6, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, 'TV 틀어줘', 7, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '음악 틀어줘', 8, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '시간 몇 시야?', 9, NOW());
-INSERT INTO phrase (category_id, content, order_index, created_at) VALUES (11, '밖에 나가고 싶어', 10, NOW());
--- 1. GENERAL_CORPUS
-INSERT INTO general_corpus (content, sentiment, weight, created_at) VALUES
-  ('응, 재밌었어', 'POSITIVE', 1.0, NOW()),
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '가려워', 1, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '닦아줘/씻어줘', 2, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '눈 닦아줘', 3, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '피부 쓸려/따가워', 4, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '입술 발라줘', 5, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '코 풀어줘', 6, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, 'TV 틀어줘', 7, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '음악 틀어줘', 8, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '시간 몇 시야?', 9, NOW());
+INSERT IGNORE INTO phrase (category_id, content, order_index, created_at) VALUES (11, '밖에 나가고 싶어', 10, NOW());
+-- ============================================
+-- GENERAL_CORPUS v2 — 67세 남성 ALS 환자용 (~900개)
+-- 차분하고 담백한 말투
+-- 인터넷 용어, 귀여운 말투, 이모티콘 제거
+-- ============================================
+
+INSERT IGNORE INTO general_corpus (content, sentiment, weight, created_at) VALUES
+  -- ===== 긍정 응답 (100개) =====
+  ('응, 좋아', 'POSITIVE', 1.0, NOW()),
   ('맞아', 'POSITIVE', 1.0, NOW()),
+  ('그래', 'POSITIVE', 1.0, NOW()),
   ('그렇지', 'POSITIVE', 1.0, NOW()),
-  ('나도 그래', 'POSITIVE', 1.0, NOW()),
-  ('정말 그래', 'POSITIVE', 1.0, NOW()),
-  ('좋아', 'POSITIVE', 1.0, NOW()),
-  ('응응', 'POSITIVE', 1.0, NOW()),
-  ('당연하지', 'POSITIVE', 1.0, NOW()),
-  ('맞는 말이야', 'POSITIVE', 1.0, NOW()),
-  ('그러게', 'POSITIVE', 1.0, NOW()),
-  ('그러면 좋겠어', 'POSITIVE', 1.0, NOW()),
-  ('그게 나아', 'POSITIVE', 1.0, NOW()),
-  ('괜찮을 것 같아', 'POSITIVE', 1.0, NOW()),
-  ('잘 됐다', 'POSITIVE', 1.0, NOW()),
-  ('다행이야', 'POSITIVE', 1.0, NOW()),
-  ('좋은 생각이야', 'POSITIVE', 1.0, NOW()),
-  ('해봐', 'POSITIVE', 1.0, NOW()),
-  ('해', 'POSITIVE', 1.0, NOW()),
+  ('고마워', 'POSITIVE', 1.0, NOW()),
+  ('고맙다', 'POSITIVE', 1.0, NOW()),
+  ('괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('좋았어', 'POSITIVE', 1.0, NOW()),
+  ('다행이다', 'POSITIVE', 1.0, NOW()),
+  ('잘했어', 'POSITIVE', 1.0, NOW()),
+  ('그래 좋아', 'POSITIVE', 1.0, NOW()),
+  ('기분 좋아', 'POSITIVE', 1.0, NOW()),
+  ('오늘 좋은 날이야', 'POSITIVE', 1.0, NOW()),
+  ('행복해', 'POSITIVE', 1.0, NOW()),
+  ('편해졌어', 'POSITIVE', 1.0, NOW()),
+  ('나아졌어', 'POSITIVE', 1.0, NOW()),
+  ('맛있었어', 'POSITIVE', 1.0, NOW()),
+  ('그거 좋다', 'POSITIVE', 1.0, NOW()),
   ('그래 그래', 'POSITIVE', 1.0, NOW()),
   ('알겠어', 'POSITIVE', 1.0, NOW()),
-  ('어, 맞아', 'POSITIVE', 1.0, NOW()),
-  ('진짜로', 'POSITIVE', 1.0, NOW()),
-  ('사실 그래', 'POSITIVE', 1.0, NOW()),
-  ('완전 동의', 'POSITIVE', 1.0, NOW()),
-  ('그거 좋다', 'POSITIVE', 1.0, NOW()),
+  ('응 맞아', 'POSITIVE', 1.0, NOW()),
   ('나도 좋아', 'POSITIVE', 1.0, NOW()),
-  ('기대돼', 'POSITIVE', 1.0, NOW()),
-  ('재밌겠다', 'POSITIVE', 1.0, NOW()),
-  ('해보자', 'POSITIVE', 1.0, NOW()),
-  ('좋지', 'POSITIVE', 1.0, NOW()),
+  ('기대된다', 'POSITIVE', 1.0, NOW()),
   ('보고 싶었어', 'POSITIVE', 1.0, NOW()),
-  ('정말 재밌어', 'POSITIVE', 1.0, NOW()),
-  ('응, 그래', 'POSITIVE', 1.0, NOW()),
+  ('응 그래', 'POSITIVE', 1.0, NOW()),
   ('맞아 맞아', 'POSITIVE', 1.0, NOW()),
-  ('당연히 좋지', 'POSITIVE', 1.0, NOW()),
-  ('나쁘지 않아', 'POSITIVE', 1.0, NOW()),
-  ('기분 좋아', 'POSITIVE', 1.0, NOW()),
-  ('행복해', 'POSITIVE', 1.0, NOW()),
-  ('좋은데', 'POSITIVE', 1.0, NOW()),
-  ('그거 해줘', 'POSITIVE', 1.0, NOW()),
+  ('괜찮아진 것 같아', 'POSITIVE', 1.0, NOW()),
+  ('좋아졌어', 'POSITIVE', 1.0, NOW()),
+  ('걱정 마', 'POSITIVE', 1.0, NOW()),
+  ('별거 아니야', 'POSITIVE', 1.0, NOW()),
+  ('그럴 수 있어', 'POSITIVE', 1.0, NOW()),
+  ('이해해', 'POSITIVE', 1.0, NOW()),
+  ('신경 쓰지 마', 'POSITIVE', 1.0, NOW()),
+  ('그래도 돼', 'POSITIVE', 1.0, NOW()),
+  ('고생했어', 'POSITIVE', 1.0, NOW()),
+  ('잘 먹었어', 'POSITIVE', 1.0, NOW()),
+  ('편하다', 'POSITIVE', 1.0, NOW()),
+  ('좋은 하루야', 'POSITIVE', 1.0, NOW()),
+  ('힘내자', 'POSITIVE', 1.0, NOW()),
+  ('나 괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('잘 지내', 'POSITIVE', 1.0, NOW()),
+  ('오늘 컨디션 좋아', 'POSITIVE', 1.0, NOW()),
+  ('그래 알았어', 'POSITIVE', 1.0, NOW()),
+  ('응 먹었어', 'POSITIVE', 1.0, NOW()),
+  ('조금 나아졌어', 'POSITIVE', 1.0, NOW()),
+  ('잘 잤어', 'POSITIVE', 1.0, NOW()),
+  ('오늘 기분 괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('당연하지', 'POSITIVE', 1.0, NOW()),
+  ('좋은 생각이야', 'POSITIVE', 1.0, NOW()),
+  ('그게 낫겠다', 'POSITIVE', 1.0, NOW()),
+  ('마음이 편하다', 'POSITIVE', 1.0, NOW()),
+  ('덕분이야', 'POSITIVE', 1.0, NOW()),
+  ('잘 될 거야', 'POSITIVE', 1.0, NOW()),
+  ('그래 해봐', 'POSITIVE', 1.0, NOW()),
+  ('뭐 괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('별일 아니야', 'POSITIVE', 1.0, NOW()),
+  ('오래간만이라 좋다', 'POSITIVE', 1.0, NOW()),
+  ('한결 낫다', 'POSITIVE', 1.0, NOW()),
+  ('보니까 좋다', 'POSITIVE', 1.0, NOW()),
+  ('마음이 놓인다', 'POSITIVE', 1.0, NOW()),
+  ('그래 괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('응 좋아졌어', 'POSITIVE', 1.0, NOW()),
+  ('기분 나쁘지 않아', 'POSITIVE', 1.0, NOW()),
+  ('오늘은 좋아', 'POSITIVE', 1.0, NOW()),
+  ('해줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('그거 괜찮다', 'POSITIVE', 1.0, NOW()),
+  ('맞아 그래', 'POSITIVE', 1.0, NOW()),
+  ('잘 됐다', 'POSITIVE', 1.0, NOW()),
+  ('다행이야', 'POSITIVE', 1.0, NOW()),
+  ('응 알겠어', 'POSITIVE', 1.0, NOW()),
+  ('그래 좋지', 'POSITIVE', 1.0, NOW()),
+  ('잘했다', 'POSITIVE', 1.0, NOW()),
+  ('그래 그렇게 하자', 'POSITIVE', 1.0, NOW()),
+  ('나도 그래', 'POSITIVE', 1.0, NOW()),
+  ('기분 좋은 날이야', 'POSITIVE', 1.0, NOW()),
+  ('오늘 좀 좋아', 'POSITIVE', 1.0, NOW()),
+  ('응 많이 나아졌어', 'POSITIVE', 1.0, NOW()),
+  ('편안하다', 'POSITIVE', 1.0, NOW()),
+  ('마음이 좋다', 'POSITIVE', 1.0, NOW()),
+  ('그래 고마워', 'POSITIVE', 1.0, NOW()),
+  ('응 해줘', 'POSITIVE', 1.0, NOW()),
+  ('좋아 좋아', 'POSITIVE', 1.0, NOW()),
+  ('그래 부탁해', 'POSITIVE', 1.0, NOW()),
+  ('기분 전환됐어', 'POSITIVE', 1.0, NOW()),
+  ('웃음이 나와', 'POSITIVE', 1.0, NOW()),
+  ('즐거워', 'POSITIVE', 1.0, NOW()),
+  ('오늘 하루 좋았어', 'POSITIVE', 1.0, NOW()),
+  ('내일도 좋겠지', 'POSITIVE', 1.0, NOW()),
+  ('좀 살 것 같아', 'POSITIVE', 1.0, NOW()),
+  ('한숨 돌렸다', 'POSITIVE', 1.0, NOW()),
+  ('덕분에 편해', 'POSITIVE', 1.0, NOW()),
+  ('참 좋다', 'POSITIVE', 1.0, NOW()),
+  ('그래 맞아', 'POSITIVE', 1.0, NOW()),
+  ('응 봤어', 'POSITIVE', 1.0, NOW()),
+  ('맞다 맞다', 'POSITIVE', 1.0, NOW()),
+  ('그거 맞아', 'POSITIVE', 1.0, NOW()),
+  ('그래 나도', 'POSITIVE', 1.0, NOW()),
+  ('응 잘 지내', 'POSITIVE', 1.0, NOW()),
+  ('뭐 나쁘지 않아', 'POSITIVE', 1.0, NOW()),
+
+  -- ===== 부정 응답 (80개) =====
   ('아니야', 'NEGATIVE', 1.0, NOW()),
   ('별로야', 'NEGATIVE', 1.0, NOW()),
   ('안 좋아', 'NEGATIVE', 1.0, NOW()),
@@ -199,2857 +266,1070 @@ INSERT INTO general_corpus (content, sentiment, weight, created_at) VALUES
   ('됐어', 'NEGATIVE', 1.0, NOW()),
   ('그냥 둬', 'NEGATIVE', 1.0, NOW()),
   ('아직 아니야', 'NEGATIVE', 1.0, NOW()),
-  ('안 먹을게', 'NEGATIVE', 1.0, NOW()),
-  ('안 가도 돼', 'NEGATIVE', 1.0, NOW()),
   ('지금은 아니야', 'NEGATIVE', 1.0, NOW()),
-  ('그건 별로야', 'NEGATIVE', 1.0, NOW()),
   ('안 괜찮아', 'NEGATIVE', 1.0, NOW()),
   ('그건 싫어', 'NEGATIVE', 1.0, NOW()),
   ('하기 싫어', 'NEGATIVE', 1.0, NOW()),
-  ('그냥 아니야', 'NEGATIVE', 1.0, NOW()),
-  ('아직 괜찮아', 'NEGATIVE', 1.0, NOW()),
-  ('잠깐 기다려', 'NEGATIVE', 1.0, NOW()),
   ('나중에 해', 'NEGATIVE', 1.0, NOW()),
-  ('됐어요', 'NEGATIVE', 1.0, NOW()),
   ('안 해도 돼', 'NEGATIVE', 1.0, NOW()),
-  ('아니 괜찮아', 'NEGATIVE', 1.0, NOW()),
-  ('그건 모르겠어', 'NEGATIVE', 1.0, NOW()),
+  ('모르겠어', 'NEGATIVE', 1.0, NOW()),
   ('별로 안 좋아', 'NEGATIVE', 1.0, NOW()),
-  ('고마워', 'POSITIVE', 1.0, NOW()),
-  ('정말 고마워', 'POSITIVE', 1.0, NOW()),
-  ('많이 도움됐어', 'POSITIVE', 1.0, NOW()),
-  ('잘 해줬어', 'POSITIVE', 1.0, NOW()),
-  ('수고했어', 'POSITIVE', 1.0, NOW()),
-  ('네 덕분이야', 'POSITIVE', 1.0, NOW()),
   ('미안해', 'NEGATIVE', 1.0, NOW()),
-  ('미안해 정말', 'NEGATIVE', 1.0, NOW()),
-  ('내가 잘못했어', 'NEGATIVE', 1.0, NOW()),
-  ('다음엔 잘 할게', 'NEGATIVE', 1.0, NOW()),
-  ('괜찮아', 'POSITIVE', 1.0, NOW()),
-  ('걱정 마', 'POSITIVE', 1.0, NOW()),
-  ('별거 아니야', 'POSITIVE', 1.0, NOW()),
-  ('그럴 수 있어', 'POSITIVE', 1.0, NOW()),
-  ('다음에 잘 하면 돼', 'POSITIVE', 1.0, NOW()),
-  ('이해해', 'POSITIVE', 1.0, NOW()),
-  ('신경 쓰지 마', 'POSITIVE', 1.0, NOW()),
-  ('그래도 돼', 'POSITIVE', 1.0, NOW()),
-  ('감사해요', 'POSITIVE', 1.0, NOW()),
-  ('고생했어', 'POSITIVE', 1.0, NOW()),
-  ('물 좀 줘', 'NEUTRAL', 1.0, NOW()),
-  ('도와줘', 'NEUTRAL', 1.0, NOW()),
-  ('불 켜줘', 'NEUTRAL', 1.0, NOW()),
-  ('불 꺼줘', 'NEUTRAL', 1.0, NOW()),
-  ('창문 열어줘', 'NEUTRAL', 1.0, NOW()),
-  ('창문 닫아줘', 'NEUTRAL', 1.0, NOW()),
-  ('전화해줘', 'NEUTRAL', 1.0, NOW()),
-  ('불러줘', 'NEUTRAL', 1.0, NOW()),
-  ('손 잡아줘', 'NEUTRAL', 1.0, NOW()),
-  ('자세 바꿔줘', 'NEUTRAL', 1.0, NOW()),
-  ('TV 켜줘', 'NEUTRAL', 1.0, NOW()),
-  ('TV 꺼줘', 'NEUTRAL', 1.0, NOW()),
-  ('음악 틀어줘', 'NEUTRAL', 1.0, NOW()),
-  ('음악 꺼줘', 'NEUTRAL', 1.0, NOW()),
-  ('약 줘', 'NEUTRAL', 1.0, NOW()),
-  ('침대 올려줘', 'NEUTRAL', 1.0, NOW()),
-  ('이불 덮어줘', 'NEUTRAL', 1.0, NOW()),
-  ('조금 더 줘', 'NEUTRAL', 1.0, NOW()),
-  ('잠깐 기다려', 'NEUTRAL', 1.0, NOW()),
-  ('천천히 해줘', 'NEUTRAL', 1.0, NOW()),
-  ('다시 해줘', 'NEUTRAL', 1.0, NOW()),
-  ('읽어줘', 'NEUTRAL', 1.0, NOW()),
-  ('보여줘', 'NEUTRAL', 1.0, NOW()),
-  ('가져다줘', 'NEUTRAL', 1.0, NOW()),
-  ('치워줘', 'NEUTRAL', 1.0, NOW()),
-  ('더 세게 해줘', 'NEUTRAL', 1.0, NOW()),
-  ('살살 해줘', 'NEUTRAL', 1.0, NOW()),
-  ('잠깐만', 'NEUTRAL', 1.0, NOW()),
-  ('좀 있다가', 'NEUTRAL', 1.0, NOW()),
-  ('지금 해줘', 'NEUTRAL', 1.0, NOW()),
-  ('날씨 좋아', 'NEUTRAL', 1.0, NOW()),
-  ('비 와', 'NEUTRAL', 1.0, NOW()),
-  ('춥다', 'NEUTRAL', 1.0, NOW()),
-  ('덥다', 'NEUTRAL', 1.0, NOW()),
-  ('맑아', 'NEUTRAL', 1.0, NOW()),
-  ('흐려', 'NEUTRAL', 1.0, NOW()),
-  ('눈 온다', 'NEUTRAL', 1.0, NOW()),
-  ('바람 불어', 'NEUTRAL', 1.0, NOW()),
-  ('좀 서늘해', 'NEUTRAL', 1.0, NOW()),
-  ('기분 좋은 날씨야', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 날씨 어때', 'NEUTRAL', 1.0, NOW()),
-  ('창문 닫아', 'NEUTRAL', 1.0, NOW()),
-  ('따뜻해', 'NEUTRAL', 1.0, NOW()),
-  ('습해', 'NEUTRAL', 1.0, NOW()),
-  ('쾌청해', 'NEUTRAL', 1.0, NOW()),
+  ('슬퍼', 'NEGATIVE', 1.0, NOW()),
+  ('힘들어', 'NEGATIVE', 1.0, NOW()),
+  ('우울해', 'NEGATIVE', 1.0, NOW()),
+  ('불안해', 'NEGATIVE', 1.0, NOW()),
+  ('외로워', 'NEGATIVE', 1.0, NOW()),
+  ('답답해', 'NEGATIVE', 1.0, NOW()),
+  ('무서워', 'NEGATIVE', 1.0, NOW()),
+  ('걱정돼', 'NEGATIVE', 1.0, NOW()),
+  ('짜증나', 'NEGATIVE', 1.0, NOW()),
+  ('화났어', 'NEGATIVE', 1.0, NOW()),
+  ('잠을 못 잤어', 'NEGATIVE', 1.0, NOW()),
+  ('컨디션 별로야', 'NEGATIVE', 1.0, NOW()),
+  ('입맛 없어', 'NEGATIVE', 1.0, NOW()),
+  ('안 먹을게', 'NEGATIVE', 1.0, NOW()),
+  ('그만 먹을게', 'NEGATIVE', 1.0, NOW()),
+  ('맛없어', 'NEGATIVE', 1.0, NOW()),
+  ('피곤해', 'NEGATIVE', 1.0, NOW()),
+  ('지쳤어', 'NEGATIVE', 1.0, NOW()),
+  ('아직 아파', 'NEGATIVE', 1.0, NOW()),
+  ('잠깐 기다려', 'NEGATIVE', 1.0, NOW()),
+  ('조금만 쉴게', 'NEGATIVE', 1.0, NOW()),
+  ('오늘은 안 할래', 'NEGATIVE', 1.0, NOW()),
+  ('그냥 좀 쉬고 싶어', 'NEGATIVE', 1.0, NOW()),
+  ('몸이 안 좋아', 'NEGATIVE', 1.0, NOW()),
+  ('속이 안 좋아', 'NEGATIVE', 1.0, NOW()),
+  ('기운이 없어', 'NEGATIVE', 1.0, NOW()),
+  ('머리가 무거워', 'NEGATIVE', 1.0, NOW()),
+  ('잠이 안 와', 'NEGATIVE', 1.0, NOW()),
+  ('좀 쉬자', 'NEGATIVE', 1.0, NOW()),
+  ('오늘 좀 그래', 'NEGATIVE', 1.0, NOW()),
+  ('말하기 힘들어', 'NEGATIVE', 1.0, NOW()),
+  ('참기 힘들어', 'NEGATIVE', 1.0, NOW()),
+  ('오늘 안 좋아', 'NEGATIVE', 1.0, NOW()),
+  ('몸이 무거워', 'NEGATIVE', 1.0, NOW()),
+  ('아무것도 하기 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('조용히 있고 싶어', 'NEGATIVE', 1.0, NOW()),
+  ('말 걸지 마', 'NEGATIVE', 1.0, NOW()),
+  ('혼자 있을래', 'NEGATIVE', 1.0, NOW()),
+  ('오늘 컨디션 안 좋아', 'NEGATIVE', 1.0, NOW()),
+  ('어제 잠을 못 잤어', 'NEGATIVE', 1.0, NOW()),
+  ('새벽에 깼어', 'NEGATIVE', 1.0, NOW()),
+  ('계속 뒤척였어', 'NEGATIVE', 1.0, NOW()),
+  ('아침부터 안 좋아', 'NEGATIVE', 1.0, NOW()),
+  ('입맛이 없어', 'NEGATIVE', 1.0, NOW()),
+  ('뭐 먹기 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('그냥 물만 줘', 'NEGATIVE', 1.0, NOW()),
+  ('오늘 힘든 날이야', 'NEGATIVE', 1.0, NOW()),
+  ('몸이 말을 안 들어', 'NEGATIVE', 1.0, NOW()),
+  ('답답하다', 'NEGATIVE', 1.0, NOW()),
+  ('숨이 답답해', 'NEGATIVE', 1.0, NOW()),
+  ('갈 수가 없어', 'NEGATIVE', 1.0, NOW()),
+  ('할 수가 없어', 'NEGATIVE', 1.0, NOW()),
+  ('아무것도 못 해', 'NEGATIVE', 1.0, NOW()),
+  ('서운해', 'NEGATIVE', 1.0, NOW()),
+  ('마음이 안 좋아', 'NEGATIVE', 1.0, NOW()),
+  ('그만하고 싶어', 'NEGATIVE', 1.0, NOW()),
+  ('오늘은 그만', 'NEGATIVE', 1.0, NOW()),
+  ('더 하기 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('나중에 하자', 'NEGATIVE', 1.0, NOW()),
+  ('귀찮아', 'NEGATIVE', 1.0, NOW()),
+  ('안 할래', 'NEGATIVE', 1.0, NOW()),
+  ('그냥 놔둬', 'NEGATIVE', 1.0, NOW()),
+
+  -- ===== 통증/건강 (120개) =====
   ('좀 아파', 'NEUTRAL', 1.0, NOW()),
   ('많이 아파', 'NEUTRAL', 1.0, NOW()),
   ('머리 아파', 'NEUTRAL', 1.0, NOW()),
   ('배 아파', 'NEUTRAL', 1.0, NOW()),
-  ('피곤해', 'NEUTRAL', 1.0, NOW()),
-  ('졸려', 'NEUTRAL', 1.0, NOW()),
-  ('힘들어', 'NEUTRAL', 1.0, NOW()),
-  ('좋아졌어', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮아진 것 같아', 'NEUTRAL', 1.0, NOW()),
-  ('아직 아파', 'NEUTRAL', 1.0, NOW()),
-  ('조금 나아졌어', 'NEUTRAL', 1.0, NOW()),
-  ('숨 쉬기 힘들어', 'NEUTRAL', 1.0, NOW()),
-  ('목 아파', 'NEUTRAL', 1.0, NOW()),
+  ('어깨 아파', 'NEUTRAL', 1.0, NOW()),
+  ('왼쪽 어깨가 저려', 'NEUTRAL', 1.2, NOW()),
+  ('왼쪽 어깨 또 아파', 'NEUTRAL', 1.2, NOW()),
+  ('어깨 결려', 'NEUTRAL', 1.0, NOW()),
+  ('어깨 좀 주물러줘', 'NEUTRAL', 1.0, NOW()),
+  ('어깨에 힘이 안 들어가', 'NEUTRAL', 1.2, NOW()),
+  ('어깨 찜질 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('오른쪽 다리 아파', 'NEUTRAL', 1.2, NOW()),
   ('다리 저려', 'NEUTRAL', 1.0, NOW()),
+  ('다리 좀 올려줘', 'NEUTRAL', 1.0, NOW()),
+  ('다리에 감각이 없어', 'NEUTRAL', 1.0, NOW()),
+  ('허리 아파', 'NEUTRAL', 1.2, NOW()),
+  ('허리 불편해', 'NEUTRAL', 1.0, NOW()),
+  ('허리 받쳐줘', 'NEUTRAL', 1.0, NOW()),
+  ('허리가 뻣뻣해', 'NEUTRAL', 1.0, NOW()),
+  ('목 아파', 'NEUTRAL', 1.0, NOW()),
+  ('등 아파', 'NEUTRAL', 1.0, NOW()),
+  ('등이 시려', 'NEUTRAL', 1.0, NOW()),
+  ('몸이 뻐근해', 'NEUTRAL', 1.0, NOW()),
+  ('숨 쉬기 힘들어', 'NEUTRAL', 1.0, NOW()),
   ('어지러워', 'NEUTRAL', 1.0, NOW()),
   ('약 먹었어', 'NEUTRAL', 1.0, NOW()),
-  ('컨디션 별로야', 'NEUTRAL', 1.0, NOW()),
+  ('약 줘', 'NEUTRAL', 1.0, NOW()),
+  ('진통제 줘', 'NEUTRAL', 1.0, NOW()),
   ('오늘은 좀 나아', 'NEUTRAL', 1.0, NOW()),
-  ('잘 잤어', 'NEUTRAL', 1.0, NOW()),
-  ('잠을 못 잤어', 'NEUTRAL', 1.0, NOW()),
-  ('입맛 없어', 'NEUTRAL', 1.0, NOW()),
+  ('어제보다 나아', 'NEUTRAL', 1.0, NOW()),
+  ('찜질 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('마사지 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('자세 바꿔줘', 'NEUTRAL', 1.0, NOW()),
+  ('베개 높여줘', 'NEUTRAL', 1.0, NOW()),
+  ('베개 낮춰줘', 'NEUTRAL', 1.0, NOW()),
+  ('이불 덮어줘', 'NEUTRAL', 1.0, NOW()),
+  ('이불 벗겨줘', 'NEUTRAL', 1.0, NOW()),
+  ('더워', 'NEUTRAL', 1.0, NOW()),
+  ('추워', 'NEUTRAL', 1.0, NOW()),
+  ('창문 열어줘', 'NEUTRAL', 1.0, NOW()),
+  ('창문 닫아줘', 'NEUTRAL', 1.0, NOW()),
+  ('에어컨 켜줘', 'NEUTRAL', 1.0, NOW()),
+  ('에어컨 꺼줘', 'NEUTRAL', 1.0, NOW()),
+  ('물리치료 받을래', 'NEUTRAL', 1.0, NOW()),
+  ('물리치료 힘들었어', 'NEUTRAL', 1.0, NOW()),
+  ('관절이 굳었어', 'NEUTRAL', 1.0, NOW()),
+  ('손가락이 잘 안 움직여', 'NEUTRAL', 1.0, NOW()),
+  ('팔이 무거워', 'NEUTRAL', 1.0, NOW()),
+  ('쥐가 났어', 'NEUTRAL', 1.0, NOW()),
+  ('근육이 떨려', 'NEUTRAL', 1.0, NOW()),
+  ('좀 나아진 것 같아', 'NEUTRAL', 1.0, NOW()),
+  ('참을 만해', 'NEUTRAL', 1.0, NOW()),
+  ('어제보다 덜 아파', 'NEUTRAL', 1.0, NOW()),
+  ('약 먹으니까 나아', 'NEUTRAL', 1.0, NOW()),
+  ('좀 쑤셔', 'NEUTRAL', 1.0, NOW()),
+  ('뻐근하다', 'NEUTRAL', 1.0, NOW()),
+  ('결리다', 'NEUTRAL', 1.0, NOW()),
+  ('당기는 느낌이야', 'NEUTRAL', 1.0, NOW()),
+  ('찌릿찌릿해', 'NEUTRAL', 1.0, NOW()),
+  ('감각이 없어', 'NEUTRAL', 1.0, NOW()),
+  ('힘이 안 들어가', 'NEUTRAL', 1.0, NOW()),
+  ('움직이기 힘들어', 'NEUTRAL', 1.0, NOW()),
+  ('가만히 있으면 괜찮아', 'NEUTRAL', 1.0, NOW()),
+  ('움직이면 아파', 'NEUTRAL', 1.0, NOW()),
+  ('누워있으면 나아', 'NEUTRAL', 1.0, NOW()),
+  ('앉아있으면 불편해', 'NEUTRAL', 1.0, NOW()),
+  ('손이 떨려', 'NEUTRAL', 1.0, NOW()),
+  ('발이 시려', 'NEUTRAL', 1.0, NOW()),
+  ('손발이 차가워', 'NEUTRAL', 1.0, NOW()),
+  ('몸이 뜨거워', 'NEUTRAL', 1.0, NOW()),
+  ('열 나는 것 같아', 'NEUTRAL', 1.0, NOW()),
+  ('오한이 있어', 'NEUTRAL', 1.0, NOW()),
+  ('가슴이 답답해', 'NEUTRAL', 1.0, NOW()),
+  ('숨이 차', 'NEUTRAL', 1.0, NOW()),
+  ('기침이 나', 'NEUTRAL', 1.0, NOW()),
+  ('목이 아파', 'NEUTRAL', 1.0, NOW()),
+  ('삼키기 힘들어', 'NEUTRAL', 1.0, NOW()),
+  ('목소리가 안 나와', 'NEUTRAL', 1.0, NOW()),
+  ('눈이 침침해', 'NEUTRAL', 1.0, NOW()),
+  ('귀가 잘 안 들려', 'NEUTRAL', 1.0, NOW()),
+  ('왼쪽이 더 아파', 'NEUTRAL', 1.2, NOW()),
+  ('오른쪽 다리가 저려', 'NEUTRAL', 1.2, NOW()),
+  ('허리 쪽이 불편해', 'NEUTRAL', 1.2, NOW()),
+  ('어깨 마사지 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('다리 마사지 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('허리 찜질 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('약 효과가 있어', 'POSITIVE', 1.0, NOW()),
+  ('약 효과가 없어', 'NEGATIVE', 1.0, NOW()),
+  ('진통제 효과 없어', 'NEGATIVE', 1.0, NOW()),
+  ('약 바꿔줘', 'NEUTRAL', 1.0, NOW()),
+  ('언제 나아', 'NEUTRAL', 1.0, NOW()),
+  ('계속 아파', 'NEGATIVE', 1.0, NOW()),
+  ('점점 나아지고 있어', 'POSITIVE', 1.0, NOW()),
+  ('어제보다 심해', 'NEGATIVE', 1.0, NOW()),
+  ('아침에 더 아파', 'NEUTRAL', 1.0, NOW()),
+  ('밤에 더 아파', 'NEUTRAL', 1.0, NOW()),
+  ('자세 바꾸면 나아', 'NEUTRAL', 1.0, NOW()),
+  ('스트레칭 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('관절 운동 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('ROM 운동 할래', 'NEUTRAL', 1.0, NOW()),
+  ('체위 변경 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('왼쪽으로 돌려줘', 'NEUTRAL', 1.0, NOW()),
+  ('오른쪽으로 돌려줘', 'NEUTRAL', 1.0, NOW()),
+  ('위루관 주변 아파', 'NEUTRAL', 1.0, NOW()),
+  ('위루술 세척 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('가래 빼줘', 'NEUTRAL', 1.0, NOW()),
+  ('석션 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('침 빼줘', 'NEUTRAL', 1.0, NOW()),
+  ('가래가 많아', 'NEUTRAL', 1.0, NOW()),
+  ('숨쉬기 편해졌어', 'POSITIVE', 1.0, NOW()),
+  ('호흡기 불편해', 'NEUTRAL', 1.0, NOW()),
+  ('산소포화도 확인해줘', 'NEUTRAL', 1.0, NOW()),
+  ('기침유발기 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('경관식 시간이야', 'NEUTRAL', 1.0, NOW()),
+  ('경관식 속도 줄여줘', 'NEUTRAL', 1.0, NOW()),
+  ('토할 것 같아', 'NEGATIVE', 1.0, NOW()),
+  ('소변 마려워', 'NEUTRAL', 1.0, NOW()),
+  ('기저귀 갈아줘', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 요청/일상 (120개) =====
+  ('물 좀 줘', 'NEUTRAL', 1.0, NOW()),
+  ('물 마시고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('목 말라', 'NEUTRAL', 1.0, NOW()),
   ('배고파', 'NEUTRAL', 1.0, NOW()),
-  ('배 불러', 'NEUTRAL', 1.0, NOW()),
-  ('좀 쉬어야겠어', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 좀 누워있을게', 'NEUTRAL', 1.0, NOW()),
-  ('맛있어', 'NEUTRAL', 1.0, NOW()),
-  ('맛없어', 'NEUTRAL', 1.0, NOW()),
-  ('짜', 'NEUTRAL', 1.0, NOW()),
-  ('싱거워', 'NEUTRAL', 1.0, NOW()),
-  ('달아', 'NEUTRAL', 1.0, NOW()),
-  ('매워', 'NEUTRAL', 1.0, NOW()),
-  ('더 먹을게', 'NEUTRAL', 1.0, NOW()),
-  ('그만 먹을게', 'NEUTRAL', 1.0, NOW()),
-  ('뭐 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
-  ('밥은 됐어', 'NEUTRAL', 1.0, NOW()),
+  ('밥 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('국 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
   ('죽 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
   ('과일 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
-  ('간식 줘', 'NEUTRAL', 1.0, NOW()),
+  ('도와줘', 'NEUTRAL', 1.0, NOW()),
+  ('불 켜줘', 'NEUTRAL', 1.0, NOW()),
+  ('불 꺼줘', 'NEUTRAL', 1.0, NOW()),
+  ('TV 켜줘', 'NEUTRAL', 1.0, NOW()),
+  ('TV 꺼줘', 'NEUTRAL', 1.0, NOW()),
+  ('음악 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('트로트 틀어줘', 'NEUTRAL', 1.2, NOW()),
+  ('라디오 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('소리 좀 줄여줘', 'NEUTRAL', 1.0, NOW()),
+  ('소리 좀 키워줘', 'NEUTRAL', 1.0, NOW()),
+  ('전화해줘', 'NEUTRAL', 1.0, NOW()),
+  ('손 잡아줘', 'NEUTRAL', 1.0, NOW()),
+  ('가까이 와줘', 'NEUTRAL', 1.0, NOW()),
+  ('침대 올려줘', 'NEUTRAL', 1.0, NOW()),
+  ('침대 내려줘', 'NEUTRAL', 1.0, NOW()),
+  ('조금 더 줘', 'NEUTRAL', 1.0, NOW()),
+  ('천천히 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('다시 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('살살 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('잠깐만', 'NEUTRAL', 1.0, NOW()),
+  ('좀 있다가', 'NEUTRAL', 1.0, NOW()),
+  ('지금 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('기다려줘', 'NEUTRAL', 1.0, NOW()),
+  ('시간 몇 시야', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 무슨 요일이야', 'NEUTRAL', 1.0, NOW()),
+  ('밖에 날씨 어때', 'NEUTRAL', 1.0, NOW()),
+  ('날씨 좋다', 'NEUTRAL', 1.0, NOW()),
+  ('좀 쉬어야겠어', 'NEUTRAL', 1.0, NOW()),
+  ('그냥 좀 누워있을게', 'NEUTRAL', 1.0, NOW()),
+  ('졸려', 'NEUTRAL', 1.0, NOW()),
+  ('잠이 안 와', 'NEUTRAL', 1.0, NOW()),
+  ('입 안 적셔줘', 'NEUTRAL', 1.0, NOW()),
+  ('입술 발라줘', 'NEUTRAL', 1.0, NOW()),
+  ('눈 닦아줘', 'NEUTRAL', 1.0, NOW()),
+  ('땀 닦아줘', 'NEUTRAL', 1.0, NOW()),
+  ('코 풀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('환기해줘', 'NEUTRAL', 1.0, NOW()),
+  ('물 한 모금만', 'NEUTRAL', 1.0, NOW()),
+  ('갈증나', 'NEUTRAL', 1.0, NOW()),
+  ('따뜻한 물 줘', 'NEUTRAL', 1.0, NOW()),
+  ('시원한 물 줘', 'NEUTRAL', 1.0, NOW()),
+  ('간식 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('커피 마시고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('차 한 잔 줘', 'NEUTRAL', 1.0, NOW()),
+  ('우유 줘', 'NEUTRAL', 1.0, NOW()),
+  ('읽어줘', 'NEUTRAL', 1.0, NOW()),
+  ('뉴스 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('책 읽어줘', 'NEUTRAL', 1.0, NOW()),
+  ('핸드폰 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('사진 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('거울 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('말 좀 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('옆에 있어줘', 'NEUTRAL', 1.0, NOW()),
+  ('같이 있어줘', 'NEUTRAL', 1.0, NOW()),
+  ('혼자 두지 마', 'NEUTRAL', 1.0, NOW()),
+  ('나가지 마', 'NEUTRAL', 1.0, NOW()),
+  ('다녀올게', 'NEUTRAL', 1.0, NOW()),
+  ('어디 가', 'NEUTRAL', 1.0, NOW()),
+  ('언제 와', 'NEUTRAL', 1.0, NOW()),
+  ('빨리 와', 'NEUTRAL', 1.0, NOW()),
+  ('누가 왔어', 'NEUTRAL', 1.0, NOW()),
+  ('문 열어줘', 'NEUTRAL', 1.0, NOW()),
+  ('전등 밝기 줄여줘', 'NEUTRAL', 1.0, NOW()),
+  ('커튼 쳐줘', 'NEUTRAL', 1.0, NOW()),
+  ('커튼 열어줘', 'NEUTRAL', 1.0, NOW()),
+  ('더운 물 줘', 'NEUTRAL', 1.0, NOW()),
+  ('찬 물 줘', 'NEUTRAL', 1.0, NOW()),
+  ('수건 줘', 'NEUTRAL', 1.0, NOW()),
+  ('닦아줘', 'NEUTRAL', 1.0, NOW()),
+  ('씻어줘', 'NEUTRAL', 1.0, NOW()),
+  ('양치해줘', 'NEUTRAL', 1.0, NOW()),
+  ('세수해줘', 'NEUTRAL', 1.0, NOW()),
+  ('머리 감겨줘', 'NEUTRAL', 1.0, NOW()),
+  ('옷 갈아입혀줘', 'NEUTRAL', 1.0, NOW()),
+  ('이불 정리해줘', 'NEUTRAL', 1.0, NOW()),
+  ('리모컨 줘', 'NEUTRAL', 1.0, NOW()),
+  ('채널 돌려줘', 'NEUTRAL', 1.0, NOW()),
+  ('볼륨 올려줘', 'NEUTRAL', 1.0, NOW()),
+  ('볼륨 줄여줘', 'NEUTRAL', 1.0, NOW()),
+  ('화장실 가고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('물티슈 줘', 'NEUTRAL', 1.0, NOW()),
+  ('안경 줘', 'NEUTRAL', 1.0, NOW()),
+  ('보청기 줘', 'NEUTRAL', 1.0, NOW()),
+  ('알람 맞춰줘', 'NEUTRAL', 1.0, NOW()),
+  ('10시에 깨워줘', 'NEUTRAL', 1.0, NOW()),
+  ('약 먹을 시간 알려줘', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 일정 뭐야', 'NEUTRAL', 1.0, NOW()),
+  ('내일 뭐 해', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 치료 있어', 'NEUTRAL', 1.0, NOW()),
+  ('산책 가고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('밖에 나가고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('햇빛 쬐고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('바깥 공기 쐬고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('외출하고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('집에 가고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('언제 퇴원해', 'NEUTRAL', 1.0, NOW()),
+  ('빨리 낫고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('나도 걷고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('예전에는 좋았는데', 'NEUTRAL', 1.0, NOW()),
+  ('아침 식사 할래', 'NEUTRAL', 1.0, NOW()),
+  ('점심 뭐 먹어', 'NEUTRAL', 1.0, NOW()),
+  ('저녁 뭐 먹어', 'NEUTRAL', 1.0, NOW()),
+  ('밥 먹을 시간이야', 'NEUTRAL', 1.0, NOW()),
+  ('약 먹을 시간이야', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 가족/손녀딸 (80개) =====
+  ('예승이 보고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('예승이 언제 와', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 오늘 와', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 만나고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('예승이 기다려', 'POSITIVE', 1.2, NOW()),
+  ('예승이 잘 있어', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 학교 갔어', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 생각나', 'POSITIVE', 1.2, NOW()),
+  ('예승이한테 전화해줘', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 사진 보여줘', 'NEUTRAL', 1.2, NOW()),
+  ('예승이가 그린 거야', 'POSITIVE', 1.2, NOW()),
+  ('예승이 목소리 듣고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('예승이 잘 크고 있지', 'POSITIVE', 1.2, NOW()),
+  ('예승이 뭐 하고 있어', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 방학이야', 'NEUTRAL', 1.2, NOW()),
+  ('예승이 같이 야구 보고 싶다', 'POSITIVE', 1.2, NOW()),
+  ('예승이 키 많이 컸겠다', 'POSITIVE', 1.2, NOW()),
+  ('예승이 잘 있어?', 'NEUTRAL', 1.2, NOW()),
+  ('가족 보고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('딸 언제 와', 'NEUTRAL', 1.0, NOW()),
+  ('아들 잘 있어', 'NEUTRAL', 1.0, NOW()),
+  ('집사람 어디 갔어', 'NEUTRAL', 1.0, NOW()),
+  ('가족들 다 잘 지내', 'NEUTRAL', 1.0, NOW()),
+  ('보고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('사랑해', 'POSITIVE', 1.0, NOW()),
+  ('고맙다 진짜', 'POSITIVE', 1.0, NOW()),
+  ('옆에 있어줘', 'NEUTRAL', 1.0, NOW()),
+  ('혼자 있기 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('같이 있어줘', 'NEUTRAL', 1.0, NOW()),
+  ('누가 왔어', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 방문 있어', 'NEUTRAL', 1.0, NOW()),
+  ('간호사 언제 와', 'NEUTRAL', 1.0, NOW()),
+  ('선생님 언제 와', 'NEUTRAL', 1.0, NOW()),
+  ('면회 가능해', 'NEUTRAL', 1.0, NOW()),
+  ('딸이 전화했어', 'NEUTRAL', 1.0, NOW()),
+  ('아들이 보내준 거야', 'POSITIVE', 1.0, NOW()),
+  ('집사람 고생이 많아', 'NEUTRAL', 1.0, NOW()),
+  ('가족한테 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('모두 고마워', 'POSITIVE', 1.0, NOW()),
+  ('걱정 끼쳐서 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('잘 지내고 있어', 'POSITIVE', 1.0, NOW()),
+  ('얼굴 보니까 좋다', 'POSITIVE', 1.0, NOW()),
+  ('딸 얼굴 보고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('아들 얼굴 보고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('집사람 얼굴 보고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('가족 사진 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('예전 사진 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('손자 잘 있어', 'NEUTRAL', 1.0, NOW()),
+  ('가족이 최고야', 'POSITIVE', 1.0, NOW()),
+  ('가족이 있어서 좋다', 'POSITIVE', 1.0, NOW()),
+  ('딸이 해준 거야', 'POSITIVE', 1.0, NOW()),
+  ('아들이 사다줬어', 'POSITIVE', 1.0, NOW()),
+  ('집사람이 걱정돼', 'NEUTRAL', 1.0, NOW()),
+  ('집사람 건강은 괜찮아', 'NEUTRAL', 1.0, NOW()),
+  ('가족들 언제 다 같이 와', 'NEUTRAL', 1.0, NOW()),
+  ('명절에 모이고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('예전에 다 같이 갔었는데', 'NEUTRAL', 1.0, NOW()),
+  ('가족 여행 가고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('다들 바쁘겠지', 'NEUTRAL', 1.0, NOW()),
+  ('와줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('오래 있다 가', 'NEUTRAL', 1.0, NOW()),
+  ('또 와줘', 'NEUTRAL', 1.0, NOW()),
+  ('조심히 가', 'NEUTRAL', 1.0, NOW()),
+  ('잘 가', 'NEUTRAL', 1.0, NOW()),
+  ('운전 조심해', 'NEUTRAL', 1.0, NOW()),
+  ('연락 자주 해', 'NEUTRAL', 1.0, NOW()),
+  ('건강하게 지내', 'POSITIVE', 1.0, NOW()),
+  ('보고 싶을 거야', 'POSITIVE', 1.0, NOW()),
+  ('다음에 또 와', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 즐거웠어', 'POSITIVE', 1.0, NOW()),
+  ('가족이 오면 좋겠다', 'POSITIVE', 1.0, NOW()),
+  ('누구 온다고 했어', 'NEUTRAL', 1.0, NOW()),
+  ('예승이 데리고 와줘', 'NEUTRAL', 1.2, NOW()),
+  ('예승이한테 선물 줄 거 있어', 'POSITIVE', 1.2, NOW()),
+  ('예승이 영상통화 하고 싶어', 'POSITIVE', 1.2, NOW()),
+
+  -- ===== 야구/롯데 (60개) =====
+  ('롯데 오늘 경기해', 'NEUTRAL', 1.2, NOW()),
+  ('롯데 이겼어', 'POSITIVE', 1.2, NOW()),
+  ('롯데 졌어', 'NEGATIVE', 1.2, NOW()),
+  ('야구 보고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('야구 중계 틀어줘', 'NEUTRAL', 1.2, NOW()),
+  ('롯데 몇 대 몇이야', 'NEUTRAL', 1.2, NOW()),
+  ('오늘 선발 누구야', 'NEUTRAL', 1.2, NOW()),
+  ('롯데 잘하고 있어', 'POSITIVE', 1.2, NOW()),
+  ('야구 결과 알려줘', 'NEUTRAL', 1.2, NOW()),
+  ('사직구장 가고 싶다', 'POSITIVE', 1.2, NOW()),
+  ('야구 시즌이야', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 야구 있어', 'NEUTRAL', 1.0, NOW()),
+  ('야구 점수 어떻게 돼', 'NEUTRAL', 1.0, NOW()),
+  ('롯데 화이팅', 'POSITIVE', 1.2, NOW()),
+  ('예전에 사직구장 자주 갔어', 'NEUTRAL', 1.0, NOW()),
+  ('야구 보면 기분 좋아', 'POSITIVE', 1.0, NOW()),
+  ('홈런 쳤어', 'POSITIVE', 1.0, NOW()),
+  ('오늘 경기 몇 시야', 'NEUTRAL', 1.0, NOW()),
+  ('내일 경기 있어', 'NEUTRAL', 1.0, NOW()),
+  ('롯데 순위 어때', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 타선이 좋았어', 'POSITIVE', 1.0, NOW()),
+  ('투수가 잘 던졌어', 'POSITIVE', 1.0, NOW()),
+  ('역전이야', 'POSITIVE', 1.0, NOW()),
+  ('아깝게 졌어', 'NEGATIVE', 1.0, NOW()),
+  ('다음에 이기면 돼', 'POSITIVE', 1.0, NOW()),
+  ('올해는 좀 기대된다', 'POSITIVE', 1.0, NOW()),
+  ('야구 하이라이트 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('경기 끝났어', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 응원했어', 'POSITIVE', 1.0, NOW()),
+  ('야구가 제일 재밌어', 'POSITIVE', 1.0, NOW()),
+  ('진짜? 좋다!', 'POSITIVE', 1.0, NOW()),
+  ('몇 대 몇이야?', 'NEUTRAL', 1.0, NOW()),
+  ('누가 잘 했어?', 'NEUTRAL', 1.0, NOW()),
+  ('다음 경기 언제야?', 'NEUTRAL', 1.0, NOW()),
+  ('역전이야?', 'POSITIVE', 1.0, NOW()),
+  ('홈런 쳤어?', 'POSITIVE', 1.0, NOW()),
+  ('아깝다 졌네', 'NEGATIVE', 1.0, NOW()),
+  ('다음에 이기면 되지', 'POSITIVE', 1.0, NOW()),
+  ('전준우 잘 쳤어', 'POSITIVE', 1.2, NOW()),
+  ('전준우 타율 어때', 'NEUTRAL', 1.2, NOW()),
+  ('김원중 잘 던졌어', 'POSITIVE', 1.2, NOW()),
+  ('김원중 오늘 등판해', 'NEUTRAL', 1.2, NOW()),
+  ('최동원이 최고였어', 'POSITIVE', 1.2, NOW()),
+  ('최동원 같은 투수가 또 나올까', 'NEUTRAL', 1.2, NOW()),
+  ('오늘 기분 좋겠다', 'POSITIVE', 1.0, NOW()),
+  ('전준우가 쳤어?', 'NEUTRAL', 1.2, NOW()),
+  ('예전에 최동원 경기 직접 봤어', 'POSITIVE', 1.0, NOW()),
+  ('롯데 팬이라 힘들어', 'NEGATIVE', 1.0, NOW()),
+  ('그래도 롯데가 좋아', 'POSITIVE', 1.2, NOW()),
+  ('야구 없는 날은 심심해', 'NEUTRAL', 1.0, NOW()),
+  ('내년에는 우승하자', 'POSITIVE', 1.0, NOW()),
+  ('오늘 투수 누구야', 'NEUTRAL', 1.0, NOW()),
+  ('타순 바꿨어', 'NEUTRAL', 1.0, NOW()),
+  ('대타 나왔어', 'NEUTRAL', 1.0, NOW()),
+  ('삼진 아웃이야', 'NEUTRAL', 1.0, NOW()),
+  ('안타 쳤어', 'POSITIVE', 1.0, NOW()),
+  ('연속 안타야', 'POSITIVE', 1.0, NOW()),
+  ('오늘 수비 좋았어', 'POSITIVE', 1.0, NOW()),
+  ('에러가 많았어', 'NEGATIVE', 1.0, NOW()),
+  ('내일도 이기자', 'POSITIVE', 1.0, NOW()),
+
+  -- ===== 트로트/음악 (40개) =====
+  ('트로트 듣고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('트로트 틀어줘', 'NEUTRAL', 1.2, NOW()),
+  ('이 노래 좋다', 'POSITIVE', 1.0, NOW()),
+  ('노래 한 번 더 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('이미자 노래 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('나훈아 노래 듣고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('음악 듣고 있으면 편해', 'POSITIVE', 1.0, NOW()),
+  ('조용한 노래 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('노래 소리 좀 줄여줘', 'NEUTRAL', 1.0, NOW()),
+  ('라디오에서 좋은 노래 나와', 'POSITIVE', 1.0, NOW()),
+  ('옛날 노래 듣고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('음악 끄지 마', 'NEUTRAL', 1.0, NOW()),
+  ('이 노래 제목이 뭐야', 'NEUTRAL', 1.0, NOW()),
+  ('노래 들으니까 좋다', 'POSITIVE', 1.0, NOW()),
+  ('트로트 들으면 기분 좋아', 'POSITIVE', 1.2, NOW()),
+  ('송대관 노래도 좋아', 'POSITIVE', 1.0, NOW()),
+  ('남진 노래 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('아침에 노래 들으면 좋아', 'POSITIVE', 1.0, NOW()),
+  ('이 가수 누구야', 'NEUTRAL', 1.0, NOW()),
+  ('요즘 트로트가 유행이래', 'NEUTRAL', 1.0, NOW()),
+  ('예전에 노래방 자주 갔어', 'NEUTRAL', 1.0, NOW()),
+  ('노래 부르고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('음악이 위로가 돼', 'POSITIVE', 1.0, NOW()),
+  ('이 노래 예전에 많이 들었어', 'NEUTRAL', 1.0, NOW()),
+  ('트로트 채널 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('나훈아 테스형 틀어줘', 'POSITIVE', 1.2, NOW()),
+  ('임영웅 노래 듣고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('임영웅 노래 좋다', 'POSITIVE', 1.0, NOW()),
+  ('나훈아가 제일 좋아', 'POSITIVE', 1.2, NOW()),
+  ('임영웅 콘서트 가고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('노래 들으면 기분 전환돼', 'POSITIVE', 1.0, NOW()),
+  ('이 노래 가사가 좋아', 'POSITIVE', 1.0, NOW()),
+  ('음악 소리 좀 키워줘', 'NEUTRAL', 1.0, NOW()),
+  ('다른 노래 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('이 노래 다시 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('라디오 켜줘', 'NEUTRAL', 1.0, NOW()),
+  ('라디오 꺼줘', 'NEUTRAL', 1.0, NOW()),
+  ('음악 듣다 잠들었어', 'NEUTRAL', 1.0, NOW()),
+  ('노래 고마워', 'POSITIVE', 1.0, NOW()),
+  ('좋은 노래 틀어줘서 고마워', 'POSITIVE', 1.0, NOW()),
+
+  -- ===== 식사/음식 (60개) =====
+  ('밥 먹었어', 'NEUTRAL', 1.0, NOW()),
+  ('아직 안 먹었어', 'NEUTRAL', 1.0, NOW()),
+  ('맛있었어', 'POSITIVE', 1.0, NOW()),
+  ('맛없었어', 'NEGATIVE', 1.0, NOW()),
+  ('더 먹을게', 'NEUTRAL', 1.0, NOW()),
+  ('배 불러', 'NEUTRAL', 1.0, NOW()),
+  ('따뜻한 거 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('시원한 거 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('김치찌개 먹고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('된장찌개 먹고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('국밥 먹고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('미역국 먹고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('수박 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('좀 싱거워', 'NEUTRAL', 1.0, NOW()),
+  ('좀 짜', 'NEUTRAL', 1.0, NOW()),
   ('뜨거워', 'NEUTRAL', 1.0, NOW()),
   ('차가워', 'NEUTRAL', 1.0, NOW()),
   ('조금만 줘', 'NEUTRAL', 1.0, NOW()),
-  ('더 줘', 'NEUTRAL', 1.0, NOW()),
-  ('국 많이 줘', 'NEUTRAL', 1.0, NOW()),
-  ('반찬 없어', 'NEUTRAL', 1.0, NOW()),
-  ('이거 맛있네', 'NEUTRAL', 1.0, NOW()),
-  ('기분 좋아', 'POSITIVE', 1.0, NOW()),
-  ('기분 안 좋아', 'POSITIVE', 1.0, NOW()),
-  ('슬퍼', 'NEGATIVE', 1.0, NOW()),
-  ('화났어', 'NEUTRAL', 1.0, NOW()),
-  ('무서워', 'NEUTRAL', 1.0, NOW()),
-  ('걱정돼', 'NEUTRAL', 1.0, NOW()),
-  ('외로워', 'NEUTRAL', 1.0, NOW()),
-  ('그립다', 'NEUTRAL', 1.0, NOW()),
-  ('보고 싶어', 'NEUTRAL', 1.0, NOW()),
-  ('행복해', 'POSITIVE', 1.0, NOW()),
-  ('즐거워', 'NEUTRAL', 1.0, NOW()),
+  ('물 좀 적셔줘', 'NEUTRAL', 1.0, NOW()),
+  ('참기름죽 먹고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('죽이 맛있었어', 'POSITIVE', 1.0, NOW()),
+  ('오늘 죽 뭐야', 'NEUTRAL', 1.0, NOW()),
+  ('입맛이 없어', 'NEGATIVE', 1.0, NOW()),
+  ('조금만 먹을게', 'NEUTRAL', 1.0, NOW()),
+  ('국물이 좋다', 'POSITIVE', 1.0, NOW()),
+  ('따뜻하니까 좋다', 'POSITIVE', 1.0, NOW()),
+  ('좀 식혀줘', 'NEUTRAL', 1.0, NOW()),
+  ('한 입만 더', 'NEUTRAL', 1.0, NOW()),
+  ('오렌지 주스 마시고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('오렌지 주스 맛있어', 'POSITIVE', 1.2, NOW()),
+  ('계란죽 먹고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('계란죽 부드러워서 좋아', 'POSITIVE', 1.0, NOW()),
+  ('초코우유 마시고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('초코우유 줘', 'NEUTRAL', 1.2, NOW()),
+  ('오렌지 주스 한 잔만', 'NEUTRAL', 1.2, NOW()),
+  ('오늘 계란죽이야', 'NEUTRAL', 1.0, NOW()),
+  ('맛있다', 'POSITIVE', 1.0, NOW()),
+  ('잘 먹었어', 'POSITIVE', 1.0, NOW()),
+  ('응 먹을게', 'POSITIVE', 1.0, NOW()),
+  ('아니 안 먹을게', 'NEGATIVE', 1.0, NOW()),
+  ('뭐 먹고 싶냐고', 'NEUTRAL', 1.0, NOW()),
+  ('경관식 멈춰줘', 'NEUTRAL', 1.0, NOW()),
+  ('배 불러 그만', 'NEUTRAL', 1.0, NOW()),
+  ('좀 더 먹을게', 'NEUTRAL', 1.0, NOW()),
+  ('물 같이 줘', 'NEUTRAL', 1.0, NOW()),
+  ('국 좀 줘', 'NEUTRAL', 1.0, NOW()),
+  ('반찬 뭐야', 'NEUTRAL', 1.0, NOW()),
+  ('이거 맛있다', 'POSITIVE', 1.0, NOW()),
+  ('이거 좀 별로야', 'NEGATIVE', 1.0, NOW()),
+  ('다른 거 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('이거 뭐야', 'NEUTRAL', 1.0, NOW()),
+  ('맛있는 거 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('부드러운 거 줘', 'NEUTRAL', 1.0, NOW()),
+  ('차가운 거 줘', 'NEUTRAL', 1.0, NOW()),
+  ('따뜻한 국 줘', 'NEUTRAL', 1.0, NOW()),
+  ('죽 먹을래', 'NEUTRAL', 1.0, NOW()),
+  ('밥 먹을래', 'NEUTRAL', 1.0, NOW()),
+  ('간식 줘', 'NEUTRAL', 1.0, NOW()),
+  ('과자 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('아이스크림 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 일상 대화 (80개) =====
+  ('오늘 뭐 해', 'NEUTRAL', 1.0, NOW()),
   ('심심해', 'NEUTRAL', 1.0, NOW()),
-  ('지루해', 'NEUTRAL', 1.0, NOW()),
-  ('좀 답답해', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮아 걱정 마', 'POSITIVE', 1.0, NOW()),
-  ('나 괜찮아', 'POSITIVE', 1.0, NOW()),
-  ('별로 안 슬퍼', 'NEGATIVE', 1.0, NOW()),
-  ('좋은 하루야', 'NEUTRAL', 1.0, NOW()),
-  ('힘나', 'NEUTRAL', 1.0, NOW()),
-  ('웃겨', 'NEUTRAL', 1.0, NOW()),
-  ('재밌어', 'POSITIVE', 1.0, NOW()),
-  ('신나', 'POSITIVE', 1.0, NOW()),
-  ('고마워서 눈물나', 'POSITIVE', 1.0, NOW()),
-  ('그냥 좀 그래', 'POSITIVE', 1.0, NOW()),
-  ('많이 생각해', 'NEUTRAL', 1.0, NOW()),
-  ('같은 고통에 시달리고잇넛구나 우리..', 'NEUTRAL', 1.0, NOW()),
-  ('난 헬스장에서', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 우유두', 'NEUTRAL', 1.0, NOW()),
-  ('함 가보던가 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('한 일년에 한번', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 다축소해서', 'NEUTRAL', 1.0, NOW()),
-  ('색 보정햇엉', 'NEUTRAL', 1.0, NOW()),
-  ('아니면 이비인후과 가서 물어바바ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('저것때문인지', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 월수금 쉬시는거 아냐?', 'NEUTRAL', 1.0, NOW()),
-  ('근데 되게 바빠질줄 알았는데', 'NEUTRAL', 1.0, NOW()),
-  ('개인트레이너랑 몇명밖에 없어 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('배 찢어지게 먹은 #@이름#', 'NEUTRAL', 1.0, NOW()),
-  ('오ㅑ때문에 예쁜머리는 박제가 안되는거야', 'NEUTRAL', 1.0, NOW()),
-  ('초음파 기계도 거기는 3-4천만원 하면', 'NEUTRAL', 1.0, NOW()),
-  ('이케아 가는 중,,,,', 'NEUTRAL', 1.0, NOW()),
-  ('무시하냐 팔아프다ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('저거 선물해주고', 'POSITIVE', 1.0, NOW()),
-  ('병원이 없어지긴햇지만', 'NEUTRAL', 1.0, NOW()),
-  ('자양강장제먹으면 화장실가야해..', 'NEUTRAL', 1.0, NOW()),
-  ('다래끼 약 먹어야해...?', 'NEUTRAL', 1.0, NOW()),
-  ('흉하다 흉해', 'NEUTRAL', 1.0, NOW()),
-  ('음 그때 말고도 전에 얘기했었던 것 같아서', 'NEUTRAL', 1.0, NOW()),
-  ('왜그러는걸까', 'NEUTRAL', 1.0, NOW()),
-  ('아ㅎ 언니가 말을 애매하게 했다~', 'NEUTRAL', 1.0, NOW()),
-  ('걷기나 뭐 그런가', 'NEUTRAL', 1.0, NOW()),
-  ('얼굴 온몸 다이렇게되고', 'NEUTRAL', 1.0, NOW()),
-  ('아맞다!언니언니', 'NEUTRAL', 1.0, NOW()),
-  ('먹으면 복귀되ㅓ 문제지..', 'NEUTRAL', 1.0, NOW()),
-  ('우리엄마가 #@이름#이가', 'NEUTRAL', 1.0, NOW()),
-  ('나 뭔가 또 단발로 자르고 싶다', 'NEUTRAL', 1.0, NOW()),
-  ('너 머리가 어두웠어서 카키빛 잘 안나와', 'NEUTRAL', 1.0, NOW()),
-  ('먹어야 한다고 하더라고ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이미 버스 야', 'NEUTRAL', 1.0, NOW()),
-  ('한달도 안됫는데', 'NEUTRAL', 1.0, NOW()),
-  ('걍 딱 봐도ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('잘어울리는것같아', 'NEUTRAL', 1.0, NOW()),
-  ('웅하한건데 기약없어ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('피는 많이 났어ㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('가슴이랑 삼두^_^', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮아요 ㅎㅎ', 'POSITIVE', 1.0, NOW()),
-  ('반지안꼈는데도 올라왔제?', 'NEUTRAL', 1.0, NOW()),
-  ('잘햇어 내성 신경 노노하고 먹어야해', 'NEUTRAL', 1.0, NOW()),
-  ('근데 이래서', 'NEUTRAL', 1.0, NOW()),
-  ('맨날 퇴근하규 운동 갔다가 10시에 집온돠..대단', 'NEUTRAL', 1.0, NOW()),
-  ('저거 입으니깤ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('지금 아무것도 안먹어쓰응으', 'POSITIVE', 1.0, NOW()),
-  ('힝구 와그라노ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('조금밖에 안들었어', 'NEUTRAL', 1.0, NOW()),
-  ('운동장 뛰기 생각보다 실천이 안됨', 'NEUTRAL', 1.0, NOW()),
-  ('생각보다 빠르네요', 'NEUTRAL', 1.0, NOW()),
-  ('살뺄리면 걍 밖에 나가면 안될듯..', 'NEUTRAL', 1.0, NOW()),
-  ('맞제 맞고싶다', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 염색...!', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋ웅', 'NEUTRAL', 1.0, NOW()),
-  ('아냐 꼭 해서 알려줘 ㅋㅋ 궁금함', 'NEUTRAL', 1.0, NOW()),
-  ('무슨 바이러스...', 'NEUTRAL', 1.0, NOW()),
-  ('안아파 ㅋㅋㅋ', 'NEGATIVE', 1.0, NOW()),
-  ('아니 난 안 해봐서 몰라가지구', 'NEGATIVE', 1.0, NOW()),
-  ('발목 부러진지 모르고 몇발자국 걸어서 발목뼈 으스러짐', 'NEUTRAL', 1.0, NOW()),
-  ('갈색이겠죠?', 'NEUTRAL', 1.0, NOW()),
-  ('그언니무증상이래', 'NEUTRAL', 1.0, NOW()),
-  ('왜너피똥싸?', 'NEUTRAL', 1.0, NOW()),
-  ('테이프 붙여놔서', 'NEUTRAL', 1.0, NOW()),
-  ('그거 화장솜에 많이 부워서', 'NEUTRAL', 1.0, NOW()),
-  ('맞아유 엄마 장판도 틀고계시고요', 'POSITIVE', 1.0, NOW()),
-  ('야 내 오늘점심때', 'NEUTRAL', 1.0, NOW()),
-  ('무난한걸로 바꿔벌여', 'NEUTRAL', 1.0, NOW()),
-  ('건강 검진 받으니까', 'NEUTRAL', 1.0, NOW()),
-  ('나도 10키로할게', 'NEUTRAL', 1.0, NOW()),
-  ('너모 마니 머것너버...', 'NEUTRAL', 1.0, NOW()),
-  ('나 20일에 연차 쓰고', 'NEUTRAL', 1.0, NOW()),
-  ('개나 고양이 피부병은', 'NEUTRAL', 1.0, NOW()),
-  ('3회하니까 좀 효과잇는거같긴햇스', 'NEUTRAL', 1.0, NOW()),
-  ('원피스둘다갠춘하넹~', 'NEUTRAL', 1.0, NOW()),
-  ('비계도없이', 'NEUTRAL', 1.0, NOW()),
-  ('모르겟어ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('너 건성이얌?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ한번먹어보슈ㅋㅋ근데난 비타민씨가 부족하면 만성피로라고들음', 'NEUTRAL', 1.0, NOW()),
-  ('병원들 들러야할듯', 'NEUTRAL', 1.0, NOW()),
-  ('피임약으로한번 살짝미룬적잇엇는대', 'NEUTRAL', 1.0, NOW()),
-  ('자꾸열이 나는데 병원에서 아무말이 없을수 있는건가~', 'NEUTRAL', 1.0, NOW()),
-  ('난심하다 피부.', 'NEUTRAL', 1.0, NOW()),
-  ('나이빨아파서', 'NEGATIVE', 1.0, NOW()),
-  ('보여주께~~~~', 'NEUTRAL', 1.0, NOW()),
-  ('상상이안가네', 'NEUTRAL', 1.0, NOW()),
-  ('낮에 먹었는데 더 심한 건 말이 안된다고', 'NEUTRAL', 1.0, NOW()),
-  ('그건 촉촉한데 지금 있는 건 덜 촉촉해서', 'NEUTRAL', 1.0, NOW()),
-  ('나 위안좋을때', 'NEUTRAL', 1.0, NOW()),
-  ('발라주능건가능하지)(', 'NEUTRAL', 1.0, NOW()),
-  ('차라리 입 안붙는 입체형 끼고혀', 'NEUTRAL', 1.0, NOW()),
-  ('닦아줘도 짜증이네', 'NEUTRAL', 1.0, NOW()),
-  ('아까 나갈라고 점프수트입었다가', 'NEUTRAL', 1.0, NOW()),
-  ('눈이 편해', 'NEUTRAL', 1.0, NOW()),
-  ('머리자른다고', 'NEUTRAL', 1.0, NOW()),
-  ('날씨 좀 선선해지면 하는게 나을거같애', 'NEUTRAL', 1.0, NOW()),
-  ('다시 재니까 안높더라구', 'NEUTRAL', 1.0, NOW()),
-  ('보통 팩 같은거는', 'NEUTRAL', 1.0, NOW()),
-  ('요즘 삶의 낙이 운동이라서여', 'NEUTRAL', 1.0, NOW()),
-  ('지금까지 설사병으로 고생중 ,,,,,,,,,,,,,,,,,,', 'NEUTRAL', 1.0, NOW()),
-  ('나한테 보여준 거 한다는 거 아녀?', 'NEUTRAL', 1.0, NOW()),
-  ('받았옹....', 'NEUTRAL', 1.0, NOW()),
-  ('렌즈 아직도 포기못했냐고', 'NEUTRAL', 1.0, NOW()),
-  ('삼백먹었네^^', 'NEUTRAL', 1.0, NOW()),
-  ('웅 지금 귀 터질 것 가타', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#는...', 'NEUTRAL', 1.0, NOW()),
-  ('맘놓고해 ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('감지럽겠다', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#가 나보다 먼저하겟군', 'NEUTRAL', 1.0, NOW()),
-  ('치과 갔는데', 'NEUTRAL', 1.0, NOW()),
-  ('접착력도 구리고', 'NEUTRAL', 1.0, NOW()),
-  ('잡아서 뽑아버리네', 'NEUTRAL', 1.0, NOW()),
-  ('살이 이르케 많은데', 'NEUTRAL', 1.0, NOW()),
-  ('늙어서 아픔을 촉진할뿐임', 'NEUTRAL', 1.0, NOW()),
-  ('힘줄염증이랴..', 'NEUTRAL', 1.0, NOW()),
-  ('바지 와이드 한거 입어서 그런듯', 'NEUTRAL', 1.0, NOW()),
-  ('지금 시간에도 손님이 많구나ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('알았어 안함', 'NEUTRAL', 1.0, NOW()),
-  ('헉 어깨가좀아픈가?', 'NEUTRAL', 1.0, NOW()),
-  ('시러시러시러', 'NEUTRAL', 1.0, NOW()),
-  ('지금 어찌 할 방법이 없다며 상비약만 ㅡㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('생각해보니..', 'NEUTRAL', 1.0, NOW()),
-  ('넹넹 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('의료용크림 1개만 바르래애', 'NEUTRAL', 1.0, NOW()),
-  ('나 하는데는 17마넌', 'NEUTRAL', 1.0, NOW()),
-  ('그거랑 생리통약도 부탁,,', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ근데 다이어트 안한다고 먹으면서 살찌니까', 'NEUTRAL', 1.0, NOW()),
-  ('스킨-크림 후에 그거 하나만 바르고 나가도 ok', 'NEUTRAL', 1.0, NOW()),
-  ('물 들어갔어?', 'NEUTRAL', 1.0, NOW()),
-  ('^_^ 기름져서', 'NEUTRAL', 1.0, NOW()),
-  ('검사해봄?', 'NEUTRAL', 1.0, NOW()),
-  ('얼굴 개길어ㅋㅋㅋㅋㅋㅋㅋㅋㅋ#@기타#', 'NEUTRAL', 1.0, NOW()),
-  ('더워져서 구런가', 'NEUTRAL', 1.0, NOW()),
-  ('일반은또 너무오래안가자나 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('생리할때는?', 'NEUTRAL', 1.0, NOW()),
-  ('내가 기억해줄게', 'NEUTRAL', 1.0, NOW()),
-  ('나도 먹는거 좋아해', 'POSITIVE', 1.0, NOW()),
-  ('너무좋다 ....', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ 담주부터임', 'NEUTRAL', 1.0, NOW()),
-  ('눈밑지방재배치 그런거 해야할까봐', 'NEUTRAL', 1.0, NOW()),
-  ('말해줘야 알지', 'NEUTRAL', 1.0, NOW()),
-  ('엄니한테 물어봐', 'NEUTRAL', 1.0, NOW()),
-  ('세븐라이너 질럿서', 'NEUTRAL', 1.0, NOW()),
-  ('너청소년아닌데', 'NEUTRAL', 1.0, NOW()),
-  ('사람진짜 안변한다', 'NEUTRAL', 1.0, NOW()),
-  ('나도 꼭 빼야돼', 'NEUTRAL', 1.0, NOW()),
-  ('난 모르것어', 'NEUTRAL', 1.0, NOW()),
-  ('연 병원이 없어서 그런가 오히려 명절에 사람 엄청 많더라ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('손톱이 너무 길어 손톱깍기 어딨어?', 'NEUTRAL', 1.0, NOW()),
-  ('피곤할때마다 아니면 이부프로펜 먹을때마다', 'NEUTRAL', 1.0, NOW()),
-  ('회사 와서도 커피 마시고 그러니까', 'NEUTRAL', 1.0, NOW()),
-  ('손이 넘 심해져서 병원가볼라고 하는데 돈많이나올라나', 'NEUTRAL', 1.0, NOW()),
-  ('눈매교정 같이 하러갈래?ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('갑자기저랫자나', 'NEUTRAL', 1.0, NOW()),
-  ('걍 서울 잇어야겟다', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ 빠지고잇는가', 'NEUTRAL', 1.0, NOW()),
-  ('아무래도 수면이 편하겠지', 'NEUTRAL', 1.0, NOW()),
-  ('중독이 내성이가', 'NEUTRAL', 1.0, NOW()),
-  ('그거 변태아저씨들', 'NEUTRAL', 1.0, NOW()),
-  ('동생 렌즈삽입술 한대', 'NEUTRAL', 1.0, NOW()),
-  ('근데 그건 암이라', 'NEUTRAL', 1.0, NOW()),
-  ('계속 베임', 'NEUTRAL', 1.0, NOW()),
-  ('나는 생리컵은 머리아프다', 'NEUTRAL', 1.0, NOW()),
-  ('말하지말고?', 'NEUTRAL', 1.0, NOW()),
-  ('왜입원했어???', 'NEUTRAL', 1.0, NOW()),
-  ('그때일할때한번얹힌거제대로안괜찮아졌던거아녀ㅜㅜ?', 'POSITIVE', 1.0, NOW()),
-  ('애들 얘기들어보니까 많이들 아픈가봐', 'NEUTRAL', 1.0, NOW()),
-  ('헉 ㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('걱정말고 열심히하고 와요', 'NEUTRAL', 1.0, NOW()),
-  ('음료는 절대 못먹게끈', 'NEUTRAL', 1.0, NOW()),
-  ('음ㅋ내가담부까지낮밤바꿔면 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('울 병원은 안 하고^^.. 2층 차이라', 'NEUTRAL', 1.0, NOW()),
-  ('하늘색머리로 염색을 해볼까 생각을 해봤어', 'NEUTRAL', 1.0, NOW()),
-  ('물 많이 먹어', 'NEUTRAL', 1.0, NOW()),
-  ('내가 원해서', 'NEUTRAL', 1.0, NOW()),
-  ('그 알지 하필 엘베 앞이 나인거야', 'NEUTRAL', 1.0, NOW()),
-  ('그러니까 또 먹기싫음 ㄴㄴㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나돈이 없어서그러는데', 'NEUTRAL', 1.0, NOW()),
-  ('아까 팀장님이 진짜 괜찮냐했을때', 'NEUTRAL', 1.0, NOW()),
-  ('너두 월요일이야?', 'NEUTRAL', 1.0, NOW()),
-  ('열심히하네', 'NEUTRAL', 1.0, NOW()),
-  ('응.. 그런가봐...', 'POSITIVE', 1.0, NOW()),
-  ('#@이름#이 지존 여름쿨톤', 'NEUTRAL', 1.0, NOW()),
-  ('열심히가야지 오빠가 보내줬는데', 'NEUTRAL', 1.0, NOW()),
-  ('..ㅠㅠ미치겟네', 'NEUTRAL', 1.0, NOW()),
-  ('너무옆으로자던데', 'NEUTRAL', 1.0, NOW()),
-  ('그조금에도 극심하게', 'NEUTRAL', 1.0, NOW()),
-  ('닌 잘 빠진줄 알았더니!!', 'NEUTRAL', 1.0, NOW()),
-  ('웅웅 ㅡㅜ 집이얌? 바로 미용실간고야?', 'NEUTRAL', 1.0, NOW()),
-  ('커트도싸네', 'NEUTRAL', 1.0, NOW()),
-  ('미챠 미챠?? 그럼 어떡해', 'NEUTRAL', 1.0, NOW()),
-  ('바지벗어도 되냐고 뮬어봐도되나..', 'NEUTRAL', 1.0, NOW()),
-  ('주말에는 비쁘나여', 'NEUTRAL', 1.0, NOW()),
-  ('와 여섯시쯤 되니까', 'NEUTRAL', 1.0, NOW()),
-  ('이름 어렵게 하네', 'NEUTRAL', 1.0, NOW()),
-  ('원랜 아예 안했는데.....', 'NEUTRAL', 1.0, NOW()),
-  ('뭐가걸린줄알고', 'NEUTRAL', 1.0, NOW()),
-  ('5군데를돌아다니다가', 'NEUTRAL', 1.0, NOW()),
-  ('문제있는거아이가 그거', 'NEUTRAL', 1.0, NOW()),
-  ('다리 뒤쪽이 너무 땡긴다 흑...😂', 'NEUTRAL', 1.0, NOW()),
-  ('무튼 그런 거 다 터져서 한 번을 제대로 멀 못 갔단 말이지', 'NEUTRAL', 1.0, NOW()),
-  ('벌써했징 커피먹고 뮤조건 해야해 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('저도 먹어도 상관없엤졒', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ많이 아파??', 'NEGATIVE', 1.0, NOW()),
-  ('썩은지도 몰랏다구우', 'NEUTRAL', 1.0, NOW()),
-  ('1시간은.기다려야하나봐', 'NEUTRAL', 1.0, NOW()),
-  ('다쓰면 아토팜써야죵ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('메인 크림이아니라', 'NEUTRAL', 1.0, NOW()),
-  ('감기기운 있어??', 'NEUTRAL', 1.0, NOW()),
-  ('하필 앞두고 그러네요ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('사진봣는데', 'NEUTRAL', 1.0, NOW()),
-  ('저번에 자기가말해줬던것같은데 그거아닌가!', 'NEUTRAL', 1.0, NOW()),
-  ('전문가 최..고', 'NEUTRAL', 1.0, NOW()),
-  ('한번 버티고 다면 다음은 쉽다', 'NEUTRAL', 1.0, NOW()),
-  ('아니 내가 맛이라도 있으면', 'NEUTRAL', 1.0, NOW()),
-  ('혹시몰라 내일 아플지...', 'NEUTRAL', 1.0, NOW()),
-  ('알바하다가 도저히 안되겠어가지고 일찍 퇴근해서 병원옴', 'NEUTRAL', 1.0, NOW()),
-  ('그만하길 다행이다 ㅠ', 'NEGATIVE', 1.0, NOW()),
-  ('나도 원래 타이레놀파였는데', 'NEUTRAL', 1.0, NOW()),
-  ('야 너 치과 갈거면 얼른가', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮은 건가?', 'NEUTRAL', 1.0, NOW()),
-  ('여름옷이야?', 'NEUTRAL', 1.0, NOW()),
-  ('나 단발로 머리잘랐오~', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#너파데뭐쓴다구햇지?,', 'NEUTRAL', 1.0, NOW()),
-  ('고름 짜러왓다', 'NEUTRAL', 1.0, NOW()),
-  ('뜨잉 ㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ오늘 미용실 갔는데', 'NEUTRAL', 1.0, NOW()),
-  ('응 우유에도 지방이 많으니까', 'POSITIVE', 1.0, NOW()),
-  ('일요일에 나염색좀해주라 ㅋㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('별일없겠지ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('내말이요.... 구냥 평범한거 해줘라', 'NEUTRAL', 1.0, NOW()),
-  ('난 눈썹이 얼마 없어서..ㅋㅋㅋㅠㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('배란 안된거는 폐기한데ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('내 말이ㅠㅠㅠㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('세종에서 갔어??피부과?', 'NEUTRAL', 1.0, NOW()),
-  ('효과없다고 생각했었는데 사실 있더라고', 'NEUTRAL', 1.0, NOW()),
-  ('제산제라도?', 'NEUTRAL', 1.0, NOW()),
-  ('20만원 주고 살바에', 'NEUTRAL', 1.0, NOW()),
-  ('언니 #@이름#이도 편도선염같은거 걸린적 있어요?', 'NEUTRAL', 1.0, NOW()),
-  ('넹 평평한거썼다', 'NEUTRAL', 1.0, NOW()),
-  ('본방사수해야하는데', 'NEUTRAL', 1.0, NOW()),
-  ('응 꼭이야!', 'POSITIVE', 1.0, NOW()),
-  ('응응 나도 잘잤징ㅋㅋㅌ', 'POSITIVE', 1.0, NOW()),
-  ('산책 가겠니?', 'NEUTRAL', 1.0, NOW()),
-  ('아 마자 검사 음성 나왓어', 'NEUTRAL', 1.0, NOW()),
-  ('열 안 나도 코로나 일 수는 있지만', 'NEUTRAL', 1.0, NOW()),
-  ('해그리드로 다니겟단말씀?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ 잘해브럿으', 'NEUTRAL', 1.0, NOW()),
-  ('근데 뽑는 게 좋을 것 같대', 'NEUTRAL', 1.0, NOW()),
-  ('마쟈 노동과 운동운 달라', 'NEUTRAL', 1.0, NOW()),
-  ('헐 삭센다', 'NEUTRAL', 1.0, NOW()),
-  ('나도 그약이나 먹을까...', 'NEUTRAL', 1.0, NOW()),
-  ('저거 미용사님이 드라이 해주신겨,,,', 'POSITIVE', 1.0, NOW()),
-  ('아니이...', 'NEUTRAL', 1.0, NOW()),
-  ('원래 더 길게했닌베', 'NEUTRAL', 1.0, NOW()),
-  ('꽃처럼 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('머리짧아서 금방하나버ㅏ', 'NEUTRAL', 1.0, NOW()),
-  ('뭔가 각이 서는 것도 없삼?', 'NEUTRAL', 1.0, NOW()),
-  ('약 먹어도?', 'NEUTRAL', 1.0, NOW()),
-  ('나야모르징', 'NEUTRAL', 1.0, NOW()),
-  ('담주에 세브란스가서 수술함', 'NEUTRAL', 1.0, NOW()),
-  ('10년 됐는데...', 'NEUTRAL', 1.0, NOW()),
-  ('마이무라...', 'NEUTRAL', 1.0, NOW()),
-  ('충격파해????', 'NEUTRAL', 1.0, NOW()),
-  ('헐 괜찬닝......', 'NEUTRAL', 1.0, NOW()),
-  ('마쟝 나는 덥웨안맞아서', 'POSITIVE', 1.0, NOW()),
-  ('다차서 못함', 'NEUTRAL', 1.0, NOW()),
-  ('치아보이는걸 선호한다해서', 'NEUTRAL', 1.0, NOW()),
-  ('맞는말...', 'NEUTRAL', 1.0, NOW()),
-  ('지금은 언제 할지 모르겠음 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('요새하묨 촌스롭냐', 'NEUTRAL', 1.0, NOW()),
-  ('옷은,,,안진다고,,,ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('헤헤헤헤헤헤헤', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ 열한ㅅ에 마친다니깐 원래?', 'NEUTRAL', 1.0, NOW()),
-  ('가족력 진짜 무섭지 않니...', 'NEUTRAL', 1.0, NOW()),
-  ('천천히 조심히 먹어요', 'NEUTRAL', 1.0, NOW()),
-  ('엄마가 낼 전화해서 있으면 다같이 맞기로 했슴다!', 'NEUTRAL', 1.0, NOW()),
-  ('저 라면2개끓여먹을거에용><', 'NEUTRAL', 1.0, NOW()),
-  ('얼굴볼살이', 'NEUTRAL', 1.0, NOW()),
-  ('아 날더우니까 조금만 운동해도 땀 엄청난다', 'NEUTRAL', 1.0, NOW()),
-  ('일반식 집밥도걍 먹고', 'NEUTRAL', 1.0, NOW()),
-  ('약은 안먹고', 'NEUTRAL', 1.0, NOW()),
-  ('근데 녹스는건 어쩔 수 없나', 'NEUTRAL', 1.0, NOW()),
-  ('바람은잘믹아주게ㅛ규나', 'NEUTRAL', 1.0, NOW()),
-  ('고민이되는군', 'NEUTRAL', 1.0, NOW()),
-  ('어..시간이흐르는동안에는', 'NEUTRAL', 1.0, NOW()),
-  ('초반이라 그렇겠지?', 'NEUTRAL', 1.0, NOW()),
-  ('도서고ㅓㄴ에서도', 'NEUTRAL', 1.0, NOW()),
-  ('멀리 가지말고 여 갈까?', 'NEUTRAL', 1.0, NOW()),
-  ('내가 마음이 아파서그래', 'NEGATIVE', 1.0, NOW()),
-  ('슈링크 좋음', 'NEUTRAL', 1.0, NOW()),
-  ('남구보건소간애만 !', 'NEUTRAL', 1.0, NOW()),
-  ('대박 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('시간될때마다받아야지..', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 친구 바쁠때가 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('쭈욱 공부할계뢱인가요', 'NEUTRAL', 1.0, NOW()),
-  ('차리고익는데', 'NEUTRAL', 1.0, NOW()),
-  ('내가산립스틱단점', 'NEUTRAL', 1.0, NOW()),
-  ('슬리퍼 분홍이 안신는거 잇는데', 'NEUTRAL', 1.0, NOW()),
-  ('야 진짜 ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('응.. 그치..', 'POSITIVE', 1.0, NOW()),
-  ('이디야는 큰거 인가봐 4200원', 'NEUTRAL', 1.0, NOW()),
-  ('엄마랑은 시장갈건데..?', 'NEUTRAL', 1.0, NOW()),
-  ('만원 개이득', 'NEUTRAL', 1.0, NOW()),
-  ('면세 안 사는 거 아니냐곸ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('지금집이야?', 'NEUTRAL', 1.0, NOW()),
-  ('출근한지가 언젠데 아직안오는거야!!', 'NEUTRAL', 1.0, NOW()),
-  ('와 언니 카리스마 넘쳐 최고', 'NEUTRAL', 1.0, NOW()),
-  ('조아 결제한다', 'NEUTRAL', 1.0, NOW()),
-  ('케이뱅크로 결제 부탁함 ㅜㅜㅋㅋㅋ 나 살거있어서 해피 삼 ㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('막 입을옷이니깐 부담갖지마', 'NEUTRAL', 1.0, NOW()),
-  ('일단 다른사람들 집에 돗자리 있나', 'NEUTRAL', 1.0, NOW()),
-  ('맞아 한두푼도 아니고 말여 ㅋ', 'POSITIVE', 1.0, NOW()),
-  ('자주하는가구나', 'NEUTRAL', 1.0, NOW()),
-  ('레뱅드메일 와인 행사', 'NEUTRAL', 1.0, NOW()),
-  ('그래도 잇으니까 편하잖아', 'POSITIVE', 1.0, NOW()),
-  ('제가 작은애들꺼 사줄게요!!', 'NEUTRAL', 1.0, NOW()),
-  ('어케 믿냐고', 'NEUTRAL', 1.0, NOW()),
-  ('또륵..?', 'NEUTRAL', 1.0, NOW()),
-  ('이맛에 모은다 아임까', 'NEUTRAL', 1.0, NOW()),
-  ('깜짝이양ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('주문 완료 했습니다~~', 'NEUTRAL', 1.0, NOW()),
-  ('잘 쓸 수 있는걸 찾아본다', 'NEUTRAL', 1.0, NOW()),
-  ('무슨맛있어', 'POSITIVE', 1.0, NOW()),
-  ('아니 이런건 어떻게 아는거야!', 'NEUTRAL', 1.0, NOW()),
-  ('이거 연남동에 당근. ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('11절 노린다', 'NEUTRAL', 1.0, NOW()),
-  ('마감 세일에 가서', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 스몰로사둬야지', 'NEUTRAL', 1.0, NOW()),
-  ('저세상기억력이냉', 'NEUTRAL', 1.0, NOW()),
-  ('사람들 말레이시아판 딥디 사두라', 'NEUTRAL', 1.0, NOW()),
-  ('나 흰색 운동화 업떠', 'NEUTRAL', 1.0, NOW()),
-  ('너 재킷 샀잖아', 'NEUTRAL', 1.0, NOW()),
-  ('중고나라에서 새거 찾아봐야겠다', 'NEUTRAL', 1.0, NOW()),
-  ('25호샀다', 'NEUTRAL', 1.0, NOW()),
-  ('잘신긴할듯', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 너거 들어가서 풀어줫눈데', 'POSITIVE', 1.0, NOW()),
-  ('배달비까지 완료~', 'NEUTRAL', 1.0, NOW()),
-  ('사실선크림이 주 목적이었암', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ 그렇줴', 'NEUTRAL', 1.0, NOW()),
-  ('600원할인', 'NEUTRAL', 1.0, NOW()),
-  ('반납하지말자', 'NEUTRAL', 1.0, NOW()),
-  ('어쨋든얘네랑 연락해야지', 'NEUTRAL', 1.0, NOW()),
-  ('이래나오나???', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋ네ㅠㅠ 일단ㅋㅋㅋㅋㅋ 감사해욬ㅋㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('아니 나도 며칠전에 신발가게 가봤거든', 'NEUTRAL', 1.0, NOW()),
-  ('혹시나 못사면 나 울어 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('앗 #@이름# 전시회구쭈 지금 목록 봤는데', 'NEUTRAL', 1.0, NOW()),
-  ('우리꺼 하려니까', 'NEUTRAL', 1.0, NOW()),
-  ('다이어리는비싸져', 'NEUTRAL', 1.0, NOW()),
-  ('맞나 그럼 255사라', 'NEUTRAL', 1.0, NOW()),
-  ('반대야 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('잠깐나갔다올려궁', 'NEUTRAL', 1.0, NOW()),
-  ('눼..?  ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('사고싶엇던', 'NEUTRAL', 1.0, NOW()),
-  ('쿠폰을 받은 사람도 있는 거 보면,', 'NEUTRAL', 1.0, NOW()),
-  ('계산해 봐', 'NEUTRAL', 1.0, NOW()),
-  ('항공권검색하면떠!', 'NEUTRAL', 1.0, NOW()),
-  ('그거쫌.. 흠 난그건 좀 그냥그렇던데', 'NEUTRAL', 1.0, NOW()),
-  ('러블리탬임 미쳤음', 'NEUTRAL', 1.0, NOW()),
-  ('크레파스 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나 그 코로나모자 쓴사람글 꽤봄', 'NEUTRAL', 1.0, NOW()),
-  ('그럼되지뭐', 'NEUTRAL', 1.0, NOW()),
-  ('크라상을 2개 3천원 할까?', 'NEUTRAL', 1.0, NOW()),
-  ('그러니까 사이렌 가입좀 해달라니까 내가 확인하게ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('커피머신 구경 가야겠군ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이것만시키면 되징!??동그라미', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ양말', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ보고 사진찍어놔', 'NEUTRAL', 1.0, NOW()),
-  ('물론 너가 도구가 있다는 전제하에', 'NEUTRAL', 1.0, NOW()),
-  ('등록해놧더니만', 'NEUTRAL', 1.0, NOW()),
-  ('에 꼭 그렇게 비싼거로 해야해?', 'NEUTRAL', 1.0, NOW()),
-  ('밖에나가서 온라인으로 왜사죠', 'NEUTRAL', 1.0, NOW()),
-  ('근데 시간도 오래걸리고', 'NEUTRAL', 1.0, NOW()),
-  ('물건좋쥬~?^^', 'NEUTRAL', 1.0, NOW()),
-  ('이거 있음 사다조', 'NEUTRAL', 1.0, NOW()),
-  ('재고떨이? 공홈에?', 'NEUTRAL', 1.0, NOW()),
-  ('스웩 넘치게 예쁨', 'NEUTRAL', 1.0, NOW()),
-  ('맞아 풀빌라 비싸...', 'POSITIVE', 1.0, NOW()),
-  ('11시에가서 인당 16000 ㅇㅇ', 'NEUTRAL', 1.0, NOW()),
-  ('로또 안사고모행?', 'NEUTRAL', 1.0, NOW()),
-  ('비싸게팔아', 'NEUTRAL', 1.0, NOW()),
-  ('색만 입으니께', 'NEUTRAL', 1.0, NOW()),
-  ('위에서보면 좀 못났오 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('3주정도 걸린다는 듯', 'NEUTRAL', 1.0, NOW()),
-  ('1층 비구역 1열14', 'NEUTRAL', 1.0, NOW()),
-  ('와 아이패드 쓰는사람들  너처럼 만족 하는듯 ㅠㅠㅠ부러워ㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('나 스도쿠책 2권 주문하고 왔어', 'NEUTRAL', 1.0, NOW()),
-  ('계좌번호 예금주가 뭐엿어?', 'NEUTRAL', 1.0, NOW()),
-  ('아깝 ㅠ 제가 고등학생땐가 어버이날 선물로 사준건ㄷ0', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋ준비만발이이ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('아니면 4일이니까 14번', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 니 수영복 바지달린거할거가 원피스형할거가', 'NEUTRAL', 1.0, NOW()),
-  ('그러는 사람 많대', 'NEUTRAL', 1.0, NOW()),
-  ('회색츄리닝 사줄라하거든?', 'NEUTRAL', 1.0, NOW()),
-  ('얼마부터무료배송임?', 'NEUTRAL', 1.0, NOW()),
-  ('7시거 여기로 성공햇다리ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('구냥 사진 넣는 게 더 예뿌지 아느까..?', 'NEUTRAL', 1.0, NOW()),
-  ('우체국에선 800에 판대..ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('지원 받을수 있을꺼야', 'NEUTRAL', 1.0, NOW()),
-  ('앜ㅋㅋㅋㅋㄱㄲ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 우리 육포살거?', 'NEUTRAL', 1.0, NOW()),
-  ('유리장에 넣어두고 조아하심', 'NEUTRAL', 1.0, NOW()),
-  ('왜 우리는 저런건 못살까', 'NEUTRAL', 1.0, NOW()),
-  ('가격,,,이 좀 장벽임,,', 'NEUTRAL', 1.0, NOW()),
-  ('밤이라서 다 팔렸나보규만 ㅠ💕아몬드 크로와상 맛있오?!', 'POSITIVE', 1.0, NOW()),
-  ('나 이거 예전에 던킨에서 얼마치 먹으면', 'NEUTRAL', 1.0, NOW()),
-  ('usb 꽂을 수 있어서 폰 충전도 바로 됨', 'NEUTRAL', 1.0, NOW()),
-  ('구백원가드라', 'NEUTRAL', 1.0, NOW()),
-  ('아직서울에있어요', 'NEUTRAL', 1.0, NOW()),
-  ('난 거의 3주 걸린듯', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이 에스케이 케미칼', 'NEUTRAL', 1.0, NOW()),
-  ('이거만띡주고갈거니까', 'NEUTRAL', 1.0, NOW()),
-  ('너 백화점 갈 일 없음?', 'NEUTRAL', 1.0, NOW()),
-  ('배송비합쳐서 사만원정도', 'NEUTRAL', 1.0, NOW()),
-  ('배송비 내고 받았어요??????????????????', 'NEUTRAL', 1.0, NOW()),
-  ('물놀이 끝나가겠어', 'NEUTRAL', 1.0, NOW()),
-  ('쿠폰칸 이런게없어', 'NEUTRAL', 1.0, NOW()),
-  ('자기 굿ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('쇼핑안할건데', 'NEUTRAL', 1.0, NOW()),
-  ('파란가방이 미니어쳐네', 'NEUTRAL', 1.0, NOW()),
-  ('방에 있는 핑크색 어디에 사용하는 거야 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그래?.오늘 삼전/하이닉스 5프로가넹', 'POSITIVE', 1.0, NOW()),
-  ('3~5마넌?', 'NEUTRAL', 1.0, NOW()),
-  ('당신은 키보드 어케 들고다닌당가', 'NEUTRAL', 1.0, NOW()),
-  ('아빠 당장 쓸거 없다는데', 'NEUTRAL', 1.0, NOW()),
-  ('오 핸드폰 바꿔?', 'NEUTRAL', 1.0, NOW()),
-  ('그래 인터넷엔 있을수도 있엉', 'POSITIVE', 1.0, NOW()),
-  ('ㅇㅋㄷㅋ기다료바', 'NEUTRAL', 1.0, NOW()),
-  ('타오바오처음엔어려운데', 'NEUTRAL', 1.0, NOW()),
-  ('예매만하는데', 'NEUTRAL', 1.0, NOW()),
-  ('사진에더 심하게나오네', 'NEUTRAL', 1.0, NOW()),
-  ('10월에 예약한 애도 수하물 추가해서 26만원에 겟햇다고', 'NEUTRAL', 1.0, NOW()),
-  ('편의점갈까', 'NEUTRAL', 1.0, NOW()),
-  ('밥 여러가지맛으로?ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그거 블프', 'NEUTRAL', 1.0, NOW()),
-  ('나 엄마 험쇼핑 포인트 많아서', 'NEUTRAL', 1.0, NOW()),
-  ('롯데월드올머야', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#능 언제감?', 'NEUTRAL', 1.0, NOW()),
-  ('문자는 왔는데', 'NEUTRAL', 1.0, NOW()),
-  ('세일.준나 하네?', 'NEUTRAL', 1.0, NOW()),
-  ('연말에빼박 오른데', 'NEUTRAL', 1.0, NOW()),
-  ('나는 점심 먹었구 이제 아이스크림 먹을거야!!!', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ웅웅 !', 'NEUTRAL', 1.0, NOW()),
-  ('알려달라해', 'NEUTRAL', 1.0, NOW()),
-  ('ㅠㅠㅠ약간 크지만 ㅠㅠ 귀여우니까 봐주려고요 ㅎㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('오호 어린이 코로나 모자 주문들어옴 ㅋㅋㅋㅋ 얼마안남긴 하지만', 'NEUTRAL', 1.0, NOW()),
-  ('호식이 간장 ㅇㅈ', 'NEUTRAL', 1.0, NOW()),
-  ('오올 오올 우리동생 거지생각해주네^^', 'POSITIVE', 1.0, NOW()),
-  ('근데 또 만약 안살걸 생각하면 좀 가기 아까운것 같고', 'NEUTRAL', 1.0, NOW()),
-  ('그러게근데', 'NEUTRAL', 1.0, NOW()),
-  ('나중에 살때 거기에 맞춰서 사야겠닼ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('지금은 저거 짭퉁밖에 안파나봐', 'NEUTRAL', 1.0, NOW()),
-  ('기차부터 예매혀', 'NEUTRAL', 1.0, NOW()),
-  ('사면 얘기해', 'NEUTRAL', 1.0, NOW()),
-  ('아니 내가 내가 안가고시퍼서 안가냐고', 'NEUTRAL', 1.0, NOW()),
-  ('왜에에에에엥', 'NEUTRAL', 1.0, NOW()),
-  ('답변 빨리줘라ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('눈떠서봣을때', 'NEUTRAL', 1.0, NOW()),
-  ('아 뭐사지', 'NEUTRAL', 1.0, NOW()),
-  ('여봉이 아직 빠바꺼 잇는거지?', 'NEUTRAL', 1.0, NOW()),
-  ('여권번호 각자 입력안해도되면', 'NEUTRAL', 1.0, NOW()),
-  ('저거 무통장으로 사긴햇는데 살까말까 고민되네...', 'NEUTRAL', 1.0, NOW()),
-  ('우워어엉!', 'NEUTRAL', 1.0, NOW()),
-  ('머리쿠션도 다르고', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋ당첨되면 월마다 칠백 준다고??', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 돈보내죠', 'NEUTRAL', 1.0, NOW()),
-  ('먼지 많이 붙으려나', 'NEUTRAL', 1.0, NOW()),
-  ('하얀거 삿다', 'NEUTRAL', 1.0, NOW()),
-  ('높게 걸엇어', 'NEUTRAL', 1.0, NOW()),
-  ('재빠른 것인가', 'NEUTRAL', 1.0, NOW()),
-  ('사골 우리듯', 'NEUTRAL', 1.0, NOW()),
-  ('그러면 될거같슴미당', 'NEUTRAL', 1.0, NOW()),
-  ('개업해서 이것저것 부딪히나봐..서서히 개선해 나가겟지', 'NEUTRAL', 1.0, NOW()),
-  ('제리가 더 귕운것같아', 'NEUTRAL', 1.0, NOW()),
-  ('아빠 패딩 구매확정하고 그포인트주는거해야겠다', 'NEUTRAL', 1.0, NOW()),
-  ('나야좋지~', 'NEUTRAL', 1.0, NOW()),
-  ('선물 보내줘봐', 'NEUTRAL', 1.0, NOW()),
-  ('가족꺼 다해서 네개 깔별로 삼 ㅎ', 'NEGATIVE', 1.0, NOW()),
-  ('오케 일단 #@이름# 이김', 'NEUTRAL', 1.0, NOW()),
-  ('나 pt는', 'NEUTRAL', 1.0, NOW()),
-  ('바지? 치마?', 'NEUTRAL', 1.0, NOW()),
-  ('구제시장에서', 'NEUTRAL', 1.0, NOW()),
-  ('고야드도 누가봐도 고야드인데..', 'NEUTRAL', 1.0, NOW()),
-  ('기다리고 있엇다 ^^ *', 'NEUTRAL', 1.0, NOW()),
-  ('기스나잖아', 'NEUTRAL', 1.0, NOW()),
-  ('근데 퀄이', 'NEUTRAL', 1.0, NOW()),
-  ('우담이 콘서트?', 'NEUTRAL', 1.0, NOW()),
-  ('근데 오늘오뎅떨어졋다고', 'NEUTRAL', 1.0, NOW()),
-  ('2주 걸리네', 'NEUTRAL', 1.0, NOW()),
-  ('7이 이제야 낮아진 거 보면', 'NEUTRAL', 1.0, NOW()),
-  ('어 푸마도 옥중살이임', 'NEUTRAL', 1.0, NOW()),
-  ('5처넌이던디', 'NEUTRAL', 1.0, NOW()),
-  ('살 거 있으면 사...', 'NEUTRAL', 1.0, NOW()),
-  ('직강봐야겟다', 'NEUTRAL', 1.0, NOW()),
-  ('웅 이따가 같이 찾아보자 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('정리하던가', 'NEUTRAL', 1.0, NOW()),
-  ('삼성이먼저 하겟지 ㅅㄱ', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 무슨 장사하는줄', 'NEUTRAL', 1.0, NOW()),
-  ('삼성카드 링크 쿠폰 다 등록해놓으셔요!!', 'NEUTRAL', 1.0, NOW()),
-  ('횐갑하면 쿠폰주네', 'NEUTRAL', 1.0, NOW()),
-  ('아무리 미개봉이어도', 'NEUTRAL', 1.0, NOW()),
-  ('감당못하겟네', 'NEUTRAL', 1.0, NOW()),
-  ('난 그게 부드럽긴한데 두꺼워서', 'NEUTRAL', 1.0, NOW()),
-  ('어째서?ㅋㅋㅋㅋㅋㄱㄱㄱㄱㄱ', 'NEUTRAL', 1.0, NOW()),
-  ('나도 그래서', 'POSITIVE', 1.0, NOW()),
-  ('세이지 괜츈', 'NEUTRAL', 1.0, NOW()),
-  ('가끔내나이도까먹는디', 'NEUTRAL', 1.0, NOW()),
-  ('시퓨 많이 높이고 전체적으로 돈 좀 바르고...', 'NEUTRAL', 1.0, NOW()),
-  ('지허철잇을라나', 'NEUTRAL', 1.0, NOW()),
-  ('오늘하고 내일만 정각에', 'NEUTRAL', 1.0, NOW()),
-  ('그냥사도 괜찮을꺼같기도 하고', 'NEUTRAL', 1.0, NOW()),
-  ('없쎀ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('기디려보자', 'NEUTRAL', 1.0, NOW()),
-  ('이거 군대에 아는사람있어야산데', 'NEUTRAL', 1.0, NOW()),
-  ('일단은 한번 물어나봐보까?', 'NEUTRAL', 1.0, NOW()),
-  ('그니까그지갈애', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 마트에서 라면만 사면되겠다!', 'NEUTRAL', 1.0, NOW()),
-  ('그래 괜쳐나 ???', 'POSITIVE', 1.0, NOW()),
-  ('그걸로할래', 'NEUTRAL', 1.0, NOW()),
-  ('사이즈 그냥 스몰샀어', 'NEUTRAL', 1.0, NOW()),
-  ('그거좋은거랭?', 'NEUTRAL', 1.0, NOW()),
-  ('28900원이야', 'NEUTRAL', 1.0, NOW()),
-  ('넵 !!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('다흑.... ㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('얼렁 가져가시고', 'NEUTRAL', 1.0, NOW()),
-  ('같이 할인판매하고 잇길래', 'NEUTRAL', 1.0, NOW()),
-  ('머라구 하지 저겅', 'NEUTRAL', 1.0, NOW()),
-  ('지금쥴게!!', 'NEUTRAL', 1.0, NOW()),
-  ('이건 ㄹㅇ 요즘 파는옷 같애', 'NEUTRAL', 1.0, NOW()),
-  ('면허 아직 안땄네 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('헐 지코 이천팔백원이래', 'NEUTRAL', 1.0, NOW()),
-  ('님 몰라,,,', 'NEUTRAL', 1.0, NOW()),
-  ('엉엉 오빠 바지 사왔당!!', 'NEUTRAL', 1.0, NOW()),
-  ('그렇게 예쁘진 않음', 'NEUTRAL', 1.0, NOW()),
-  ('실시간예약애는', 'NEUTRAL', 1.0, NOW()),
-  ('난 두통 사도 꾸준히 안 먹어서', 'NEGATIVE', 1.0, NOW()),
-  ('어깨큰거봐', 'NEUTRAL', 1.0, NOW()),
-  ('그려..그건 내가 사고', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타#비싸네ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('디오꺼로 아무거나 두어개만', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋ오', 'NEUTRAL', 1.0, NOW()),
-  ('척테일러 ??', 'NEUTRAL', 1.0, NOW()),
-  ('금욜 인전공항 출국맞음?', 'NEUTRAL', 1.0, NOW()),
-  ('쿠폰쓴거지?', 'NEUTRAL', 1.0, NOW()),
-  ('패딩같은거안에입어도대고', 'NEUTRAL', 1.0, NOW()),
-  ('담주화욜인가..', 'NEUTRAL', 1.0, NOW()),
-  ('일단 내목표다', 'NEUTRAL', 1.0, NOW()),
-  ('그게 안되나보더라고', 'NEUTRAL', 1.0, NOW()),
-  ('근데 가격도 별로야ㅠㅠ', 'NEGATIVE', 1.0, NOW()),
-  ('종류가 많네', 'NEUTRAL', 1.0, NOW()),
-  ('뜯을 때 영혼도 뜯김', 'NEUTRAL', 1.0, NOW()),
-  ('구래 남겨둬라', 'NEUTRAL', 1.0, NOW()),
-  ('그건 환불하면 되니까', 'NEUTRAL', 1.0, NOW()),
-  ('있으면 하나 사두지', 'NEUTRAL', 1.0, NOW()),
-  ('어디에든 어울리지', 'NEUTRAL', 1.0, NOW()),
-  ('흐뭇하다고', 'NEUTRAL', 1.0, NOW()),
-  ('49000원인가', 'NEUTRAL', 1.0, NOW()),
-  ('6월15일까진 무조건들어야', 'NEUTRAL', 1.0, NOW()),
-  ('모양이 살짝 다르더라고', 'NEUTRAL', 1.0, NOW()),
-  ('오오옿엨ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('10월초면', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 두개 사와', 'NEUTRAL', 1.0, NOW()),
-  ('무배면 그래도 이득이다', 'POSITIVE', 1.0, NOW()),
-  ('응 사면 나도 해봐야지', 'POSITIVE', 1.0, NOW()),
-  ('억지로 구겨넣으니까 들어가 ㅎㅎ 근데 뛰면빠질둡', 'NEUTRAL', 1.0, NOW()),
-  ('사러가고십구만요', 'NEUTRAL', 1.0, NOW()),
-  ('담에 가면 사다주니', 'NEUTRAL', 1.0, NOW()),
-  ('저번에 산가방', 'NEUTRAL', 1.0, NOW()),
-  ('일단 10개만시켜보까', 'NEUTRAL', 1.0, NOW()),
-  ('가격 비싼 거 ㅇㅈ', 'NEUTRAL', 1.0, NOW()),
-  ('오래된거라그런거같다는뎅', 'NEUTRAL', 1.0, NOW()),
-  ('됐고 택배 뜯지 마삼', 'NEUTRAL', 1.0, NOW()),
-  ('갈떄는 짐붙일떄 돈내고', 'NEUTRAL', 1.0, NOW()),
-  ('엉ㅌㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('어케~~~', 'NEUTRAL', 1.0, NOW()),
-  ('이거 같아', 'NEUTRAL', 1.0, NOW()),
-  ('24가 주말 아니라 그런가?', 'NEUTRAL', 1.0, NOW()),
-  ('정말 웃기는 분이시네!!!', 'NEUTRAL', 1.0, NOW()),
-  ('3시에 왔네', 'NEUTRAL', 1.0, NOW()),
-  ('과장이 차 없을때', 'NEUTRAL', 1.0, NOW()),
-  ('지갑이나살까..', 'NEUTRAL', 1.0, NOW()),
-  ('품질이 얼마나 비급일까ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('지도 몰랐대', 'NEUTRAL', 1.0, NOW()),
-  ('서프라이즈가 좋대서', 'NEUTRAL', 1.0, NOW()),
-  ('이건 #@이름#가사서', 'NEUTRAL', 1.0, NOW()),
-  ('응응! 나도 컴퓨터 켜놔야겟다', 'POSITIVE', 1.0, NOW()),
-  ('엥 안 살래', 'NEUTRAL', 1.0, NOW()),
-  ('타오바오에서 사', 'NEUTRAL', 1.0, NOW()),
-  ('좀 귀여우면서 베이직한?', 'NEUTRAL', 1.0, NOW()),
-  ('웅웅 그래야짘ㅋㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('상태갠차너?', 'NEUTRAL', 1.0, NOW()),
-  ('그나마 저렴한걸로 해야지', 'NEUTRAL', 1.0, NOW()),
-  ('들어가있을뎌', 'NEUTRAL', 1.0, NOW()),
-  ('번호 오류가 있었네요^^', 'NEUTRAL', 1.0, NOW()),
-  ('카키로해 카키이쁘겟지 실물못봐서', 'NEUTRAL', 1.0, NOW()),
-  ('애들보내고 영어 공부좀 해보게 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('핗요없으면 다른칭구줘도돼서', 'NEUTRAL', 1.0, NOW()),
-  ('쿠앤크는 뭔들 맛있지', 'POSITIVE', 1.0, NOW()),
-  ('우리는 직접와서 포장하는 사람이 많고', 'NEUTRAL', 1.0, NOW()),
-  ('킹햄갈래???', 'NEUTRAL', 1.0, NOW()),
-  ('저 도차쿠', 'NEUTRAL', 1.0, NOW()),
-  ('그러는거...', 'NEUTRAL', 1.0, NOW()),
-  ('통일하면같은거하구', 'NEUTRAL', 1.0, NOW()),
-  ('오마이갓ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('몇시에나가려나 모르겟어', 'NEUTRAL', 1.0, NOW()),
-  ('나왔는데요', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#랑 뽑뽀많이 하고싶기도 해..☆', 'NEUTRAL', 1.0, NOW()),
-  ('근데 엄마랑 수욜에', 'NEUTRAL', 1.0, NOW()),
-  ('천천히 줘~// 내가 잊어먹을까봐 미리 말하는 거라서~ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('머 이번이 아니더라도 가면되니 알겟어 ~', 'NEUTRAL', 1.0, NOW()),
-  ('해줄거야??', 'NEUTRAL', 1.0, NOW()),
-  ('5시쯤엔 나올수있을듯ㅠㅠ?..', 'NEUTRAL', 1.0, NOW()),
-  ('언니가 일을 쉴줄몰랏ㄴ지', 'NEUTRAL', 1.0, NOW()),
-  ('아닝 내일볼거야 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그래야지 시너지 효과가 있찌', 'POSITIVE', 1.0, NOW()),
-  ('아님 생각해보고 망해쥬 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나는 바로 출근 ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('대만 갔을때 욕심냇다가 너무 힘들엇엇지', 'NEGATIVE', 1.0, NOW()),
-  ('그이후 비우지머', 'NEUTRAL', 1.0, NOW()),
-  ('네넹 한장더 챙겨놓긴했어요', 'NEUTRAL', 1.0, NOW()),
-  ('응ㅜㅜㅜㅜㅜ', 'POSITIVE', 1.0, NOW()),
-  ('잘 다녀와요', 'NEUTRAL', 1.0, NOW()),
-  ('수정하고있어 ㅋ,,,,,,,', 'NEUTRAL', 1.0, NOW()),
-  ('그우리가보기루하자그랬던데가는고아냐??', 'NEUTRAL', 1.0, NOW()),
-  ('심심하면산책', 'NEUTRAL', 1.0, NOW()),
-  ('9시까지 들어오면 사줌', 'NEUTRAL', 1.0, NOW()),
-  ('다낭호이안', 'NEUTRAL', 1.0, NOW()),
-  ('아니 원래 오늘 #@이름#랑 여행가기로 햇엇는데', 'NEUTRAL', 1.0, NOW()),
-  ('늦게자도됨', 'NEUTRAL', 1.0, NOW()),
-  ('아빠엄마공짜임', 'NEUTRAL', 1.0, NOW()),
-  ('저번에 못가봤던곳이 성산?? 애월??', 'NEUTRAL', 1.0, NOW()),
-  ('어 나도 다왔다', 'NEUTRAL', 1.0, NOW()),
-  ('얼대 아차산 중곡 일ㅋㅔ 잇다', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ...월요일에 올거야.......', 'NEUTRAL', 1.0, NOW()),
-  ('웅웅 ㅋㅋㅋㅋㅋㅋ 쇼핑몰', 'NEUTRAL', 1.0, NOW()),
-  ('근데 평일은 아무때나 가능할듷', 'NEUTRAL', 1.0, NOW()),
-  ('뭔가 아까울(?)수 있을 것 같아서', 'NEUTRAL', 1.0, NOW()),
-  ('시간 노상관~~', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 수학여행 온닥', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이 안늦는다며', 'NEUTRAL', 1.0, NOW()),
-  ('부평 괜츈_?', 'NEUTRAL', 1.0, NOW()),
-  ('고마 부산네랴오고<~', 'NEUTRAL', 1.0, NOW()),
-  ('낼샐러드사오지마......그냥와 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('저 씻고 올게유', 'NEUTRAL', 1.0, NOW()),
-  ('금요일 여유로워 괜찮음 시간', 'NEUTRAL', 1.0, NOW()),
-  ('인쟈 끝났어', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 3시30분쯤에', 'NEUTRAL', 1.0, NOW()),
-  ('4명 누구?', 'NEUTRAL', 1.0, NOW()),
-  ('렌트카예약은해놨어', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ단위 엄청크다ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그렇긴한데 제주도만한 곳이 없어', 'NEUTRAL', 1.0, NOW()),
-  ('친구데려와도된대', 'NEUTRAL', 1.0, NOW()),
-  ('놀러오기로 했는데', 'NEUTRAL', 1.0, NOW()),
-  ('넹넹 나 5시쯤 대전에서 버스타구 올라갈건데', 'NEUTRAL', 1.0, NOW()),
-  ('지금 나갈게', 'NEUTRAL', 1.0, NOW()),
-  ('내일 재밌게 놀쟈', 'POSITIVE', 1.0, NOW()),
-  ('제과제빵도 같이 배워봐야하고', 'NEUTRAL', 1.0, NOW()),
-  ('아 오케이', 'NEUTRAL', 1.0, NOW()),
-  ('아니면 걍 카페투어', 'NEUTRAL', 1.0, NOW()),
-  ('로그인 정보 #@계정#', 'NEUTRAL', 1.0, NOW()),
-  ('알아쪙..', 'NEUTRAL', 1.0, NOW()),
-  ('표는. 카톡으로보내줘', 'NEUTRAL', 1.0, NOW()),
-  ('넘 조으면', 'NEUTRAL', 1.0, NOW()),
-  ('점심에 #@이름#랑 #@이름#보기로햇오ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('어디서 볼래!!?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ영실코스 가 중학교때 올라간돗이고', 'NEUTRAL', 1.0, NOW()),
-  ('나보러는 오지도않더니', 'NEUTRAL', 1.0, NOW()),
-  ('또 누웠다가 잠들라', 'NEUTRAL', 1.0, NOW()),
-  ('레인파티해', 'NEUTRAL', 1.0, NOW()),
-  ('수고했어.   낼올때 조심히 와', 'NEUTRAL', 1.0, NOW()),
-  ('혼자????', 'NEUTRAL', 1.0, NOW()),
-  ('봐서...', 'NEUTRAL', 1.0, NOW()),
-  ('오... 거긴 계속 줄서있더라', 'NEUTRAL', 1.0, NOW()),
-  ('여권,???', 'NEUTRAL', 1.0, NOW()),
-  ('아니여서 못사고', 'NEUTRAL', 1.0, NOW()),
-  ('집 먼저 가셈', 'NEUTRAL', 1.0, NOW()),
-  ('아야진항해변펜션은 바다쪽에 있고 수자별은 산쪽에 있엌ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('뭐..괜찮다 ㅋ!', 'NEUTRAL', 1.0, NOW()),
-  ('그럼담에 또 A0뽑아달라고 메일주시면 갈게요', 'NEUTRAL', 1.0, NOW()),
-  ('내일 치킨 어떰', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮은거 있으면 사오려고', 'NEUTRAL', 1.0, NOW()),
-  ('11월 11일토요일에 하는건데', 'NEUTRAL', 1.0, NOW()),
-  ('일 늦게 끝내 ^^', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 저녁엔 정준일!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('일욜에 오면 몇시에와,', 'NEUTRAL', 1.0, NOW()),
-  ('강릉가봒어?', 'NEUTRAL', 1.0, NOW()),
-  ('날을 다시잡어 그럼', 'NEUTRAL', 1.0, NOW()),
-  ('아 피자헋이다', 'NEUTRAL', 1.0, NOW()),
-  ('우리 저거먹자', 'NEUTRAL', 1.0, NOW()),
-  ('아아 ㅎㅎ알았어', 'NEUTRAL', 1.0, NOW()),
-  ('얼른갈까요?ㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('자고갈거강~~~', 'NEUTRAL', 1.0, NOW()),
-  ('그래.. 그냥 거기서 케익부는게', 'POSITIVE', 1.0, NOW()),
-  ('시간 금방 갈수도 있겠어요', 'NEUTRAL', 1.0, NOW()),
-  ('걔외박안해', 'NEUTRAL', 1.0, NOW()),
-  ('내일 왜와', 'NEUTRAL', 1.0, NOW()),
-  ('지금 고돈이야??', 'NEUTRAL', 1.0, NOW()),
-  ('없어지지마요ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('학기마다 치나?', 'NEUTRAL', 1.0, NOW()),
-  ('라면도 한강에서 먹은거처럼 무료로 해갈수있다더라', 'NEUTRAL', 1.0, NOW()),
-  ('부족할까??ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('애들이 에바래', 'NEUTRAL', 1.0, NOW()),
-  ('2박 3일입니다 금토일ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('오 예쁘네 우리도 담에 가보자 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('누가 또 결혼하냐', 'NEUTRAL', 1.0, NOW()),
-  ('아니 밥사준다고 나오라고 하는게', 'NEUTRAL', 1.0, NOW()),
-  ('오래걸리지ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('너 안고르다가..', 'NEUTRAL', 1.0, NOW()),
-  ('암때나~~ ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('운주계곡밖에없다,,ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('작년 겨울에', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 그럼 밥먹고 양재로가??', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ과연 #@이름#가 갈까', 'NEUTRAL', 1.0, NOW()),
-  ('둘째는 들어본적도 없는데', 'NEUTRAL', 1.0, NOW()),
-  ('겟해서 오거라.. 언닌 못감', 'NEUTRAL', 1.0, NOW()),
-  ('2시 3시쯤 될거가타!', 'NEUTRAL', 1.0, NOW()),
-  ('그날부터 #@이름#가 제주도가거든', 'NEUTRAL', 1.0, NOW()),
-  ('그랬음 좋겠으', 'NEUTRAL', 1.0, NOW()),
-  ('왜 망했어?', 'NEUTRAL', 1.0, NOW()),
-  ('어이구..어디루?', 'NEUTRAL', 1.0, NOW()),
-  ('어떤사람이', 'NEUTRAL', 1.0, NOW()),
-  ('아직도 할머니댁이니', 'NEUTRAL', 1.0, NOW()),
-  ('완전 자기들끼라 춤추네', 'NEUTRAL', 1.0, NOW()),
-  ('17일 월요일', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 나 영화는', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 얼만지 봤는데 엄청싸ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('2월5일 38만원임', 'NEUTRAL', 1.0, NOW()),
-  ('출발했어요?', 'NEUTRAL', 1.0, NOW()),
-  ('낼 저녁에 우리집에서 되긴하느데 아주 늦게까지는 못마실듯', 'NEUTRAL', 1.0, NOW()),
-  ('거기 한가함', 'NEUTRAL', 1.0, NOW()),
-  ('그래두되구요', 'POSITIVE', 1.0, NOW()),
-  ('오 예술공원!', 'NEUTRAL', 1.0, NOW()),
-  ('카페 열지는 읺잖어', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 그냥 클라이밍센터에서 다섯시 반에?', 'NEUTRAL', 1.0, NOW()),
-  ('웅 ㅠㅠㅠ늦게라도 가야지 머!!', 'NEUTRAL', 1.0, NOW()),
-  ('와 오늘 넘예쁘게 입고갔네여 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그려그려 이따 보세', 'NEUTRAL', 1.0, NOW()),
-  ('봐야지!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('집가서볼겡', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 24시카페가서 빡공 하실...?', 'NEUTRAL', 1.0, NOW()),
-  ('아직 만난지 얼마 안돼서', 'NEUTRAL', 1.0, NOW()),
-  ('아 그러까', 'NEUTRAL', 1.0, NOW()),
-  ('그날 하얏트 수영장 갈까해서', 'NEUTRAL', 1.0, NOW()),
-  ('한 6-7시쯤 만나지 않을까...?', 'NEUTRAL', 1.0, NOW()),
-  ('아항 넹넹ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('안되는데 가면어캄', 'NEUTRAL', 1.0, NOW()),
-  ('조식 상태도 보고', 'NEUTRAL', 1.0, NOW()),
-  ('나 치과갔다와서보쟈', 'NEUTRAL', 1.0, NOW()),
-  ('조식 갑자기 중요해짐', 'NEUTRAL', 1.0, NOW()),
-  ('걱정안해야겠어', 'NEUTRAL', 1.0, NOW()),
-  ('식끝나고 또 피로연같이하고', 'NEUTRAL', 1.0, NOW()),
-  ('오오 가나초콜렛ㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('내일이구나수욜이', 'NEUTRAL', 1.0, NOW()),
-  ('냅^^!!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('더얘기도해보고ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('리얼 해외가야대는데', 'NEUTRAL', 1.0, NOW()),
-  ('그니깐요..굿즈 어떻게 사려고.', 'NEUTRAL', 1.0, NOW()),
-  ('웅 몰라 몇번이모는', 'NEUTRAL', 1.0, NOW()),
-  ('피방은 내가사껭ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('맛있는거 사들고', 'POSITIVE', 1.0, NOW()),
-  ('그렇긴하지', 'NEUTRAL', 1.0, NOW()),
-  ('#@소속# 연못 벚꽃도 안붐비고 좋다는데', 'NEUTRAL', 1.0, NOW()),
-  ('쏘리 맨 아임 근로 1시', 'NEUTRAL', 1.0, NOW()),
-  ('약간 웃으면서 그냥 오세요 했는데 기분 나쁜 웃음', 'NEUTRAL', 1.0, NOW()),
-  ('비행기랑 숙소해서 68만원', 'NEUTRAL', 1.0, NOW()),
-  ('한 시쯤 어때 ??', 'NEUTRAL', 1.0, NOW()),
-  ('아직안갔나', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#는 어떻게 생각하시는지.,', 'NEUTRAL', 1.0, NOW()),
-  ('충대??????', 'NEUTRAL', 1.0, NOW()),
-  ('용돈 백정도 생각해서', 'NEUTRAL', 1.0, NOW()),
-  ('8시에 나간다', 'NEUTRAL', 1.0, NOW()),
-  ('근데지금생각해보면 숙소잡을돈 충분히 모을수있었는데', 'NEUTRAL', 1.0, NOW()),
-  ('수요일엔 어디갈까??', 'NEUTRAL', 1.0, NOW()),
-  ('강원도로가는거', 'NEUTRAL', 1.0, NOW()),
-  ('9번 칸이야', 'NEUTRAL', 1.0, NOW()),
-  ('갈 수 있으려나?', 'NEUTRAL', 1.0, NOW()),
-  ('나 아까 아빠랑 논현동 다녀왔어..', 'NEUTRAL', 1.0, NOW()),
-  ('이월드랑 팔공산이래!!', 'NEUTRAL', 1.0, NOW()),
-  ('넌 엉제부터 가 있을 거??', 'NEUTRAL', 1.0, NOW()),
-  ('응응 그렇게 할거야', 'POSITIVE', 1.0, NOW()),
-  ('저녁 언제여..', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#님 우리 내일 몇시에갈까예~', 'NEUTRAL', 1.0, NOW()),
-  ('빨리보고시프다', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 먼나네 ㅡㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('이마트갈랭,,,?', 'NEUTRAL', 1.0, NOW()),
-  ('그러면 이번주 토요일로', 'NEUTRAL', 1.0, NOW()),
-  ('낼모레부터', 'NEUTRAL', 1.0, NOW()),
-  ('대리타고가는게가혹한ㄱㅓ같기두하고..', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 고고?!', 'NEUTRAL', 1.0, NOW()),
-  ('그치,, 비싸도 언젠가 한번 가자', 'NEUTRAL', 1.0, NOW()),
-  ('병원몇시에간다했지?', 'NEUTRAL', 1.0, NOW()),
-  ('응응 더 찾아보자! 아직 시간 있으니까', 'POSITIVE', 1.0, NOW()),
-  ('직항이 훨 편하긴할텐데..', 'NEUTRAL', 1.0, NOW()),
-  ('오 #@이름#이한테', 'NEUTRAL', 1.0, NOW()),
-  ('딱히 가고 싶은데는 없는데', 'NEUTRAL', 1.0, NOW()),
-  ('그냥웃고떠들고올듯', 'NEUTRAL', 1.0, NOW()),
-  ('카페를 찾도록하징', 'NEUTRAL', 1.0, NOW()),
-  ('배고파… 헉스…', 'NEUTRAL', 1.0, NOW()),
-  ('왜냐면 20일 시험끝나고 언니 남친이랑 넷이보기로 했잖아요', 'NEUTRAL', 1.0, NOW()),
-  ('그러자! 잘자공 목에 봄세', 'NEUTRAL', 1.0, NOW()),
-  ('근데너무미뤄져도받을돈못받구하니까할사람들은하더라ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('엄청 또 오래된것같아ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('하면 되는데', 'NEUTRAL', 1.0, NOW()),
-  ('숙소를 바꾸자구?', 'NEUTRAL', 1.0, NOW()),
-  ('날도 좋은디', 'NEUTRAL', 1.0, NOW()),
-  ('어제 8시에 왔네', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 미리 늘려서 간다', 'NEUTRAL', 1.0, NOW()),
-  ('수업 잘 들어용', 'NEUTRAL', 1.0, NOW()),
-  ('잘놀고 있나욤~', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 종각에서 3시에 만나자긔', 'NEUTRAL', 1.0, NOW()),
-  ('3 그냥 샤워 안허고 얼굴만 씻고 공항에서 잔다', 'NEUTRAL', 1.0, NOW()),
-  ('배고프시지 않을까 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('웅낼연락행!!ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('오!!!!맛집기대할겤ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('강구면 자전거타도될듯 무슨역이야? 강서구청역이있어?', 'NEUTRAL', 1.0, NOW()),
-  ('새우머리 어찌구 가능?', 'NEUTRAL', 1.0, NOW()),
-  ('나가고픈곳', 'NEUTRAL', 1.0, NOW()),
-  ('안가서 좋겠네 #@이름# ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('아침 10시', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 그냥 낼', 'POSITIVE', 1.0, NOW()),
-  ('구래구래ㅋㅋㅋㅋ나두 백수라 크게 상관없어', 'NEUTRAL', 1.0, NOW()),
-  ('아맞네맞네', 'NEUTRAL', 1.0, NOW()),
-  ('님님 나랑', 'NEUTRAL', 1.0, NOW()),
-  ('#@이모티콘# 우웅 좋아', 'POSITIVE', 1.0, NOW()),
-  ('너 20일날 몇시까지 들어가야하고 그런거 있어?', 'NEUTRAL', 1.0, NOW()),
-  ('화욜에 본사감', 'NEUTRAL', 1.0, NOW()),
-  ('다른거 입어?', 'NEUTRAL', 1.0, NOW()),
-  ('그래 그럼 10시로 예약할게', 'POSITIVE', 1.0, NOW()),
-  ('그럼 미리 열쇠달라고 해바 ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('더러븐 녀석~~~', 'NEUTRAL', 1.0, NOW()),
-  ('그니까... 먹고...시내가면 되자너....', 'NEUTRAL', 1.0, NOW()),
-  ('출발출발~~~', 'NEUTRAL', 1.0, NOW()),
-  ('집에서 뭐 해먹기가 힘든것', 'NEUTRAL', 1.0, NOW()),
-  ('영도 카페 샌드위치 마싯서', 'NEUTRAL', 1.0, NOW()),
-  ('내일 몇시에갈까~~??', 'NEUTRAL', 1.0, NOW()),
-  ('시간 정해져떠여??', 'NEUTRAL', 1.0, NOW()),
-  ('휴가 언제까지냐....', 'NEUTRAL', 1.0, NOW()),
-  ('담에 십센치 가쟠 ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('흑 안되면 우리끼리막창먹고 술마시지모', 'NEUTRAL', 1.0, NOW()),
-  ('나 가고싶은 카페!!!찾아또', 'NEUTRAL', 1.0, NOW()),
-  ('우웅...', 'NEUTRAL', 1.0, NOW()),
-  ('함 보는거 어때..?', 'NEUTRAL', 1.0, NOW()),
-  ('지금 2박에 방 2개 40줬어', 'NEUTRAL', 1.0, NOW()),
-  ('갑자기 먹고싶어졌옹?', 'NEUTRAL', 1.0, NOW()),
-  ('허걱스 알숭', 'NEUTRAL', 1.0, NOW()),
-  ('다섯시까지 말해조 앞으혼', 'NEUTRAL', 1.0, NOW()),
-  ('애들도 계속 그야기하던데ㅔ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 결혼?', 'NEUTRAL', 1.0, NOW()),
-  ('웅ㅋㅋㅋㅋ아니 나두 막 나왓섴ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('드레스 코드는 블랙', 'NEUTRAL', 1.0, NOW()),
-  ('웅 나도 달력봤어', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 겹치겠군', 'NEUTRAL', 1.0, NOW()),
-  ('고기만아니면', 'NEUTRAL', 1.0, NOW()),
-  ('아!! 웅웅!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('어차피 양 창렬ㄹ..', 'NEUTRAL', 1.0, NOW()),
-  ('일단 바로 디지털밸리로오셔요^^', 'NEUTRAL', 1.0, NOW()),
-  ('난그날휴가라못가네용ㅜㅜ 잘태우고와 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('지금 뭐하고있냐눙', 'NEUTRAL', 1.0, NOW()),
-  ('나옷만입고나가면대', 'NEUTRAL', 1.0, NOW()),
-  ('뭐...팀호완에서', 'NEUTRAL', 1.0, NOW()),
-  ('어서놀아야해!!', 'NEUTRAL', 1.0, NOW()),
-  ('구래서낮술부터마시자구햇떠#@이름#가', 'NEUTRAL', 1.0, NOW()),
-  ('27일? 평일인디??', 'NEUTRAL', 1.0, NOW()),
-  ('트렌치도 엔씨가서 봐볼까', 'NEUTRAL', 1.0, NOW()),
-  ('아 #@이름# ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅎㅎ 감사합니다~~~~~', 'POSITIVE', 1.0, NOW()),
-  ('세종가??', 'NEUTRAL', 1.0, NOW()),
-  ('그래 그럼 낼 열두시 19일 11시', 'POSITIVE', 1.0, NOW()),
-  ('사회적 거리두기 실천하쟈,,', 'NEUTRAL', 1.0, NOW()),
-  ('20분쯤?', 'NEUTRAL', 1.0, NOW()),
-  ('맛집 알아냈거든', 'NEUTRAL', 1.0, NOW()),
-  ('저런메뉴..', 'NEUTRAL', 1.0, NOW()),
-  ('가기도 그렇고ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('나머지 뭐가 돈드냐', 'NEUTRAL', 1.0, NOW()),
-  ('수원역에서 또 시험장으로 가야되자나 ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 청주에서 심판있어서', 'NEUTRAL', 1.0, NOW()),
-  ('모임장이 운영이 힘들어서 너한테 권하는거야', 'NEGATIVE', 1.0, NOW()),
-  ('#@이름#이 홍대엣서 기다리고 있는중...', 'NEUTRAL', 1.0, NOW()),
-  ('대전에 급히 내려가야할 일이 생기셨다구', 'NEUTRAL', 1.0, NOW()),
-  ('10분걸어야하긴하네', 'NEUTRAL', 1.0, NOW()),
-  ('그런곳 가고싶어요 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('줌마팬이 안되기 위해 최선을 다하겠습니다', 'NEUTRAL', 1.0, NOW()),
-  ('이미 출고됐네', 'NEUTRAL', 1.0, NOW()),
-  ('여기 전시 좋데?', 'NEUTRAL', 1.0, NOW()),
-  ('나갈 거거둔', 'NEUTRAL', 1.0, NOW()),
-  ('덕수궁은어때', 'NEUTRAL', 1.0, NOW()),
-  ('더 꿀잼일듯', 'NEUTRAL', 1.0, NOW()),
-  ('하루안에못본대 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('여기도 친절햇음 그리안비쌈', 'NEUTRAL', 1.0, NOW()),
-  ('며칠할까 ㅇㅁㅇ 2박 3일은 해야! 학', 'NEUTRAL', 1.0, NOW()),
-  ('세부는 내가 #@이름#데리고 가보고싶다고', 'NEUTRAL', 1.0, NOW()),
-  ('1박에 십마넌대니까', 'NEUTRAL', 1.0, NOW()),
-  ('주말 어때?', 'NEUTRAL', 1.0, NOW()),
-  ('대만가는데 한 백만원 정도만 모아서 가면 될 듯 ㅎ!!', 'NEUTRAL', 1.0, NOW()),
-  ('요기 싸고조탕', 'NEUTRAL', 1.0, NOW()),
-  ('그건내가이제기차시간이랑봐볼겤ㄱㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아쨌든 요번주 담주는 안된다구 흑흑', 'NEUTRAL', 1.0, NOW()),
-  ('어제 그렇게 들음', 'NEUTRAL', 1.0, NOW()),
-  ('선내 승무원에 미련남으면', 'NEUTRAL', 1.0, NOW()),
-  ('감사합니다 ...', 'POSITIVE', 1.0, NOW()),
-  ('5분안에먹을거같아 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('터미널점도 적용되남?', 'NEUTRAL', 1.0, NOW()),
-  ('난 다 노상관', 'NEUTRAL', 1.0, NOW()),
-  ('점심에 일반식 반식', 'NEUTRAL', 1.0, NOW()),
-  ('나능 뭐 항상', 'NEUTRAL', 1.0, NOW()),
-  ('청당동이래', 'NEUTRAL', 1.0, NOW()),
-  ('아니 못한다', 'NEUTRAL', 1.0, NOW()),
-  ('회 왜 먹어 ㅡㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('치킨은 순살이 먹기도 편하구', 'NEUTRAL', 1.0, NOW()),
-  ('나는 중학생때', 'NEUTRAL', 1.0, NOW()),
-  ('엌ㅋㅋㅋ이미시작햇네', 'NEUTRAL', 1.0, NOW()),
-  ('찹쌀 넣구', 'NEUTRAL', 1.0, NOW()),
-  ('다상했다 다버려야됨..', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋ햄김치볶음', 'NEUTRAL', 1.0, NOW()),
-  ('난 고기국수랑 안맞는듯', 'NEUTRAL', 1.0, NOW()),
-  ('서브웨이 먹을래??', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ아 나도 얼큰한거', 'NEUTRAL', 1.0, NOW()),
-  ('완전 아삭거려 ㅋㅋㅋㅋ asmr해도 될듯', 'NEUTRAL', 1.0, NOW()),
-  ('왜안좋지?', 'NEUTRAL', 1.0, NOW()),
-  ('김밥 #@기타#', 'NEUTRAL', 1.0, NOW()),
-  ('맘스터치 딥치즈버거..', 'NEUTRAL', 1.0, NOW()),
-  ('룰리커피랑 비슷한거 같아', 'NEUTRAL', 1.0, NOW()),
-  ('근데 저건 스타믹스 작은버전인가', 'NEUTRAL', 1.0, NOW()),
-  ('맛있었듬 ㅎㅅㅎ', 'POSITIVE', 1.0, NOW()),
-  ('밤 맛있덩', 'POSITIVE', 1.0, NOW()),
-  ('근데 남촌 체인점이다 쳐보니까', 'NEUTRAL', 1.0, NOW()),
-  ('이제 우리집이잖아여', 'NEUTRAL', 1.0, NOW()),
-  ('구럼ㅋㅋㅋㅋㅋ혼밥함', 'NEUTRAL', 1.0, NOW()),
-  ('이런 깍둑 고기는 어디가야 팔어', 'NEUTRAL', 1.0, NOW()),
-  ('다음에 해먹겠읍니다', 'NEUTRAL', 1.0, NOW()),
-  ('나 칼퇴할수있을듯', 'NEUTRAL', 1.0, NOW()),
-  ('그거 조금만 녹여줭', 'NEUTRAL', 1.0, NOW()),
-  ('암거나 넣어두 맛있는', 'POSITIVE', 1.0, NOW()),
-  ('고민해본다,,', 'NEUTRAL', 1.0, NOW()),
-  ('근데 오빵 점심 메뉴뭐야?', 'NEUTRAL', 1.0, NOW()),
-  ('전도 먹는다니께ㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('오이 그 때 안 먹는다고...', 'NEGATIVE', 1.0, NOW()),
-  ('오늘은 떡볶이 안먹어??', 'NEUTRAL', 1.0, NOW()),
-  ('Tmi) 엄마가 점심 샤브향 먹고싶다해서', 'NEUTRAL', 1.0, NOW()),
-  ('초코렛이랑', 'NEUTRAL', 1.0, NOW()),
-  ('유자토마토먹고싶어서', 'NEUTRAL', 1.0, NOW()),
-  ('어어어 그거말구 전기ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('유명한 오래된 포차?이런거 있는데', 'NEUTRAL', 1.0, NOW()),
-  ('언니도 안먹는다길래 같이 안먹으려고 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('응 지금도 팔아', 'POSITIVE', 1.0, NOW()),
-  ('ㅎ-ㅎ웅!', 'NEUTRAL', 1.0, NOW()),
-  ('재미있을듯', 'NEUTRAL', 1.0, NOW()),
-  ('근데 교촌은', 'NEUTRAL', 1.0, NOW()),
-  ('달걀이랑 준비는 다 해놓을께', 'NEUTRAL', 1.0, NOW()),
-  ('아닝 이거 먹어야되서 안가져왔지', 'NEUTRAL', 1.0, NOW()),
-  ('이거는 식도 지나가는 길 마다 쓰려', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 콩도모르고', 'NEUTRAL', 1.0, NOW()),
-  ('천안역 기차 타기 직전 매점에서 파는 호두과자도 맛있음', 'POSITIVE', 1.0, NOW()),
-  ('알겠어욬ㅋㅋㅋㅋㅋㅋㅌㅌ#@이모티콘#뿌듯#', 'NEUTRAL', 1.0, NOW()),
-  ('뭔가 맛잇는 그맛을 알게되면', 'NEUTRAL', 1.0, NOW()),
-  ('그리고 슈플레?? 머얐디', 'NEUTRAL', 1.0, NOW()),
-  ('그래 낼두 목어야 하자나', 'POSITIVE', 1.0, NOW()),
-  ('고딩 땐 봉구스 밥버거', 'NEUTRAL', 1.0, NOW()),
-  ('만나는게 낫지 나도 밖인더', 'NEUTRAL', 1.0, NOW()),
-  ('라면땅 먹고 싶나?', 'NEUTRAL', 1.0, NOW()),
-  ('지금 이 시국에 정확히 묘사하시면', 'NEUTRAL', 1.0, NOW()),
-  ('아 겁나 부러워ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('밥이 계속 나와', 'NEUTRAL', 1.0, NOW()),
-  ('이탈리안가자', 'NEUTRAL', 1.0, NOW()),
-  ('왜, 함박스테이크 먹고싶나?', 'NEUTRAL', 1.0, NOW()),
-  ('오오 언젠간 가보고싶다', 'NEUTRAL', 1.0, NOW()),
-  ('아스크림만 머근거 아니쥐', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ버킷하나 이루겠네요', 'NEUTRAL', 1.0, NOW()),
-  ('오징어지킴이!', 'NEUTRAL', 1.0, NOW()),
-  ('조리퐁사이에', 'NEUTRAL', 1.0, NOW()),
-  ('신기하네ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('뭔데 가격???넘 비싼데????', 'NEUTRAL', 1.0, NOW()),
-  ('볶음밥??', 'NEUTRAL', 1.0, NOW()),
-  ('머카너 편의점에 팔지만 좋은와인이거든', 'NEUTRAL', 1.0, NOW()),
-  ('짜파게티 먹으면', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 집에', 'NEUTRAL', 1.0, NOW()),
-  ('우왕ㅌㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('돼지고기 존맛', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇㅇ돌돌 말아서 바삭해', 'NEUTRAL', 1.0, NOW()),
-  ('아이스크림에', 'NEUTRAL', 1.0, NOW()),
-  ('맛난 과자를 발견햇오', 'NEUTRAL', 1.0, NOW()),
-  ('한참 기다려야할듯..', 'NEUTRAL', 1.0, NOW()),
-  ('아님 #@주소# 빵집', 'NEUTRAL', 1.0, NOW()),
-  ('떡은 없지 않나', 'NEUTRAL', 1.0, NOW()),
-  ('사장님이 써비스로 주셨오', 'NEUTRAL', 1.0, NOW()),
-  ('ㅍㅔ퍼로니마싯겟다', 'NEUTRAL', 1.0, NOW()),
-  ('팔팔끓음이', 'NEUTRAL', 1.0, NOW()),
-  ('촉감도 부들몰캉한것이~ 맛도 좋군~', 'NEUTRAL', 1.0, NOW()),
-  ('30판짜리 4천원 살까', 'NEUTRAL', 1.0, NOW()),
-  ('아니 그런건 아닌거같고', 'NEUTRAL', 1.0, NOW()),
-  ('뭐 새로운거없나', 'NEUTRAL', 1.0, NOW()),
-  ('아이스 홍차 요즘 내 최애메뉴야', 'NEUTRAL', 1.0, NOW()),
-  ('생야채등 챙겨먹어야지', 'NEUTRAL', 1.0, NOW()),
-  ('오징어 진짜 많이 썰어 넣은 해물파전', 'NEUTRAL', 1.0, NOW()),
-  ('배고프다 #@이름#씨 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('샌드위치만', 'NEUTRAL', 1.0, NOW()),
-  ('핫케이크 믹스라고', 'NEUTRAL', 1.0, NOW()),
-  ('혼자 있으면 먹을 생각 없어', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋ 갑자긔??', 'NEUTRAL', 1.0, NOW()),
-  ('고기만두빼곤 다 다른데랑 별반차이엊ㅅ음', 'NEUTRAL', 1.0, NOW()),
-  ('근데 전부침 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('맛있게먹어', 'POSITIVE', 1.0, NOW()),
-  ('설쳐서 샀는데', 'NEUTRAL', 1.0, NOW()),
-  ('이모 안스 빵 선물해드리고싶어서', 'NEUTRAL', 1.0, NOW()),
-  ('헐.. 독도새우 철 언제야', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ치킨집에서 감자맛집', 'NEUTRAL', 1.0, NOW()),
-  ('우리엄마두 ...', 'NEUTRAL', 1.0, NOW()),
-  ('별걸다 미리 만드네', 'NEUTRAL', 1.0, NOW()),
-  ('해산물은 신선해야만 해서', 'NEUTRAL', 1.0, NOW()),
-  ('고수/.?', 'NEUTRAL', 1.0, NOW()),
-  ('조금 먹어봄', 'NEUTRAL', 1.0, NOW()),
-  ('응 그렇게 먹으니까 고소하고 안비리고 맛있더라', 'POSITIVE', 1.0, NOW()),
-  ('두세개정도', 'NEUTRAL', 1.0, NOW()),
-  ('파스타도 팔다니', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타#싸', 'NEUTRAL', 1.0, NOW()),
-  ('많이 머겄엉 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('제일 좋아하는 국은 미역국', 'POSITIVE', 1.0, NOW()),
-  ('물드링킹중', 'NEUTRAL', 1.0, NOW()),
-  ('오오 맞아', 'POSITIVE', 1.0, NOW()),
-  ('뭐 지방 분해해준다 입냄새 없애준다', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅋ 일단 믿어본다', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ 24시간 지난다음에', 'NEUTRAL', 1.0, NOW()),
-  ('왕고기만두일 것이다!', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ아스크림 겁나먹는구나 니네', 'NEUTRAL', 1.0, NOW()),
-  ('그런가봨ㅋㅋㅋ몰라어이없어진짜루..훨씬쪼꼼인데,,?', 'NEUTRAL', 1.0, NOW()),
-  ('그런건 할라피뇨랑', 'NEUTRAL', 1.0, NOW()),
-  ('대박스 4개는 먹어야지', 'NEUTRAL', 1.0, NOW()),
-  ('나 씻고 먹을께~', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ미친 숯불구이 덮밥 ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('구리다면구린거지!', 'NEUTRAL', 1.0, NOW()),
-  ('근데 감자전도 있잖아', 'NEUTRAL', 1.0, NOW()),
-  ('맛잇어??', 'NEUTRAL', 1.0, NOW()),
-  ('저녁으로 산 우동에 찬물부웟어...', 'NEUTRAL', 1.0, NOW()),
-  ('콜라랑ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('1키로면 2명먹나', 'NEUTRAL', 1.0, NOW()),
-  ('이게머람ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나 오늘 어른들이랑 밥먹었어..', 'NEUTRAL', 1.0, NOW()),
-  ('아님 찜닭먹자', 'NEUTRAL', 1.0, NOW()),
-  ('넴 국물에 찍어먹음 분짜라???', 'NEUTRAL', 1.0, NOW()),
-  ('투치킨이네', 'NEUTRAL', 1.0, NOW()),
-  ('크림 낭낭한거 보소..', 'NEUTRAL', 1.0, NOW()),
-  ('더워서 웅앵?', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타#일땜에못갓지..', 'NEUTRAL', 1.0, NOW()),
-  ('한번먹을때마다 한봉지씩먹음', 'NEUTRAL', 1.0, NOW()),
-  ('오늘도 아빠표 간식팩이따', 'NEUTRAL', 1.0, NOW()),
-  ('그거랑 맛', 'NEUTRAL', 1.0, NOW()),
-  ('난 사먹겠어ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 찜닥대나', 'NEUTRAL', 1.0, NOW()),
-  ('아줌니 다가져갓고 포도두줫엉', 'NEUTRAL', 1.0, NOW()),
-  ('안그래도 방금', 'POSITIVE', 1.0, NOW()),
-  ('말해주는데', 'POSITIVE', 1.0, NOW()),
-  ('저번에도 그 반응이었잖아', 'POSITIVE', 1.0, NOW()),
-  ('라면이라도머겅', 'NEUTRAL', 1.0, NOW()),
-  ('잘먹돚데여', 'NEUTRAL', 1.0, NOW()),
-  ('평소에는 하나에 주먹밥까지 먹는디 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('아 나도 집에 보이차 있는데', 'NEUTRAL', 1.0, NOW()),
-  ('어디 갓는뎅', 'NEUTRAL', 1.0, NOW()),
-  ('어제 이모가 사온 고기', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㄱㅋㅋ좋아요좋아요', 'POSITIVE', 1.0, NOW()),
-  ('오 좋겠다 ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('파김치는 안먹', 'NEUTRAL', 1.0, NOW()),
-  ('배고프니까!!', 'NEUTRAL', 1.0, NOW()),
-  ('흐르기전에', 'NEUTRAL', 1.0, NOW()),
-  ('밥멋자!!', 'NEUTRAL', 1.0, NOW()),
-  ('벌써 고급코스아니*가요', 'NEUTRAL', 1.0, NOW()),
-  ('여기서 그말하면 안됨', 'NEUTRAL', 1.0, NOW()),
-  ('샤브샤브ㅡ븝브븝브브브브브브븝제', 'NEUTRAL', 1.0, NOW()),
-  ('반찬가게라도 있으면 좋은데..', 'NEUTRAL', 1.0, NOW()),
-  ('그체 그냥', 'NEUTRAL', 1.0, NOW()),
-  ('ㄹㅇ 저런 게 존맛이야', 'NEUTRAL', 1.0, NOW()),
-  ('다운타운버거 왜 익숙할까잉', 'NEUTRAL', 1.0, NOW()),
-  ('내주변이 다 그런 듯', 'NEUTRAL', 1.0, NOW()),
-  ('밥솥왜없주!', 'NEUTRAL', 1.0, NOW()),
-  ('식당 주인하고 요리사를 먹여 살리기 위해서', 'NEUTRAL', 1.0, NOW()),
-  ('거기 고기줜나 마니주거든', 'NEUTRAL', 1.0, NOW()),
-  ('오늘은 뭔갈 처먹고 싶은날이야', 'NEUTRAL', 1.0, NOW()),
-  ('난 좀 있다 갈게', 'NEUTRAL', 1.0, NOW()),
-  ('지금 한 세숫가락 넣엇는데', 'NEUTRAL', 1.0, NOW()),
-  ('본인이 반 드심 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('먹었어 ?', 'NEUTRAL', 1.0, NOW()),
-  ('김치 쫑쫑 썰어 넣자', 'NEUTRAL', 1.0, NOW()),
-  ('아침부터 두개 #@기타# 무리더라..;;', 'NEUTRAL', 1.0, NOW()),
-  ('나ㅅㅅㅅㅅㅅㅅㅅㅅㅅㅅㅅㅅㅅㅅㅅTHING', 'NEUTRAL', 1.0, NOW()),
-  ('꾸워줄끄야', 'NEUTRAL', 1.0, NOW()),
-  ('엄마도 먹겠다해서', 'NEUTRAL', 1.0, NOW()),
-  ('나도 포카칩 깠다', 'NEUTRAL', 1.0, NOW()),
-  ('거기 다른 상황들도 그렇고 ㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('파는게 아닌거같앗음 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나는 그냥', 'NEUTRAL', 1.0, NOW()),
-  ('연관있나요?', 'NEUTRAL', 1.0, NOW()),
-  ('색이 근데 구리네 ;;', 'NEUTRAL', 1.0, NOW()),
-  ('밥먹으러 갑니다아아☺️', 'NEUTRAL', 1.0, NOW()),
-  ('배민으로 시켜줄까?', 'NEUTRAL', 1.0, NOW()),
-  ('여태 먹는 거 괜찮으니까 무난하겠다', 'NEUTRAL', 1.0, NOW()),
-  ('4일이나했는데1도안빠졌는데', 'NEUTRAL', 1.0, NOW()),
-  ('아님 딴 집 뚫어볼까', 'NEUTRAL', 1.0, NOW()),
-  ('난 이번 연말 한식으로 뽀갬ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('헐 나도 허니콤보로 바꿀랭', 'NEUTRAL', 1.0, NOW()),
-  ('휘핑 크림 제조기 사서', 'NEUTRAL', 1.0, NOW()),
-  ('만델링이랑 비슷한가봐', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 아침에 진짜 입맛이 뚝 떨어져서 요거트 하나만 먹었거든', 'NEUTRAL', 1.0, NOW()),
-  ('양파도 썰면됑', 'NEUTRAL', 1.0, NOW()),
-  ('저녁 남산돈가스 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ거의 그 급이었다', 'NEUTRAL', 1.0, NOW()),
-  ('맥주가 들어갔으니..', 'NEUTRAL', 1.0, NOW()),
-  ('다 먹었어', 'NEUTRAL', 1.0, NOW()),
-  ('점심은여?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ넉넉히', 'NEUTRAL', 1.0, NOW()),
-  ('저런.. 한식이먹고싶나보다..!', 'NEUTRAL', 1.0, NOW()),
-  ('아니지?????????', 'NEUTRAL', 1.0, NOW()),
-  ('5동으로와서 숙모들이랑 다 같이먹자네...;;;;;;;', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ 잽싸게 먹어', 'NEUTRAL', 1.0, NOW()),
-  ('자래또ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('얼어있던거 아니었어요?', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 그런가 오히려 쓴 맛이 거의 없음 원래 남는데 입안에', 'POSITIVE', 1.0, NOW()),
-  ('대리만족할래', 'NEUTRAL', 1.0, NOW()),
-  ('왜 사과만머거', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ뭐야 어디야 나도알려줘 그집 친절하네', 'NEUTRAL', 1.0, NOW()),
-  ('헉쓰 두근두근', 'NEUTRAL', 1.0, NOW()),
-  ('전 아직까진 아메리카노로 만족합니다', 'NEUTRAL', 1.0, NOW()),
-  ('칼로리개낮음', 'NEUTRAL', 1.0, NOW()),
-  ('므흣 ^_^좋다요', 'NEUTRAL', 1.0, NOW()),
-  ('고생햇다요ㅠㅠ노릇하게 아주 잘구웟그랴', 'NEUTRAL', 1.0, NOW()),
-  ('박아줘야 돼', 'NEUTRAL', 1.0, NOW()),
-  ('슬프게도...', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ이따 저녁에 포장해올라고~ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이모티콘# 아하ㅎㅎ 맛있겠당', 'POSITIVE', 1.0, NOW()),
-  ('우리삼겹살먹구저녁에곱창먹는거냐구!!!!!!!!!!!!1', 'NEUTRAL', 1.0, NOW()),
-  ('특별한 날아니면 그냥 돼지고기 먹는거 같아요', 'NEUTRAL', 1.0, NOW()),
-  ('나는 또 잠들었다가 이제 깼담', 'NEUTRAL', 1.0, NOW()),
-  ('웅 밥을 멀살지', 'NEUTRAL', 1.0, NOW()),
-  ('혼자 먹어야겠누....', 'NEUTRAL', 1.0, NOW()),
-  ('헐 새우 짱맛', 'NEUTRAL', 1.0, NOW()),
-  ('나도오오오오 내놔라아아', 'NEUTRAL', 1.0, NOW()),
-  ('으음 서브웨이는 짜 ,,', 'NEUTRAL', 1.0, NOW()),
-  ('아 저녁에 비빔면 먹어야겟다', 'NEUTRAL', 1.0, NOW()),
-  ('굴보쌈 졸맛인데..!', 'NEUTRAL', 1.0, NOW()),
-  ('더 넣음ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('신기한맛이다', 'NEUTRAL', 1.0, NOW()),
-  ('안돼..?', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 일곱끼째인가?', 'NEUTRAL', 1.0, NOW()),
-  ('뭐야뭐야?? 맛있엉??', 'POSITIVE', 1.0, NOW()),
-  ('잘해따~~!!', 'NEUTRAL', 1.0, NOW()),
-  ('내가 너무 충격받았지뭐야', 'NEUTRAL', 1.0, NOW()),
-  ('나두 조아해', 'NEUTRAL', 1.0, NOW()),
-  ('ㄹㅇ금값이더라', 'NEUTRAL', 1.0, NOW()),
-  ('기분이달라ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('사실 이미 배부르지만 조진거라', 'NEUTRAL', 1.0, NOW()),
-  ('엄마 새우티김 먹고싶다.,', 'NEUTRAL', 1.0, NOW()),
-  ('너 안먹엇어?', 'NEUTRAL', 1.0, NOW()),
-  ('신메뉴 머거밧뎌', 'NEUTRAL', 1.0, NOW()),
-  ('김밥먹고시퍼..김밥사먹을까....?', 'NEUTRAL', 1.0, NOW()),
-  ('짱깨쓰 ~.~', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 적은양을 두번먹자아', 'NEUTRAL', 1.0, NOW()),
-  ('나도 몰랐는데 안에', 'NEUTRAL', 1.0, NOW()),
-  ('떡국먹나 집가서 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이한테 해줄게 많네', 'NEUTRAL', 1.0, NOW()),
-  ('아마..?', 'NEUTRAL', 1.0, NOW()),
-  ('그것도 한잔만나온다그래서ㅠ', 'POSITIVE', 1.0, NOW()),
-  ('원래 개좋아하거둔', 'POSITIVE', 1.0, NOW()),
-  ('글쿤 나도 맥도날드', 'NEUTRAL', 1.0, NOW()),
-  ('맛잇어 그거', 'NEUTRAL', 1.0, NOW()),
-  ('에스케이 통신사 할인은 머얌', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ뻘크업하고왔다', 'NEUTRAL', 1.0, NOW()),
-  ('야..거기??', 'NEUTRAL', 1.0, NOW()),
-  ('유통기한3개월지난과자', 'NEUTRAL', 1.0, NOW()),
-  ('안간지 엄청 오래됐따', 'NEUTRAL', 1.0, NOW()),
-  ('안그럼 썩음', 'NEUTRAL', 1.0, NOW()),
-  ('엄마가 방토주고감ㅠㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('유어 브래드 남겨놓았어요', 'NEUTRAL', 1.0, NOW()),
-  ('그롬 오손도손 모여서 김밥먹었구나~', 'NEUTRAL', 1.0, NOW()),
-  ('나는 밥먹으로 왔는데', 'NEUTRAL', 1.0, NOW()),
-  ('단백질 대체로 딱 좋아', 'POSITIVE', 1.0, NOW()),
-  ('탕이야 샹궈야', 'NEUTRAL', 1.0, NOW()),
-  ('물로 중화', 'NEUTRAL', 1.0, NOW()),
-  ('ㅡㅡ 안먹으면', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ밥.... 우리집에 삼일됨', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 내가 스모어 만들어 먹을께여', 'NEUTRAL', 1.0, NOW()),
-  ('가깝지않나요', 'NEUTRAL', 1.0, NOW()),
-  ('둘 중에 뭐 좋아하는지 헷갈리', 'POSITIVE', 1.0, NOW()),
-  ('이 맵찔아', 'NEUTRAL', 1.0, NOW()),
-  ('나 떡볶이랑 순대사서 집가고잇어', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ 나중에 기회되면 자기도 해줄게💗', 'NEUTRAL', 1.0, NOW()),
-  ('샐러드에 쌀국수 추가 해서 배부르게 먹었다', 'NEUTRAL', 1.0, NOW()),
-  ('오오 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('동생 점심은 먹고있니?', 'NEUTRAL', 1.0, NOW()),
-  ('무슨케익으로 삿어', 'NEUTRAL', 1.0, NOW()),
-  ('생선까스 넘 싫어', 'NEGATIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ아니면은 진짜', 'NEUTRAL', 1.0, NOW()),
-  ('아니 먹을만했어 난!!', 'NEUTRAL', 1.0, NOW()),
-  ('두반장쓰니까 진짜', 'NEUTRAL', 1.0, NOW()),
-  ('응 뭐 먹고 싶어', 'POSITIVE', 1.0, NOW()),
-  ('했어 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 벅허킹갈래,,? 니는 안먹어도되고!', 'NEUTRAL', 1.0, NOW()),
-  ('그쪽으로 갈일이 없으니까', 'NEUTRAL', 1.0, NOW()),
-  ('머핀이랑 마실거랑', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 엄마는 저녁 어디서 먹어?', 'NEUTRAL', 1.0, NOW()),
-  ('오빠 굽네에다가', 'NEUTRAL', 1.0, NOW()),
-  ('아그래여?? ㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('그니까머네', 'NEUTRAL', 1.0, NOW()),
-  ('옆에 커피숍있고', 'NEUTRAL', 1.0, NOW()),
-  ('나는 멀쩡한데...?', 'NEUTRAL', 1.0, NOW()),
-  ('막 어 아까 #@이름#이랑 왔다갔는데? 이런식으로', 'NEUTRAL', 1.0, NOW()),
-  ('이해해..주실거다... (외면)', 'NEUTRAL', 1.0, NOW()),
-  ('하 그냥 지금 갔다올께 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('넹그바로뒤여 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('음.. 생각 좀 해봐야겠네', 'POSITIVE', 1.0, NOW()),
-  ('아 나 집에', 'NEUTRAL', 1.0, NOW()),
-  ('어제일수습하고왓어', 'NEUTRAL', 1.0, NOW()),
-  ('전날 이틀치 공지해놨더라고', 'NEUTRAL', 1.0, NOW()),
-  ('지금 15만원짜리', 'NEUTRAL', 1.0, NOW()),
-  ('근로자의날 토요일인거 나 진짜 용납 못한다', 'NEUTRAL', 1.0, NOW()),
-  ('원래 완전 잘못끼었던거네~', 'NEUTRAL', 1.0, NOW()),
-  ('귀찮아도 다시 들어감', 'NEUTRAL', 1.0, NOW()),
-  ('소중한굿즈들도 있기때매', 'NEUTRAL', 1.0, NOW()),
-  ('어째서죠....', 'NEUTRAL', 1.0, NOW()),
-  ('순식간에 책상 다젖', 'NEUTRAL', 1.0, NOW()),
-  ('우리 오늘부터 화장실공사한다!', 'NEUTRAL', 1.0, NOW()),
-  ('옹 아마도ㅠ그러지않을까 싶어유!', 'NEUTRAL', 1.0, NOW()),
-  ('뭘입어야하나.......', 'NEUTRAL', 1.0, NOW()),
-  ('맞아 약간 내가 사긴 아까운', 'POSITIVE', 1.0, NOW()),
-  ('그랳어??ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아진짜.....', 'NEUTRAL', 1.0, NOW()),
-  ('가족은 가끔 봐야해', 'NEUTRAL', 1.0, NOW()),
-  ('아니면 엄마가 아는 아저씨를 부르던가', 'NEUTRAL', 1.0, NOW()),
-  ('예쁜카페도있는데', 'NEUTRAL', 1.0, NOW()),
-  ('그거 어떻게 씻는지 몰라서 엄두 못내고잇어', 'NEUTRAL', 1.0, NOW()),
-  ('그걸로 뭘만들수있지', 'NEUTRAL', 1.0, NOW()),
-  ('크라이오 했는데', 'NEUTRAL', 1.0, NOW()),
-  ('니트랑겉옷', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 대충 유명한데 넣어 놓은 듯 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이거 금인데....', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ텀블러자너', 'NEUTRAL', 1.0, NOW()),
-  ('연습하는 코스도', 'NEUTRAL', 1.0, NOW()),
-  ('벚꽃도 제대로즐길수잇을지 모르겟네....', 'NEUTRAL', 1.0, NOW()),
-  ('한기가 너무 돌아서', 'NEUTRAL', 1.0, NOW()),
-  ('하지만 내자전거는', 'NEUTRAL', 1.0, NOW()),
-  ('그정도로 막을바에 손바닥으로 막겟다', 'NEUTRAL', 1.0, NOW()),
-  ('당연히 안되지', 'POSITIVE', 1.0, NOW()),
-  ('겨땀 폭팔', 'NEUTRAL', 1.0, NOW()),
-  ('카페갔따왔어효', 'NEUTRAL', 1.0, NOW()),
-  ('어디서타요', 'NEUTRAL', 1.0, NOW()),
-  ('아무거나 타도될걸??', 'NEUTRAL', 1.0, NOW()),
-  ('나 케텍 탈래', 'NEUTRAL', 1.0, NOW()),
-  ('넘 더워..... 찜질방온거 같아..', 'NEUTRAL', 1.0, NOW()),
-  ('그 적금은 인터넷아님 모바일로 해야 우대이율받을수있어!!!', 'NEUTRAL', 1.0, NOW()),
-  ('충전기 문제일까?', 'NEUTRAL', 1.0, NOW()),
-  ('안다침??', 'NEUTRAL', 1.0, NOW()),
-  ('무섭게시리 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('우리말고 4집 더있대', 'NEUTRAL', 1.0, NOW()),
-  ('사람들 다 파업할까봐 일찍 갓나봐', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ고뤠고뤠', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 부지런하네 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 날씨 장난아니다', 'NEUTRAL', 1.0, NOW()),
-  ('1시20분 열차 탈수있을까?ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('니가 오늘 할일', 'NEUTRAL', 1.0, NOW()),
-  ('술깨더라 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('앜ㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('가서 차타고', 'NEUTRAL', 1.0, NOW()),
-  ('카드가 없어서 어딨는지 생각해봐야 해', 'POSITIVE', 1.0, NOW()),
-  ('엄마집에잇으니까 연락해봐', 'POSITIVE', 1.0, NOW()),
-  ('실제로본게 훨어어어엉씬 예뻤는데', 'NEUTRAL', 1.0, NOW()),
-  ('좋다햇자나', 'NEUTRAL', 1.0, NOW()),
-  ('얼마나오래? 영원히 경기도인거?', 'NEUTRAL', 1.0, NOW()),
-  ('배고플거같아', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ서울 가는걸 줄여야지,,', 'NEUTRAL', 1.0, NOW()),
-  ('캡쳐해서 구글 이미지 검색해', 'NEUTRAL', 1.0, NOW()),
-  ('지하철 타려고 기다리고있어용', 'NEUTRAL', 1.0, NOW()),
-  ('명동 화장품가게들은 다 폐업했다더라', 'NEUTRAL', 1.0, NOW()),
-  ('이어폰들고가라고할걸', 'NEUTRAL', 1.0, NOW()),
-  ('나 어제 손발 차가워죽는주레', 'NEUTRAL', 1.0, NOW()),
-  ('이 김에 새로 사 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('정수는 뭔가 하나 더 거치는느낌??', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 왜 모른척해', 'NEUTRAL', 1.0, NOW()),
-  ('그것도 동시접속하면 끊기낭', 'NEUTRAL', 1.0, NOW()),
-  ('설렌다 호 호', 'NEUTRAL', 1.0, NOW()),
-  ('이왕나온거', 'NEUTRAL', 1.0, NOW()),
-  ('안 나갈 거냐고ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('들할거같도', 'NEUTRAL', 1.0, NOW()),
-  ('수급자달글도잇음', 'NEUTRAL', 1.0, NOW()),
-  ('나이스합니당', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 날씨 공부할날씨 아냐', 'NEUTRAL', 1.0, NOW()),
-  ('아 유턴하다 회사차 살짝 긁은ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('큰지진이었으면', 'NEUTRAL', 1.0, NOW()),
-  ('근데 이게 어떻게 받는거야', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 저 서울로 이사 간 친구', 'POSITIVE', 1.0, NOW()),
-  ('드갈때마다 조마조마스', 'NEUTRAL', 1.0, NOW()),
-  ('좀 글치 머', 'NEUTRAL', 1.0, NOW()),
-  ('그래도 해보까?', 'POSITIVE', 1.0, NOW()),
-  ('날씨가미쳐써', 'NEUTRAL', 1.0, NOW()),
-  ('되긴 돼??', 'NEUTRAL', 1.0, NOW()),
-  ('너 써 그럼', 'NEUTRAL', 1.0, NOW()),
-  ('아빠 극대노해서', 'NEUTRAL', 1.0, NOW()),
-  ('낼이랑 모레 도배장판조명하면 목욜오전에 모든 리모델링 끝납니다요', 'NEUTRAL', 1.0, NOW()),
-  ('음 안무겁겠어?', 'NEUTRAL', 1.0, NOW()),
-  ('더 늦게오는경우가 많아', 'NEUTRAL', 1.0, NOW()),
-  ('아직도 잠이 안깨', 'NEUTRAL', 1.0, NOW()),
-  ('너네 회사 뭐지?', 'NEUTRAL', 1.0, NOW()),
-  ('집같은거 경매있잖아', 'NEUTRAL', 1.0, NOW()),
-  ('마스크는 꼈어?!', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#학교가 남부로 나왔네?', 'NEUTRAL', 1.0, NOW()),
-  ('미산교 삼례교 우리동네', 'NEUTRAL', 1.0, NOW()),
-  ('지금 출발 3번탓다', 'NEUTRAL', 1.0, NOW()),
-  ('앗........죄송합니다', 'NEUTRAL', 1.0, NOW()),
-  ('점프해서 올라갈걸', 'NEUTRAL', 1.0, NOW()),
-  ('내이름으로?', 'NEUTRAL', 1.0, NOW()),
-  ('저나해서물어보고', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ구니까 신기하넹', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 다섯시에 수넙 끝나는데 셔틀이 6시 10분이엇어', 'NEUTRAL', 1.0, NOW()),
-  ('너가 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('오빠 언니만 몇명 있으면돼ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('용답이모야?', 'NEUTRAL', 1.0, NOW()),
-  ('라면 끓여먹는거', 'NEUTRAL', 1.0, NOW()),
-  ('확정날짜에 도장찍으러 다시 주민센터왔음,..', 'NEUTRAL', 1.0, NOW()),
-  ('혹쉬 내가 머리끈을 거지고 오지 않운 날', 'NEUTRAL', 1.0, NOW()),
-  ('그렇게ㅛ지ㅜㅜ?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ 캐쉬워크 하다가', 'NEUTRAL', 1.0, NOW()),
-  ('찬바람나와', 'NEUTRAL', 1.0, NOW()),
-  ('근데 니 스벅갈때만비왔나보다', 'NEUTRAL', 1.0, NOW()),
-  ('그럴때 제일 난감함 ㅠㅜ 출근전날일때 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('요즘은 또 계속 광주가 심각하다고 맨날 나오니까', 'NEUTRAL', 1.0, NOW()),
-  ('옷은 괜찮던데', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 정말ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('아 구냥 그릇에넣고 돌렷는데..', 'NEUTRAL', 1.0, NOW()),
-  ('머가 나을라나', 'NEUTRAL', 1.0, NOW()),
-  ('지진에 폭우에 난리네ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('소생불가구나', 'NEUTRAL', 1.0, NOW()),
-  ('피티썜이 본가가 대부도라고 맨날 주말에 가는데', 'NEUTRAL', 1.0, NOW()),
-  ('냉장고에서 이상한 소리나', 'NEUTRAL', 1.0, NOW()),
-  ('응 근데 그렇게 사면 사이즈가 애매해', 'POSITIVE', 1.0, NOW()),
-  ('응 적당히 따시게 입으면 되겠지?', 'POSITIVE', 1.0, NOW()),
-  ('진짜 자취의 정석이다', 'NEUTRAL', 1.0, NOW()),
-  ('요기 나의러닝엔 뜨는데', 'NEUTRAL', 1.0, NOW()),
-  ('넘나 애찔,,,', 'NEUTRAL', 1.0, NOW()),
-  ('근데 오늘은 비 안온다고 하니! 움직이기 좋을거양', 'NEUTRAL', 1.0, NOW()),
-  ('누나 이거내야하눈데 현금있남? ㅜ.ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('왜6시 출잘해', 'NEUTRAL', 1.0, NOW()),
-  ('다음주 목요일까지ㅔ입금', 'NEUTRAL', 1.0, NOW()),
-  ('천안이였네 #@기타#', 'NEUTRAL', 1.0, NOW()),
-  ('졸업전에는 나아지려나;;', 'NEUTRAL', 1.0, NOW()),
-  ('차가.....', 'NEUTRAL', 1.0, NOW()),
-  ('하늘색이라 구엽게타', 'NEUTRAL', 1.0, NOW()),
-  ('빌려줬자나', 'NEUTRAL', 1.0, NOW()),
-  ('근데 진심 너무 컸음', 'NEUTRAL', 1.0, NOW()),
-  ('언니야 오늘 나가봤어?', 'NEUTRAL', 1.0, NOW()),
-  ('날씨미친듯ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나는 지금 이 순간도 오들오들 떨고있어', 'NEUTRAL', 1.0, NOW()),
-  ('차피19일까지래', 'NEUTRAL', 1.0, NOW()),
-  ('포르투갈도 들렸으니까', 'NEUTRAL', 1.0, NOW()),
-  ('애플 사이트에서 예약하고 가', 'NEUTRAL', 1.0, NOW()),
-  ('츙전기 잌더 그거 가져와져', 'NEUTRAL', 1.0, NOW()),
-  ('2박 3일에 뭘 얼마나 가져가는데 초과돼?????? 아..', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 비 안온다해서 두고 왓단말여ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('점심 시간에 잠깐 들렸어', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 잠시만', 'NEUTRAL', 1.0, NOW()),
-  ('나가기싫응데', 'POSITIVE', 1.0, NOW()),
-  ('어키 파바 앞에서 보쟝', 'NEUTRAL', 1.0, NOW()),
-  ('기다리지 마시라고요', 'NEUTRAL', 1.0, NOW()),
-  ('그거로 쭉 해봐봐유', 'POSITIVE', 1.0, NOW()),
-  ('안받았는데!!!', 'NEUTRAL', 1.0, NOW()),
-  ('내꺼 2019인가 그거라 못하겠어ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('나 저거 화장도 쟤가 다 해준거야', 'NEUTRAL', 1.0, NOW()),
-  ('아침뉴스까지', 'NEUTRAL', 1.0, NOW()),
-  ('언니는 잘 가고있어??', 'NEUTRAL', 1.0, NOW()),
-  ('월세살다가', 'NEUTRAL', 1.0, NOW()),
-  ('잠옷이 따뜻해야해', 'NEUTRAL', 1.0, NOW()),
-  ('그 옥수수 한봉지도 꺼내놔줘', 'NEUTRAL', 1.0, NOW()),
-  ('바람 불면 저렇게 켜지더라', 'NEUTRAL', 1.0, NOW()),
-  ('한시간 좀 안걸리니까 8시쫌 넘어서 나갈라공', 'NEUTRAL', 1.0, NOW()),
-  ('엘지가 성능은 좋은데', 'NEUTRAL', 1.0, NOW()),
-  ('올리브영이네', 'NEUTRAL', 1.0, NOW()),
-  ('3도 보지말고', 'NEUTRAL', 1.0, NOW()),
-  ('비싸보이것지', 'NEUTRAL', 1.0, NOW()),
-  ('책상에 없어?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ제주도 바다중에 물 제일더러운거같아', 'NEUTRAL', 1.0, NOW()),
-  ('대리점가서 해도돼', 'NEUTRAL', 1.0, NOW()),
-  ('이건 안넘어기서 빡쳐...', 'NEUTRAL', 1.0, NOW()),
-  ('아니 사업자아이디 가입 안되어있을걸', 'NEUTRAL', 1.0, NOW()),
-  ('산후마사지가 힘들오?', 'NEGATIVE', 1.0, NOW()),
-  ('Sk기다리고이써??', 'NEUTRAL', 1.0, NOW()),
-  ('야 신청했냐?', 'NEUTRAL', 1.0, NOW()),
-  ('믿기도 힘들고', 'NEGATIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ차선변경하는데', 'NEUTRAL', 1.0, NOW()),
-  ('들어오셨나요?!', 'NEUTRAL', 1.0, NOW()),
-  ('근데 스펙보니까', 'NEUTRAL', 1.0, NOW()),
-  ('렁 ㅐ딩인데', 'NEUTRAL', 1.0, NOW()),
-  ('한국 미세먼지 대박이양', 'NEUTRAL', 1.0, NOW()),
-  ('아아 고맙', 'NEUTRAL', 1.0, NOW()),
-  ('오래써봐야 3년이고', 'NEUTRAL', 1.0, NOW()),
-  ('흑흑 비싫어', 'NEGATIVE', 1.0, NOW()),
-  ('응 그래야겠다ㅠㅠ', 'POSITIVE', 1.0, NOW()),
-  ('음... 안추울거야', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ 무슨공부를 할까', 'NEUTRAL', 1.0, NOW()),
-  ('언니랑 촬영가자는거 안그래도 빠꾸먹음', 'POSITIVE', 1.0, NOW()),
-  ('나는 내 에어팟 충전안한지 한달된듯', 'NEUTRAL', 1.0, NOW()),
-  ('에어컨키면춥고', 'NEUTRAL', 1.0, NOW()),
-  ('그게 더없어보여', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮다 써랑', 'NEUTRAL', 1.0, NOW()),
-  ('아무래도 주택이 좋겠지?', 'NEUTRAL', 1.0, NOW()),
-  ('덜덜덜..', 'NEUTRAL', 1.0, NOW()),
-  ('집 근처 지하철 역 맞은편에', 'NEUTRAL', 1.0, NOW()),
-  ('웅ㅋㅋㅋㅋㅋ짖짜뒤지겟다 어흏', 'NEUTRAL', 1.0, NOW()),
-  ('3천불이면', 'NEUTRAL', 1.0, NOW()),
-  ('대구광역시 달서구 #@주소#', 'NEUTRAL', 1.0, NOW()),
-  ('에어컨 잠가달라했다고 ㅡㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('타지로 가게되면', 'NEUTRAL', 1.0, NOW()),
-  ('아예 종이에', 'NEUTRAL', 1.0, NOW()),
-  ('자기 도착시간 맞춰서 가려고', 'NEUTRAL', 1.0, NOW()),
-  ('집 근처 한식당에 밥먹으러 옴', 'NEUTRAL', 1.0, NOW()),
-  ('버스타는거 알지 #@이름#??', 'NEUTRAL', 1.0, NOW()),
-  ('대강 웅웅거리는건 들리는데', 'NEUTRAL', 1.0, NOW()),
-  ('우퍼는 심하다', 'NEUTRAL', 1.0, NOW()),
-  ('우리#@이름#쓰', 'NEUTRAL', 1.0, NOW()),
-  ('나혼자 구경가니까', 'NEUTRAL', 1.0, NOW()),
-  ('그러게 올때까지 기다려야하나봐', 'NEUTRAL', 1.0, NOW()),
-  ('니 사서 써봐 쓰는거 보고ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('남이 운전해주는것도', 'POSITIVE', 1.0, NOW()),
-  ('5마넌..', 'NEUTRAL', 1.0, NOW()),
-  ('아!!!!!!!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('웅웅ㅇ 고마오', 'NEUTRAL', 1.0, NOW()),
-  ('트렌치는한국선얼매늬?', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#도 CI보험 다시 봐라', 'NEUTRAL', 1.0, NOW()),
-  ('그거 엘지?', 'NEUTRAL', 1.0, NOW()),
-  ('아하ㅋㅋㅋ𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛𐌅𐨛', 'NEUTRAL', 1.0, NOW()),
-  ('과연 어떤거 탔을랑가.......', 'NEUTRAL', 1.0, NOW()),
-  ('엘베 공사아냐?', 'NEUTRAL', 1.0, NOW()),
-  ('티비도 크게 볼수 있어서 조아><', 'NEUTRAL', 1.0, NOW()),
-  ('나도 가고싶다 시골', 'NEUTRAL', 1.0, NOW()),
-  ('잘안치우니까 신경못쓰지 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('한잔 무료쿠펀도 줌', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 버스 갠춘하네', 'NEUTRAL', 1.0, NOW()),
-  ('배달음식 가격도 올렸대', 'NEUTRAL', 1.0, NOW()),
-  ('신한은..아직도', 'NEUTRAL', 1.0, NOW()),
-  ('공시생처럼 보이면 안되니깐.그것이 약속이니까.', 'NEUTRAL', 1.0, NOW()),
-  ('전화해보고가', 'NEUTRAL', 1.0, NOW()),
-  ('응 엄청은 아니어도 괜찮을껄', 'POSITIVE', 1.0, NOW()),
-  ('엄마 키 ㅔ갖다줘여되는데', 'NEUTRAL', 1.0, NOW()),
-  ('외부는 안하구 그냥 내부만 할수 있을듯', 'NEUTRAL', 1.0, NOW()),
-  ('걍 내이름인데', 'NEUTRAL', 1.0, NOW()),
-  ('엉 가입된대', 'NEUTRAL', 1.0, NOW()),
-  ('짐빼는걸로..?????', 'NEUTRAL', 1.0, NOW()),
-  ('나 대학 때 가봤자나', 'NEUTRAL', 1.0, NOW()),
-  ('조금 추웠어', 'NEUTRAL', 1.0, NOW()),
-  ('영어가 아니라 좀 거슬려', 'NEUTRAL', 1.0, NOW()),
-  ('코로나시국에 악재 겹치셨네...', 'NEUTRAL', 1.0, NOW()),
-  ('다음아이폰 반값', 'NEUTRAL', 1.0, NOW()),
-  ('3~4낳는거', 'NEUTRAL', 1.0, NOW()),
-  ('휴대폰이 방향을 못잡아...', 'NEUTRAL', 1.0, NOW()),
-  ('무슨스벅가격이야', 'NEUTRAL', 1.0, NOW()),
-  ('한마리잡았는데', 'NEUTRAL', 1.0, NOW()),
-  ('흔들어 겁나 흔들어', 'NEUTRAL', 1.0, NOW()),
-  ('잘 생각해봐~ 너무 복잡해보이지않게', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋ악 나도,,,6 20만원에 팔아버림', 'NEUTRAL', 1.0, NOW()),
-  ('하오 원래 쓰던 침대도 바뀌었응께', 'POSITIVE', 1.0, NOW()),
-  ('부동산에서 3차를 추천하네', 'NEUTRAL', 1.0, NOW()),
-  ('개별로도 가지고 놀수있어', 'NEGATIVE', 1.0, NOW()),
-  ('갔는데출장중적혀있어', 'NEUTRAL', 1.0, NOW()),
-  ('난 광주구경하고싶어 ㅋㅋㅋ 담양은 많이가봣어 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('웅ㅎㅎ넌어댜?', 'NEUTRAL', 1.0, NOW()),
-  ('어디얼집인데 추첨을해?', 'NEUTRAL', 1.0, NOW()),
-  ('서비스센터가봐랏', 'NEUTRAL', 1.0, NOW()),
-  ('빨리도보낸다', 'NEUTRAL', 1.0, NOW()),
-  ('니글 아닌거 아니냐ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('다음주 치과', 'NEUTRAL', 1.0, NOW()),
-  ('분리수거해야해', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ뭐이리 일찍나와 ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('누나 차 에다가 넣고', 'NEUTRAL', 1.0, NOW()),
-  ('칼각이에요?!', 'NEUTRAL', 1.0, NOW()),
-  ('깔롱직있노', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 나가서 쓸게', 'NEUTRAL', 1.0, NOW()),
-  ('어떻게 하는지 모르는데;', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅌㅋㅋㅋ 구래구래ㅋㅋㅋㅋ 꿀빵 잘 묵고ㅋㅋㅋ  푹 쉬엉!!', 'NEUTRAL', 1.0, NOW()),
-  ('날아다냐 막', 'NEUTRAL', 1.0, NOW()),
-  ('내가가진카드로는앙대ㅠㅠㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('목아 파요ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('완전 대박', 'NEUTRAL', 1.0, NOW()),
-  ('맞아요~~!!!', 'POSITIVE', 1.0, NOW()),
-  ('난 어차피 여기 되면 다른거 살 여력도 안되는데', 'NEUTRAL', 1.0, NOW()),
-  ('팔거팔고 버릴거버리곸ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('빨리 받고싶군 ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('청소좀한닷', 'NEUTRAL', 1.0, NOW()),
-  ('휴...귀찮고 힘들다', 'NEGATIVE', 1.0, NOW()),
-  ('중앙조절이여 건물자체에서 관리해', 'NEUTRAL', 1.0, NOW()),
-  ('여기서 사용가능하게 하려구', 'NEUTRAL', 1.0, NOW()),
-  ('내맘대로 식사', 'NEUTRAL', 1.0, NOW()),
-  ('출구앞이긔', 'NEUTRAL', 1.0, NOW()),
-  ('비 미친거냐;;', 'NEUTRAL', 1.0, NOW()),
-  ('천둥이심해서', 'NEUTRAL', 1.0, NOW()),
-  ('민ㄴ원24인가', 'NEUTRAL', 1.0, NOW()),
-  ('아 진짜 오늘 너무추어 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('그건 모르게떵', 'NEUTRAL', 1.0, NOW()),
-  ('보험도 필요한걸 드는거지', 'NEUTRAL', 1.0, NOW()),
-  ('사퍼 조차 못킴', 'NEUTRAL', 1.0, NOW()),
-  ('한 3만원 정도 하려나...', 'NEUTRAL', 1.0, NOW()),
-  ('더운데 왜 아무도 움직이질 않능거야', 'NEUTRAL', 1.0, NOW()),
-  ('날씬한 사람이 입어야 예뻐', 'NEUTRAL', 1.0, NOW()),
-  ('9만원있음', 'NEUTRAL', 1.0, NOW()),
-  ('처음에 금액이 있어야해', 'NEUTRAL', 1.0, NOW()),
-  ('월 27이면', 'NEUTRAL', 1.0, NOW()),
-  ('히트맨이랑', 'NEUTRAL', 1.0, NOW()),
-  ('낚시객이 딱보고 알릴정도면 자주출몰하는앤가..?', 'NEUTRAL', 1.0, NOW()),
-  ('아 그런말이엇어?', 'NEUTRAL', 1.0, NOW()),
-  ('풍선타는거 아냐?', 'NEUTRAL', 1.0, NOW()),
-  ('그니까 조그맣게 생겨서', 'NEUTRAL', 1.0, NOW()),
-  ('혹시 아는데 잇니', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 어벤저스 얘기하는거 그만보고싶어 ㅡㅡ', 'NEGATIVE', 1.0, NOW()),
-  ('그때까지만 내가 함', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#그려서 액자에 걸어놓을까', 'NEUTRAL', 1.0, NOW()),
-  ('응 할 수 있다 할 수 있어', 'POSITIVE', 1.0, NOW()),
-  ('ㄹㅇ항상있는 걍기본컵이랑 걍 어디든있는 자기 도시컵', 'NEUTRAL', 1.0, NOW()),
-  ('결제해서 보는걸로..!', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이야?', 'NEUTRAL', 1.0, NOW()),
-  ('20대만주는쿠폰', 'NEUTRAL', 1.0, NOW()),
-  ('나이를먹긴먹었구나', 'NEUTRAL', 1.0, NOW()),
-  ('사람 많으면', 'NEUTRAL', 1.0, NOW()),
-  ('내려오는 와중에', 'NEUTRAL', 1.0, NOW()),
-  ('요즘근데 차세대배우 없다', 'NEUTRAL', 1.0, NOW()),
-  ('잇는걸로알아요!!', 'NEUTRAL', 1.0, NOW()),
-  ('평생 못할수도있지', 'NEUTRAL', 1.0, NOW()),
-  ('굿피플 인턴들', 'NEUTRAL', 1.0, NOW()),
-  ('저 영화 봐야곘군요^^', 'NEUTRAL', 1.0, NOW()),
-  ('굳이 빨리 안해도 된다는구려', 'NEUTRAL', 1.0, NOW()),
-  ('무슨 노래 나옴?', 'NEUTRAL', 1.0, NOW()),
-  ('손님도 딱 3명ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ이따 나 혼자 본다잉', 'NEUTRAL', 1.0, NOW()),
-  ('우리 동원이가 젤 잘생겻네~~', 'NEUTRAL', 1.0, NOW()),
-  ('근데 저렇게 먹는데 살이 빠지는게 더 신기함', 'NEUTRAL', 1.0, NOW()),
-  ('너무 많네~^^', 'NEUTRAL', 1.0, NOW()),
-  ('지금은 사람 별로 없어?', 'NEGATIVE', 1.0, NOW()),
-  ('완성햇어요!', 'NEUTRAL', 1.0, NOW()),
-  ('언제쯤 편하게 하짘ㅋㅋ큐ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('너 언니랑 베드민턴 쳤던 기억 나니? ㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('인터넷으로할수잇더라궁!!', 'NEUTRAL', 1.0, NOW()),
-  ('나는 샤이니가 샤이니여서 너무 좋아', 'POSITIVE', 1.0, NOW()),
-  ('기를 모으는 거라니,,', 'NEUTRAL', 1.0, NOW()),
-  ('미친거같아', 'NEUTRAL', 1.0, NOW()),
-  ('영상 유튜브에 있을건데', 'NEUTRAL', 1.0, NOW()),
-  ('이번 시즌 16일날 끝나는데..', 'NEUTRAL', 1.0, NOW()),
-  ('나도 그런 꿈 꿈 적 있는데 일어나자마자 불쾌했잖아', 'NEUTRAL', 1.0, NOW()),
-  ('사이즈를 찔끔 키우고 그러는데', 'NEUTRAL', 1.0, NOW()),
-  ('웅 전번 없어', 'NEUTRAL', 1.0, NOW()),
-  ('자연스러워', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 초사기', 'NEUTRAL', 1.0, NOW()),
-  ('샀다는거 아니니 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('신비의 세계!', 'NEUTRAL', 1.0, NOW()),
-  ('무튼 그 때 죽었는데', 'NEUTRAL', 1.0, NOW()),
-  ('저공지로니아이디해놓은건모야??', 'NEUTRAL', 1.0, NOW()),
-  ('아 케이뱅크', 'NEUTRAL', 1.0, NOW()),
-  ('이미 저것 외에도', 'NEUTRAL', 1.0, NOW()),
-  ('정말 당첨되고 싶다ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅡㅡ롤토체스', 'NEUTRAL', 1.0, NOW()),
-  ('응 몇개만', 'POSITIVE', 1.0, NOW()),
-  ('그나마 갠차는데', 'NEUTRAL', 1.0, NOW()),
-  ('헐쒸 몰아봐야기', 'NEUTRAL', 1.0, NOW()),
-  ('0.5겜차라', 'NEUTRAL', 1.0, NOW()),
-  ('아니 사람들', 'NEUTRAL', 1.0, NOW()),
-  ('저런데 테어나서 한 번도 안가봄', 'NEUTRAL', 1.0, NOW()),
-  ('그림체 완전 ㅋㅋㅋㅋㅋ ^^.. ;; 보면알아', 'NEUTRAL', 1.0, NOW()),
-  ('왜왜어딴데??', 'NEUTRAL', 1.0, NOW()),
-  ('나또한 그렇지', 'NEUTRAL', 1.0, NOW()),
-  ('언제든 아이디어 생기면 주렴하하하', 'NEUTRAL', 1.0, NOW()),
-  ('근데 확실한건', 'NEUTRAL', 1.0, NOW()),
-  ('웅태어낫을쯤', 'NEUTRAL', 1.0, NOW()),
-  ('어어 보고있어 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나 그것 좀 찾아줘', 'NEUTRAL', 1.0, NOW()),
-  ('아마 좀 시간이 걸릴거에용', 'NEUTRAL', 1.0, NOW()),
-  ('내일인걸ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('쇼핑몰이아니라!', 'NEUTRAL', 1.0, NOW()),
-  ('김종국 뭐 한거있나;;', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ좋은거아냐?', 'NEUTRAL', 1.0, NOW()),
-  ('하 이거 머더라', 'NEUTRAL', 1.0, NOW()),
-  ('고마워 덕분에 연극 보겠구만 호호', 'POSITIVE', 1.0, NOW()),
-  ('스릴러 연극', 'NEUTRAL', 1.0, NOW()),
-  ('학기중에는 너무 바빠서 안될 것 같아', 'NEUTRAL', 1.0, NOW()),
-  ('미모 오졌다리..', 'NEUTRAL', 1.0, NOW()),
-  ('오빠 엗시트에 나온', 'NEUTRAL', 1.0, NOW()),
-  ('프루나 당나귀 토랜트', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ난 조금씩 움직였다 풀어달라고', 'NEUTRAL', 1.0, NOW()),
-  ('오디마크포 사고', 'NEUTRAL', 1.0, NOW()),
-  ('알려주드라... 여자헤어짱이뻐', 'NEUTRAL', 1.0, NOW()),
-  ('아냐유,,', 'NEUTRAL', 1.0, NOW()),
-  ('손민수하고파', 'NEUTRAL', 1.0, NOW()),
-  ('정글의 법칙 보면', 'NEUTRAL', 1.0, NOW()),
-  ('보자보자~', 'NEUTRAL', 1.0, NOW()),
-  ('신기방기하다', 'NEUTRAL', 1.0, NOW()),
-  ('장바구니를봐줘...', 'NEUTRAL', 1.0, NOW()),
-  ('7시좀넘지안녀??', 'NEUTRAL', 1.0, NOW()),
-  ('난 빡대가리라 보드게임 잘 못해 흩흨 운도없음', 'NEUTRAL', 1.0, NOW()),
-  ('부부싸움~', 'NEUTRAL', 1.0, NOW()),
-  ('웅웅 쥬삼쥬삼', 'NEUTRAL', 1.0, NOW()),
-  ('나폴레옹의 모자가', 'NEUTRAL', 1.0, NOW()),
-  ('그림그리냐', 'NEUTRAL', 1.0, NOW()),
-  ('지구가#@기타#', 'NEUTRAL', 1.0, NOW()),
-  ('곰보를하고난리야 부들부들', 'NEUTRAL', 1.0, NOW()),
-  ('넌공효진드라마랑잘맞나봐ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('소장에 의미를 두시는구나', 'NEUTRAL', 1.0, NOW()),
-  ('인게임이랑', 'NEUTRAL', 1.0, NOW()),
-  ('화려하게 해주세요', 'POSITIVE', 1.0, NOW()),
-  ('손아파서 얼마 안했던거 같지?', 'NEGATIVE', 1.0, NOW()),
-  ('사진 백업프로그램?', 'NEUTRAL', 1.0, NOW()),
-  ('좋아 ㅋㅋㅋㅋㅋㅋㅋ 지금 자겠지만 얘기는 해놓자 신난다', 'POSITIVE', 1.0, NOW()),
-  ('걍듯어가서 오락실노래방처럼', 'NEUTRAL', 1.0, NOW()),
-  ('아님 고무줄로', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 금방 다봣규나', 'POSITIVE', 1.0, NOW()),
-  ('스포는 삐 처리하고 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('코로나 때문인가 싶었으나,', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ 아무나', 'NEUTRAL', 1.0, NOW()),
-  ('난 쓰레기야 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('조지킬 볼 거면 무조건 1층으로 가고 싶음', 'NEUTRAL', 1.0, NOW()),
-  ('오 진짜?', 'NEUTRAL', 1.0, NOW()),
-  ('얼굴이 너무나도', 'NEUTRAL', 1.0, NOW()),
-  ('자주 들었는데도 안질리더라고ㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('오에에?!?!?', 'NEUTRAL', 1.0, NOW()),
-  ('너무 웃겨섴ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('응 뮤비 봐봡', 'POSITIVE', 1.0, NOW()),
-  ('상금은 없구', 'NEUTRAL', 1.0, NOW()),
-  ('이거 봤냐.... 나 한소절 보고 닫았다', 'NEUTRAL', 1.0, NOW()),
-  ('아냐ㅑ 나 당황했어.. 차콜...차콜..', 'NEUTRAL', 1.0, NOW()),
-  ('주말로 예약할까해서 전화거는데 계속 안받네ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('서강준 미모가', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇ밸런시스난만족', 'NEUTRAL', 1.0, NOW()),
-  ('맞아 개그맨은 짜여진 각본대로', 'POSITIVE', 1.0, NOW()),
-  ('기가맥히게 부르자나 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('웅 마자~~!', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ개웃기네', 'NEUTRAL', 1.0, NOW()),
-  ('이왕 패하는거', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ대박', 'NEUTRAL', 1.0, NOW()),
-  ('저녁시간....?', 'NEUTRAL', 1.0, NOW()),
-  ('티비엔은 판타지물로 인기 많아진 뒤로', 'NEUTRAL', 1.0, NOW()),
-  ('장 대타로 한방치고 들어가넼', 'NEUTRAL', 1.0, NOW()),
-  ('좋았어 넌 어디임?', 'NEUTRAL', 1.0, NOW()),
-  ('눈에 띄게 글을 써', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이 유튜브에 영상올렸다고 해서 보는데', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이 줘서', 'NEUTRAL', 1.0, NOW()),
-  ('잘그리는걸 당신....', 'NEUTRAL', 1.0, NOW()),
-  ('나 솔직히 없어 그래서 세상에서 제일', 'POSITIVE', 1.0, NOW()),
-  ('볼거 두개 생겼다', 'NEUTRAL', 1.0, NOW()),
-  ('지굼은 아저씨 다됐다ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('못보겠어 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅎㅎㅎㅎ열시미 해보자 어늘두', 'NEUTRAL', 1.0, NOW()),
-  ('좀 어이없지만 킬링타임엔 최고지', 'NEUTRAL', 1.0, NOW()),
-  ('나 알라딘 봄', 'NEUTRAL', 1.0, NOW()),
-  ('그걸 냄새로(?) 알고선 보호자에게 가시를 세우지 않는대~!', 'NEUTRAL', 1.0, NOW()),
-  ('몸이 기억하지 않니?', 'NEUTRAL', 1.0, NOW()),
-  ('있는지는모름ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('누구 나와 근디', 'NEUTRAL', 1.0, NOW()),
-  ('오늘은 티켓팅 어디 자리 풀리는거야??', 'NEUTRAL', 1.0, NOW()),
-  ('나는 트임해야돼', 'NEUTRAL', 1.0, NOW()),
-  ('한시간짜맄ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('대도랑 윰댕도 비제이거든~~!', 'NEUTRAL', 1.0, NOW()),
-  ('이사 이름 몇개야..', 'NEUTRAL', 1.0, NOW()),
-  ('어마어마하지', 'NEUTRAL', 1.0, NOW()),
-  ('배드블러드', 'NEUTRAL', 1.0, NOW()),
-  ('30번봐봐', 'NEUTRAL', 1.0, NOW()),
-  ('역시 면세점 직원설이 사실이였어!ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('다 날렸어', 'NEUTRAL', 1.0, NOW()),
-  ('고양이랑 놀아주고 까까 주고싶어요. .', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 언제 하는거야?', 'NEUTRAL', 1.0, NOW()),
-  ('글쎼...??그냥 대학교 다니고 싶어서??', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 넌 뒤를 눌러..', 'NEUTRAL', 1.0, NOW()),
-  ('해보겠소?', 'NEUTRAL', 1.0, NOW()),
-  ('흠흠 일리 있군!!!🤠', 'NEUTRAL', 1.0, NOW()),
-  ('오 맞아맞아', 'POSITIVE', 1.0, NOW()),
-  ('싸인도 해주고', 'POSITIVE', 1.0, NOW()),
-  ('카톡도 안보구', 'NEUTRAL', 1.0, NOW()),
-  ('아 두개 키운다길래', 'NEUTRAL', 1.0, NOW()),
-  ('나는 리복도 괜찮은것 같은데?ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('헐 구리에 가챠샵이 있어?', 'NEUTRAL', 1.0, NOW()),
-  ('바퀴때매 그런거가 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('무도 보고싶다', 'NEUTRAL', 1.0, NOW()),
-  ('우리나라 드라마보려면 뭔티비보라던데여', 'NEUTRAL', 1.0, NOW()),
-  ('혼자볼수업어', 'NEUTRAL', 1.0, NOW()),
-  ('앞으로 이렇게 해야겠다', 'NEUTRAL', 1.0, NOW()),
-  ('좀 심한거 아니내능', 'NEUTRAL', 1.0, NOW()),
-  ('난엄마한테가야돼', 'NEUTRAL', 1.0, NOW()),
-  ('동해홍보대사네', 'NEUTRAL', 1.0, NOW()),
-  ('너는 당구칠줄아니?', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 요번주까진 운동 쉴듯!!', 'NEUTRAL', 1.0, NOW()),
-  ('헐ㅋㅋㅋㅋ그냥 일주일기다려!!ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('저작권 프리 사이트가 있어', 'NEUTRAL', 1.0, NOW()),
-  ('기준맞출 생각이 없나..', 'NEUTRAL', 1.0, NOW()),
-  ('응 그거봤아', 'POSITIVE', 1.0, NOW()),
-  ('와 그장면은 진짜 안슬펏는데', 'NEUTRAL', 1.0, NOW()),
-  ('그래야되나', 'POSITIVE', 1.0, NOW()),
-  ('CD로 듣는거', 'NEUTRAL', 1.0, NOW()),
-  ('아 장성규가 라디오 하는구나ㅎㅎㅎ재밌겠다ㅎㅎ', 'POSITIVE', 1.0, NOW()),
-  ('한쪽발들려도', 'NEUTRAL', 1.0, NOW()),
-  ('쟤도 눈치만 좀 챙기면', 'NEUTRAL', 1.0, NOW()),
-  ('너 기준으로는 당연히', 'POSITIVE', 1.0, NOW()),
-  ('뭔데 저 사람', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ 욕해', 'NEUTRAL', 1.0, NOW()),
-  ('나오던 영화', 'NEUTRAL', 1.0, NOW()),
-  ('뭐봤는데?', 'NEUTRAL', 1.0, NOW()),
-  ('추억의 1편...', 'NEUTRAL', 1.0, NOW()),
-  ('페북아이디 겜용으로 만드세여 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('우~~~~', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#도 해보고싶다해서', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 왜케', 'NEUTRAL', 1.0, NOW()),
-  ('벌써 박터진다', 'NEUTRAL', 1.0, NOW()),
-  ('화면녹화가', 'NEUTRAL', 1.0, NOW()),
-  ('설리번은 털느낌이 살아있어야 좋아하', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ너무 우꼌ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 예뻐서..', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 물박물관', 'NEUTRAL', 1.0, NOW()),
-  ('케이윌 봣어 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('저노래 좋아해', 'POSITIVE', 1.0, NOW()),
-  ('나 창궐봤는데', 'NEUTRAL', 1.0, NOW()),
-  ('아냐 그냥', 'NEUTRAL', 1.0, NOW()),
-  ('아 8부터 안 나오네', 'NEUTRAL', 1.0, NOW()),
-  ('같이 어디 수련회가는꿈을 꿨어!!', 'NEUTRAL', 1.0, NOW()),
-  ('캡쳐각이다', 'NEUTRAL', 1.0, NOW()),
-  ('이제 메이플 2개월찬데', 'NEUTRAL', 1.0, NOW()),
-  ('그거 고스트..버스터즈?', 'NEUTRAL', 1.0, NOW()),
-  ('곰믹스 프로 39000원인데', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ마자 의사가보는 의료게임', 'NEUTRAL', 1.0, NOW()),
-  ('칼로물베기~', 'NEUTRAL', 1.0, NOW()),
-  ('응 보통 그런식인 거 같아', 'POSITIVE', 1.0, NOW()),
-  ('그로인한 신뢰를 얻으려고?', 'NEUTRAL', 1.0, NOW()),
-  ('늦게까지하넫ㄷㄷ', 'NEUTRAL', 1.0, NOW()),
-  ('희재는 진짴ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이모티콘# 그게 뭔데', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 시작해서 52됐다.', 'NEUTRAL', 1.0, NOW()),
-  ('미리 사서 다 꾸며늏을거야', 'NEUTRAL', 1.0, NOW()),
-  ('그치,,,달표면 보이는거보고', 'NEUTRAL', 1.0, NOW()),
-  ('다보고왓어', 'NEUTRAL', 1.0, NOW()),
-  ('맛있는 곳 알려주는디', 'POSITIVE', 1.0, NOW()),
-  ('이거읽어떠', 'NEUTRAL', 1.0, NOW()),
-  ('그래서더놀라움..', 'POSITIVE', 1.0, NOW()),
-  ('아아 맞넹', 'NEUTRAL', 1.0, NOW()),
-  ('아니야ㅋㅋ', 'NEGATIVE', 1.0, NOW()),
-  ('아직이네 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('기대하자구~~~', 'NEUTRAL', 1.0, NOW()),
-  ('나도 하나도몰라 ㅜ 어렵더라', 'NEUTRAL', 1.0, NOW()),
-  ('겁나 델 듯 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('진정령 다 봤냥', 'NEUTRAL', 1.0, NOW()),
-  ('내가 춤알못이라 그런가 잘 모르겠음 ㅎㅎ..', 'NEUTRAL', 1.0, NOW()),
-  ('왜 중국노래는 풀리지않는건가요', 'NEUTRAL', 1.0, NOW()),
-  ('그거 보고 울었는데 ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋ개웃기다', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ핫하네', 'NEUTRAL', 1.0, NOW()),
-  ('어제는 옵치 아나 했엉', 'NEUTRAL', 1.0, NOW()),
-  ('유미와 순록이 데이트하니', 'NEUTRAL', 1.0, NOW()),
-  ('품위정주행각', 'NEUTRAL', 1.0, NOW()),
-  ('일찍나와서천천히타면대려나', 'NEUTRAL', 1.0, NOW()),
-  ('인내의숲 오랜만.....', 'NEUTRAL', 1.0, NOW()),
-  ('그래 그런시간 필요하지', 'POSITIVE', 1.0, NOW()),
-  ('형은피해자ㅜㅇㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('안반데기...이번휴가에 함 가본다...', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 구경햇어', 'POSITIVE', 1.0, NOW()),
-  ('나 비티에스 입덕각이라면', 'NEUTRAL', 1.0, NOW()),
-  ('재밋지않아? 나이번주말에 또갈꺼야', 'NEUTRAL', 1.0, NOW()),
-  ('내가 너한테 추천했는데', 'NEUTRAL', 1.0, NOW()),
-  ('나에게도 저럴때가', 'NEUTRAL', 1.0, NOW()),
-  ('저도 동물 진짜좋아해요', 'POSITIVE', 1.0, NOW()),
-  ('2번깟는데', 'NEUTRAL', 1.0, NOW()),
-  ('나도 다 읽진 않고 골라읽긴해.. ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('새고 안해도되자너', 'NEUTRAL', 1.0, NOW()),
-  ('그리고 바다에서 유리병 주워왔다니까', 'NEUTRAL', 1.0, NOW()),
-  ('이상한데서 들었네 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('팔로도 안햇는네', 'NEUTRAL', 1.0, NOW()),
-  ('너 라떼아트도 했었어?', 'NEUTRAL', 1.0, NOW()),
-  ('더 해야 나오는거여.....?', 'NEUTRAL', 1.0, NOW()),
-  ('넷플릭스에있는거 다볼거같아', 'NEUTRAL', 1.0, NOW()),
-  ('두개만 쓴다 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('또 화낼꺼잖아ㅎㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('소녀시대는 아직도', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 영화추천해바', 'NEUTRAL', 1.0, NOW()),
-  ('내가 화나는게 너무당연해', 'NEGATIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ요즘볼것이너무없어ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('토르 떠댕기다가', 'NEUTRAL', 1.0, NOW()),
-  ('컴터가 빠른듯', 'NEUTRAL', 1.0, NOW()),
-  ('아 근데 시간', 'NEUTRAL', 1.0, NOW()),
-  ('그 이어받을걸 잘 들고 있지 못하는 느낌', 'NEUTRAL', 1.0, NOW()),
-  ('유산소 할때는 진짜 숨쉬는게 너무 힘들어서', 'NEGATIVE', 1.0, NOW()),
-  ('응응 긴뜨시', 'POSITIVE', 1.0, NOW()),
-  ('월광조아해?', 'NEUTRAL', 1.0, NOW()),
-  ('이거 뮤비 너무', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋ아니?..', 'NEUTRAL', 1.0, NOW()),
-  ('아 난또 겜못스라고 뭐라하는줄', 'NEUTRAL', 1.0, NOW()),
-  ('근데 안치홍은 엥?? 이런 느낌이고', 'NEUTRAL', 1.0, NOW()),
-  ('대단...', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ 나 지금', 'NEUTRAL', 1.0, NOW()),
-  ('맞아 못빌리니까 다읽어도', 'POSITIVE', 1.0, NOW()),
-  ('#@이모티콘# 도전!!', 'NEUTRAL', 1.0, NOW()),
-  ('너무 귀엽드라', 'NEUTRAL', 1.0, NOW()),
-  ('주식같은거 뭔가 공부하고 넣어야한다고 알아가지고 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('무시해주삼', 'POSITIVE', 1.0, NOW()),
-  ('으..응.!', 'POSITIVE', 1.0, NOW()),
-  ('기를 쓰고 그건 막을 듯', 'NEUTRAL', 1.0, NOW()),
-  ('아냐 그냥 물어봤어', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 드라마만 바도 재밋을듯', 'POSITIVE', 1.0, NOW()),
-  ('미국 공포영화에', 'NEUTRAL', 1.0, NOW()),
-  ('아 운동했는데 디질 거 가탓', 'NEUTRAL', 1.0, NOW()),
-  ('공부하다니', 'NEUTRAL', 1.0, NOW()),
-  ('수량 안줄어서', 'NEUTRAL', 1.0, NOW()),
-  ('응 그럴만두 ㅋㅋㅋ 이제 1화 다봄 ㅋㅋ 찬찬히 볼겡', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ 어차피 난 못 보는 것', 'NEUTRAL', 1.0, NOW()),
-  ('하는 넘들 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('남자친구가 3개한대요.. 그래서 내가 3개가 뭐냐', 'POSITIVE', 1.0, NOW()),
-  ('중요하게 받아들여지니까 어쩔수 없지ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('80프로가', 'NEUTRAL', 1.0, NOW()),
-  ('바롬인데~~~~', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타# 말바꾸네', 'NEUTRAL', 1.0, NOW()),
-  ('갠차남 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('돈 없는 것도 아니고', 'NEUTRAL', 1.0, NOW()),
-  ('남들도 열심히 살고 있노', 'NEUTRAL', 1.0, NOW()),
-  ('캬페에서 공부하는데', 'NEUTRAL', 1.0, NOW()),
-  ('한몫하나봐 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('어제 잡혔대', 'NEUTRAL', 1.0, NOW()),
-  ('애들이 읽지를 않아', 'NEUTRAL', 1.0, NOW()),
-  ('제발.....', 'NEUTRAL', 1.0, NOW()),
-  ('교양인데 아무도 안듣자ㅓㄴ....', 'NEUTRAL', 1.0, NOW()),
-  ('아쟈~ 힘내쟝!!!ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('그게 교수님의 일이야!', 'NEUTRAL', 1.0, NOW()),
-  ('앗 알바몬 인생ㅠㅠㅠㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('상당히 커요', 'NEUTRAL', 1.0, NOW()),
-  ('자기 오늘 일찍 갔네', 'NEUTRAL', 1.0, NOW()),
-  ('그니까여ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('나 오늘 저녁이 늦어서 잠깐 밥먹고 올게ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('시험알마안남았노', 'NEUTRAL', 1.0, NOW()),
-  ('엔클렉스라고 미국간호사 자격증 시험이야', 'NEUTRAL', 1.0, NOW()),
-  ('딘짜ㅜㅜㅜㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('시험이제 끝이야??? 이틀쳐?', 'NEUTRAL', 1.0, NOW()),
-  ('이찬원이 코로나 검사를 받았는데', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#, #@이름# 학원안간다니깐 #@이름#도 안간다한다;;', 'NEUTRAL', 1.0, NOW()),
-  ('헐 알게따', 'NEUTRAL', 1.0, NOW()),
-  ('내년 1월부터', 'NEUTRAL', 1.0, NOW()),
-  ('뭐 그렇 그렇게찌', 'NEUTRAL', 1.0, NOW()),
-  ('학사경고 받거나', 'NEUTRAL', 1.0, NOW()),
-  ('콜마는 생산 위주고', 'NEUTRAL', 1.0, NOW()),
-  ('왜 창창한 자식들이랑 부인까지 죽여', 'NEUTRAL', 1.0, NOW()),
-  ('붙일수도있지머..', 'NEUTRAL', 1.0, NOW()),
-  ('백퍼돼ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('오키오키오키나와', 'NEUTRAL', 1.0, NOW()),
-  ('작은 불씨하나가 그렇게 모든걸 다 태울 수 있다는게 충격적이야', 'NEUTRAL', 1.0, NOW()),
-  ('여주대안나왔어요!!!', 'NEUTRAL', 1.0, NOW()),
-  ('이게 병코문제인데', 'NEUTRAL', 1.0, NOW()),
-  ('너무자신이업떠', 'NEUTRAL', 1.0, NOW()),
-  ('근데 결석해도', 'NEUTRAL', 1.0, NOW()),
-  ('뭔가 같은 조원 욕하거나 이간질하능 느낌 없지..?', 'NEUTRAL', 1.0, NOW()),
-  ('장바구니에', 'NEUTRAL', 1.0, NOW()),
-  ('혹시 턴잇인 써보셨나요?', 'NEUTRAL', 1.0, NOW()),
-  ('읽을 듯해서', 'NEUTRAL', 1.0, NOW()),
-  ('단어장 발음 읽어주는 mp3 모두 보낼게', 'NEUTRAL', 1.0, NOW()),
-  ('그렇게 살지마', 'NEUTRAL', 1.0, NOW()),
-  ('지금 뉴스에서 트럼프가내년 1월에 빠르면 백신 보급 가능하대', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 개무섭다', 'NEUTRAL', 1.0, NOW()),
-  ('걍 공부해여쥥', 'NEUTRAL', 1.0, NOW()),
-  ('정상수업 한대', 'NEUTRAL', 1.0, NOW()),
-  ('와 대단하다', 'NEUTRAL', 1.0, NOW()),
-  ('과제란엨ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아 저무대', 'NEUTRAL', 1.0, NOW()),
-  ('11명확진', 'NEUTRAL', 1.0, NOW()),
-  ('적을겅야?', 'NEUTRAL', 1.0, NOW()),
-  ('2주치 플랜으로 하면 63까지 해야하는데', 'NEUTRAL', 1.0, NOW()),
-  ('그러긴 하템데', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 내려가는게 나아?', 'NEUTRAL', 1.0, NOW()),
-  ('??????어?결론남?', 'NEUTRAL', 1.0, NOW()),
-  ('맞아ㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('여백줄이고... 자간 줄간격 좁히고', 'NEUTRAL', 1.0, NOW()),
-  ('우웅 알아써요', 'NEUTRAL', 1.0, NOW()),
-  ('자기가 실패하면 더이상 물러날데가 없다는 사실이', 'NEUTRAL', 1.0, NOW()),
-  ('그런 아이디어 원하면 뽑고 가져가든가', 'NEUTRAL', 1.0, NOW()),
-  ('문법공부해야하거든ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('과아연 나는', 'NEUTRAL', 1.0, NOW()),
-  ('다시맨탈 부여잡고 하러감', 'NEUTRAL', 1.0, NOW()),
-  ('아니 에어팟만', 'NEUTRAL', 1.0, NOW()),
-  ('멀면 다행....', 'POSITIVE', 1.0, NOW()),
-  ('또 면허 떨어졌다고 하기가ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('앗 미안 지금봣다', 'NEGATIVE', 1.0, NOW()),
-  ('알써.......', 'NEUTRAL', 1.0, NOW()),
-  ('네가 CBT 컴퓨터활용능력', 'NEUTRAL', 1.0, NOW()),
-  ('울어...엉엉엉', 'NEUTRAL', 1.0, NOW()),
-  ('수강인원이 없어서...', 'NEUTRAL', 1.0, NOW()),
-  ('아 감도안잡혀', 'NEUTRAL', 1.0, NOW()),
-  ('다 돈이다...이거 학점따려고 수강하는것도', 'NEUTRAL', 1.0, NOW()),
-  ('시사상식라디오같은거들어서', 'NEUTRAL', 1.0, NOW()),
-  ('밤새고 가서 개피곤할듯 ㅡㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('먹먹이라는게', 'NEUTRAL', 1.0, NOW()),
-  ('다음주가 개강인데', 'NEUTRAL', 1.0, NOW()),
-  ('공무원봉급으로', 'NEUTRAL', 1.0, NOW()),
-  ('가족들오면', 'NEUTRAL', 1.0, NOW()),
-  ('그거까진 잘 모르지만', 'NEUTRAL', 1.0, NOW()),
-  ('졸업못할뻔했네', 'NEUTRAL', 1.0, NOW()),
-  ('네말대로면 휴학이 좋지만 올해 고시에 붙으면 어떻게 돼나?', 'NEUTRAL', 1.0, NOW()),
-  ('아니 안봐쏘', 'NEUTRAL', 1.0, NOW()),
-  ('아글고 개', 'NEUTRAL', 1.0, NOW()),
-  ('내일학원알아보러간다능', 'NEUTRAL', 1.0, NOW()),
-  ('집에 가서 볼게', 'NEUTRAL', 1.0, NOW()),
-  ('잘하셨는지', 'NEUTRAL', 1.0, NOW()),
-  ('사학년이 아니였다', 'NEUTRAL', 1.0, NOW()),
-  ('응응 외국에 급히 나가야래서 그런다구', 'POSITIVE', 1.0, NOW()),
-  ('끝까지 #@이모티콘#감동#', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 근데 첨이라', 'NEUTRAL', 1.0, NOW()),
-  ('몰아들으니까 힘드네 ^^^^^^^^^^^^^', 'NEUTRAL', 1.0, NOW()),
-  ('머가리 깨질듯', 'NEUTRAL', 1.0, NOW()),
-  ('설계는 의미없어', 'NEUTRAL', 1.0, NOW()),
-  ('3도화상입었대', 'NEUTRAL', 1.0, NOW()),
-  ('난 그래도 중요한건 몇개 알고있어', 'POSITIVE', 1.0, NOW()),
-  ('진쫘 짜중나', 'NEUTRAL', 1.0, NOW()),
-  ('영국이 타국전염 최초의 유럽국가인가 이랬었거든ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이제 십분뒤부터 교육 시작', 'NEUTRAL', 1.0, NOW()),
-  ('근데 저거 암호화 화폐 보니까', 'NEUTRAL', 1.0, NOW()),
-  ('교육받으면 뭐 수료하는건데', 'NEUTRAL', 1.0, NOW()),
-  ('잘내도 몇억은벌드라', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#도 나가잖아..', 'NEUTRAL', 1.0, NOW()),
-  ('5차까지 조사하는게 말인 안되지', 'NEUTRAL', 1.0, NOW()),
-  ('펴보지도 않았다 자네', 'NEUTRAL', 1.0, NOW()),
-  ('같은 수업이 그러는거??', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ 넌 토익 다시 해야 하는 시점이 와쓰?', 'NEUTRAL', 1.0, NOW()),
-  ('줄어들긴커녕 계속 늘어나는데', 'NEUTRAL', 1.0, NOW()),
-  ('창밖을 내다보면서', 'NEUTRAL', 1.0, NOW()),
-  ('강의 를 들어야겟네', 'NEUTRAL', 1.0, NOW()),
-  ('기억이 안나...', 'NEUTRAL', 1.0, NOW()),
-  ('종정시야?', 'NEUTRAL', 1.0, NOW()),
-  ('점심시간마다 피아노학원', 'NEUTRAL', 1.0, NOW()),
-  ('이탈리아는 사실상 의료 포기 상태라던데...', 'NEUTRAL', 1.0, NOW()),
-  ('아 당선확정이시래', 'NEUTRAL', 1.0, NOW()),
-  ('ㅠㅠㅠㅠ에혀 수도권은 진짜ㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('아 ㅇㅋㅇㅋ 스피드웨건해드릴게요', 'NEUTRAL', 1.0, NOW()),
-  ('그래? 털에도 감각이 있나보구만', 'POSITIVE', 1.0, NOW()),
-  ('아 그거 학교마다 달라', 'NEUTRAL', 1.0, NOW()),
-  ('구랴 부담갖지말고', 'NEUTRAL', 1.0, NOW()),
-  ('아 4.48ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('오!!!ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아 끝났다', 'NEUTRAL', 1.0, NOW()),
-  ('포로 사격하지', 'NEUTRAL', 1.0, NOW()),
-  ('수목금이나 주말중에는...?ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('오늘은 8명', 'NEUTRAL', 1.0, NOW()),
-  ('대박이지 나도 기사보고 놀램', 'NEUTRAL', 1.0, NOW()),
-  ('한국사나 세계사', 'NEUTRAL', 1.0, NOW()),
-  ('다른 심리책이랑 내용이 비슷해서', 'NEUTRAL', 1.0, NOW()),
-  ('자리 옮기기.', 'NEUTRAL', 1.0, NOW()),
-  ('두시였으면 좋겠다', 'NEUTRAL', 1.0, NOW()),
-  ('눙물....ㅠㅠㅠㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('7학저남음', 'NEUTRAL', 1.0, NOW()),
-  ('시간어케채우나 모르겟음..막막...', 'NEUTRAL', 1.0, NOW()),
-  ('넹ㅋㅋ 일주일 몇번가여?', 'NEUTRAL', 1.0, NOW()),
-  ('단계별 방역조치좀 다시 읽어봐야겠다', 'NEUTRAL', 1.0, NOW()),
-  ('휴학하고 삶의질이 올라감 ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('하!하!!', 'NEUTRAL', 1.0, NOW()),
-  ('일분뒤에저나하장', 'NEUTRAL', 1.0, NOW()),
-  ('물론 만나서 같이 들어야하지만', 'NEUTRAL', 1.0, NOW()),
-  ('문화유산있는 월정사로 갑니다..', 'NEUTRAL', 1.0, NOW()),
-  ('화나서 못보겠엉', 'NEGATIVE', 1.0, NOW()),
-  ('너시간표좀보내볼래??', 'NEUTRAL', 1.0, NOW()),
-  ('바둑도 바둑기사가 가르치고', 'NEUTRAL', 1.0, NOW()),
-  ('도대체 왜', 'NEUTRAL', 1.0, NOW()),
-  ('농상집요(이암)', 'NEUTRAL', 1.0, NOW()),
-  ('잠도못자고', 'NEUTRAL', 1.0, NOW()),
-  ('몇시시험이지?', 'NEUTRAL', 1.0, NOW()),
-  ('티비켜놨어?', 'NEUTRAL', 1.0, NOW()),
-  ('개신기..', 'NEUTRAL', 1.0, NOW()),
-  ('애들다시학교못나가는거아닌가몰러ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('교인들한테는 검사받지 말라해놓고', 'NEUTRAL', 1.0, NOW()),
-  ('울엄마도 싱가폴 갔다왔는디-.-당분간 나 만나지마 친구들', 'NEUTRAL', 1.0, NOW()),
-  ('글구 그냥 모르는 단어도 많이 나왔었어', 'NEUTRAL', 1.0, NOW()),
-  ('푹 자 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('단어 1일차만 보고 끝냄', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ 나 아침부터 하고잇지ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('광주 ????', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ큐ㅠㅠ진짜 고생했어', 'NEUTRAL', 1.0, NOW()),
-  ('나더,,,', 'NEUTRAL', 1.0, NOW()),
-  ('여자 분은 이미', 'NEUTRAL', 1.0, NOW()),
-  ('하루 공부량으로 치면 별로 많이 한 것 같지는 않은데', 'NEGATIVE', 1.0, NOW()),
-  ('핵심은 국제유가 70 코로나 30', 'NEUTRAL', 1.0, NOW()),
-  ('지금 뭔 마을도', 'NEUTRAL', 1.0, NOW()),
-  ('그렇게 얘기하니 걱정이 좀 덜하네', 'NEUTRAL', 1.0, NOW()),
-  ('미술치료도 비플이야..', 'NEUTRAL', 1.0, NOW()),
-  ('그래야마음의위안이돼', 'POSITIVE', 1.0, NOW()),
-  ('시험유형조차 노출을 안하심', 'NEUTRAL', 1.0, NOW()),
-  ('무서워서 해외', 'NEUTRAL', 1.0, NOW()),
-  ('8시간후 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('내일은 출근하지?', 'NEUTRAL', 1.0, NOW()),
-  ('나컴호ㅓㄹ시험도', 'NEUTRAL', 1.0, NOW()),
-  ('아니 당장 담주라도 필기시험있으면', 'NEUTRAL', 1.0, NOW()),
-  ('멍때리다가', 'NEUTRAL', 1.0, NOW()),
-  ('99프로래', 'NEUTRAL', 1.0, NOW()),
-  ('전화해봤러?', 'NEUTRAL', 1.0, NOW()),
-  ('철통 놓고오고', 'NEUTRAL', 1.0, NOW()),
-  ('아니 그동안 클린하더니', 'NEUTRAL', 1.0, NOW()),
-  ('집까지 조심해서 오자 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('꼭 듣고싶은걸로 신청해', 'NEUTRAL', 1.0, NOW()),
-  ('미니스탁은..', 'NEUTRAL', 1.0, NOW()),
-  ('이쯤했으면', 'NEUTRAL', 1.0, NOW()),
-  ('그것도 걍', 'NEUTRAL', 1.0, NOW()),
-  ('한권만이야', 'NEUTRAL', 1.0, NOW()),
-  ('폰 잠금하고 일하는거 실패하면 벌금 내야 하는데', 'NEUTRAL', 1.0, NOW()),
-  ('참여 안 한 사람들도 참여할 거 같아', 'NEUTRAL', 1.0, NOW()),
-  ('값이너무 작아서', 'NEUTRAL', 1.0, NOW()),
-  ('11시 53분에 제출함 쫄려서 죽는줄알앗네', 'NEUTRAL', 1.0, NOW()),
-  ('키키킥 공부하고보볌', 'NEUTRAL', 1.0, NOW()),
-  ('공강가미쳤네', 'NEUTRAL', 1.0, NOW()),
-  ('야 그때 로켓그거 조사하려면', 'NEUTRAL', 1.0, NOW()),
-  ('뭔소린지모르겠음', 'NEUTRAL', 1.0, NOW()),
-  ('그때 얘기 해줘', 'NEUTRAL', 1.0, NOW()),
-  ('그 미친놈', 'NEUTRAL', 1.0, NOW()),
-  ('큰일이네ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그랬으면 조케다...ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('친구 맞아?', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ우리과기ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('까다로운걸 묻긴한듯', 'NEUTRAL', 1.0, NOW()),
-  ('헐 어디서 본거야??', 'NEUTRAL', 1.0, NOW()),
-  ('외우면보임ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('진작끝난줄알앗지 뭐야 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('간호직한대 ?', 'NEUTRAL', 1.0, NOW()),
-  ('내꺼 4학점 했던건', 'NEUTRAL', 1.0, NOW()),
-  ('신청해야와?', 'NEUTRAL', 1.0, NOW()),
-  ('그 노선안밝히는 깜깜이땜시', 'NEUTRAL', 1.0, NOW()),
-  ('빨리 했네', 'NEUTRAL', 1.0, NOW()),
-  ('그니까내말은', 'NEUTRAL', 1.0, NOW()),
-  ('아니 아직...', 'NEUTRAL', 1.0, NOW()),
-  ('지식인ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('갑자기 말투 뭐야', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ그다음파트는', 'NEUTRAL', 1.0, NOW()),
-  ('나랑은안맞아', 'POSITIVE', 1.0, NOW()),
-  ('1급 실기... 진짜 노답...', 'NEUTRAL', 1.0, NOW()),
-  ('님공부하도있4ㅜ나', 'NEUTRAL', 1.0, NOW()),
-  ('우리나라 법 경찰 검찰 재판등등이', 'NEUTRAL', 1.0, NOW()),
-  ('그럴거같아..', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 아침에도 봣눈데 안떠 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('다음주 7일 월요일 광남동사무소에서 열린 시장실 운영하네', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 근데 이거 대면강의하면', 'NEUTRAL', 1.0, NOW()),
-  ('공부를 열심히 하면 나오기때문에', 'NEUTRAL', 1.0, NOW()),
-  ('어휘력이 딸려서', 'NEUTRAL', 1.0, NOW()),
-  ('이게 무슨일이야..', 'NEUTRAL', 1.0, NOW()),
-  ('18명정도인데', 'NEUTRAL', 1.0, NOW()),
-  ('걔네 가족 ㄹㅇ', 'NEUTRAL', 1.0, NOW()),
-  ('문제 나오면 막힘없이 다 풀고있엉', 'NEUTRAL', 1.0, NOW()),
-  ('댓절은 뒤에 주어동사가오거든?', 'NEUTRAL', 1.0, NOW()),
-  ('웅 난 없지렁 ㅎㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('나는 주식 한 번 해보고 싶은데', 'NEUTRAL', 1.0, NOW()),
-  ('그런가보지 뭐', 'NEUTRAL', 1.0, NOW()),
-  ('34안갈래', 'NEUTRAL', 1.0, NOW()),
-  ('마약쟁이야????', 'NEUTRAL', 1.0, NOW()),
-  ('시험 띄엄띄엄 있는게 나은듯', 'NEUTRAL', 1.0, NOW()),
-  ('못따는거 아녀', 'NEUTRAL', 1.0, NOW()),
-  ('저걸 바꿀수 잇긴해', 'NEUTRAL', 1.0, NOW()),
-  ('책사러왔다함', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋ.웅 마자', 'NEUTRAL', 1.0, NOW()),
-  ('교수님 한분 시험끝난 그 다으쭈에', 'NEUTRAL', 1.0, NOW()),
-  ('그러다 또 까먹는다', 'NEUTRAL', 1.0, NOW()),
-  ('abcd요런거', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ맨뒷자리가야겟네', 'NEUTRAL', 1.0, NOW()),
-  ('헐...어케', 'NEUTRAL', 1.0, NOW()),
-  ('심지어 90학점', 'NEUTRAL', 1.0, NOW()),
-  ('그렇군. 그럼 미국인이랑 결혼 해야겠다.', 'NEUTRAL', 1.0, NOW()),
-  ('한챕터씩 하지말고', 'NEUTRAL', 1.0, NOW()),
-  ('#@소속#는 원래', 'NEUTRAL', 1.0, NOW()),
-  ('다시강의실간다ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('확통2번품????', 'NEUTRAL', 1.0, NOW()),
-  ('공부했으니까 보상휴식ㄱ ㄱ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ와우', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ어 그래라해야겟다', 'POSITIVE', 1.0, NOW()),
-  ('공지를 빨리 올려줬으면 좋겠어', 'NEUTRAL', 1.0, NOW()),
-  ('더 생경야 할꺼니깟', 'NEUTRAL', 1.0, NOW()),
-  ('거기 안에 들어있는 초콜릿바? 먹으면서 참았어', 'NEUTRAL', 1.0, NOW()),
-  ('야 오늘도 코로나 확진자 200명 넘었지?', 'NEUTRAL', 1.0, NOW()),
-  ('아님 밖나간거야?', 'NEUTRAL', 1.0, NOW()),
-  ('실습가면 거기서 또 뭐써야되잖아', 'NEUTRAL', 1.0, NOW()),
-  ('직접 등하교 시켜달래', 'NEUTRAL', 1.0, NOW()),
-  ('그렇지 뭐.. 올린게 어디냐', 'NEUTRAL', 1.0, NOW()),
-  ('너무 재미가 없어..', 'NEUTRAL', 1.0, NOW()),
-  ('라고하는데 교육부 지침은 어디에있는거야?', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이 이해 못햇다', 'NEUTRAL', 1.0, NOW()),
-  ('따기어렵 ?', 'NEUTRAL', 1.0, NOW()),
-  ('수업 다듣고 해야지', 'NEUTRAL', 1.0, NOW()),
-  ('아뭐여 식당 밤9시~오전5시래', 'NEUTRAL', 1.0, NOW()),
-  ('나름 그때 성적이 젤좋앗스', 'NEUTRAL', 1.0, NOW()),
-  ('다운받으려궁', 'NEUTRAL', 1.0, NOW()),
-  ('응 ㅋㅋㅋㅋ 내일 그럼 연락해', 'POSITIVE', 1.0, NOW()),
-  ('다섯시쯤 끝날것같대8ㅅ8', 'NEUTRAL', 1.0, NOW()),
-  ('시험 언제부터봐?', 'NEUTRAL', 1.0, NOW()),
-  ('시험 보고', 'NEUTRAL', 1.0, NOW()),
-  ('나옷방에서 잘라니까', 'NEUTRAL', 1.0, NOW()),
-  ('오지말라고는 해는데', 'NEUTRAL', 1.0, NOW()),
-  ('몇 점인데', 'NEUTRAL', 1.0, NOW()),
-  ('(#@이모티콘#) 너가 나쁜거면 나눈 아메바야', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이다', 'NEUTRAL', 1.0, NOW()),
-  ('알아야되지않냐', 'NEUTRAL', 1.0, NOW()),
-  ('에이제로 무슨일이야ㅡㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('부동산 잡아야하는데 바로 밑선들이 저러니', 'NEUTRAL', 1.0, NOW()),
-  ('ㄴㄴㄴ 실기', 'NEUTRAL', 1.0, NOW()),
-  ('우리가 가장 좋은 대접받았던', 'NEUTRAL', 1.0, NOW()),
-  ('요즘 같은 시대에..', 'NEUTRAL', 1.0, NOW()),
-  ('망해쓰~~~~~~', 'NEUTRAL', 1.0, NOW()),
-  ('진짜.. 밥을 다 떠먹여달라고… 성인들 맞냐구요… 그쵸', 'NEUTRAL', 1.0, NOW()),
-  ('객관식3문제', 'NEUTRAL', 1.0, NOW()),
-  ('원래 실기도 같이 해야', 'NEUTRAL', 1.0, NOW()),
-  ('우리가 치는 시험은', 'NEUTRAL', 1.0, NOW()),
-  ('다른사람이 먼저 말하는 것=답', 'NEUTRAL', 1.0, NOW()),
-  ('그냥그래..뭔가아무생각이가없음ㅋㄱㄱㄱ', 'POSITIVE', 1.0, NOW()),
-  ('일단 전공들어봐', 'NEUTRAL', 1.0, NOW()),
-  ('지금 수의사가 와서 실험동물 윤리 교육해', 'NEUTRAL', 1.0, NOW()),
-  ('원래 밖에서 안해도 되고', 'NEUTRAL', 1.0, NOW()),
-  ('하지만 6시간짜리를 3시에 끝낸다는건', 'NEUTRAL', 1.0, NOW()),
-  ('아냐 나두 떨어질구더 있자나,,^_^', 'NEUTRAL', 1.0, NOW()),
-  ('요즘 워낙 위험하게 달리니까', 'NEUTRAL', 1.0, NOW()),
-  ('그러다가 감염자 더 늘으면 어떡함', 'NEUTRAL', 1.0, NOW()),
-  ('내스타일 개그 ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('타조아냐?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋ정신만 차림', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋ머라머라구햇셔', 'NEUTRAL', 1.0, NOW()),
-  ('걍 잘해왔는ㄷ0', 'NEUTRAL', 1.0, NOW()),
-  ('너넨 좋겟다', 'NEUTRAL', 1.0, NOW()),
-  ('나 내일 휴가 쓰는 거 오바일까', 'NEUTRAL', 1.0, NOW()),
-  ('저도 얼른사야지여', 'NEUTRAL', 1.0, NOW()),
-  ('라면밖에없다고하니까', 'NEUTRAL', 1.0, NOW()),
-  ('응 아  참고있어야된다는개', 'POSITIVE', 1.0, NOW()),
-  ('한번쯤,,', 'NEUTRAL', 1.0, NOW()),
-  ('다시 잘 지내봐', 'NEUTRAL', 1.0, NOW()),
-  ('나가기 귀찮네', 'NEUTRAL', 1.0, NOW()),
-  ('빈속에 먹어서 그런거 아니야??', 'NEGATIVE', 1.0, NOW()),
-  ('아 마따 #@이름#도 학생회였네ㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('근데 그게 보여서 화나는 거지', 'NEGATIVE', 1.0, NOW()),
-  ('싸우는거지', 'NEUTRAL', 1.0, NOW()),
-  ('맥반석 오징엌ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('혼자파란만두', 'NEUTRAL', 1.0, NOW()),
-  ('1 정신을 차리고 허리띠를 졸라맨다', 'NEUTRAL', 1.0, NOW()),
-  ('많이 피곤하구나', 'NEUTRAL', 1.0, NOW()),
-  ('배터리를??', 'NEUTRAL', 1.0, NOW()),
-  ('떡볶이 조짐', 'NEUTRAL', 1.0, NOW()),
-  ('말해주세여 ㅋㅋㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('진짜 너무 아파서', 'NEGATIVE', 1.0, NOW()),
-  ('ㅠ아.. 이야기하고오셔야죠ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('어떤분이 나한테 우울해 보인다고;;', 'NEGATIVE', 1.0, NOW()),
-  ('빨ㄴ늬...우리가 이 환경을 더 좋게 만들어나갑싀다!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('대놓고 말해요?ㄷㄷ', 'NEUTRAL', 1.0, NOW()),
-  ('뭔가 옛날에는 음식 남기는게', 'NEUTRAL', 1.0, NOW()),
-  ('믿어본다~', 'NEUTRAL', 1.0, NOW()),
-  ('나는 머스크가 싫어', 'NEGATIVE', 1.0, NOW()),
-  ('와....가방에 11억이래', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋ앜ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('우리 #@이름#는', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 우선은 급하지 않으니', 'NEUTRAL', 1.0, NOW()),
-  ('끼여가고잇어', 'NEUTRAL', 1.0, NOW()),
-  ('아니 한 20?', 'NEUTRAL', 1.0, NOW()),
-  ('거의 똑같구나..', 'NEUTRAL', 1.0, NOW()),
-  ('네이버 ㄱ ㄱ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#아 오늘도 조퇴하나', 'NEUTRAL', 1.0, NOW()),
-  ('손목도 확 못잡아', 'NEUTRAL', 1.0, NOW()),
-  ('그렇구만 마법좀 배워와봥', 'NEUTRAL', 1.0, NOW()),
-  ('내가 점심 시간에 사다놔야겠네. 무슨 맛으로 살까?', 'NEUTRAL', 1.0, NOW()),
-  ('나는 나갈준비 하고있어', 'NEUTRAL', 1.0, NOW()),
-  ('지금 보냈샤', 'NEUTRAL', 1.0, NOW()),
-  ('심지어 그 총무가 성격이', 'NEUTRAL', 1.0, NOW()),
-  ('언니가 우리 과제 베끼는게 싫었다라고?', 'NEUTRAL', 1.0, NOW()),
-  ('확인하러 흐.', 'NEUTRAL', 1.0, NOW()),
-  ('임시분가 허락받았습니다^^', 'NEUTRAL', 1.0, NOW()),
-  ('잘생기고 옷 못입는 사람 vs 못생겼는데 옷 잘입는 사람', 'NEUTRAL', 1.0, NOW()),
-  ('수영도 진짜 많이 함', 'NEUTRAL', 1.0, NOW()),
-  ('허걱 너무 비싸다', 'NEUTRAL', 1.0, NOW()),
-  ('묘한이로 대체가', 'NEUTRAL', 1.0, NOW()),
-  ('이러고 ;', 'NEUTRAL', 1.0, NOW()),
-  ('만날 때마다 미묘하게 달라져있음', 'NEUTRAL', 1.0, NOW()),
-  ('큰거 사서', 'NEUTRAL', 1.0, NOW()),
-  ('마따...^^시작이 반이랬다!', 'NEUTRAL', 1.0, NOW()),
-  ('나도 지금은 미친짓이라 생각하지..', 'NEUTRAL', 1.0, NOW()),
-  ('업서도,,,,', 'NEUTRAL', 1.0, NOW()),
-  ('무서운데....', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 #@이름#아 너무 즐거웠어 땡스', 'NEUTRAL', 1.0, NOW()),
-  ('얼그레이케이크랑 밀푀유', 'NEUTRAL', 1.0, NOW()),
-  ('그런생각이안들더라', 'NEUTRAL', 1.0, NOW()),
-  ('그래두 너무 늦게자면안댄다', 'POSITIVE', 1.0, NOW()),
-  ('이쿠 졸리다', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#가 하자구 안 했는데', 'NEUTRAL', 1.0, NOW()),
-  ('젤 져은걸?', 'NEUTRAL', 1.0, NOW()),
-  ('자요 꿀잠', 'NEUTRAL', 1.0, NOW()),
-  ('사람많아요?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ개못생겼뎌', 'NEUTRAL', 1.0, NOW()),
-  ('바로 점프 가넝 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('그렇게하고', 'NEUTRAL', 1.0, NOW()),
-  ('근데 내가 내 공부를 못해서 뭔가 결단이 필요한거같아', 'NEUTRAL', 1.0, NOW()),
-  ('''#@이름#형은 말을 너무 쎄게하고 예민해''', 'NEUTRAL', 1.0, NOW()),
-  ('전 생리대행 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이모티콘# 이거', 'NEUTRAL', 1.0, NOW()),
-  ('그나마다행소식', 'POSITIVE', 1.0, NOW()),
-  ('어제 한강 조깅도 함', 'NEUTRAL', 1.0, NOW()),
-  ('숨어서 지냈자나 남들보다 그니까 부담이 있는거지', 'NEUTRAL', 1.0, NOW()),
-  ('한 세네개 있는거야', 'NEUTRAL', 1.0, NOW()),
-  ('아니요...', 'NEUTRAL', 1.0, NOW()),
-  ('웅ㅎㅎㅎ밥먹고 새똥 주우러왓는데', 'NEUTRAL', 1.0, NOW()),
-  ('월타에서 나왔다고 했지', 'NEUTRAL', 1.0, NOW()),
-  ('서울살았을때는', 'NEUTRAL', 1.0, NOW()),
-  ('그 다음날부터 #@이름#랑 나랑 둘 다 탈남 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅎㅎ 주신다면 넘나 감사하죠 ㅠㅠ', 'POSITIVE', 1.0, NOW()),
-  ('맥주 소주 완비', 'NEUTRAL', 1.0, NOW()),
-  ('과자만 처먹음^^............', 'NEUTRAL', 1.0, NOW()),
-  ('무이자할부같은거야?', 'NEUTRAL', 1.0, NOW()),
-  ('우리도 죄인같잖아', 'NEUTRAL', 1.0, NOW()),
-  ('켜줄래!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('나 가야한대??', 'NEUTRAL', 1.0, NOW()),
-  ('나 채식해', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 오늘은 날인 거임', 'NEUTRAL', 1.0, NOW()),
-  ('그럼어떨때감동받지~~??', 'NEUTRAL', 1.0, NOW()),
-  ('빡치면 어떡해', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 나 지금가서 집에가?', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타# 배고픈디 집 가서', 'NEUTRAL', 1.0, NOW()),
-  ('그래도 아침부터 자가지고', 'POSITIVE', 1.0, NOW()),
-  ('뿡뿡아...', 'NEUTRAL', 1.0, NOW()),
-  ('아 #@이름# 카페야지금?', 'NEUTRAL', 1.0, NOW()),
-  ('웅근데 자기더', 'NEUTRAL', 1.0, NOW()),
-  ('zㅋㅋㅋㅋㅋㅋ특별히 빌려준다', 'NEUTRAL', 1.0, NOW()),
-  ('찾앗옹???', 'NEUTRAL', 1.0, NOW()),
-  ('흑돼지라고 해줘야하나?', 'NEUTRAL', 1.0, NOW()),
-  ('내놓으라노...', 'NEUTRAL', 1.0, NOW()),
-  ('좀 어때들?', 'NEUTRAL', 1.0, NOW()),
-  ('대면????', 'NEUTRAL', 1.0, NOW()),
-  ('살기좋은 도시  과천이구만💕💕💕', 'NEUTRAL', 1.0, NOW()),
-  ('나도 이것저것 생각은 했는데', 'NEUTRAL', 1.0, NOW()),
-  ('그래도 집이 아주 시원하겠어~^^', 'POSITIVE', 1.0, NOW()),
-  ('전무는 또 어디 가서 뵈이지도 않네', 'NEUTRAL', 1.0, NOW()),
-  ('웃음을 참을 수 있나?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㄱㄱㄱ그냥 좀 이해가안가는거같긴했는데', 'NEUTRAL', 1.0, NOW()),
-  ('거절하지망~', 'NEUTRAL', 1.0, NOW()),
-  ('얼굴이끝이야ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('헤어지는 게 덜 비참할 수도', 'NEUTRAL', 1.0, NOW()),
-  ('못가고 참다가', 'NEUTRAL', 1.0, NOW()),
-  ('아구야 모임은 좀', 'NEUTRAL', 1.0, NOW()),
-  ('망했다 그래', 'POSITIVE', 1.0, NOW()),
-  ('너가 전화하기전까지 하지말래서', 'NEUTRAL', 1.0, NOW()),
-  ('이제 시작해서 그런가...', 'NEUTRAL', 1.0, NOW()),
-  ('꼭 저렇게 말한다니깐~~', 'NEUTRAL', 1.0, NOW()),
-  ('방에 누워있으면', 'NEUTRAL', 1.0, NOW()),
-  ('짱이 토욜날 실밥뽑으러갈때 물어보고 애견카페갈거야', 'NEUTRAL', 1.0, NOW()),
-  ('우리 물건 전부~', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ이제 뚜벅초아니라 짐많아도 걱정안됩니당 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('넘많이먹지말고~~조심히들와', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 니 말을 좀 정리해볼게', 'NEUTRAL', 1.0, NOW()),
-  ('회복이 어렵대', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇㅇㅇㅇㅇㅇ완죤 맞는 말이메', 'NEUTRAL', 1.0, NOW()),
-  ('놀러오기로 했다가', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 말랐겠다', 'NEUTRAL', 1.0, NOW()),
-  ('산책나가고하는거^^..', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ넌 어딘데?', 'NEUTRAL', 1.0, NOW()),
-  ('하긴 우리도 씻고 나가는데..', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 인가', 'NEUTRAL', 1.0, NOW()),
-  ('책있나만봐주라', 'NEUTRAL', 1.0, NOW()),
-  ('요리얘기하다가', 'NEUTRAL', 1.0, NOW()),
-  ('곧 30이긴 하지만 ..', 'NEUTRAL', 1.0, NOW()),
-  ('그때는 사진 보면서 되게 신기했는데', 'NEUTRAL', 1.0, NOW()),
-  ('자는데 만지는거아냐?', 'NEUTRAL', 1.0, NOW()),
-  ('진짜잘해주는것도없는데', 'POSITIVE', 1.0, NOW()),
-  ('전하께서도 편히 주무십시오', 'NEUTRAL', 1.0, NOW()),
-  ('ㅠ 전화하라고 답없으면', 'NEUTRAL', 1.0, NOW()),
-  ('나는 좀 중간', 'NEUTRAL', 1.0, NOW()),
-  ('...나 자고싶어', 'NEUTRAL', 1.0, NOW()),
-  ('카톡 그만하고 얼른자', 'NEGATIVE', 1.0, NOW()),
-  ('어릴때 왜이리 풍파가 많니 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이제 힘든거 못하겟어..', 'NEUTRAL', 1.0, NOW()),
-  ('잘되는것같어~?', 'NEUTRAL', 1.0, NOW()),
-  ('서울서데이트ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('슬릭은 아니니까', 'NEUTRAL', 1.0, NOW()),
-  ('오늘가삼!!', 'NEUTRAL', 1.0, NOW()),
-  ('오빠 여친이랑 보냈지', 'NEUTRAL', 1.0, NOW()),
-  ('웅#@이모티콘#', 'NEUTRAL', 1.0, NOW()),
-  ('#@이모티콘# 내일봐', 'NEUTRAL', 1.0, NOW()),
-  ('와서 계속 쳐다봐', 'NEUTRAL', 1.0, NOW()),
-  ('아이디어 다 소진 됨', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ내랑 비슷한정돈가보네ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그립다..너의 옆자리..', 'NEUTRAL', 1.0, NOW()),
-  ('밥먹고 멍하게 앉아잇어ㅠㅠ힘들어서', 'NEGATIVE', 1.0, NOW()),
-  ('잘 다녀와아~~?💕', 'NEUTRAL', 1.0, NOW()),
-  ('이번주토요일에 엄마랑 목걸이 사러가기러함', 'NEUTRAL', 1.0, NOW()),
-  ('귀리우유맛있네', 'POSITIVE', 1.0, NOW()),
-  ('300엔짜리 ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('우리 영통으로 하자', 'NEUTRAL', 1.0, NOW()),
-  ('오늘  잘  버티고 3일 쉬면   좀  나아지려나 ?', 'NEUTRAL', 1.0, NOW()),
-  ('읽엇다고?', 'NEUTRAL', 1.0, NOW()),
-  ('쥐잡듯이 찾으먄 잇겟지', 'NEUTRAL', 1.0, NOW()),
-  ('잼없음ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('보여줘 !', 'NEUTRAL', 1.0, NOW()),
-  ('나가면 사이 좋아지겎지 뭐', 'POSITIVE', 1.0, NOW()),
-  ('심지어 카드 결제 한게 코미디다 진짜', 'NEUTRAL', 1.0, NOW()),
-  ('결과 빨리 나왔으면 좋겠다..', 'NEUTRAL', 1.0, NOW()),
-  ('이러면서 머리간질간질', 'NEUTRAL', 1.0, NOW()),
-  ('역시 인간은', 'NEUTRAL', 1.0, NOW()),
-  ('저 자막 피해서 사진 찍어서 한거였음', 'NEUTRAL', 1.0, NOW()),
-  ('신발신고 1미터인듯ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 나 눈썹문신한다', 'NEUTRAL', 1.0, NOW()),
-  ('난 그런거 티나는 순간 딱 질.색.', 'NEUTRAL', 1.0, NOW()),
-  ('함덕 다녀완??', 'NEUTRAL', 1.0, NOW()),
-  ('근데 다시 읽어볼 엄두는 안나고', 'NEUTRAL', 1.0, NOW()),
-  ('이제 #@이름#가 아니군요!', 'NEUTRAL', 1.0, NOW()),
-  ('기흥구청 쪽', 'NEUTRAL', 1.0, NOW()),
-  ('무슨 색을 제일 좋아해?', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ므ㅓㄴ소리야', 'NEUTRAL', 1.0, NOW()),
-  ('큰애가 더하기가 오늘 좀 안되더라그', 'NEUTRAL', 1.0, NOW()),
-  ('진짜머싯다', 'NEUTRAL', 1.0, NOW()),
-  ('이거 언제 외우고자지', 'NEUTRAL', 1.0, NOW()),
-  ('모잘못햇는뎅???', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ언제 친해지지', 'NEUTRAL', 1.0, NOW()),
-  ('환자달래고', 'NEUTRAL', 1.0, NOW()),
-  ('얼른 씻어', 'NEUTRAL', 1.0, NOW()),
-  ('전화는 왜 안 받아', 'NEUTRAL', 1.0, NOW()),
-  ('골앵 감사합니다 떙큐', 'POSITIVE', 1.0, NOW()),
-  ('마라탕 먹고싶다', 'NEUTRAL', 1.0, NOW()),
-  ('잠순이가 댓서', 'NEUTRAL', 1.0, NOW()),
-  ('근데 꼭 군기를 잡겠다는 애가', 'NEUTRAL', 1.0, NOW()),
-  ('늦게잣어?', 'NEUTRAL', 1.0, NOW()),
-  ('그래 니 통장 한 봐라', 'POSITIVE', 1.0, NOW()),
-  ('머리 심는 고', 'NEUTRAL', 1.0, NOW()),
-  ('멋쟁이넼ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나 근데 썸 때는 뽀뽀 원래 안 하는데', 'NEUTRAL', 1.0, NOW()),
-  ('들어봤어?', 'NEUTRAL', 1.0, NOW()),
-  ('그건 포기', 'NEUTRAL', 1.0, NOW()),
-  ('왜? 회사에서', 'NEUTRAL', 1.0, NOW()),
-  ('앞으로 안볼사람처럼', 'NEUTRAL', 1.0, NOW()),
-  ('언뉘 나 혹시 웃기게 나온 엽사같은 사진 없음??', 'NEUTRAL', 1.0, NOW()),
-  ('사거리 있어서 그런듯', 'NEUTRAL', 1.0, NOW()),
-  ('어린이집가', 'NEUTRAL', 1.0, NOW()),
-  ('아니 핸드폰요금은 왜... 미납이 되신거래', 'NEUTRAL', 1.0, NOW()),
-  ('해도 휴게실!!!', 'NEUTRAL', 1.0, NOW()),
-  ('재료 구할때 회사근처 다이소도 가보셈..ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('아 쟤가 나 더 좋아하게ㅜ만들어야지 이러면서', 'POSITIVE', 1.0, NOW()),
-  ('아빠가 안쫓아내고', 'NEUTRAL', 1.0, NOW()),
-  ('역시 #@이름#이 안목~~ 넣어입으니까 더 이뻣어ㅎㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('P랑 j는 왓다리갔다리하고', 'NEUTRAL', 1.0, NOW()),
-  ('스스로 나가서 밥 사먹고 오면 대자나..', 'NEUTRAL', 1.0, NOW()),
-  ('사람어색하게하는게있어', 'NEUTRAL', 1.0, NOW()),
-  ('애미는 핵교 가려고', 'NEUTRAL', 1.0, NOW()),
-  ('결국 지하철 문 열림', 'NEUTRAL', 1.0, NOW()),
-  ('뿌듯하네 ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('응응 안가는게 좋을것같아', 'POSITIVE', 1.0, NOW()),
-  ('너mbti 알아?', 'NEUTRAL', 1.0, NOW()),
-  ('그런 것 같네', 'NEUTRAL', 1.0, NOW()),
-  ('노랑플라스틱 매', 'NEUTRAL', 1.0, NOW()),
-  ('주소 올려두까..', 'NEUTRAL', 1.0, NOW()),
-  ('울고불고 하는거 다찍을수있는데', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 홀가분하면서', 'NEUTRAL', 1.0, NOW()),
-  ('어제 한 3시 반까지 자다가 씻고 코엑스 구견라고 왓어', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 차로 다녀..', 'POSITIVE', 1.0, NOW()),
-  ('??헉 대박 내 선물이야?', 'NEUTRAL', 1.0, NOW()),
-  ('엄청잘가지고노네ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('그정도 돈이 안됨..', 'NEUTRAL', 1.0, NOW()),
-  ('갸악 웅웅 그러길!!', 'NEUTRAL', 1.0, NOW()),
-  ('웅 그럴라고,,,,ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('가운데 끼기 싫대..', 'NEUTRAL', 1.0, NOW()),
-  ('심리적으로 그럴수 있다고 칭찬 많이 해주래', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋ스위트미련걸', 'NEUTRAL', 1.0, NOW()),
-  ('읽었어 ㅋㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('엄마십만원', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#아 내가 너무 사랑하니까', 'NEUTRAL', 1.0, NOW()),
-  ('순종하며 살아야지', 'NEUTRAL', 1.0, NOW()),
-  ('그 독서실 밑에', 'NEUTRAL', 1.0, NOW()),
-  ('신의옷을묶으려해', 'NEUTRAL', 1.0, NOW()),
-  ('피곤하겠당ㅋㅋ 어여자', 'NEUTRAL', 1.0, NOW()),
-  ('내일은 쉬어야되뎄는데', 'NEUTRAL', 1.0, NOW()),
-  ('넌 어릴때부터 참 해맑았구나☆', 'NEUTRAL', 1.0, NOW()),
-  ('아눗곀ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋ너무 꿀잼', 'NEUTRAL', 1.0, NOW()),
-  ('동선이 거지야', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 물어본건데 ㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('주기적으로 땡기는걸 보면은', 'NEUTRAL', 1.0, NOW()),
-  ('자존감만 바닥치고', 'NEUTRAL', 1.0, NOW()),
-  ('병원에서는 심한 타박상이래요 T∇T', 'NEUTRAL', 1.0, NOW()),
-  ('주접떠는거보고 윙옵이 젤 맘에드는 구절이라고 했다고', 'NEUTRAL', 1.0, NOW()),
-  ('연기자모드', 'NEUTRAL', 1.0, NOW()),
-  ('그건 그렇징~ 애매하구만 ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('정말 많은 얘기들이 있었어', 'NEUTRAL', 1.0, NOW()),
-  ('너가 같이 논다고했으니까', 'NEUTRAL', 1.0, NOW()),
-  ('완전 실친 솔메 급 만나서', 'NEUTRAL', 1.0, NOW()),
-  ('힐신고가냐 학교..?', 'NEUTRAL', 1.0, NOW()),
-  ('딱히필요없을수도 있짜나', 'NEUTRAL', 1.0, NOW()),
-  ('보이스트롯2위햇닷', 'NEUTRAL', 1.0, NOW()),
-  ('아 그러니까ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 가게에서 자는겋까?', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 아빠 보면서 반성합', 'POSITIVE', 1.0, NOW()),
-  ('저게 눈알인줄 알았대', 'NEUTRAL', 1.0, NOW()),
-  ('긍게긍게..ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('실제로는 아무도 안걸리네요 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('전화했겠지', 'NEUTRAL', 1.0, NOW()),
-  ('근데 31일에 뭐하지!', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 끝이나면', 'NEUTRAL', 1.0, NOW()),
-  ('혼자잇으니까', 'NEUTRAL', 1.0, NOW()),
-  ('과외하구올게융', 'NEUTRAL', 1.0, NOW()),
-  ('이불을 베고 자ㅋㅋㄱ', 'NEUTRAL', 1.0, NOW()),
-  ('코트자락도 열림ㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아.. 그거', 'NEUTRAL', 1.0, NOW()),
-  ('뱈수네 거짐ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('거짓말할것도아닌일이자나', 'NEUTRAL', 1.0, NOW()),
-  ('이제 고충을 알겠니...?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ근데', 'NEUTRAL', 1.0, NOW()),
-  ('남아돌겠네', 'NEUTRAL', 1.0, NOW()),
-  ('나 혼자옴', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ이미 챙겼어??', 'NEUTRAL', 1.0, NOW()),
-  ('글치 아니면 그 우리밥먹은 식당그렁데서 자거나ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('데이트는 글렀네', 'NEUTRAL', 1.0, NOW()),
-  ('낼만나면되', 'NEUTRAL', 1.0, NOW()),
-  ('불안감이 많으면 주변한테 피해주는거야', 'POSITIVE', 1.0, NOW()),
-  ('전도 주네', 'NEUTRAL', 1.0, NOW()),
-  ('아니 엄청 쫄보라서', 'NEUTRAL', 1.0, NOW()),
-  ('싱글침대자나ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#이만 혼자 남아잇어??', 'NEUTRAL', 1.0, NOW()),
-  ('축하해요!!', 'NEUTRAL', 1.0, NOW()),
-  ('독립심 강하고!', 'NEUTRAL', 1.0, NOW()),
-  ('들킷노 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('어딘데 너', 'NEUTRAL', 1.0, NOW()),
-  ('보다마자 눈물날뻔', 'NEUTRAL', 1.0, NOW()),
-  ('벌써 호들갑', 'NEUTRAL', 1.0, NOW()),
-  ('저 할줄몰라여그거ㅜㅜㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이거는 돈도주네', 'NEUTRAL', 1.0, NOW()),
-  ('우리회사 감면 받으시는 분들 서류 온거 봤는데', 'NEUTRAL', 1.0, NOW()),
-  ('파산 신청해도', 'NEUTRAL', 1.0, NOW()),
-  ('두달이 조금 지나버려서.......', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#  걍 죽는게 나을듯!', 'NEUTRAL', 1.0, NOW()),
-  ('그냥 한다던데,,,,', 'NEUTRAL', 1.0, NOW()),
-  ('나야.대단해', 'NEUTRAL', 1.0, NOW()),
-  ('제가 일지썼던걸 잘못했길래', 'NEUTRAL', 1.0, NOW()),
-  ('통갈이하고', 'NEUTRAL', 1.0, NOW()),
-  ('크으.. 이것저것해도 110남는거 개 간지', 'NEUTRAL', 1.0, NOW()),
-  ('이새키들이', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ시공하러간구야?', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ근데이게', 'NEUTRAL', 1.0, NOW()),
-  ('대 체 뭐 지', 'NEUTRAL', 1.0, NOW()),
-  ('오오 #@이름#랑 #@이름#', 'NEUTRAL', 1.0, NOW()),
-  ('그래도 난 일년이상은 하고싶은제', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋ 당연쓰', 'POSITIVE', 1.0, NOW()),
-  ('쌀국수집에서 알바하면', 'NEUTRAL', 1.0, NOW()),
-  ('반차 좋다 하루 힐링해', 'NEUTRAL', 1.0, NOW()),
-  ('퇴근을 할 수가 없어 뭔가', 'NEUTRAL', 1.0, NOW()),
-  ('미련은 없는뎅...ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('두명은 다음주에 끄ㅌ이고', 'NEUTRAL', 1.0, NOW()),
-  ('그래도 자긴 공무원생홯 만족한데', 'POSITIVE', 1.0, NOW()),
-  ('와생각만해도막막해', 'NEUTRAL', 1.0, NOW()),
-  ('예약 됨?', 'NEUTRAL', 1.0, NOW()),
-  ('제가 감싸드릴게요', 'NEUTRAL', 1.0, NOW()),
-  ('월욜 면접만 잘보고 그리고 예전에 했던곳ㄷ이면 기억하쥐 않을꽈', 'NEUTRAL', 1.0, NOW()),
-  ('헉....다시해야되는건가ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('이사람들은서울쓴사람들인가바', 'NEUTRAL', 1.0, NOW()),
-  ('아... 주말 알바니까 평일에 열심히 써야게따ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('생각나니까', 'NEUTRAL', 1.0, NOW()),
-  ('이런 ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('오지네...', 'NEUTRAL', 1.0, NOW()),
-  ('사기업에 이직을 할거면 굳이 이직할필욘없을거같기도한데', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ나만 욕먹고 월요일 월차썻니??', 'NEUTRAL', 1.0, NOW()),
-  ('7시반 오픈부터 4시까지', 'NEUTRAL', 1.0, NOW()),
-  ('세후 180이래도 감사할듯ㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('힘들지ㅎ......', 'NEGATIVE', 1.0, NOW()),
-  ('아니 출근하자마자', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 우린 일하나터진거 잇어서', 'NEUTRAL', 1.0, NOW()),
-  ('합격!.!', 'NEUTRAL', 1.0, NOW()),
-  ('제에발!!!!', 'NEUTRAL', 1.0, NOW()),
-  ('육포굽는 석쇠닦기 힘두롱', 'NEUTRAL', 1.0, NOW()),
-  ('신규는 연구사 조카라는거 알았으니', 'NEUTRAL', 1.0, NOW()),
-  ('헐...진짜신기해..', 'NEUTRAL', 1.0, NOW()),
-  ('나는마지막만보고', 'NEUTRAL', 1.0, NOW()),
-  ('아니 나 저번에', 'NEUTRAL', 1.0, NOW()),
-  ('아트피 같은 느낌은 뭐지 ㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('머야 #@이름#', 'NEUTRAL', 1.0, NOW()),
-  ('다를바 없자나', 'NEUTRAL', 1.0, NOW()),
-  ('돈 많이 버는걸로 가고싶어', 'NEUTRAL', 1.0, NOW()),
-  ('문자로 상사가 하는건있어...', 'NEUTRAL', 1.0, NOW()),
-  ('정말 장사안된다ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('넘 지옥이예요', 'NEUTRAL', 1.0, NOW()),
-  ('아직도 많이 남았는데..? ㅋㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('교육 내혼자들으러간다...', 'NEUTRAL', 1.0, NOW()),
-  ('#@소속#애들', 'NEUTRAL', 1.0, NOW()),
-  ('2월말이라고해야겟넼ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('많이벌었다', 'NEUTRAL', 1.0, NOW()),
-  ('휴ㅠㅠㅠㅠㅠ 진짜 생각하기 시작하면 한숨만 나온닼ㅋㅋㅋㄱㄱ', 'NEUTRAL', 1.0, NOW()),
-  ('하 ... .', 'NEUTRAL', 1.0, NOW()),
-  ('피신ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ이득,,', 'NEUTRAL', 1.0, NOW()),
-  ('우리 회사도 큰일.사장님 11시에 퇴근 하심', 'NEUTRAL', 1.0, NOW()),
-  ('엘지 씨엔에스', 'NEUTRAL', 1.0, NOW()),
-  ('낼출근하라는데 뭐라고보내?', 'NEUTRAL', 1.0, NOW()),
-  ('내가깜빡하고', 'NEUTRAL', 1.0, NOW()),
-  ('아마 경력자라서 뽑힐 듯 ㅎㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('앞으로가 더 많이 남아끈', 'NEUTRAL', 1.0, NOW()),
-  ('진상들 많아?ㅜㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('라마단도 끝낫을텐데 왜 답장이없냐', 'NEUTRAL', 1.0, NOW()),
-  ('같이해준다니', 'NEUTRAL', 1.0, NOW()),
-  ('앉아서 유투브해', 'NEUTRAL', 1.0, NOW()),
-  ('부천 키즈카페!!', 'NEUTRAL', 1.0, NOW()),
-  ('보스톤이랑 실리콘밸리가서 교육받앗다고', 'NEUTRAL', 1.0, NOW()),
-  ('얼마못받을듯', 'NEUTRAL', 1.0, NOW()),
-  ('코레일..내년에 2000명 뽑는대', 'NEUTRAL', 1.0, NOW()),
-  ('근로계약서안썻어?', 'NEUTRAL', 1.0, NOW()),
-  ('휴무구나?', 'NEUTRAL', 1.0, NOW()),
-  ('다음은 할만해지지않을까...ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('근데 부담스러', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 하루에 8시간 하는셈', 'POSITIVE', 1.0, NOW()),
-  ('금욜날 #@기타# 많응ㄹㄱㄹ걸', 'POSITIVE', 1.0, NOW()),
-  ('프리로 근무한것도', 'NEUTRAL', 1.0, NOW()),
-  ('어떤식으로 열리나', 'NEUTRAL', 1.0, NOW()),
-  ('너무 힘들다 도망가고싶어ㅋㅋ', 'NEGATIVE', 1.0, NOW()),
-  ('좋아하는 애들 단한명도 없어', 'POSITIVE', 1.0, NOW()),
-  ('인성이 별로야', 'NEGATIVE', 1.0, NOW()),
-  ('남은금액의 오십퍼를', 'NEUTRAL', 1.0, NOW()),
-  ('롯데 큐에이 미팅 잡으라는데', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ진짜 언니 휴가 개많닼ㅌㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아니 졸려도 애들이 안와서 그런지 피곤하진 않아', 'NEUTRAL', 1.0, NOW()),
-  ('주말출근땜에?,,,', 'NEUTRAL', 1.0, NOW()),
-  ('공기업이야?', 'NEUTRAL', 1.0, NOW()),
-  ('낼 집에 있음ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('나가기도함ㅋㅋㅋ그래도 좀넉넉하게 3일~4일이면 하는건데 하..', 'POSITIVE', 1.0, NOW()),
-  ('여기 여덟명중 학벌 젤 딸려ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('녜 제 시험 발표날도 엄마아빠가 제일 먼저 알고잇서요..', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ 걍 너 나가고 한 두달 만에 포기하길...ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('난 시험은 안맞아..', 'POSITIVE', 1.0, NOW()),
-  ('...귀탆데하네..', 'NEUTRAL', 1.0, NOW()),
-  ('해야... 내년엔 안하지', 'NEUTRAL', 1.0, NOW()),
-  ('와서는 #@이름#씨 우리 어떻게해?', 'NEUTRAL', 1.0, NOW()),
-  ('근데 나도 운ㅇ 좋은게', 'NEUTRAL', 1.0, NOW()),
-  ('아니 월급', 'NEUTRAL', 1.0, NOW()),
-  ('그리고 엄마가 안된대', 'NEUTRAL', 1.0, NOW()),
-  ('ㅠㅠㅠㅠ힘들당', 'NEGATIVE', 1.0, NOW()),
-  ('도안에 삼촌쮸꾸미 그쪽에', 'NEUTRAL', 1.0, NOW()),
-  ('집에가고시퍼', 'NEUTRAL', 1.0, NOW()),
-  ('저금도 모태', 'NEUTRAL', 1.0, NOW()),
-  ('오 개싱기해', 'NEUTRAL', 1.0, NOW()),
-  ('다름이아니고', 'NEUTRAL', 1.0, NOW()),
-  ('월요일인데 달렸구나....ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('쉴 때 받아야하는데', 'NEUTRAL', 1.0, NOW()),
-  ('칼퇴를 위햐!!', 'NEUTRAL', 1.0, NOW()),
-  ('이런거 한 한시간은 할줄 알아서', 'NEUTRAL', 1.0, NOW()),
-  ('꼭 구해졌으면,,,,', 'NEUTRAL', 1.0, NOW()),
-  ('존버하기엔 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('그때 엄마랑 같은 시기에 다른쪽에서 일했었거든ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('생각할수록 대단하다너', 'NEUTRAL', 1.0, NOW()),
-  ('아직 안친하니까', 'NEUTRAL', 1.0, NOW()),
-  ('쌤그만둔다할때', 'NEGATIVE', 1.0, NOW()),
-  ('그러다 다른곳 붙으면 인턴 우짜노!', 'NEUTRAL', 1.0, NOW()),
-  ('면접보라는곳', 'NEUTRAL', 1.0, NOW()),
-  ('성격이 개지랄맞다면,,', 'NEUTRAL', 1.0, NOW()),
-  ('들어가면 ㅎ', 'NEUTRAL', 1.0, NOW()),
-  ('어????', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#아 너무 기대 돼', 'NEUTRAL', 1.0, NOW()),
-  ('말해주께~!’ㅜ', 'POSITIVE', 1.0, NOW()),
-  ('생각보다 별 거 없어서..ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('이잉 할 수 있어', 'NEUTRAL', 1.0, NOW()),
-  ('아헐ㅠ 요즘 온라인배송들 물량딸려서', 'NEUTRAL', 1.0, NOW()),
-  ('덕평 한번 넣어봣는대', 'NEUTRAL', 1.0, NOW()),
-  ('상관은없어', 'NEUTRAL', 1.0, NOW()),
-  ('정장 안입고', 'NEUTRAL', 1.0, NOW()),
-  ('내말이....', 'NEUTRAL', 1.0, NOW()),
-  ('나 낼 병가내줘요', 'NEUTRAL', 1.0, NOW()),
-  ('맞아.....', 'POSITIVE', 1.0, NOW()),
-  ('화성은싫고', 'NEUTRAL', 1.0, NOW()),
-  ('아...이런..ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('일단 너한테 보내준 자소서는 완성 안 된 자소서라는 점 알아주샘', 'NEUTRAL', 1.0, NOW()),
-  ('내용이 넘많아서 머릿속에', 'NEUTRAL', 1.0, NOW()),
-  ('사장님한테 2시까지로 줄여달리고 해볼까', 'NEUTRAL', 1.0, NOW()),
-  ('구냥 먼가 쉬는날이 정해지면', 'NEUTRAL', 1.0, NOW()),
-  ('일년만..하자..', 'NEUTRAL', 1.0, NOW()),
-  ('그런거 있다던데', 'NEUTRAL', 1.0, NOW()),
-  ('밥같이 묵고가라', 'NEUTRAL', 1.0, NOW()),
-  ('ㅡㅡ뭐 언제 바쁠지알고', 'NEUTRAL', 1.0, NOW()),
-  ('그니까 한번 왔으니까 안올줄 알았지', 'NEUTRAL', 1.0, NOW()),
-  ('화사에서 대리가 필요햇데', 'NEUTRAL', 1.0, NOW()),
-  ('원해요~!!!', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타# 공장 들어가는 순간', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 그거 다 내가 보는 거임', 'NEUTRAL', 1.0, NOW()),
-  ('맨날 간식 먹게', 'NEUTRAL', 1.0, NOW()),
-  ('아 날씨 개좋네,,,', 'NEUTRAL', 1.0, NOW()),
-  ('여자애는 대구 앤데', 'NEUTRAL', 1.0, NOW()),
-  ('의전없이 나타날지도 모르니까..', 'NEUTRAL', 1.0, NOW()),
-  ('전무가 나서서 행사 준비를 하기 때문에', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름# 남친한테 배운 기술이야 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('막 다른곳까지 가서 복사해와야하나', 'NEUTRAL', 1.0, NOW()),
-  ('제품 잘나왔엉?', 'NEUTRAL', 1.0, NOW()),
-  ('큰회사였나여?', 'NEUTRAL', 1.0, NOW()),
-  ('낼 #@이름#도 없어서 힘들텐데 무리하지말고 들어가요', 'NEGATIVE', 1.0, NOW()),
-  ('네 ㅎㅎ 금요일날 #@이름#박사님이 알려주셨어요..', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋ잘못부른거래 이사가', 'NEUTRAL', 1.0, NOW()),
-  ('그래서 기다렸다?', 'POSITIVE', 1.0, NOW()),
-  ('보고 살면되겠다..', 'NEUTRAL', 1.0, NOW()),
-  ('아니 내가 젊은꼰대인가', 'NEUTRAL', 1.0, NOW()),
-  ('그나마 위안이라면', 'NEUTRAL', 1.0, NOW()),
-  ('그니까 월수금인데도 ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('어후 진짜....', 'NEUTRAL', 1.0, NOW()),
-  ('통제하기가 너무 힘들엌ㅋㅋㅋㅋㅋㅋ', 'NEGATIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ여유가있는듯없는듯ㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('BAT 간단하다구 했는데', 'NEUTRAL', 1.0, NOW()),
-  ('오 #@이름#아', 'NEUTRAL', 1.0, NOW()),
-  ('다 취소되고', 'NEUTRAL', 1.0, NOW()),
-  ('나 알바하는데 우리 감독관 짱좋음', 'NEUTRAL', 1.0, NOW()),
-  ('아니야. 지금은 쉬고있다', 'NEGATIVE', 1.0, NOW()),
-  ('오늘 지금까지 4팀이 실화입니까', 'NEUTRAL', 1.0, NOW()),
-  ('아 #@이름# 짜증나진짜...', 'NEUTRAL', 1.0, NOW()),
-  ('너무 화난다 진쨔^^', 'NEUTRAL', 1.0, NOW()),
-  ('지금 회사에 간식 짱많아', 'NEUTRAL', 1.0, NOW()),
-  ('개발자들은 프리는 정말 끝이거든', 'NEUTRAL', 1.0, NOW()),
-  ('이번주 휴가는 괜찮나봐여', 'NEUTRAL', 1.0, NOW()),
-  ('삼월말 면접보고', 'NEUTRAL', 1.0, NOW()),
-  ('오늘도 고생했어...', 'NEUTRAL', 1.0, NOW()),
-  ('개빡쳤겟다', 'NEUTRAL', 1.0, NOW()),
-  ('괜찮아용~~ 3시 설명회만 끝나면 오늘 끝인강???', 'POSITIVE', 1.0, NOW()),
-  ('대충업무시간될거같음 ;;;', 'NEUTRAL', 1.0, NOW()),
-  ('작업장여나여', 'NEUTRAL', 1.0, NOW()),
-  ('혼자할거생각하니까?', 'NEUTRAL', 1.0, NOW()),
-  ('맞아ㅜㅜ내가잔걱정이많아서', 'POSITIVE', 1.0, NOW()),
-  ('빨리 금요일왔으면 좋겠다ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('몇 잔이게', 'NEUTRAL', 1.0, NOW()),
-  ('와달라고 문자도옴', 'NEUTRAL', 1.0, NOW()),
-  ('응ㅋㅋㅋ건조했는데', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋㅋㅋ벌써 그런얘기까지?', 'NEUTRAL', 1.0, NOW()),
-  ('발표 언제 해', 'NEUTRAL', 1.0, NOW()),
-  ('엉오늘새로운막내왔는데', 'NEUTRAL', 1.0, NOW()),
-  ('아하 오킹', 'NEUTRAL', 1.0, NOW()),
-  ('약간 기획 아닌 쪽에서는 방관자야', 'NEUTRAL', 1.0, NOW()),
-  ('카누로 아픈마음 달래기', 'NEUTRAL', 1.0, NOW()),
-  ('원하시는 일일공부 해드렸으니ㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('아개웃겨 나오열중', 'NEUTRAL', 1.0, NOW()),
-  ('변프롭니다', 'NEUTRAL', 1.0, NOW()),
-  ('언니 나중에', 'NEUTRAL', 1.0, NOW()),
-  ('일요일은 이시간대가 빡세네', 'NEUTRAL', 1.0, NOW()),
-  ('와.... 잘못했다고 미안하다고 말안해...??', 'NEGATIVE', 1.0, NOW()),
-  ('빡빡이에 깸', 'NEUTRAL', 1.0, NOW()),
-  ('ㅌㅋㅋ퇴근했오?', 'NEUTRAL', 1.0, NOW()),
-  ('맞다 내 물건은 소중하니까,,,', 'NEUTRAL', 1.0, NOW()),
-  ('돈벌면 쉬고싶고 . . . 쉬면 벌고싶고 . .', 'NEUTRAL', 1.0, NOW()),
-  ('월급 15만원 오름', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋ째도 되능겨??', 'NEUTRAL', 1.0, NOW()),
-  ('김밥이랑 과자사와서 먹으면서', 'NEUTRAL', 1.0, NOW()),
-  ('하루 9시간씩 일하는 게 치료에 엄청 부담이야', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 마을버스타고오는데 ,, #@소속#학생들이 엄청나더라구여', 'NEUTRAL', 1.0, NOW()),
-  ('환자옷갈아입히는데', 'NEUTRAL', 1.0, NOW()),
-  ('학원수강생당으로 계산하더라고', 'NEUTRAL', 1.0, NOW()),
-  ('비싸다고.ㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('내 맘대로 할수가 없어', 'NEUTRAL', 1.0, NOW()),
-  ('헐 20분까지 가야하는데', 'NEUTRAL', 1.0, NOW()),
-  ('팀으로 움직여 이제', 'NEUTRAL', 1.0, NOW()),
-  ('알지도 못하면서', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ 그랭~', 'NEUTRAL', 1.0, NOW()),
-  ('분위기도 알겸', 'NEUTRAL', 1.0, NOW()),
-  ('진짜 올해 순삭..', 'NEUTRAL', 1.0, NOW()),
-  ('야 아니 근데', 'NEUTRAL', 1.0, NOW()),
-  ('개웃기져?', 'NEUTRAL', 1.0, NOW()),
-  ('다들 바쁘고 예민하겠네', 'NEUTRAL', 1.0, NOW()),
-  ('그쌤이랑 #@이름#쌤이랑하라고 하더라구욬ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('하 근무하기 싫다', 'NEUTRAL', 1.0, NOW()),
-  ('거기서도 조각 모으고', 'NEUTRAL', 1.0, NOW()),
-  ('안뽑아주는거아니가ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('역시 알바도 대기업이 직통으로 관리하는 큰물에서 해야', 'NEUTRAL', 1.0, NOW()),
-  ('결국 일분 등록하고', 'NEUTRAL', 1.0, NOW()),
-  ('저 원장님부터가 좋게 얘기하시는거같은데요?', 'NEUTRAL', 1.0, NOW()),
-  ('스티커는 추가로 하거나', 'NEUTRAL', 1.0, NOW()),
-  ('계속하는사람은', 'NEUTRAL', 1.0, NOW()),
-  ('그러게요...점점 더 일하기 싫고 자꾸 조퇴만 하고 싶고 ㅠㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('워요일이요ㅎㅎㅎ 아뇨아뇨 그냥 주는겅데ㅔ', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#가 면접 봐보고싶었던 기업에서', 'NEUTRAL', 1.0, NOW()),
-  ('인사만 뽑아서 풀거라서', 'NEUTRAL', 1.0, NOW()),
-  ('일이 한번에 그렇게 들어오니까 그렇지.......', 'NEUTRAL', 1.0, NOW()),
-  ('뭐여 그게ㅜ', 'NEUTRAL', 1.0, NOW()),
-  ('연락이나해바그럼', 'NEUTRAL', 1.0, NOW()),
-  ('#@기타#.......', 'NEUTRAL', 1.0, NOW()),
-  ('요즘 계속 늦게 갔잖아', 'NEUTRAL', 1.0, NOW()),
-  ('클린룸이야...', 'NEUTRAL', 1.0, NOW()),
-  ('내 친구도 그래서 졸업전에', 'POSITIVE', 1.0, NOW()),
-  ('주임도 그만두겠다는 마당에 그런건가봄', 'NEGATIVE', 1.0, NOW()),
-  ('물건 들어오면 몇천키로 옮기는 노가다라고', 'NEUTRAL', 1.0, NOW()),
-  ('사업이나 인강강사가 아닐까...', 'NEUTRAL', 1.0, NOW()),
-  ('댕겨야지 모', 'NEUTRAL', 1.0, NOW()),
-  ('그럼 나 금욜 마다 휴가써야겠다', 'NEUTRAL', 1.0, NOW()),
-  ('그리고 뭔 직업인지', 'NEUTRAL', 1.0, NOW()),
-  ('그런데;;', 'NEUTRAL', 1.0, NOW()),
-  ('미래 보장임', 'NEUTRAL', 1.0, NOW()),
-  ('빨리 퇴근해', 'NEUTRAL', 1.0, NOW()),
-  ('못하겎구나.. #@이름# 튜잡 뛰오', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#씨에게 스파르타 교육 받았으니까 ㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('간다간다~', 'NEUTRAL', 1.0, NOW()),
-  ('혹시 설때랑 추석때랑', 'NEUTRAL', 1.0, NOW()),
-  ('나눈 이제 밥먹으러왔옹...', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋㅋ난 공휴일엔 무조건 쉬어 진짜 급한일 없으면', 'NEUTRAL', 1.0, NOW()),
-  ('못쉬겟어여ㅋㅋㅋㅋㅋㅋㅋ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ 없음', 'NEUTRAL', 1.0, NOW()),
-  ('#@이름#앙', 'NEUTRAL', 1.0, NOW()),
-  ('믿을 수없어', 'NEUTRAL', 1.0, NOW()),
-  ('걱자 다 찍어야돼서', 'NEUTRAL', 1.0, NOW()),
-  ('2차못가겤', 'NEUTRAL', 1.0, NOW()),
-  ('실핏줄 안 터진 게 다행ㅋㅋ', 'POSITIVE', 1.0, NOW()),
-  ('회사에서 아프면 어떻게 할껀지', 'NEUTRAL', 1.0, NOW()),
-  ('엥 근데 왜 오전출근이야', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋ 이런경우도 잇나?', 'NEUTRAL', 1.0, NOW()),
-  ('관련 법령이 다르다', 'NEUTRAL', 1.0, NOW()),
-  ('돈 안떼먹는다는뭐임', 'NEUTRAL', 1.0, NOW()),
-  ('ㅋㅋㅋㅋㅋㅋ뒤로자빠질듯#@이름#이 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('지금충전해', 'NEUTRAL', 1.0, NOW()),
-  ('근데 난 여태까지 면접다운 면접을 본적이 없어..', 'NEUTRAL', 1.0, NOW()),
-  ('너가 된다하면 신청할건데', 'NEUTRAL', 1.0, NOW()),
-  ('장려금 저거대로 돈 나와서 11만원밖에 못받음', 'NEUTRAL', 1.0, NOW()),
-  ('하루정일 누워잇엇거든.....', 'NEUTRAL', 1.0, NOW()),
-  ('어쩔수가 없어', 'NEUTRAL', 1.0, NOW()),
-  ('항상...도도리표', 'NEUTRAL', 1.0, NOW()),
-  ('애들은 결혼햇냐', 'NEUTRAL', 1.0, NOW()),
-  ('2020년도 적응못했는데', 'POSITIVE', 1.0, NOW()),
-  ('ㅋㅋ 얼마타셨오?', 'NEUTRAL', 1.0, NOW()),
-  ('걔네도 확인하는데 시간 걸린대요 ㅡㅡ', 'NEUTRAL', 1.0, NOW()),
-  ('내가 절대 자소서 봐달라고 선톡한거 아니야 믿어쥬ㅓ', 'NEGATIVE', 1.0, NOW()),
-  ('숙제 준비ㅏ느라 이제 연락준거냐며..', 'NEUTRAL', 1.0, NOW()),
-  ('거기도 9.30 -6.30', 'NEUTRAL', 1.0, NOW()),
-  ('가디건은 나만 괜찮으면 쓰라는디', 'NEUTRAL', 1.0, NOW()),
-  ('근데 이유없이 괴롭히는거 진짜 극혐이긴 하다 ㅠ', 'NEUTRAL', 1.0, NOW()),
-  ('ㅇㅇ말안하줌', 'NEUTRAL', 1.0, NOW()),
-  ('오늘 아침부터했음', 'NEUTRAL', 1.0, NOW()),
-  ('얼른 들어가라우', 'NEUTRAL', 1.0, NOW()),
-  ('맞아... 에효 ㅠㅠㅠ', 'POSITIVE', 1.0, NOW());
+  ('뭐 하고 있어', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 일정 알려줘', 'NEUTRAL', 1.0, NOW()),
+  ('그냥 그래', 'NEUTRAL', 1.0, NOW()),
+  ('그저그래', 'NEUTRAL', 1.0, NOW()),
+  ('뭐 별로 없어', 'NEUTRAL', 1.0, NOW()),
+  ('그냥 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('특별한 거 없어', 'NEUTRAL', 1.0, NOW()),
+  ('그냥 쉬고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('TV 보고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('낮잠 잤어', 'NEUTRAL', 1.0, NOW()),
+  ('뭐 재밌는 거 없어', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 하루 어땠어', 'NEUTRAL', 1.0, NOW()),
+  ('내일은 좀 나을까', 'NEUTRAL', 1.0, NOW()),
+  ('오늘도 수고했어', 'POSITIVE', 1.0, NOW()),
+  ('고생이 많다', 'NEUTRAL', 1.0, NOW()),
+  ('시간 빨리 간다', 'NEUTRAL', 1.0, NOW()),
+  ('벌써 저녁이야', 'NEUTRAL', 1.0, NOW()),
+  ('아침이 됐어', 'NEUTRAL', 1.0, NOW()),
+  ('요즘 어때', 'NEUTRAL', 1.0, NOW()),
+  ('별일 없었어', 'NEUTRAL', 1.0, NOW()),
+  ('그냥 평범했어', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 좀 지루해', 'NEUTRAL', 1.0, NOW()),
+  ('할 게 없어', 'NEUTRAL', 1.0, NOW()),
+  ('뭐 좀 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('얘기 좀 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('뉴스에 뭐 나와', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 날짜가 몇일이야', 'NEUTRAL', 1.0, NOW()),
+  ('지금 몇 시야', 'NEUTRAL', 1.0, NOW()),
+  ('아까 뭐라고 했어', 'NEUTRAL', 1.0, NOW()),
+  ('다시 말해줘', 'NEUTRAL', 1.0, NOW()),
+  ('잘 안 들려', 'NEUTRAL', 1.0, NOW()),
+  ('크게 말해줘', 'NEUTRAL', 1.0, NOW()),
+  ('천천히 말해줘', 'NEUTRAL', 1.0, NOW()),
+  ('뭐라고', 'NEUTRAL', 1.0, NOW()),
+  ('응', 'POSITIVE', 1.0, NOW()),
+  ('아니', 'NEGATIVE', 1.0, NOW()),
+  ('글쎄', 'NEUTRAL', 1.0, NOW()),
+  ('잘 모르겠어', 'NEUTRAL', 1.0, NOW()),
+  ('생각해볼게', 'NEUTRAL', 1.0, NOW()),
+  ('나중에 말할게', 'NEUTRAL', 1.0, NOW()),
+  ('그건 아니야', 'NEGATIVE', 1.0, NOW()),
+  ('그럴 수도 있지', 'NEUTRAL', 1.0, NOW()),
+  ('그건 좋은데', 'POSITIVE', 1.0, NOW()),
+  ('그건 좀 그래', 'NEGATIVE', 1.0, NOW()),
+  ('한번 해보자', 'POSITIVE', 1.0, NOW()),
+  ('오늘 날씨 어때', 'NEUTRAL', 1.0, NOW()),
+  ('밖에 비 와', 'NEUTRAL', 1.0, NOW()),
+  ('날이 따뜻해졌어', 'POSITIVE', 1.0, NOW()),
+  ('바람이 부네', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 좀 춥다', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 좀 덥다', 'NEUTRAL', 1.0, NOW()),
+  ('날씨 좋으면 나가고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('봄이 왔나보다', 'POSITIVE', 1.0, NOW()),
+  ('하늘 좀 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('창밖에 뭐 보여', 'NEUTRAL', 1.0, NOW()),
+  ('벌써 아침이야', 'NEUTRAL', 1.0, NOW()),
+  ('점심 때 됐어', 'NEUTRAL', 1.0, NOW()),
+  ('저녁 시간이네', 'NEUTRAL', 1.0, NOW()),
+  ('이제 잘 시간이야', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 하루 빨리 갔다', 'NEUTRAL', 1.0, NOW()),
+  ('밤이 됐네', 'NEUTRAL', 1.0, NOW()),
+  ('새벽에 깼어', 'NEUTRAL', 1.0, NOW()),
+  ('이른 아침이네', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 닫힌 질문 짧은 응답 (40개) =====
+  ('응 좋아', 'POSITIVE', 1.0, NOW()),
+  ('아니 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('좀 그래', 'NEUTRAL', 1.0, NOW()),
+  ('아직', 'NEUTRAL', 1.0, NOW()),
+  ('응 먹었어', 'POSITIVE', 1.0, NOW()),
+  ('아직 안 먹었어', 'NEUTRAL', 1.0, NOW()),
+  ('응 괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('아니 안 괜찮아', 'NEGATIVE', 1.0, NOW()),
+  ('응 좀 아파', 'NEGATIVE', 1.0, NOW()),
+  ('아니 안 아파', 'POSITIVE', 1.0, NOW()),
+  ('응 마실게', 'POSITIVE', 1.0, NOW()),
+  ('아니 됐어', 'NEGATIVE', 1.0, NOW()),
+  ('아니 나중에', 'NEGATIVE', 1.0, NOW()),
+  ('응 해줘', 'POSITIVE', 1.0, NOW()),
+  ('아니 괜찮아', 'NEGATIVE', 1.0, NOW()),
+  ('응 봤어', 'POSITIVE', 1.0, NOW()),
+  ('아니 안 봤어', 'NEGATIVE', 1.0, NOW()),
+  ('응 알아', 'POSITIVE', 1.0, NOW()),
+  ('아니 몰라', 'NEGATIVE', 1.0, NOW()),
+  ('응 그래', 'POSITIVE', 1.0, NOW()),
+  ('아니 그건 아니야', 'NEGATIVE', 1.0, NOW()),
+  ('맞아', 'POSITIVE', 1.0, NOW()),
+  ('아니야', 'NEGATIVE', 1.0, NOW()),
+  ('그래', 'POSITIVE', 1.0, NOW()),
+  ('아직 안 했어', 'NEUTRAL', 1.0, NOW()),
+  ('응 했어', 'POSITIVE', 1.0, NOW()),
+  ('좀 있다가', 'NEUTRAL', 1.0, NOW()),
+  ('지금은 아니야', 'NEGATIVE', 1.0, NOW()),
+  ('나중에 할게', 'NEUTRAL', 1.0, NOW()),
+  ('응 먹을게', 'POSITIVE', 1.0, NOW()),
+  ('아니 안 먹을게', 'NEGATIVE', 1.0, NOW()),
+  ('응 마셨어', 'POSITIVE', 1.0, NOW()),
+  ('아직 안 마셨어', 'NEUTRAL', 1.0, NOW()),
+  ('응 잤어', 'POSITIVE', 1.0, NOW()),
+  ('아니 못 잤어', 'NEGATIVE', 1.0, NOW()),
+  ('그런 것 같아', 'NEUTRAL', 1.0, NOW()),
+  ('잘 모르겠어', 'NEUTRAL', 1.0, NOW()),
+  ('그럴 수도', 'NEUTRAL', 1.0, NOW()),
+  ('아마도', 'NEUTRAL', 1.0, NOW()),
+  ('글쎄다', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 감사/사과/위로 (40개) =====
+  ('걱정 끼쳐서 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('항상 고마워', 'POSITIVE', 1.0, NOW()),
+  ('신경 써줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('미안하다', 'NEGATIVE', 1.0, NOW()),
+  ('괜찮아 신경 쓰지 마', 'POSITIVE', 1.0, NOW()),
+  ('별거 아니야 걱정 마', 'POSITIVE', 1.0, NOW()),
+  ('내가 미안하지', 'NEGATIVE', 1.0, NOW()),
+  ('고생시켜서 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('덕분에 좋아졌어', 'POSITIVE', 1.0, NOW()),
+  ('네가 있어서 좋다', 'POSITIVE', 1.0, NOW()),
+  ('진짜 고맙다', 'POSITIVE', 1.0, NOW()),
+  ('고마워 정말', 'POSITIVE', 1.0, NOW()),
+  ('잘 해줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('옆에 있어줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('많이 도와줬어', 'POSITIVE', 1.0, NOW()),
+  ('폐 끼치는 것 같아', 'NEGATIVE', 1.0, NOW()),
+  ('짐이 되는 것 같아', 'NEGATIVE', 1.0, NOW()),
+  ('미안한 마음뿐이야', 'NEGATIVE', 1.0, NOW()),
+  ('더 잘해주고 싶은데', 'NEUTRAL', 1.0, NOW()),
+  ('내가 할 수 있는 게 없어서', 'NEGATIVE', 1.0, NOW()),
+  ('그래도 고마워', 'POSITIVE', 1.0, NOW()),
+  ('많이 힘들지', 'NEUTRAL', 1.0, NOW()),
+  ('고생이 많아', 'NEUTRAL', 1.0, NOW()),
+  ('수고했어', 'POSITIVE', 1.0, NOW()),
+  ('오늘도 고마워', 'POSITIVE', 1.0, NOW()),
+  ('항상 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('걱정하지 마', 'POSITIVE', 1.0, NOW()),
+  ('나 때문에 힘들지', 'NEGATIVE', 1.0, NOW()),
+  ('괜찮아질 거야', 'POSITIVE', 1.0, NOW()),
+  ('같이 있어줘서 좋다', 'POSITIVE', 1.0, NOW()),
+  ('혼자였으면 힘들었을 거야', 'NEUTRAL', 1.0, NOW()),
+  ('가족이 있어서 버틸 수 있어', 'POSITIVE', 1.0, NOW()),
+  ('고마운 사람이 많아', 'POSITIVE', 1.0, NOW()),
+  ('감사하다', 'POSITIVE', 1.0, NOW()),
+  ('말 못 해서 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('제대로 못 해서 미안해', 'NEGATIVE', 1.0, NOW()),
+  ('돌봐줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('챙겨줘서 고마워', 'POSITIVE', 1.0, NOW()),
+  ('와줘서 고맙다', 'POSITIVE', 1.0, NOW()),
+  ('다음에 또 와줘', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 일상 대화 응답형 (80개) — 상대방 말에 반응 =====
+  -- 외출/다녀옴 반응
+  ('그래? 뭐 샀어?', 'NEUTRAL', 1.0, NOW()),
+  ('잘 다녀왔어?', 'NEUTRAL', 1.0, NOW()),
+  ('힘들었겠다', 'NEUTRAL', 1.0, NOW()),
+  ('오래 걸렸어?', 'NEUTRAL', 1.0, NOW()),
+  ('뭐 사왔어?', 'NEUTRAL', 1.0, NOW()),
+  ('좋았어?', 'NEUTRAL', 1.0, NOW()),
+  ('나도 가고 싶었는데', 'NEUTRAL', 1.0, NOW()),
+  ('날씨 어땠어?', 'NEUTRAL', 1.0, NOW()),
+  ('사람 많았어?', 'NEUTRAL', 1.0, NOW()),
+  ('맛있는 거 샀어?', 'NEUTRAL', 1.0, NOW()),
+
+  -- 음식/식사 반응
+  ('맛있겠다', 'POSITIVE', 1.0, NOW()),
+  ('나도 먹고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('그거 좋아하는데', 'POSITIVE', 1.0, NOW()),
+  ('많이 먹었어?', 'NEUTRAL', 1.0, NOW()),
+  ('배 안 고파?', 'NEUTRAL', 1.0, NOW()),
+  ('뭐 먹었는데?', 'NEUTRAL', 1.0, NOW()),
+  ('잘 먹었어?', 'NEUTRAL', 1.0, NOW()),
+  ('또 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('그거 맛있지', 'POSITIVE', 1.0, NOW()),
+  ('나는 죽 먹었어', 'NEUTRAL', 1.0, NOW()),
+
+  -- 안부/상태 반응
+  ('그래 다행이다', 'POSITIVE', 1.0, NOW()),
+  ('괜찮아졌어?', 'NEUTRAL', 1.0, NOW()),
+  ('많이 힘들었지?', 'NEUTRAL', 1.0, NOW()),
+  ('푹 쉬어', 'NEUTRAL', 1.0, NOW()),
+  ('무리하지 마', 'NEUTRAL', 1.0, NOW()),
+  ('조심해', 'NEUTRAL', 1.0, NOW()),
+  ('잘 지내고 있어?', 'NEUTRAL', 1.0, NOW()),
+  ('건강은 괜찮아?', 'NEUTRAL', 1.0, NOW()),
+  ('밥은 먹었어?', 'NEUTRAL', 1.0, NOW()),
+  ('잠은 잤어?', 'NEUTRAL', 1.0, NOW()),
+
+  -- 소식/뉴스 반응
+  ('진짜?', 'NEUTRAL', 1.0, NOW()),
+  ('그래?', 'NEUTRAL', 1.0, NOW()),
+  ('몰랐어', 'NEUTRAL', 1.0, NOW()),
+  ('그런 일이 있었어?', 'NEUTRAL', 1.0, NOW()),
+  ('언제?', 'NEUTRAL', 1.0, NOW()),
+  ('어디서?', 'NEUTRAL', 1.0, NOW()),
+  ('왜?', 'NEUTRAL', 1.0, NOW()),
+  ('누가?', 'NEUTRAL', 1.0, NOW()),
+  ('어떻게 됐어?', 'NEUTRAL', 1.0, NOW()),
+  ('자세히 말해줘', 'NEUTRAL', 1.0, NOW()),
+
+  -- 좋은 소식 반응
+  ('잘 됐다', 'POSITIVE', 1.0, NOW()),
+  ('좋은 소식이네', 'POSITIVE', 1.0, NOW()),
+  ('축하해', 'POSITIVE', 1.0, NOW()),
+  ('대단하다', 'POSITIVE', 1.0, NOW()),
+  ('기쁘다', 'POSITIVE', 1.0, NOW()),
+  ('잘 했어', 'POSITIVE', 1.0, NOW()),
+  ('그거 좋은 거야', 'POSITIVE', 1.0, NOW()),
+  ('나도 기쁘다', 'POSITIVE', 1.0, NOW()),
+  ('정말 다행이야', 'POSITIVE', 1.0, NOW()),
+  ('기분 좋겠다', 'POSITIVE', 1.0, NOW()),
+
+  -- 안 좋은 소식 반응
+  ('에이 아쉽다', 'NEGATIVE', 1.0, NOW()),
+  ('속상하겠다', 'NEGATIVE', 1.0, NOW()),
+  ('힘들었겠네', 'NEGATIVE', 1.0, NOW()),
+  ('걱정된다', 'NEGATIVE', 1.0, NOW()),
+  ('괜찮아질 거야', 'POSITIVE', 1.0, NOW()),
+  ('힘내', 'POSITIVE', 1.0, NOW()),
+  ('어쩔 수 없지', 'NEUTRAL', 1.0, NOW()),
+  ('다음에 잘 되겠지', 'POSITIVE', 1.0, NOW()),
+  ('너무 걱정하지 마', 'POSITIVE', 1.0, NOW()),
+  ('그래도 괜찮아', 'POSITIVE', 1.0, NOW()),
+
+  -- 제안/권유 반응
+  ('그래 좋아', 'POSITIVE', 1.0, NOW()),
+  ('그렇게 하자', 'POSITIVE', 1.0, NOW()),
+  ('좋은 생각이야', 'POSITIVE', 1.0, NOW()),
+  ('그래 해봐', 'POSITIVE', 1.0, NOW()),
+  ('그건 좀 그래', 'NEGATIVE', 1.0, NOW()),
+  ('생각해볼게', 'NEUTRAL', 1.0, NOW()),
+  ('나중에 하자', 'NEUTRAL', 1.0, NOW()),
+  ('지금은 좀 그래', 'NEGATIVE', 1.0, NOW()),
+  ('다음에 하자', 'NEUTRAL', 1.0, NOW()),
+  ('그거보다 다른 거 하자', 'NEUTRAL', 1.0, NOW()),
+
+  -- 날씨/시간 반응
+  ('그러게 오늘 춥다', 'NEUTRAL', 1.0, NOW()),
+  ('그러게 날씨 좋다', 'POSITIVE', 1.0, NOW()),
+  ('비 오면 좀 우울해', 'NEGATIVE', 1.0, NOW()),
+  ('날씨 좋으면 기분도 좋아', 'POSITIVE', 1.0, NOW()),
+  ('벌써 그렇게 됐어?', 'NEUTRAL', 1.0, NOW()),
+  ('시간 빠르다', 'NEUTRAL', 1.0, NOW()),
+  ('아직 이른데', 'NEUTRAL', 1.0, NOW()),
+  ('벌써 저녁이야?', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 하루 빨랐다', 'NEUTRAL', 1.0, NOW()),
+  ('내일 날씨는 어때?', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 닫힌 질문 응답형 — "응" 계열 (30개) =====
+  ('응 불러줘', 'POSITIVE', 1.0, NOW()),
+  ('응 그래줘', 'POSITIVE', 1.0, NOW()),
+  ('응 해줘', 'POSITIVE', 1.0, NOW()),
+  ('응 좋아', 'POSITIVE', 1.0, NOW()),
+  ('응 먹을게', 'POSITIVE', 1.0, NOW()),
+  ('응 마실게', 'POSITIVE', 1.0, NOW()),
+  ('응 보고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('응 가고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('응 듣고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('응 해보자', 'POSITIVE', 1.0, NOW()),
+  ('그래 부탁해', 'POSITIVE', 1.0, NOW()),
+  ('그래 그렇게 해줘', 'POSITIVE', 1.0, NOW()),
+  ('빨리 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('빨리 왔으면 좋겠다', 'POSITIVE', 1.0, NOW()),
+  ('빨리 보고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('당연하지', 'POSITIVE', 1.0, NOW()),
+  ('물론이지', 'POSITIVE', 1.0, NOW()),
+  ('그럼 그럼', 'POSITIVE', 1.0, NOW()),
+  ('응 그래', 'POSITIVE', 1.0, NOW()),
+  ('좋지', 'POSITIVE', 1.0, NOW()),
+  ('그래 알았어', 'POSITIVE', 1.0, NOW()),
+  ('그래 고마워', 'POSITIVE', 1.0, NOW()),
+  ('응 부탁해', 'POSITIVE', 1.0, NOW()),
+  ('응 기다릴게', 'POSITIVE', 1.0, NOW()),
+  ('빨리 오라고 해', 'NEUTRAL', 1.0, NOW()),
+  ('보고 싶다고 전해줘', 'POSITIVE', 1.0, NOW()),
+  ('사랑한다고 전해줘', 'POSITIVE', 1.0, NOW()),
+  ('고맙다고 전해줘', 'POSITIVE', 1.0, NOW()),
+  ('빨리 와줬으면', 'POSITIVE', 1.0, NOW()),
+  ('기다리고 있을게', 'POSITIVE', 1.0, NOW()),
+
+  -- ===== 닫힌 질문 응답형 — "아니" 계열 (20개) =====
+  ('아니 됐어', 'NEGATIVE', 1.0, NOW()),
+  ('아니 괜찮아', 'NEGATIVE', 1.0, NOW()),
+  ('아니 안 할래', 'NEGATIVE', 1.0, NOW()),
+  ('아니 나중에', 'NEGATIVE', 1.0, NOW()),
+  ('지금은 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('지금은 아니야', 'NEGATIVE', 1.0, NOW()),
+  ('아직 안 할래', 'NEGATIVE', 1.0, NOW()),
+  ('나중에 하자', 'NEUTRAL', 1.0, NOW()),
+  ('좀 이따가', 'NEUTRAL', 1.0, NOW()),
+  ('다음에 하자', 'NEUTRAL', 1.0, NOW()),
+  ('그건 좀 그래', 'NEGATIVE', 1.0, NOW()),
+  ('안 먹을래', 'NEGATIVE', 1.0, NOW()),
+  ('안 마실래', 'NEGATIVE', 1.0, NOW()),
+  ('필요 없어', 'NEGATIVE', 1.0, NOW()),
+  ('하기 싫어', 'NEGATIVE', 1.0, NOW()),
+  ('귀찮아', 'NEGATIVE', 1.0, NOW()),
+  ('안 보고 싶어', 'NEGATIVE', 1.0, NOW()),
+  ('힘들어서 안 돼', 'NEGATIVE', 1.0, NOW()),
+  ('몸이 안 좋아서', 'NEGATIVE', 1.0, NOW()),
+  ('오늘은 그만', 'NEGATIVE', 1.0, NOW()),
+
+  -- ===== 가족 방문 응답형 (20개) =====
+  ('빨리 왔으면 좋겠어', 'POSITIVE', 1.2, NOW()),
+  ('보고 싶었어', 'POSITIVE', 1.0, NOW()),
+  ('오래 있다 가', 'NEUTRAL', 1.0, NOW()),
+  ('다음에 또 와', 'NEUTRAL', 1.0, NOW()),
+  ('같이 밥 먹자', 'POSITIVE', 1.0, NOW()),
+  ('예승이 데리고 와', 'POSITIVE', 1.2, NOW()),
+  ('가족 다 같이 오면 좋겠다', 'POSITIVE', 1.0, NOW()),
+  ('언제 올 수 있어?', 'NEUTRAL', 1.0, NOW()),
+  ('내일 와줘', 'NEUTRAL', 1.0, NOW()),
+  ('주말에 와줘', 'NEUTRAL', 1.0, NOW()),
+  ('만나면 좋겠다', 'POSITIVE', 1.0, NOW()),
+  ('오면 야구 같이 보자', 'POSITIVE', 1.2, NOW()),
+  ('오면 트로트 같이 듣자', 'POSITIVE', 1.2, NOW()),
+  ('얼굴 보고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('목소리라도 듣고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('영상통화라도 하자', 'NEUTRAL', 1.0, NOW()),
+  ('사진이라도 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('걱정하지 말라고 해', 'NEUTRAL', 1.0, NOW()),
+  ('잘 지내고 있다고 해', 'POSITIVE', 1.0, NOW()),
+  ('보고 싶다고 해줘', 'POSITIVE', 1.2, NOW()),
+
+  -- ===== 일상 응답 — 보호자 행동에 반응 (40개) =====
+  ('고생했어', 'POSITIVE', 1.0, NOW()),
+  ('수고했어', 'POSITIVE', 1.0, NOW()),
+  ('고마워', 'POSITIVE', 1.0, NOW()),
+  ('뭐 사왔어?', 'NEUTRAL', 1.0, NOW()),
+  ('맛있는 거 사왔어?', 'NEUTRAL', 1.0, NOW()),
+  ('오래 걸렸어?', 'NEUTRAL', 1.0, NOW()),
+  ('힘들었겠다', 'NEUTRAL', 1.0, NOW()),
+  ('밥은 먹었어?', 'NEUTRAL', 1.0, NOW()),
+  ('나도 같이 가고 싶었어', 'NEUTRAL', 1.0, NOW()),
+  ('날씨 괜찮았어?', 'NEUTRAL', 1.0, NOW()),
+  ('사람 많았어?', 'NEUTRAL', 1.0, NOW()),
+  ('재밌었어?', 'NEUTRAL', 1.0, NOW()),
+  ('어디 갔다 왔어?', 'NEUTRAL', 1.0, NOW()),
+  ('잘 다녀왔어', 'POSITIVE', 1.0, NOW()),
+  ('빨리 왔네', 'NEUTRAL', 1.0, NOW()),
+  ('늦었네', 'NEUTRAL', 1.0, NOW()),
+  ('걱정했어', 'NEUTRAL', 1.0, NOW()),
+  ('기다렸어', 'NEUTRAL', 1.0, NOW()),
+  ('보고 싶었어', 'POSITIVE', 1.0, NOW()),
+  ('혼자 있으니까 심심했어', 'NEUTRAL', 1.0, NOW()),
+  ('나는 여기서 쉬고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('TV 보고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('트로트 듣고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('야구 보고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('낮잠 잤어', 'NEUTRAL', 1.0, NOW()),
+  ('가래 빼고 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('약 먹었어', 'NEUTRAL', 1.0, NOW()),
+  ('물리치료 받았어', 'NEUTRAL', 1.0, NOW()),
+  ('간호사 왔다 갔어', 'NEUTRAL', 1.0, NOW()),
+  ('누가 전화했어', 'NEUTRAL', 1.0, NOW()),
+  ('딸이 전화했어', 'NEUTRAL', 1.0, NOW()),
+  ('아들이 연락했어', 'NEUTRAL', 1.0, NOW()),
+  ('예승이가 전화했어', 'POSITIVE', 1.2, NOW()),
+  ('조용히 있었어', 'NEUTRAL', 1.0, NOW()),
+  ('그냥 누워있었어', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 좀 힘들었어', 'NEGATIVE', 1.0, NOW()),
+  ('오늘 좀 나았어', 'POSITIVE', 1.0, NOW()),
+  ('어깨가 좀 아팠어', 'NEGATIVE', 1.0, NOW()),
+  ('괜찮았어', 'POSITIVE', 1.0, NOW()),
+  ('별일 없었어', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 음식 제안 응답 (30개) =====
+  ('응 먹을게', 'POSITIVE', 1.0, NOW()),
+  ('응 마실게', 'POSITIVE', 1.0, NOW()),
+  ('응 줘', 'POSITIVE', 1.0, NOW()),
+  ('응 좋아', 'POSITIVE', 1.0, NOW()),
+  ('맛있겠다', 'POSITIVE', 1.0, NOW()),
+  ('그거 좋아', 'POSITIVE', 1.0, NOW()),
+  ('그거 먹고 싶었어', 'POSITIVE', 1.0, NOW()),
+  ('고마워 잘 먹을게', 'POSITIVE', 1.0, NOW()),
+  ('아니 다른 거 줘', 'NEGATIVE', 1.0, NOW()),
+  ('아니 안 먹을래', 'NEGATIVE', 1.0, NOW()),
+  ('아니 배 안 고파', 'NEGATIVE', 1.0, NOW()),
+  ('나중에 먹을게', 'NEUTRAL', 1.0, NOW()),
+  ('좀 이따가', 'NEUTRAL', 1.0, NOW()),
+  ('조금만 줘', 'NEUTRAL', 1.0, NOW()),
+  ('많이 줘', 'NEUTRAL', 1.0, NOW()),
+  ('따뜻한 거 줘', 'NEUTRAL', 1.0, NOW()),
+  ('시원한 거 줘', 'NEUTRAL', 1.0, NOW()),
+  ('그거 말고', 'NEGATIVE', 1.0, NOW()),
+  ('오렌지 주스가 좋아', 'POSITIVE', 1.2, NOW()),
+  ('계란죽이 좋아', 'POSITIVE', 1.2, NOW()),
+  ('초코우유 마시고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('국밥 먹고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('김치찌개 먹고 싶어', 'POSITIVE', 1.0, NOW()),
+  ('물 먼저 줘', 'NEUTRAL', 1.0, NOW()),
+  ('입 좀 적셔줘', 'NEUTRAL', 1.0, NOW()),
+  ('배고프긴 해', 'NEUTRAL', 1.0, NOW()),
+  ('좀 있다가 먹을게', 'NEUTRAL', 1.0, NOW()),
+  ('맛있어', 'POSITIVE', 1.0, NOW()),
+  ('잘 먹었어', 'POSITIVE', 1.0, NOW()),
+  ('더 줘', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 야구 대화 응답 (30개) =====
+  ('진짜? 이겼어?', 'POSITIVE', 1.2, NOW()),
+  ('좋다! 몇 대 몇이야?', 'POSITIVE', 1.2, NOW()),
+  ('누가 잘 했어?', 'NEUTRAL', 1.0, NOW()),
+  ('전준우 쳤어?', 'NEUTRAL', 1.2, NOW()),
+  ('김원중 던졌어?', 'NEUTRAL', 1.2, NOW()),
+  ('홈런 나왔어?', 'NEUTRAL', 1.0, NOW()),
+  ('역전이야?', 'POSITIVE', 1.0, NOW()),
+  ('다음 경기 언제야?', 'NEUTRAL', 1.0, NOW()),
+  ('오늘 기분 좋다', 'POSITIVE', 1.0, NOW()),
+  ('에이 졌어?', 'NEGATIVE', 1.0, NOW()),
+  ('아깝다', 'NEGATIVE', 1.0, NOW()),
+  ('다음에 이기면 돼', 'POSITIVE', 1.0, NOW()),
+  ('그래도 잘 싸웠어', 'POSITIVE', 1.0, NOW()),
+  ('투수가 안 좋았어?', 'NEUTRAL', 1.0, NOW()),
+  ('타선이 안 맞았어?', 'NEUTRAL', 1.0, NOW()),
+  ('내일은 이기자', 'POSITIVE', 1.0, NOW()),
+  ('야구 보니까 좋다', 'POSITIVE', 1.0, NOW()),
+  ('경기 재밌었어?', 'NEUTRAL', 1.0, NOW()),
+  ('하이라이트 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('롯데 화이팅', 'POSITIVE', 1.2, NOW()),
+  ('올해는 기대된다', 'POSITIVE', 1.0, NOW()),
+  ('순위 몇 위야?', 'NEUTRAL', 1.0, NOW()),
+  ('최동원 때가 좋았어', 'NEUTRAL', 1.0, NOW()),
+  ('사직구장 가고 싶다', 'POSITIVE', 1.2, NOW()),
+  ('예전에 자주 갔었는데', 'NEUTRAL', 1.0, NOW()),
+  ('같이 보고 싶다', 'POSITIVE', 1.0, NOW()),
+  ('예승이랑 야구 보고 싶어', 'POSITIVE', 1.2, NOW()),
+  ('오늘 응원했어', 'POSITIVE', 1.0, NOW()),
+  ('중계 다시 보여줘', 'NEUTRAL', 1.0, NOW()),
+  ('내일도 경기 있어?', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 트로트/음악 응답 (20개) =====
+  ('이 노래 좋다', 'POSITIVE', 1.0, NOW()),
+  ('나훈아 틀어줘', 'NEUTRAL', 1.2, NOW()),
+  ('임영웅 틀어줘', 'NEUTRAL', 1.2, NOW()),
+  ('한 번 더 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('이 노래 뭐야?', 'NEUTRAL', 1.0, NOW()),
+  ('좋은 노래다', 'POSITIVE', 1.0, NOW()),
+  ('옛날 생각나', 'NEUTRAL', 1.0, NOW()),
+  ('노래 들으니까 좋아', 'POSITIVE', 1.0, NOW()),
+  ('소리 좀 키워줘', 'NEUTRAL', 1.0, NOW()),
+  ('소리 좀 줄여줘', 'NEUTRAL', 1.0, NOW()),
+  ('다른 노래 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('이 가수 좋아', 'POSITIVE', 1.0, NOW()),
+  ('테스형 틀어줘', 'POSITIVE', 1.2, NOW()),
+  ('노래 듣고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('아침에 노래 좋다', 'POSITIVE', 1.0, NOW()),
+  ('노래 끄지 마', 'NEUTRAL', 1.0, NOW()),
+  ('라디오 틀어줘', 'NEUTRAL', 1.0, NOW()),
+  ('음악 듣다 잠들었어', 'NEUTRAL', 1.0, NOW()),
+  ('기분 전환됐어', 'POSITIVE', 1.0, NOW()),
+  ('노래 고마워', 'POSITIVE', 1.0, NOW()),
+
+  -- ===== 통증 대화 응답 (30개) =====
+  ('응 좀 아파', 'NEGATIVE', 1.0, NOW()),
+  ('많이 아파', 'NEGATIVE', 1.0, NOW()),
+  ('좀 나아졌어', 'POSITIVE', 1.0, NOW()),
+  ('어제보다 나아', 'POSITIVE', 1.0, NOW()),
+  ('참을 만해', 'NEUTRAL', 1.0, NOW()),
+  ('약 먹으면 좀 나아', 'NEUTRAL', 1.0, NOW()),
+  ('왼쪽 어깨가 아파', 'NEGATIVE', 1.2, NOW()),
+  ('오른쪽 다리가 아파', 'NEGATIVE', 1.2, NOW()),
+  ('허리가 불편해', 'NEGATIVE', 1.2, NOW()),
+  ('아침에 더 아파', 'NEGATIVE', 1.0, NOW()),
+  ('밤에 더 아파', 'NEGATIVE', 1.0, NOW()),
+  ('움직이면 아파', 'NEGATIVE', 1.0, NOW()),
+  ('가만히 있으면 괜찮아', 'NEUTRAL', 1.0, NOW()),
+  ('찜질하면 좀 나아', 'NEUTRAL', 1.0, NOW()),
+  ('마사지 해주면 좋겠어', 'NEUTRAL', 1.0, NOW()),
+  ('진통제 먹었어', 'NEUTRAL', 1.0, NOW()),
+  ('아직 효과 없어', 'NEGATIVE', 1.0, NOW()),
+  ('좀 있으면 나아지겠지', 'POSITIVE', 1.0, NOW()),
+  ('걱정 마 괜찮아', 'POSITIVE', 1.0, NOW()),
+  ('그냥 좀 아픈 거야', 'NEUTRAL', 1.0, NOW()),
+  ('숨쉬기 좀 힘들어', 'NEGATIVE', 1.0, NOW()),
+  ('가래 좀 빼줘', 'NEUTRAL', 1.0, NOW()),
+  ('석션 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('숨쉬기 편해졌어', 'POSITIVE', 1.0, NOW()),
+  ('호흡기 좀 확인해줘', 'NEUTRAL', 1.0, NOW()),
+  ('약 시간 됐어', 'NEUTRAL', 1.0, NOW()),
+  ('약 효과 있어', 'POSITIVE', 1.0, NOW()),
+  ('약 효과 없어', 'NEGATIVE', 1.0, NOW()),
+  ('체위 변경 해줘', 'NEUTRAL', 1.0, NOW()),
+  ('자세 바꿔줘', 'NEUTRAL', 1.0, NOW()),
+
+  -- ===== 기분/감정 대화 응답 (30개) =====
+  ('오늘 기분 좋아', 'POSITIVE', 1.0, NOW()),
+  ('좀 우울해', 'NEGATIVE', 1.0, NOW()),
+  ('그냥 그래', 'NEUTRAL', 1.0, NOW()),
+  ('별로야', 'NEGATIVE', 1.0, NOW()),
+  ('좋은 편이야', 'POSITIVE', 1.0, NOW()),
+  ('나쁘지 않아', 'POSITIVE', 1.0, NOW()),
+  ('오늘은 좀 나아', 'POSITIVE', 1.0, NOW()),
+  ('어제보다 좋아', 'POSITIVE', 1.0, NOW()),
+  ('힘들긴 한데 괜찮아', 'NEUTRAL', 1.0, NOW()),
+  ('그래도 살만해', 'POSITIVE', 1.0, NOW()),
+  ('예승이 생각하면 좋아', 'POSITIVE', 1.2, NOW()),
+  ('야구 보면 기분 나아져', 'POSITIVE', 1.2, NOW()),
+  ('트로트 들으면 좋아져', 'POSITIVE', 1.2, NOW()),
+  ('가족 보면 좋아질 것 같아', 'POSITIVE', 1.0, NOW()),
+  ('좀 외로워', 'NEGATIVE', 1.0, NOW()),
+  ('밤에 좀 무서워', 'NEGATIVE', 1.0, NOW()),
+  ('잠이 안 와서 힘들어', 'NEGATIVE', 1.0, NOW()),
+  ('몸이 답답해', 'NEGATIVE', 1.0, NOW()),
+  ('빨리 낫고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('걷고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('밖에 나가고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('예전처럼 되고 싶어', 'NEUTRAL', 1.0, NOW()),
+  ('그래도 감사해', 'POSITIVE', 1.0, NOW()),
+  ('가족이 있어서 버텨', 'POSITIVE', 1.0, NOW()),
+  ('포기하지 않을 거야', 'POSITIVE', 1.0, NOW()),
+  ('오늘도 힘내자', 'POSITIVE', 1.0, NOW()),
+  ('내일은 나을 거야', 'POSITIVE', 1.0, NOW()),
+  ('웃어야지', 'POSITIVE', 1.0, NOW()),
+  ('살아있어서 좋다', 'POSITIVE', 1.0, NOW()),
+  ('고마운 하루야', 'POSITIVE', 1.0, NOW());
 
 -- 2. 테스트용 USER / PATIENT / GUARDIAN / MATCHING
 -- 비밀번호: asdf1234 (BCrypt 해시)
@@ -3090,486 +1370,1497 @@ VALUES (1, 1, 1, 1, NOW()),   -- 기상/아침: 경관식/수분섭취
        (6, 1, 6, 8, NOW()),   -- 취침준비: 세면/위생
        (7, 1, 7, 11, NOW());  -- 야간: 휴식/수면
 
+-- ============================================
+-- EXPRESSIONS v2 — 환자 페르소나: 박윤환 (67세 남성 ALS)
+-- 손녀딸(김예승), 롯데(야구), 트로트, 참기름죽
+-- 왼쪽 어깨 통증 심함, 오른쪽 다리/허리 통증
+-- ============================================
+
 -- 3. EXPRESSIONS (matching_id=1)
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (1, 1, '물 좀 줘', 'NEUTRAL', '영양/수분', '2026-03-13T11:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (2, 1, '어깨 아파', 'NEGATIVE', '통증', '2026-03-13T10:15:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (3, 1, '고마워', 'POSITIVE', '감정', '2026-03-13T09:45:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (4, 1, '맛있어', 'POSITIVE', '음식', '2026-03-13T09:20:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (5, 1, '좋아', 'POSITIVE', '평가', '2026-03-12T20:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (6, 1, '자세 바꿔줘', 'NEUTRAL', '요청', '2026-03-12T19:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (7, 1, '손녀딸 보고 싶어', 'POSITIVE', '가족', '2026-03-12T18:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (8, 1, '목 말라', 'NEUTRAL', '영양/수분', '2026-03-12T15:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (9, 1, '허리 불편해', 'NEGATIVE', '통증', '2026-03-12T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (10, 1, '덥다', 'NEGATIVE', '환경', '2026-03-12T12:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (11, 1, '배고파', 'NEUTRAL', '음식', '2026-03-11T12:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (12, 1, '도와줘', 'NEUTRAL', '요청', '2026-03-11T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (13, 1, '불 켜줘', 'NEUTRAL', '환경', '2026-03-11T09:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (14, 1, '기분 좋아', 'POSITIVE', '기분', '2026-03-10T16:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (15, 1, '김치찌개 먹고 싶어', 'POSITIVE', '음식', '2026-03-10T12:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (16, 1, '다리 저려', 'NEGATIVE', '통증', '2026-03-10T10:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (17, 1, '그저그래', 'NEUTRAL', '평가', '2026-03-09T18:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (18, 1, '우울해', 'NEGATIVE', '기분', '2026-03-09T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (19, 1, '딸 언제 와?', 'NEUTRAL', '가족', '2026-03-08T15:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (20, 1, '춥다', 'NEGATIVE', '환경', '2026-03-08T08:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (21, 1, '별로야', 'NEGATIVE', '평가', '2026-03-07T19:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (22, 1, '치킨 시켜줘', 'POSITIVE', '음식', '2026-03-06T18:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (23, 1, '행복해', 'POSITIVE', '감정', '2026-03-05T17:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (24, 1, '아들 잘 있어?', 'NEUTRAL', '가족', '2026-03-04T20:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (25, 1, '화나', 'NEGATIVE', '감정', '2026-03-03T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (26, 1, '슬퍼', 'NEGATIVE', '감정', '2026-03-02T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (27, 1, '불안해', 'NEGATIVE', '감정', '2026-02-28T09:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (28, 1, '오늘 기분 좋아', 'POSITIVE', '기분', '2026-03-12T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (29, 1, '기쁘다', 'POSITIVE', '기분', '2026-03-11T16:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (30, 1, '신나', 'POSITIVE', '기분', '2026-03-10T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (31, 1, '오늘 행복해', 'POSITIVE', '기분', '2026-03-12T09:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (32, 1, '기분이 좋아', 'POSITIVE', '기분', '2026-03-11T15:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (33, 1, '오늘 기분 괜찮아', 'NEUTRAL', '기분', '2026-03-10T17:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (34, 1, '오늘 좀 슬퍼', 'NEGATIVE', '기분', '2026-03-09T13:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (35, 1, '우울한 날이야', 'NEGATIVE', '기분', '2026-03-08T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (36, 1, '화가 나', 'NEGATIVE', '기분', '2026-03-07T10:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (37, 1, '손녀딸 오늘 와?', 'NEUTRAL', '가족', '2026-03-13T08:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (38, 1, '손녀딸 만나고 싶어', 'POSITIVE', '가족', '2026-03-12T17:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (39, 1, '오늘 방문 있어', 'NEUTRAL', '일정', '2026-03-11T09:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (40, 1, '손녀딸 기다려', 'POSITIVE', '가족', '2026-03-10T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (41, 1, '오늘 누가 와?', 'NEUTRAL', '일정', '2026-03-09T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (42, 1, '아침 식사 할래', 'NEUTRAL', '일정', '2026-03-13T08:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (43, 1, '아침 맛있어', 'POSITIVE', '음식', '2026-03-12T09:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (44, 1, '밥 먹을 시간이야', 'NEUTRAL', '일정', '2026-03-11T08:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (45, 1, '위루술 해줘', 'NEUTRAL', '의료', '2026-03-13T10:50:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (46, 1, '위루술 세척 시간이야', 'NEUTRAL', '의료', '2026-03-12T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (47, 1, '물리치료 받을래', 'NEUTRAL', '일정', '2026-03-13T15:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (48, 1, '오늘 치료 있어', 'NEUTRAL', '일정', '2026-03-12T16:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (49, 1, '물리치료 힘들어', 'NEGATIVE', '치료', '2026-03-11T16:30:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (50, 1, '목 아파', 'NEGATIVE', '통증', '2026-03-12T13:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (51, 1, '등 시려', 'NEGATIVE', '통증', '2026-03-11T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (52, 1, '머리 아파', 'NEGATIVE', '통증', '2026-03-10T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (53, 1, '배 아파', 'NEGATIVE', '통증', '2026-03-09T15:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (54, 1, '어깨 결려', 'NEGATIVE', '통증', '2026-03-12T10:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (55, 1, '다리 아파', 'NEGATIVE', '통증', '2026-03-11T09:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (56, 1, '몸이 뻐근해', 'NEGATIVE', '통증', '2026-03-08T16:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (57, 1, '피곤해', 'NEGATIVE', '상태', '2026-03-12T20:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (58, 1, '물 마시고 싶어', 'NEUTRAL', '영양/수분', '2026-03-13T11:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (59, 1, '갈증나', 'NEUTRAL', '영양/수분', '2026-03-12T15:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (60, 1, '물 한 모금 줘', 'NEUTRAL', '영양/수분', '2026-03-11T10:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (61, 1, '숨이 차', 'NEGATIVE', '상태', '2026-03-07T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (62, 1, '베개 높여줘', 'NEUTRAL', '요청', '2026-03-10T21:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (63, 1, '창문 열어줘', 'NEUTRAL', '환경', '2026-03-09T12:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (64, 1, '손녀딸 좋아', 'POSITIVE', '가족', '2026-03-13T09:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (65, 1, '손녀딸 생각나', 'POSITIVE', '가족', '2026-03-12T18:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (66, 1, '오늘 일정 알려줘', 'NEUTRAL', '일정', '2026-03-08T08:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (67, 1, '약 먹을 시간이야', 'NEUTRAL', '의료', '2026-03-13T08:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (68, 1, '찜질해줘', 'NEUTRAL', '요청', '2026-03-11T15:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (69, 1, '마사지 해줘', 'NEUTRAL', '요청', '2026-03-10T14:00:00', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (70, 1, '신기한 맛이야', 'NEUTRAL', NULL, '2026-03-14T16:10:20', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (71, 1, '어깨 결려서 아파.', 'NEUTRAL', NULL, '2026-03-14T16:21:26', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (72, 1, '뭐든지 맛있겠다!', 'NEUTRAL', NULL, '2026-03-14T16:32:36', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (73, 1, '김치찌개 진짜 맛있어', 'POSITIVE', NULL, '2026-03-14T16:40:58', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (74, 1, '진짜 맛있더라!', 'POSITIVE', NULL, '2026-03-14T16:41:51', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (75, 1, '점심 메뉴 궁금해.', 'NEUTRAL', NULL, '2026-03-14T18:08:57', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (76, 1, '아침은 별로야.', 'NEUTRAL', NULL, '2026-03-14T18:09:32', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (77, 1, '상큼하고 좋다!', 'POSITIVE', NULL, '2026-03-14T21:08:10', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (78, 1, '김치찌개가 제일 맛있어.', 'NEUTRAL', NULL, '2026-03-15T05:56:23', NOW());
-INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
-VALUES (79, 1, '기분이 좋아!', 'POSITIVE', NULL, '2026-03-15T06:02:39', NOW());
+-- 통증 관련 (왼쪽 어깨 집중, 오른쪽 다리, 허리)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (1, 1, '왼쪽 어깨 또 저려', 'NEGATIVE', '통증', '2026-03-24T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (2, 1, '어깨 좀 주물러줘', 'NEUTRAL', '요청', '2026-03-24T09:15:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (3, 1, '왼쪽 어깨가 많이 아파', 'NEGATIVE', '통증', '2026-03-23T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (4, 1, '어깨 찜질 해줘', 'NEUTRAL', '요청', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (5, 1, '오른쪽 다리 아파', 'NEGATIVE', '통증', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (6, 1, '다리 좀 올려줘', 'NEUTRAL', '요청', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (7, 1, '다리 저려', 'NEGATIVE', '통증', '2026-03-22T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (8, 1, '허리 불편해', 'NEGATIVE', '통증', '2026-03-24T07:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (9, 1, '허리 좀 받쳐줘', 'NEUTRAL', '요청', '2026-03-23T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (10, 1, '몸이 뻐근해', 'NEGATIVE', '통증', '2026-03-22T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (11, 1, '오늘 어깨 좀 나아', 'POSITIVE', '통증', '2026-03-21T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (12, 1, '진통제 줘', 'NEUTRAL', '요청', '2026-03-24T10:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (13, 1, '마사지 해줘', 'NEUTRAL', '요청', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (14, 1, '목 아파', 'NEGATIVE', '통증', '2026-03-22T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (15, 1, '등 시려', 'NEGATIVE', '통증', '2026-03-21T06:00:00', NOW());
+
+-- 손녀딸 (김예승) 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (16, 1, '예승이 보고 싶어', 'POSITIVE', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (17, 1, '예승이 언제 와', 'NEUTRAL', '가족', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (18, 1, '예승이 학교 잘 다녀', 'NEUTRAL', '가족', '2026-03-23T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (19, 1, '예승이 오면 좋겠다', 'POSITIVE', '가족', '2026-03-23T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (20, 1, '예승이 생각나', 'POSITIVE', '가족', '2026-03-22T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (21, 1, '예승이 사진 보여줘', 'NEUTRAL', '가족', '2026-03-22T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (22, 1, '예승이한테 전화해줘', 'NEUTRAL', '요청', '2026-03-21T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (23, 1, '예승이가 보내준 편지 읽어줘', 'POSITIVE', '가족', '2026-03-20T15:00:00', NOW());
+
+-- 가족 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (24, 1, '딸 언제 와', 'NEUTRAL', '가족', '2026-03-23T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (25, 1, '아들 잘 있어', 'NEUTRAL', '가족', '2026-03-22T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (26, 1, '집사람 어디 갔어', 'NEUTRAL', '가족', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (27, 1, '가족 보고 싶어', 'POSITIVE', '가족', '2026-03-21T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (28, 1, '고마워', 'POSITIVE', '감정', '2026-03-24T09:00:00', NOW());
+
+-- 야구/롯데 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (29, 1, '롯데 오늘 경기해', 'NEUTRAL', '여가', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (30, 1, '야구 보고 싶어', 'POSITIVE', '여가', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (31, 1, '야구 중계 틀어줘', 'NEUTRAL', '요청', '2026-03-24T14:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (32, 1, '롯데 이겼어', 'POSITIVE', '여가', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (33, 1, '롯데 졌어', 'NEGATIVE', '여가', '2026-03-22T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (34, 1, '오늘 선발 누구야', 'NEUTRAL', '여가', '2026-03-24T13:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (35, 1, '사직구장 가고 싶다', 'POSITIVE', '여가', '2026-03-20T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (36, 1, '야구 결과 알려줘', 'NEUTRAL', '여가', '2026-03-23T22:00:00', NOW());
+
+-- 트로트/음악 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (37, 1, '트로트 틀어줘', 'NEUTRAL', '요청', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (38, 1, '트로트 듣고 싶어', 'POSITIVE', '여가', '2026-03-24T06:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (39, 1, '이 노래 좋다', 'POSITIVE', '여가', '2026-03-23T07:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (40, 1, '나훈아 노래 듣고 싶어', 'POSITIVE', '여가', '2026-03-22T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (41, 1, '노래 듣고 있으면 편해', 'POSITIVE', '여가', '2026-03-23T08:00:00', NOW());
+
+-- 식사/음식 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (42, 1, '참기름죽 먹고 싶어', 'POSITIVE', '음식', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (43, 1, '죽 맛있었어', 'POSITIVE', '음식', '2026-03-23T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (44, 1, '밥 먹을 시간이야', 'NEUTRAL', '일정', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (45, 1, '배고파', 'NEUTRAL', '음식', '2026-03-24T11:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (46, 1, '물 좀 줘', 'NEUTRAL', '요청', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (47, 1, '목 말라', 'NEUTRAL', '요청', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (48, 1, '김치찌개 먹고 싶어', 'POSITIVE', '음식', '2026-03-22T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (49, 1, '국밥 먹고 싶어', 'POSITIVE', '음식', '2026-03-21T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (50, 1, '맛있었어', 'POSITIVE', '음식', '2026-03-24T08:30:00', NOW());
+
+-- 기분/감정 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (51, 1, '오늘 기분 괜찮아', 'POSITIVE', '기분', '2026-03-24T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (52, 1, '기분 좋아', 'POSITIVE', '기분', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (53, 1, '좀 우울해', 'NEGATIVE', '기분', '2026-03-22T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (54, 1, '힘들어', 'NEGATIVE', '기분', '2026-03-23T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (55, 1, '그래도 괜찮아', 'POSITIVE', '기분', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (56, 1, '오늘은 좀 나아', 'POSITIVE', '기분', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (57, 1, '피곤해', 'NEGATIVE', '상태', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (58, 1, '잠이 안 와', 'NEGATIVE', '상태', '2026-03-22T23:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (59, 1, '외로워', 'NEGATIVE', '감정', '2026-03-21T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (60, 1, '답답해', 'NEGATIVE', '감정', '2026-03-22T16:00:00', NOW());
+
+-- 일상/일정 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (61, 1, '약 먹을 시간이야', 'NEUTRAL', '일정', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (62, 1, '물리치료 받을래', 'NEUTRAL', '일정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (63, 1, '오늘 치료 있어', 'NEUTRAL', '일정', '2026-03-23T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (64, 1, '자세 바꿔줘', 'NEUTRAL', '요청', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (65, 1, '베개 높여줘', 'NEUTRAL', '요청', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (66, 1, '창문 열어줘', 'NEUTRAL', '요청', '2026-03-24T10:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (67, 1, '불 꺼줘', 'NEUTRAL', '요청', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (68, 1, 'TV 틀어줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (69, 1, '도와줘', 'NEUTRAL', '요청', '2026-03-23T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (70, 1, '빨리 낫고 싶어', 'POSITIVE', '감정', '2026-03-24T20:00:00', NOW());
+
+-- 위루술/경관식 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (91, 1, '위루술 해줘', 'NEUTRAL', '의료', '2026-03-24T10:50:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (92, 1, '위루술 세척 시간이야', 'NEUTRAL', '의료', '2026-03-23T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (93, 1, '위루관 주변 아파', 'NEGATIVE', '의료', '2026-03-24T09:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (94, 1, '경관식 시간이야', 'NEUTRAL', '의료', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (95, 1, '경관식 속도 줄여줘', 'NEUTRAL', '의료', '2026-03-23T12:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (96, 1, '경관식 멈춰줘', 'NEUTRAL', '의료', '2026-03-22T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (97, 1, '속이 불편해', 'NEGATIVE', '의료', '2026-03-23T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (98, 1, '토할 것 같아', 'NEGATIVE', '의료', '2026-03-22T12:30:00', NOW());
+
+-- 가래 석션/호흡 관련
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (99, 1, '가래 빼줘', 'NEUTRAL', '의료', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (100, 1, '가래가 많아', 'NEGATIVE', '의료', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (101, 1, '침 빼줘', 'NEUTRAL', '의료', '2026-03-23T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (102, 1, '침이 흘러', 'NEGATIVE', '의료', '2026-03-23T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (103, 1, '석션 더 해줘', 'NEUTRAL', '의료', '2026-03-24T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (104, 1, '석션 그만', 'NEUTRAL', '의료', '2026-03-23T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (105, 1, '가래가 안 나와', 'NEGATIVE', '의료', '2026-03-22T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (106, 1, '기침유발기 해줘', 'NEUTRAL', '의료', '2026-03-21T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (107, 1, '숨쉬기 힘들어', 'NEGATIVE', '의료', '2026-03-24T06:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (108, 1, '호흡기 불편해', 'NEGATIVE', '의료', '2026-03-23T06:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (109, 1, '산소포화도 확인해줘', 'NEUTRAL', '의료', '2026-03-22T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (110, 1, '숨쉬기 편해졌어', 'POSITIVE', '의료', '2026-03-24T09:00:00', NOW());
+
+-- 추가 일상/환경
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (111, 1, '덥다', 'NEGATIVE', '환경', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (112, 1, '춥다', 'NEGATIVE', '환경', '2026-03-23T06:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (113, 1, '환기 해줘', 'NEUTRAL', '환경', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (114, 1, '좋아', 'POSITIVE', '평가', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (115, 1, '별로야', 'NEGATIVE', '평가', '2026-03-23T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (116, 1, '그저그래', 'NEUTRAL', '평가', '2026-03-22T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (117, 1, '맛있어', 'POSITIVE', '음식', '2026-03-24T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (118, 1, '갈증나', 'NEUTRAL', '요청', '2026-03-23T14:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (119, 1, '손 잡아줘', 'NEUTRAL', '요청', '2026-03-22T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (120, 1, '사랑해', 'POSITIVE', '감정', '2026-03-24T21:00:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS (91~120)
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (91, '위루술');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (92, '위루술');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (92, '세척');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (93, '위루관');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (93, '아프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (94, '경관식');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (94, '시간');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (95, '경관식');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (95, '줄이다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (96, '경관식');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (96, '멈추다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (97, '속');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (97, '불편하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (98, '토하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (99, '가래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (99, '빼다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (100, '가래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (100, '많다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (101, '침');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (101, '빼다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (102, '침');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (102, '흐르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (103, '석션');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (103, '더');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (104, '석션');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (104, '그만');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (105, '가래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (105, '나오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (106, '기침유발기');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (107, '숨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (107, '힘들다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (108, '호흡기');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (108, '불편하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (109, '산소포화도');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (110, '숨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (110, '편하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (111, '덥다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (112, '춥다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (113, '환기');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (114, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (115, '별로');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (116, '그저그렇다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (117, '맛있다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (118, '갈증');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (119, '손');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (119, '잡다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (120, '사랑하다');
+
+-- 추가 EXPRESSIONS: 응답형 표현 (야구/트로트/음식/일상)
+-- 야구 응답형
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (121, 1, '진짜? 좋다!', 'POSITIVE', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (122, 1, '몇 대 몇이야?', 'NEUTRAL', '여가', '2026-03-24T15:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (123, 1, '누가 잘 했어?', 'NEUTRAL', '여가', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (124, 1, '다음 경기 언제야?', 'NEUTRAL', '여가', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (125, 1, '역전이야?', 'POSITIVE', '여가', '2026-03-23T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (126, 1, '홈런 쳤어?', 'POSITIVE', '여가', '2026-03-22T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (127, 1, '아깝다 졌네', 'NEGATIVE', '여가', '2026-03-22T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (128, 1, '다음에 이기면 되지', 'POSITIVE', '여가', '2026-03-21T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (129, 1, '오늘 기분 좋겠다', 'POSITIVE', '기분', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (130, 1, '전준우가 쳤어?', 'NEUTRAL', '여가', '2026-03-24T15:30:00', NOW());
+
+-- 음식/음료 응답형
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (131, 1, '응 마실게', 'POSITIVE', '음식', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (132, 1, '아니 됐어', 'NEGATIVE', '음식', '2026-03-23T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (133, 1, '다른 거 줘', 'NEUTRAL', '음식', '2026-03-23T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (134, 1, '조금만 줘', 'NEUTRAL', '음식', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (135, 1, '맛있다', 'POSITIVE', '음식', '2026-03-24T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (136, 1, '좀 더 줘', 'NEUTRAL', '음식', '2026-03-23T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (137, 1, '배 불러', 'NEUTRAL', '음식', '2026-03-22T12:30:00', NOW());
+
+-- 일상 응답형
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (138, 1, '응', 'POSITIVE', '일상', '2026-03-24T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (139, 1, '아니', 'NEGATIVE', '일상', '2026-03-24T09:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (140, 1, '잘 모르겠어', 'NEUTRAL', '일상', '2026-03-23T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (141, 1, '그래 알았어', 'POSITIVE', '일상', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (142, 1, '나중에', 'NEUTRAL', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (143, 1, '고맙다', 'POSITIVE', '감정', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (144, 1, '그냥 그래', 'NEUTRAL', '기분', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (145, 1, '오늘은 좀 힘들어', 'NEGATIVE', '기분', '2026-03-24T20:00:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS (121~145)
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (121, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (122, '점수');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (123, '잘하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (124, '경기');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (124, '언제');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (125, '역전');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (126, '홈런');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (127, '지다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (128, '이기다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (129, '기분');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (129, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (130, '전준우');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (131, '마시다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (132, '됐다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (133, '다른');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (134, '조금');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (135, '맛있다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (136, '더');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (137, '배');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (137, '부르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (138, '응');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (139, '아니');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (140, '모르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (141, '알다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (142, '나중');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (143, '고맙다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (144, '그냥');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (145, '힘들다');
+
+-- 추가 EXPRESSIONS: 통증 응답형
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (146, 1, '좀 나아졌어', 'POSITIVE', '통증', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (147, 1, '참을 만해', 'NEUTRAL', '통증', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (148, 1, '어제보다 덜 아파', 'POSITIVE', '통증', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (149, 1, '좀 쑤셔', 'NEGATIVE', '통증', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (150, 1, '아직 아파', 'NEGATIVE', '통증', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (151, 1, '약 먹으니까 좀 나아', 'POSITIVE', '통증', '2026-03-24T11:00:00', NOW());
+
+-- 시간대별 표현
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (152, 1, '아침이다', 'NEUTRAL', '일상', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (153, 1, '점심 시간이야', 'NEUTRAL', '일상', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (154, 1, '저녁이네', 'NEUTRAL', '일상', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (155, 1, '잠 올 시간이야', 'NEUTRAL', '일상', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (156, 1, '10시다 약 먹어야지', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (157, 1, '1시다 약 시간이야', 'NEUTRAL', '일정', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (158, 1, '7시다 약 먹자', 'NEUTRAL', '일정', '2026-03-25T19:00:00', NOW());
+
+-- 날씨/계절
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (159, 1, '오늘 날씨 좋다', 'POSITIVE', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (160, 1, '비 오네', 'NEUTRAL', '환경', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (161, 1, '바람 분다', 'NEUTRAL', '환경', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (162, 1, '따뜻해졌다', 'POSITIVE', '환경', '2026-03-25T11:00:00', NOW());
+
+-- 예승이 응답형 추가
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (163, 1, '예승이 잘 있어?', 'NEUTRAL', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (164, 1, '예승이 뭐 하고 있어?', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (165, 1, '예승이 키 많이 컸겠다', 'POSITIVE', '가족', '2026-03-23T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (166, 1, '예승이 방학이야?', 'NEUTRAL', '가족', '2026-03-22T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (167, 1, '예승이 같이 야구 보고 싶다', 'POSITIVE', '가족', '2026-03-25T14:00:00', NOW());
+
+-- 감사/사과/위로
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (168, 1, '항상 고마워', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (169, 1, '걱정 끼쳐서 미안해', 'NEGATIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (170, 1, '신경 써줘서 고마워', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (171, 1, '괜찮아 신경 쓰지 마', 'POSITIVE', '감정', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (172, 1, '별거 아니야', 'POSITIVE', '감정', '2026-03-23T16:00:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS (146~172)
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (146, '낫다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (147, '참다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (148, '어제');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (148, '덜');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (148, '아프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (149, '쑤시다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (150, '아프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (151, '약');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (151, '낫다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (152, '아침');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (153, '점심');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (153, '시간');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (154, '저녁');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (155, '잠');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (155, '시간');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (156, '약');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (156, '10시');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (157, '약');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (157, '1시');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (158, '약');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (158, '7시');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (159, '날씨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (159, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (160, '비');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (161, '바람');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (162, '따뜻하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (163, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (163, '잘 있다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (164, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (164, '하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (165, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (165, '키');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (165, '크다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (166, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (166, '방학');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (167, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (167, '야구');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (167, '보다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (168, '고맙다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (169, '걱정');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (169, '미안하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (170, '신경');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (170, '고맙다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (171, '괜찮다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (171, '신경');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (172, '별거');
+
+-- 추가 EXPRESSIONS: 일상 응답형 (상대방 말에 반응)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (173, 1, '그래? 뭐 샀어?', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (174, 1, '잘 다녀왔어?', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (175, 1, '힘들었겠다', 'NEUTRAL', '감정', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (176, 1, '나도 가고 싶었는데', 'NEUTRAL', '감정', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (177, 1, '진짜?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (178, 1, '그래?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (179, 1, '좋았어?', 'NEUTRAL', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (180, 1, '오래 걸렸어?', 'NEUTRAL', '일상', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (181, 1, '잘 됐다', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (182, 1, '대단하다', 'POSITIVE', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (183, 1, '에이 아쉽다', 'NEGATIVE', '감정', '2026-03-23T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (184, 1, '속상하겠다', 'NEGATIVE', '감정', '2026-03-22T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (185, 1, '괜찮아질 거야', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (186, 1, '그렇게 하자', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (187, 1, '맛있겠다', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (188, 1, '나도 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (189, 1, '그거 좋아하는데', 'POSITIVE', '일상', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (190, 1, '시간 빠르다', 'NEUTRAL', '일상', '2026-03-25T18:00:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS (173~190)
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (173, '사다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (174, '다녀오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (175, '힘들다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (176, '가다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (177, '진짜');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (178, '그래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (179, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (180, '오래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (180, '걸리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (181, '잘 되다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (182, '대단하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (183, '아쉽다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (184, '속상하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (185, '괜찮다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (186, '하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (187, '맛있다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (188, '먹다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (189, '좋아하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (190, '시간');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (190, '빠르다');
+
+-- 추가 EXPRESSIONS: 닫힌 질문 응답형 + 가족 방문 응답
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (191, 1, '응 불러줘', 'POSITIVE', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (192, 1, '빨리 왔으면 좋겠어', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (193, 1, '보고 싶다고 전해줘', 'POSITIVE', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (194, 1, '예승이 데리고 와', 'POSITIVE', '가족', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (195, 1, '오면 야구 같이 보자', 'POSITIVE', '가족', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (196, 1, '영상통화라도 하자', 'NEUTRAL', '가족', '2026-03-23T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (197, 1, '기다리고 있을게', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (198, 1, '사랑한다고 전해줘', 'POSITIVE', '가족', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (199, 1, '아니 나중에', 'NEGATIVE', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (200, 1, '지금은 좀 힘들어서', 'NEGATIVE', '일상', '2026-03-24T20:00:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS (191~200)
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (191, '부르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (192, '빨리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (192, '오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (193, '보고 싶다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (193, '전하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (194, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (194, '데리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (195, '야구');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (195, '보다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (196, '영상통화');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (197, '기다리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (198, '사랑하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (198, '전하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (199, '나중');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (200, '힘들다');
+
+-- ===== 대량 추가: 응답형 expressions 200개 (id 201~400) =====
+
+-- 닫힌 질문 응답 — "응" 계열 (201~225)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (201, 1, '응 불러줘', 'POSITIVE', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (202, 1, '응 해줘', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (203, 1, '응 먹을게', 'POSITIVE', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (204, 1, '응 마실게', 'POSITIVE', '음식', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (205, 1, '응 보고 싶어', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (206, 1, '그래 부탁해', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (207, 1, '빨리 해줘', 'NEUTRAL', '요청', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (208, 1, '당연하지', 'POSITIVE', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (209, 1, '좋지', 'POSITIVE', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (210, 1, '그럼 그럼', 'POSITIVE', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (211, 1, '응 기다릴게', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (212, 1, '빨리 오라고 해', 'NEUTRAL', '가족', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (213, 1, '빨리 왔으면', 'POSITIVE', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (214, 1, '물론이지', 'POSITIVE', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (215, 1, '고마워 잘 먹을게', 'POSITIVE', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (216, 1, '그거 먹고 싶었어', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (217, 1, '오렌지 주스가 좋아', 'POSITIVE', '음식', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (218, 1, '계란죽이 좋아', 'POSITIVE', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (219, 1, '응 듣고 싶어', 'POSITIVE', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (220, 1, '응 보자', 'POSITIVE', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (221, 1, '응 괜찮아', 'POSITIVE', '기분', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (222, 1, '응 나아졌어', 'POSITIVE', '통증', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (223, 1, '그래 알겠어', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (224, 1, '응 할게', 'POSITIVE', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (225, 1, '응 가고 싶어', 'POSITIVE', '일상', '2026-03-24T14:00:00', NOW());
+
+-- 닫힌 질문 응답 — "아니" 계열 (226~245)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (226, 1, '아니 됐어', 'NEGATIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (227, 1, '아니 괜찮아', 'NEGATIVE', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (228, 1, '지금은 싫어', 'NEGATIVE', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (229, 1, '안 먹을래', 'NEGATIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (230, 1, '안 마실래', 'NEGATIVE', '음식', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (231, 1, '나중에 하자', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (232, 1, '다음에 하자', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (233, 1, '좀 이따가', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (234, 1, '힘들어서 안 돼', 'NEGATIVE', '일상', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (235, 1, '오늘은 그만', 'NEGATIVE', '일상', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (236, 1, '그건 좀 그래', 'NEGATIVE', '일상', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (237, 1, '필요 없어', 'NEGATIVE', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (238, 1, '귀찮아', 'NEGATIVE', '일상', '2026-03-22T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (239, 1, '그거 말고', 'NEGATIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (240, 1, '몸이 안 좋아서', 'NEGATIVE', '통증', '2026-03-25T08:00:00', NOW());
+
+-- 야구 응답형 (241~270)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (241, 1, '진짜? 이겼어?', 'POSITIVE', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (242, 1, '좋다! 몇 대 몇?', 'POSITIVE', '여가', '2026-03-25T15:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (243, 1, '전준우 쳤어?', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (244, 1, '김원중 던졌어?', 'NEUTRAL', '여가', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (245, 1, '홈런 나왔어?', 'NEUTRAL', '여가', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (246, 1, '역전이야?', 'POSITIVE', '여가', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (247, 1, '에이 졌어?', 'NEGATIVE', '여가', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (248, 1, '아깝다', 'NEGATIVE', '여가', '2026-03-22T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (249, 1, '그래도 잘 싸웠어', 'POSITIVE', '여가', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (250, 1, '내일은 이기자', 'POSITIVE', '여가', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (251, 1, '야구 보니까 좋다', 'POSITIVE', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (252, 1, '롯데 화이팅', 'POSITIVE', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (253, 1, '올해는 기대된다', 'POSITIVE', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (254, 1, '순위 몇 위야?', 'NEUTRAL', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (255, 1, '예승이랑 야구 보고 싶어', 'POSITIVE', '가족', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (256, 1, '하이라이트 보여줘', 'NEUTRAL', '여가', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (257, 1, '중계 다시 보여줘', 'NEUTRAL', '여가', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (258, 1, '내일도 경기 있어?', 'NEUTRAL', '여가', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (259, 1, '같이 보고 싶다', 'POSITIVE', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (260, 1, '오늘 응원했어', 'POSITIVE', '여가', '2026-03-25T20:00:00', NOW());
+
+-- 트로트/음악 응답형 (261~280)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (261, 1, '나훈아 틀어줘', 'NEUTRAL', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (262, 1, '임영웅 틀어줘', 'NEUTRAL', '여가', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (263, 1, '한 번 더 틀어줘', 'NEUTRAL', '여가', '2026-03-25T07:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (264, 1, '좋은 노래다', 'POSITIVE', '여가', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (265, 1, '옛날 생각나', 'NEUTRAL', '감정', '2026-03-23T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (266, 1, '소리 좀 키워줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (267, 1, '다른 노래 틀어줘', 'NEUTRAL', '여가', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (268, 1, '테스형 틀어줘', 'POSITIVE', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (269, 1, '기분 전환됐어', 'POSITIVE', '기분', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (270, 1, '노래 고마워', 'POSITIVE', '감정', '2026-03-25T08:00:00', NOW());
+
+-- 통증 응답형 (271~300)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (271, 1, '응 좀 아파', 'NEGATIVE', '통증', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (272, 1, '많이 아파', 'NEGATIVE', '통증', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (273, 1, '어제보다 나아', 'POSITIVE', '통증', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (274, 1, '약 먹으면 좀 나아', 'NEUTRAL', '통증', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (275, 1, '아침에 더 아파', 'NEGATIVE', '통증', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (276, 1, '밤에 더 아파', 'NEGATIVE', '통증', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (277, 1, '가만히 있으면 괜찮아', 'NEUTRAL', '통증', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (278, 1, '움직이면 아파', 'NEGATIVE', '통증', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (279, 1, '찜질하면 좀 나아', 'NEUTRAL', '통증', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (280, 1, '걱정 마 괜찮아', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (281, 1, '그냥 좀 아픈 거야', 'NEUTRAL', '통증', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (282, 1, '좀 있으면 나아지겠지', 'POSITIVE', '통증', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (283, 1, '약 효과 있어', 'POSITIVE', '통증', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (284, 1, '약 효과 없어', 'NEGATIVE', '통증', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (285, 1, '숨쉬기 좀 힘들어', 'NEGATIVE', '의료', '2026-03-25T06:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (286, 1, '가래 좀 빼줘', 'NEUTRAL', '의료', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (287, 1, '숨쉬기 편해졌어', 'POSITIVE', '의료', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (288, 1, '체위 변경 해줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (289, 1, '왼쪽 어깨 좀 봐줘', 'NEUTRAL', '통증', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (290, 1, '오른쪽 다리 좀 봐줘', 'NEUTRAL', '통증', '2026-03-24T16:00:00', NOW());
+
+-- 보호자 행동 반응형 (291~320)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (291, 1, '고생했어', 'POSITIVE', '감정', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (292, 1, '수고했어', 'POSITIVE', '감정', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (293, 1, '뭐 사왔어?', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (294, 1, '맛있는 거 사왔어?', 'NEUTRAL', '음식', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (295, 1, '기다렸어', 'NEUTRAL', '감정', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (296, 1, '혼자 있으니까 심심했어', 'NEUTRAL', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (297, 1, '걱정했어', 'NEUTRAL', '감정', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (298, 1, '빨리 왔네', 'POSITIVE', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (299, 1, '늦었네', 'NEUTRAL', '일상', '2026-03-23T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (300, 1, '나는 여기서 쉬고 있었어', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (301, 1, '트로트 듣고 있었어', 'NEUTRAL', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (302, 1, '야구 보고 있었어', 'NEUTRAL', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (303, 1, '낮잠 잤어', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (304, 1, '약 먹었어', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (305, 1, '간호사 왔다 갔어', 'NEUTRAL', '일정', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (306, 1, '딸이 전화했어', 'NEUTRAL', '가족', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (307, 1, '예승이가 전화했어', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (308, 1, '괜찮았어', 'POSITIVE', '기분', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (309, 1, '별일 없었어', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (310, 1, '어깨가 좀 아팠어', 'NEGATIVE', '통증', '2026-03-25T09:00:00', NOW());
+
+-- 기분/감정 응답형 (311~340)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (311, 1, '오늘 기분 좋아', 'POSITIVE', '기분', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (312, 1, '좀 우울해', 'NEGATIVE', '기분', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (313, 1, '좋은 편이야', 'POSITIVE', '기분', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (314, 1, '나쁘지 않아', 'POSITIVE', '기분', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (315, 1, '힘들긴 한데 괜찮아', 'NEUTRAL', '기분', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (316, 1, '그래도 살만해', 'POSITIVE', '기분', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (317, 1, '예승이 생각하면 좋아', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (318, 1, '야구 보면 기분 나아져', 'POSITIVE', '여가', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (319, 1, '트로트 들으면 좋아져', 'POSITIVE', '여가', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (320, 1, '좀 외로워', 'NEGATIVE', '감정', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (321, 1, '잠이 안 와서 힘들어', 'NEGATIVE', '상태', '2026-03-24T23:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (322, 1, '빨리 낫고 싶어', 'NEUTRAL', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (323, 1, '걷고 싶어', 'NEUTRAL', '감정', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (324, 1, '밖에 나가고 싶어', 'NEUTRAL', '감정', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (325, 1, '가족이 있어서 버텨', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (326, 1, '포기하지 않을 거야', 'POSITIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (327, 1, '오늘도 힘내자', 'POSITIVE', '기분', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (328, 1, '내일은 나을 거야', 'POSITIVE', '기분', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (329, 1, '살아있어서 좋다', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (330, 1, '고마운 하루야', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+
+-- 소식/뉴스 반응형 (331~350)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (331, 1, '진짜?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (332, 1, '그래?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (333, 1, '몰랐어', 'NEUTRAL', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (334, 1, '언제?', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (335, 1, '어떻게 됐어?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (336, 1, '잘 됐다', 'POSITIVE', '감정', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (337, 1, '좋은 소식이네', 'POSITIVE', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (338, 1, '에이 아쉽다', 'NEGATIVE', '감정', '2026-03-23T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (339, 1, '속상하겠다', 'NEGATIVE', '감정', '2026-03-22T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (340, 1, '괜찮아질 거야', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (341, 1, '힘내', 'POSITIVE', '감정', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (342, 1, '어쩔 수 없지', 'NEUTRAL', '일상', '2026-03-23T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (343, 1, '다음에 잘 되겠지', 'POSITIVE', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (344, 1, '너무 걱정하지 마', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (345, 1, '기쁘다', 'POSITIVE', '감정', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (346, 1, '나도 기쁘다', 'POSITIVE', '감정', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (347, 1, '정말 다행이야', 'POSITIVE', '감정', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (348, 1, '기분 좋겠다', 'POSITIVE', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (349, 1, '대단하다', 'POSITIVE', '감정', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (350, 1, '자세히 말해줘', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+
+-- 감사/사과/위로 응답형 (351~370)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (351, 1, '항상 고마워', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (352, 1, '걱정 끼쳐서 미안해', 'NEGATIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (353, 1, '신경 써줘서 고마워', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (354, 1, '덕분에 좋아졌어', 'POSITIVE', '감정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (355, 1, '네가 있어서 좋다', 'POSITIVE', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (356, 1, '돌봐줘서 고마워', 'POSITIVE', '감정', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (357, 1, '내가 미안하지', 'NEGATIVE', '감정', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (358, 1, '고생시켜서 미안해', 'NEGATIVE', '감정', '2026-03-22T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (359, 1, '옆에 있어줘서 고마워', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (360, 1, '같이 있어줘서 좋다', 'POSITIVE', '감정', '2026-03-24T20:00:00', NOW());
+
+-- 음식 응답형 추가 (361~380)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (361, 1, '맛있다', 'POSITIVE', '음식', '2026-03-25T08:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (362, 1, '잘 먹었어', 'POSITIVE', '음식', '2026-03-25T12:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (363, 1, '더 줘', 'NEUTRAL', '음식', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (364, 1, '따뜻한 거 줘', 'NEUTRAL', '음식', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (365, 1, '시원한 거 줘', 'NEUTRAL', '음식', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (366, 1, '물 먼저 줘', 'NEUTRAL', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (367, 1, '배고프긴 해', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (368, 1, '좀 있다가 먹을게', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (369, 1, '국물이 좋다', 'POSITIVE', '음식', '2026-03-25T12:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (370, 1, '부드러운 거 줘', 'NEUTRAL', '음식', '2026-03-24T08:00:00', NOW());
+
+-- 일상/시간대 응답형 (371~400)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (371, 1, '벌써 아침이야', 'NEUTRAL', '일상', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (372, 1, '점심 때 됐어', 'NEUTRAL', '일상', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (373, 1, '저녁 시간이네', 'NEUTRAL', '일상', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (374, 1, '이제 잘 시간이야', 'NEUTRAL', '일상', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (375, 1, '시간 빠르다', 'NEUTRAL', '일상', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (376, 1, '오늘 하루 빨랐다', 'NEUTRAL', '일상', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (377, 1, '날씨 좋다', 'POSITIVE', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (378, 1, '비 오네', 'NEUTRAL', '환경', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (379, 1, '따뜻해졌다', 'POSITIVE', '환경', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (380, 1, '오늘 뭐 해', 'NEUTRAL', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (381, 1, '심심해', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (382, 1, '뭐 재밌는 거 없어', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (383, 1, '얘기 좀 해줘', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (384, 1, '생각해볼게', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (385, 1, '나중에 말할게', 'NEUTRAL', '일상', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (386, 1, '그건 좋은데', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (387, 1, '한번 해보자', 'POSITIVE', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (388, 1, '잘 모르겠어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (389, 1, '글쎄', 'NEUTRAL', '일상', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (390, 1, '그럴 수도 있지', 'NEUTRAL', '일상', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (391, 1, '맞아', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (392, 1, '그렇지', 'POSITIVE', '일상', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (393, 1, '나도 그래', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (394, 1, '크게 말해줘', 'NEUTRAL', '요청', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (395, 1, '천천히 말해줘', 'NEUTRAL', '요청', '2026-03-23T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (396, 1, '다시 말해줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (397, 1, '뭐라고?', 'NEUTRAL', '일상', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (398, 1, '잘 안 들려', 'NEUTRAL', '일상', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (399, 1, '아까 뭐라고 했어', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (400, 1, '오늘도 감사해', 'POSITIVE', '감정', '2026-03-25T21:00:00', NOW());
+
+-- ===== 상황별 응답형 200개 (id 401~600) =====
+
+-- 보호자 자리 비움 응답 (401~420)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (401, 1, '응 알겠어', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (402, 1, '필요하면 부를게', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (403, 1, '빨리 와', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (404, 1, '가지 마', 'NEGATIVE', '감정', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (405, 1, '옆에 있어줘', 'NEUTRAL', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (406, 1, '혼자 있기 싫어', 'NEGATIVE', '감정', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (407, 1, '금방 올 거지?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (408, 1, '뭐 하러 가?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (409, 1, '주방에서 할 거 있어?', 'NEUTRAL', '일상', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (410, 1, '오래 걸려?', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (411, 1, '조심해', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (412, 1, '나 괜찮아 갔다 와', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (413, 1, '물 좀 갖다 줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (414, 1, '가기 전에 이것만', 'NEUTRAL', '요청', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (415, 1, '문 열어놓고 가', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (416, 1, '나중에 같이 밥 먹자', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (417, 1, '천천히 해', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (418, 1, '서두르지 마', 'NEUTRAL', '일상', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (419, 1, '어디 가는 거야?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (420, 1, '언제 돌아와?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+
+-- 치료/검진 관련 응답 (421~445)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (421, 1, '응 받을게', 'POSITIVE', '의료', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (422, 1, '아니 오늘은 안 할래', 'NEGATIVE', '의료', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (423, 1, '좀 이따가 할래', 'NEUTRAL', '의료', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (424, 1, '힘들어서 못 하겠어', 'NEGATIVE', '의료', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (425, 1, '오늘 물리치료 있어?', 'NEUTRAL', '일정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (426, 1, '선생님 언제 와?', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (427, 1, '오늘 약 먹었어?', 'NEUTRAL', '일정', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (428, 1, '약 시간 됐어', 'NEUTRAL', '일정', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (429, 1, '경관식 할 시간이야', 'NEUTRAL', '의료', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (430, 1, '석션 좀 해줘', 'NEUTRAL', '의료', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (431, 1, '산소 확인해줘', 'NEUTRAL', '의료', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (432, 1, '호흡기 좀 봐줘', 'NEUTRAL', '의료', '2026-03-24T06:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (433, 1, '위루관 좀 봐줘', 'NEUTRAL', '의료', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (434, 1, '물리치료 효과 있어', 'POSITIVE', '의료', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (435, 1, '오늘 치료 힘들었어', 'NEGATIVE', '의료', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (436, 1, '좀 쉬고 하자', 'NEUTRAL', '의료', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (437, 1, '천천히 해줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (438, 1, '살살 해줘', 'NEUTRAL', '요청', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (439, 1, '좀 세게 해줘', 'NEUTRAL', '요청', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (440, 1, '거기 아파', 'NEGATIVE', '통증', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (441, 1, '거기 좋아', 'POSITIVE', '통증', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (442, 1, '거기 말고', 'NEUTRAL', '통증', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (443, 1, '좀 더 해줘', 'NEUTRAL', '요청', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (444, 1, '됐어 그만', 'NEUTRAL', '요청', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (445, 1, '고마워 시원하다', 'POSITIVE', '감정', '2026-03-25T15:00:00', NOW());
+
+-- 잠/수면 관련 (446~465)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (446, 1, '잘 잤어', 'POSITIVE', '상태', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (447, 1, '못 잤어', 'NEGATIVE', '상태', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (448, 1, '새벽에 깼어', 'NEGATIVE', '상태', '2026-03-23T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (449, 1, '계속 뒤척였어', 'NEGATIVE', '상태', '2026-03-22T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (450, 1, '졸려', 'NEUTRAL', '상태', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (451, 1, '낮잠 잘래', 'NEUTRAL', '상태', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (452, 1, '잠이 안 와', 'NEGATIVE', '상태', '2026-03-24T23:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (453, 1, '불 꺼줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (454, 1, '이불 덮어줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (455, 1, '조용히 해줘', 'NEUTRAL', '요청', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (456, 1, '좀 더 잘게', 'NEUTRAL', '상태', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (457, 1, '깨워줘서 고마워', 'POSITIVE', '감정', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (458, 1, '아직 졸려', 'NEUTRAL', '상태', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (459, 1, '일어날게', 'NEUTRAL', '일상', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (460, 1, '꿈 꿨어', 'NEUTRAL', '일상', '2026-03-24T07:00:00', NOW());
+
+-- 환경/온도 응답형 (461~480)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (461, 1, '응 더워', 'NEGATIVE', '환경', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (462, 1, '응 추워', 'NEGATIVE', '환경', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (463, 1, '아니 괜찮아', 'POSITIVE', '환경', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (464, 1, '에어컨 켜줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (465, 1, '히터 켜줘', 'NEUTRAL', '요청', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (466, 1, '창문 좀 열어줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (467, 1, '창문 닫아줘', 'NEUTRAL', '요청', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (468, 1, '바람 들어와', 'NEUTRAL', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (469, 1, '공기 좋다', 'POSITIVE', '환경', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (470, 1, '환기 좀 해줘', 'NEUTRAL', '요청', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (471, 1, '이불 벗겨줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (472, 1, '땀 닦아줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (473, 1, '손발이 차가워', 'NEGATIVE', '통증', '2026-03-24T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (474, 1, '몸이 뜨거워', 'NEGATIVE', '통증', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (475, 1, '열 나는 것 같아', 'NEGATIVE', '통증', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (476, 1, '시원해졌어', 'POSITIVE', '환경', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (477, 1, '따뜻해졌어', 'POSITIVE', '환경', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (478, 1, '딱 좋아', 'POSITIVE', '환경', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (479, 1, '아직 추워', 'NEGATIVE', '환경', '2026-03-23T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (480, 1, '아직 더워', 'NEGATIVE', '환경', '2026-03-23T14:00:00', NOW());
+
+-- 위생/세면 응답형 (481~500)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (481, 1, '응 씻겨줘', 'NEUTRAL', '요청', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (482, 1, '양치해줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (483, 1, '세수해줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (484, 1, '입 좀 적셔줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (485, 1, '입술 발라줘', 'NEUTRAL', '요청', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (486, 1, '눈 닦아줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (487, 1, '코 풀어줘', 'NEUTRAL', '요청', '2026-03-24T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (488, 1, '머리 감겨줘', 'NEUTRAL', '요청', '2026-03-23T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (489, 1, '옷 갈아입혀줘', 'NEUTRAL', '요청', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (490, 1, '상쾌하다', 'POSITIVE', '기분', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (491, 1, '개운해졌어', 'POSITIVE', '기분', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (492, 1, '나중에 씻을래', 'NEUTRAL', '일상', '2026-03-23T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (493, 1, '물티슈 줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (494, 1, '수건 줘', 'NEUTRAL', '요청', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (495, 1, '가려워', 'NEGATIVE', '통증', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (496, 1, '긁어줘', 'NEUTRAL', '요청', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (497, 1, '거기 가려워', 'NEGATIVE', '통증', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (498, 1, '시원하다', 'POSITIVE', '기분', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (499, 1, '깨끗해졌어', 'POSITIVE', '기분', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (500, 1, '고마워 씻겨줘서', 'POSITIVE', '감정', '2026-03-25T08:00:00', NOW());
+
+-- 예승이 상황별 응답 (501~525)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (501, 1, '예승이 보고 싶다', 'POSITIVE', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (502, 1, '예승이 얼굴 보고 싶어', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (503, 1, '예승이 뭐 한대?', 'NEUTRAL', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (504, 1, '예승이 잘 먹어?', 'NEUTRAL', '가족', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (505, 1, '예승이 선물 사줘', 'POSITIVE', '가족', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (506, 1, '예승이한테 사탕 줘', 'POSITIVE', '가족', '2026-03-22T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (507, 1, '예승이 크면 뭐 될까', 'NEUTRAL', '가족', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (508, 1, '예승이 닮았어', 'POSITIVE', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (509, 1, '예승이 영상 보여줘', 'NEUTRAL', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (510, 1, '예승이가 보낸 거야?', 'NEUTRAL', '가족', '2026-03-24T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (511, 1, '예승이 목소리 듣고 싶어', 'POSITIVE', '가족', '2026-03-25T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (512, 1, '예승이가 보고싶대?', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (513, 1, '나도 보고 싶어', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (514, 1, '예승이 데리고 와줘', 'NEUTRAL', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (515, 1, '예승이랑 통화하고 싶어', 'POSITIVE', '가족', '2026-03-25T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (516, 1, '예승이가 그렸어?', 'POSITIVE', '가족', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (517, 1, '예승이 잘 컸다', 'POSITIVE', '가족', '2026-03-23T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (518, 1, '예승이가 자랑스러워', 'POSITIVE', '가족', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (519, 1, '예승이 건강하지?', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (520, 1, '예승이한테 할아버지 사랑한다고 해', 'POSITIVE', '가족', '2026-03-25T21:00:00', NOW());
+
+-- 롯데 상황별 응답 (521~545)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (521, 1, '오늘 경기 몇 시야?', 'NEUTRAL', '여가', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (522, 1, '스코어 알려줘', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (523, 1, '누가 이기고 있어?', 'NEUTRAL', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (524, 1, '몇 회야?', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (525, 1, '오늘 누가 던져?', 'NEUTRAL', '여가', '2026-03-25T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (526, 1, '타순 어떻게 돼?', 'NEUTRAL', '여가', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (527, 1, '전준우 오늘 어때?', 'NEUTRAL', '여가', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (528, 1, '김원중 오늘 던져?', 'NEUTRAL', '여가', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (529, 1, '좋다 이겼어', 'POSITIVE', '여가', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (530, 1, '에이 졌네', 'NEGATIVE', '여가', '2026-03-24T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (531, 1, '아깝다 다음에 이기자', 'POSITIVE', '여가', '2026-03-23T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (532, 1, '오늘은 재밌었어', 'POSITIVE', '여가', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (533, 1, '야구 없는 날은 심심해', 'NEUTRAL', '여가', '2026-03-22T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (534, 1, '내년에는 우승하자', 'POSITIVE', '여가', '2026-03-21T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (535, 1, '최동원 때가 좋았어', 'NEUTRAL', '여가', '2026-03-20T15:00:00', NOW());
+
+-- 음식 상황별 응답 (536~560)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (536, 1, '오렌지 주스 줘', 'NEUTRAL', '음식', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (537, 1, '초코우유 줘', 'NEUTRAL', '음식', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (538, 1, '계란죽 해줘', 'NEUTRAL', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (539, 1, '뜨거운 거 줘', 'NEUTRAL', '음식', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (540, 1, '찬 거 줘', 'NEUTRAL', '음식', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (541, 1, '국물 있는 거 먹고 싶어', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (542, 1, '부드러운 거 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (543, 1, '그거 맛있었어', 'POSITIVE', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (544, 1, '그거 별로였어', 'NEGATIVE', '음식', '2026-03-23T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (545, 1, '다른 거 먹고 싶어', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (546, 1, '이거 뭐야?', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (547, 1, '오늘 뭐 먹어?', 'NEUTRAL', '음식', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (548, 1, '간식 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (549, 1, '물 좀 줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (550, 1, '따뜻한 물 줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+
+-- 가족 일반 응답형 (551~575)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (551, 1, '딸 잘 지내?', 'NEUTRAL', '가족', '2026-03-25T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (552, 1, '아들 뭐 하고 있어?', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (553, 1, '집사람 밥은 먹었어?', 'NEUTRAL', '가족', '2026-03-25T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (554, 1, '가족 사진 보여줘', 'NEUTRAL', '가족', '2026-03-24T17:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (555, 1, '다들 건강하지?', 'NEUTRAL', '가족', '2026-03-25T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (556, 1, '가족이 제일이야', 'POSITIVE', '가족', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (557, 1, '다 같이 모이고 싶다', 'POSITIVE', '가족', '2026-03-24T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (558, 1, '집에 가고 싶어', 'NEUTRAL', '감정', '2026-03-25T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (559, 1, '걱정하지 말라고 전해줘', 'NEUTRAL', '가족', '2026-03-24T18:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (560, 1, '잘 지내고 있다고 전해줘', 'POSITIVE', '가족', '2026-03-25T18:00:00', NOW());
+
+-- 기타 상황별 응답 (561~600)
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (561, 1, '뉴스에 뭐 나와?', 'NEUTRAL', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (562, 1, '오늘 몇 일이야?', 'NEUTRAL', '일상', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (563, 1, '밖에 뭐 보여?', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (564, 1, '오늘 뭐 입었어?', 'NEUTRAL', '일상', '2026-03-25T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (565, 1, '핸드폰 보여줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (566, 1, '거울 보여줘', 'NEUTRAL', '요청', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (567, 1, '리모컨 줘', 'NEUTRAL', '요청', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (568, 1, '채널 돌려줘', 'NEUTRAL', '요청', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (569, 1, '안경 줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (570, 1, '전등 좀 밝게 해줘', 'NEUTRAL', '요청', '2026-03-25T19:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (571, 1, '전등 좀 어둡게 해줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (572, 1, '커튼 쳐줘', 'NEUTRAL', '요청', '2026-03-25T22:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (573, 1, '커튼 열어줘', 'NEUTRAL', '요청', '2026-03-25T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (574, 1, '뭐 좀 먹고 싶어', 'NEUTRAL', '음식', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (575, 1, '배 안 고파', 'NEUTRAL', '음식', '2026-03-24T12:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (576, 1, '얘기 좀 해줘', 'NEUTRAL', '일상', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (577, 1, '조용히 있고 싶어', 'NEUTRAL', '일상', '2026-03-24T20:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (578, 1, '뭐 하고 있었어?', 'NEUTRAL', '일상', '2026-03-25T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (579, 1, '오늘 좀 지루해', 'NEUTRAL', '기분', '2026-03-25T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (580, 1, '할 게 없어', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (581, 1, '산책하고 싶어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (582, 1, '햇빛 쬐고 싶어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (583, 1, '밖에 나가고 싶어', 'NEUTRAL', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (584, 1, '예전처럼 되고 싶어', 'NEUTRAL', '감정', '2026-03-25T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (585, 1, '웃어야지', 'POSITIVE', '감정', '2026-03-25T09:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (586, 1, '뭐라고?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (587, 1, '잘 안 들려', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (588, 1, '다시 말해줘', 'NEUTRAL', '요청', '2026-03-25T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (589, 1, '크게 말해줘', 'NEUTRAL', '요청', '2026-03-24T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (590, 1, '천천히 말해줘', 'NEUTRAL', '요청', '2026-03-23T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (591, 1, '그래서?', 'NEUTRAL', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (592, 1, '그 다음에?', 'NEUTRAL', '일상', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (593, 1, '정말?', 'NEUTRAL', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (594, 1, '대단하다', 'POSITIVE', '감정', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (595, 1, '그건 아니야', 'NEGATIVE', '일상', '2026-03-23T16:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (596, 1, '맞아 맞아', 'POSITIVE', '일상', '2026-03-25T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (597, 1, '그렇지', 'POSITIVE', '일상', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (598, 1, '나도 그 생각이야', 'POSITIVE', '일상', '2026-03-25T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (599, 1, '글쎄다', 'NEUTRAL', '일상', '2026-03-24T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at) VALUES (600, 1, '잘 모르겠어', 'NEUTRAL', '일상', '2026-03-25T10:00:00', NOW());
+
+-- 추가 USAGE_LOG (191~200)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 191, 4, '2026-03-25T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 192, 4, '2026-03-25T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 193, 5, '2026-03-24T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 194, 4, '2026-03-25T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 195, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 196, 5, '2026-03-23T19:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 197, 4, '2026-03-25T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 198, 5, '2026-03-24T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 199, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 200, 5, '2026-03-24T20:00:00');
+
+-- 추가 USAGE_LOG (173~190)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 173, 4, '2026-03-25T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 174, 4, '2026-03-25T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 175, 4, '2026-03-24T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 176, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 177, 3, '2026-03-25T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 178, 2, '2026-03-25T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 179, 4, '2026-03-24T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 180, 4, '2026-03-23T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 181, 2, '2026-03-25T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 182, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 183, 5, '2026-03-23T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 184, 5, '2026-03-22T19:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 185, 2, '2026-03-25T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 186, 2, '2026-03-25T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 187, 3, '2026-03-24T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 188, 3, '2026-03-25T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 189, 3, '2026-03-24T13:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 190, 5, '2026-03-25T18:00:00');
+
+-- 추가 USAGE_LOG (146~172)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 146, 2, '2026-03-25T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 147, 2, '2026-03-25T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 148, 1, '2026-03-25T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 149, 4, '2026-03-24T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 150, 1, '2026-03-25T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 151, 2, '2026-03-24T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 152, 1, '2026-03-25T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 153, 3, '2026-03-25T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 154, 5, '2026-03-25T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 155, 6, '2026-03-24T22:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 156, 2, '2026-03-25T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 157, 3, '2026-03-25T13:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 158, 5, '2026-03-25T19:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 159, 2, '2026-03-25T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 160, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 161, 4, '2026-03-23T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 162, 2, '2026-03-25T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 163, 4, '2026-03-25T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 164, 5, '2026-03-24T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 165, 4, '2026-03-23T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 166, 4, '2026-03-22T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 167, 3, '2026-03-25T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 168, 5, '2026-03-25T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 169, 6, '2026-03-24T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 170, 2, '2026-03-25T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 171, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 172, 4, '2026-03-23T16:00:00');
+
+-- 추가 USAGE_LOG (121~145)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 121, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 122, 4, '2026-03-24T15:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 123, 4, '2026-03-24T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 124, 6, '2026-03-23T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 125, 5, '2026-03-23T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 126, 6, '2026-03-22T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 127, 6, '2026-03-22T22:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 128, 6, '2026-03-21T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 129, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 130, 4, '2026-03-24T15:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 131, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 132, 2, '2026-03-23T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 133, 2, '2026-03-23T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 134, 1, '2026-03-24T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 135, 1, '2026-03-24T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 136, 3, '2026-03-23T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 137, 3, '2026-03-22T12:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 138, 2, '2026-03-24T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 139, 2, '2026-03-24T09:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 140, 2, '2026-03-23T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 141, 2, '2026-03-24T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 142, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 143, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 144, 4, '2026-03-23T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 145, 5, '2026-03-24T20:00:00');
+
+-- 추가 USAGE_LOG (91~120)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 91, 2, '2026-03-24T10:50:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 92, 2, '2026-03-23T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 93, 2, '2026-03-24T09:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 94, 3, '2026-03-24T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 95, 3, '2026-03-23T12:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 96, 3, '2026-03-22T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 97, 3, '2026-03-23T13:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 98, 3, '2026-03-22T12:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 99, 1, '2026-03-24T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 100, 1, '2026-03-24T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 101, 1, '2026-03-23T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 102, 2, '2026-03-23T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 103, 1, '2026-03-24T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 104, 1, '2026-03-23T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 105, 2, '2026-03-22T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 106, 2, '2026-03-21T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 107, 1, '2026-03-24T06:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 108, 1, '2026-03-23T06:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 109, 1, '2026-03-22T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 110, 2, '2026-03-24T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 111, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 112, 1, '2026-03-23T06:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 113, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 114, 2, '2026-03-24T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 115, 5, '2026-03-23T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 116, 4, '2026-03-22T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 117, 1, '2026-03-24T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 118, 3, '2026-03-23T14:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 119, 5, '2026-03-22T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 120, 6, '2026-03-24T21:00:00');
+
+-- 자주 쓰는 의료 표현 usage_log 추가
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 99, 1, '2026-03-23T07:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 99, 2, '2026-03-22T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 91, 2, '2026-03-23T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 91, 3, '2026-03-22T13:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 107, 1, '2026-03-23T06:00:00');
 
 -- 4. EXPRESSION_KEYWORDS
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (1, 1, '물');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (2, 1, '주다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (3, 2, '어깨');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (4, 2, '아프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (5, 3, '고맙다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (6, 4, '맛있다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (7, 5, '좋다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (8, 6, '자세');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (9, 6, '바꾸다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (10, 7, '손녀딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (11, 7, '보다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (12, 7, '그립다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (13, 8, '목');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (14, 8, '말라다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (15, 9, '허리');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (16, 9, '불편하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (17, 10, '덥다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (18, 11, '배');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (19, 11, '고프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (20, 12, '돕다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (21, 13, '불');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (22, 13, '켜다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (23, 14, '기분');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (24, 14, '좋다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (25, 15, '김치찌개');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (26, 15, '먹다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (27, 15, '원하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (28, 16, '다리');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (29, 16, '저리다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (30, 17, '그저그렇다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (31, 18, '우울하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (32, 19, '딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (33, 19, '언제');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (34, 19, '오다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (35, 20, '춥다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (36, 21, '별로');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (37, 22, '치킨');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (38, 22, '시키다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (39, 23, '행복하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (40, 24, '아들');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (41, 24, '잘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (42, 24, '있다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (43, 25, '화나다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (44, 26, '슬프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (45, 27, '불안하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (46, 28, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (47, 28, '기분');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (48, 28, '좋다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (49, 29, '기쁘다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (50, 30, '신나다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (51, 31, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (52, 31, '행복하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (53, 32, '기분');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (54, 32, '좋다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (55, 33, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (56, 33, '기분');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (57, 33, '괜찮다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (58, 34, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (59, 34, '슬프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (60, 35, '우울하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (61, 35, '날');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (62, 36, '화');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (63, 36, '나다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (64, 37, '손녀딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (65, 37, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (66, 37, '오다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (67, 38, '손녀딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (68, 38, '만나다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (69, 38, '원하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (70, 39, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (71, 39, '방문');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (72, 39, '있다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (73, 40, '손녀딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (74, 40, '기다리다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (75, 41, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (76, 41, '오다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (77, 42, '아침');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (78, 42, '식사');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (79, 42, '하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (80, 43, '아침');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (81, 43, '맛있다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (82, 44, '밥');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (83, 44, '먹다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (84, 44, '시간');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (85, 45, '위루술');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (86, 45, '하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (87, 46, '위루술');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (88, 46, '세척');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (89, 46, '시간');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (90, 47, '물리치료');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (91, 47, '받다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (92, 48, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (93, 48, '치료');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (94, 48, '있다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (95, 49, '물리치료');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (96, 49, '힘들다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (97, 50, '목');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (98, 50, '아프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (99, 51, '등');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (100, 51, '시리다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (101, 52, '머리');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (102, 52, '아프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (103, 53, '배');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (104, 53, '아프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (105, 54, '어깨');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (106, 54, '결리다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (107, 55, '다리');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (108, 55, '아프다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (109, 56, '몸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (110, 56, '뻐근하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (111, 57, '피곤하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (112, 58, '물');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (113, 58, '마시다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (114, 58, '원하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (115, 59, '갈증');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (116, 59, '나다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (117, 60, '물');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (118, 60, '모금');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (119, 60, '주다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (120, 61, '숨');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (121, 61, '차다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (122, 62, '베개');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (123, 62, '높이다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (124, 63, '창문');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (125, 63, '열다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (126, 64, '손녀딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (127, 64, '좋다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (128, 65, '손녀딸');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (129, 65, '생각나다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (130, 66, '오늘');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (131, 66, '일정');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (132, 66, '알려주다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (133, 67, '약');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (134, 67, '먹다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (135, 67, '시간');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (136, 68, '찜질');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (137, 68, '하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (138, 69, '마사지');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (139, 69, '하다');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (140, 73, '김치찌개');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (141, 73, '진짜');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (142, 73, '맛있어');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (143, 74, '진짜');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (144, 74, '맛있더라!');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (145, 75, '점심');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (146, 75, '메뉴');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (147, 75, '궁금해');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (148, 76, '아침은');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (149, 76, '별로야');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (150, 77, '상큼하고');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (151, 77, '좋다!');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (152, 78, '김치찌개');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (153, 78, '제일');
-INSERT INTO expression_keywords (id, expr_id, keyword) VALUES (154, 78, '맛있다');
+-- 통증
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (1, '왼쪽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (1, '어깨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (1, '저리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (2, '어깨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (2, '주무르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (3, '왼쪽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (3, '어깨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (3, '아프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (4, '어깨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (4, '찜질');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (5, '오른쪽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (5, '다리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (5, '아프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (6, '다리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (6, '올리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (7, '다리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (7, '저리다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (8, '허리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (8, '불편하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (9, '허리');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (9, '받치다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (10, '몸');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (10, '뻐근하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (11, '어깨');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (11, '낫다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (12, '진통제');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (13, '마사지');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (14, '목');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (14, '아프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (15, '등');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (15, '시리다');
 
--- 5. USAGE_LOG (각 표현당 대표 1건씩, usageCount는 실제 서비스에서 쌓임)
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 1, '물 좀 줘', 2, '2026-03-13T11:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 2, '어깨 아파', 2, '2026-03-13T10:15:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 3, '고마워', 2, '2026-03-13T09:45:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 4, '맛있어', 2, '2026-03-13T09:20:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 5, '좋아', 5, '2026-03-12T20:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 6, '자세 바꿔줘', 5, '2026-03-12T19:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 7, '손녀딸 보고 싶어', 5, '2026-03-12T18:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 8, '목 말라', 4, '2026-03-12T15:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 9, '허리 불편해', 3, '2026-03-12T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 10, '덥다', 3, '2026-03-12T12:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 11, '배고파', 3, '2026-03-11T12:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 12, '도와줘', 2, '2026-03-11T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 13, '불 켜줘', 2, '2026-03-11T09:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 14, '기분 좋아', 4, '2026-03-10T16:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 15, '김치찌개 먹고 싶어', 3, '2026-03-10T12:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 16, '다리 저려', 2, '2026-03-10T10:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 17, '그저그래', 5, '2026-03-09T18:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 18, '우울해', 3, '2026-03-09T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 19, '딸 언제 와?', 4, '2026-03-08T15:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 20, '춥다', 1, '2026-03-08T08:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 21, '별로야', 5, '2026-03-07T19:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 22, '치킨 시켜줘', 5, '2026-03-06T18:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 23, '행복해', 4, '2026-03-05T17:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 24, '아들 잘 있어?', 5, '2026-03-04T20:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 25, '화나', 2, '2026-03-03T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 26, '슬퍼', 3, '2026-03-02T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 27, '불안해', 2, '2026-02-28T09:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 28, '오늘 기분 좋아', 3, '2026-03-12T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 29, '기쁘다', 4, '2026-03-11T16:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 30, '신나', 2, '2026-03-10T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 31, '오늘 행복해', 2, '2026-03-12T09:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 32, '기분이 좋아', 4, '2026-03-11T15:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 33, '오늘 기분 괜찮아', 4, '2026-03-10T17:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 34, '오늘 좀 슬퍼', 3, '2026-03-09T13:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 35, '우울한 날이야', 3, '2026-03-08T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 36, '화가 나', 2, '2026-03-07T10:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 37, '손녀딸 오늘 와?', 1, '2026-03-13T08:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 38, '손녀딸 만나고 싶어', 4, '2026-03-12T17:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 39, '오늘 방문 있어', 2, '2026-03-11T09:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 40, '손녀딸 기다려', 3, '2026-03-10T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 41, '오늘 누가 와?', 2, '2026-03-09T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 42, '아침 식사 할래', 1, '2026-03-13T08:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 43, '아침 맛있어', 2, '2026-03-12T09:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 44, '밥 먹을 시간이야', 1, '2026-03-11T08:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 45, '위루술 해줘', 2, '2026-03-13T10:50:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 46, '위루술 세척 시간이야', 2, '2026-03-12T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 47, '물리치료 받을래', 4, '2026-03-13T15:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 48, '오늘 치료 있어', 4, '2026-03-12T16:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 49, '물리치료 힘들어', 4, '2026-03-11T16:30:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 50, '목 아파', 3, '2026-03-12T13:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 51, '등 시려', 3, '2026-03-11T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 52, '머리 아파', 2, '2026-03-10T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 53, '배 아파', 4, '2026-03-09T15:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 54, '어깨 결려', 2, '2026-03-12T10:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 55, '다리 아파', 2, '2026-03-11T09:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 56, '몸이 뻐근해', 4, '2026-03-08T16:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 57, '피곤해', 5, '2026-03-12T20:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 58, '물 마시고 싶어', 2, '2026-03-13T11:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 59, '갈증나', 4, '2026-03-12T15:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 60, '물 한 모금 줘', 2, '2026-03-11T10:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 61, '숨이 차', 3, '2026-03-07T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 62, '베개 높여줘', 6, '2026-03-10T21:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 63, '창문 열어줘', 3, '2026-03-09T12:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 64, '손녀딸 좋아', 2, '2026-03-13T09:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 65, '손녀딸 생각나', 5, '2026-03-12T18:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 66, '오늘 일정 알려줘', 1, '2026-03-08T08:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 67, '약 먹을 시간이야', 1, '2026-03-13T08:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 68, '찜질해줘', 4, '2026-03-11T15:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 69, '마사지 해줘', 3, '2026-03-10T14:00:00');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 70, '신기한 맛이야', 4, '2026-03-14T16:10:20');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 71, '어깨 결려서 아파.', 4, '2026-03-14T16:21:26');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 72, '뭐든지 맛있겠다!', 4, '2026-03-14T16:32:36');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 73, '김치찌개 진짜 맛있어', 4, '2026-03-14T16:40:58');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 74, '진짜 맛있더라!', 4, '2026-03-14T16:41:51');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 75, '점심 메뉴 궁금해.', 5, '2026-03-14T18:08:57');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 76, '아침은 별로야.', 5, '2026-03-14T18:09:32');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 77, '상큼하고 좋다!', 6, '2026-03-14T21:08:10');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 78, '김치찌개가 제일 맛있어.', 1, '2026-03-15T05:56:23');
-INSERT INTO usage_log (matching_id, expr_id, content, time_slot_id, used_at)
-VALUES (1, 79, '기분이 좋아!', 1, '2026-03-15T06:02:39');
+-- 손녀딸/가족
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (16, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (16, '보고 싶다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (17, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (17, '오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (18, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (18, '학교');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (19, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (19, '오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (20, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (20, '생각나다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (21, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (21, '사진');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (22, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (22, '전화');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (23, '예승');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (23, '편지');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (24, '딸');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (24, '오다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (25, '아들');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (26, '집사람');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (27, '가족');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (27, '보고 싶다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (28, '고맙다');
 
--- 6. USER_WORDS (matching_id=1)
+-- 야구/롯데
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (29, '롯데');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (29, '경기');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (30, '야구');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (30, '보다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (31, '야구');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (31, '중계');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (32, '롯데');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (32, '이기다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (33, '롯데');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (33, '지다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (34, '선발');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (35, '사직구장');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (36, '야구');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (36, '결과');
+
+-- 트로트
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (37, '트로트');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (38, '트로트');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (38, '듣다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (39, '노래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (39, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (40, '나훈아');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (40, '노래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (41, '노래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (41, '편하다');
+
+-- 음식
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (42, '참기름죽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (42, '먹다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (43, '죽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (43, '맛있다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (44, '밥');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (44, '시간');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (45, '배고프다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (46, '물');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (46, '주다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (47, '목');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (47, '마르다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (48, '김치찌개');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (48, '먹다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (49, '국밥');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (49, '먹다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (50, '맛있다');
+
+-- 기분/감정
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (51, '기분');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (51, '괜찮다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (52, '기분');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (52, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (53, '우울하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (54, '힘들다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (55, '괜찮다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (56, '낫다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (57, '피곤하다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (58, '잠');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (59, '외롭다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (60, '답답하다');
+
+-- 일상
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (61, '약');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (61, '시간');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (62, '물리치료');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (63, '치료');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (64, '자세');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (64, '바꾸다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (65, '베개');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (65, '높이다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (66, '창문');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (66, '열다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (67, '불');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (67, '끄다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (68, 'TV');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (69, '돕다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (70, '낫다');
+
+-- 추가 EXPRESSIONS: 페르소나 디테일 (선수/가수/음식)
+-- 야구 선수
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (71, 1, '전준우 오늘 잘 쳤어', 'POSITIVE', '여가', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (72, 1, '전준우 타율 어때', 'NEUTRAL', '여가', '2026-03-23T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (73, 1, '김원중 오늘 등판해', 'NEUTRAL', '여가', '2026-03-24T13:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (74, 1, '김원중 잘 던졌어', 'POSITIVE', '여가', '2026-03-23T21:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (75, 1, '최동원 같은 투수가 또 나올까', 'NEUTRAL', '여가', '2026-03-22T14:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (76, 1, '최동원이 최고였어', 'POSITIVE', '여가', '2026-03-21T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (77, 1, '예전에 최동원 경기 직접 봤어', 'POSITIVE', '여가', '2026-03-20T14:00:00', NOW());
+
+-- 트로트 가수
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (78, 1, '나훈아 테스형 틀어줘', 'POSITIVE', '여가', '2026-03-24T07:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (79, 1, '임영웅 노래 듣고 싶어', 'POSITIVE', '여가', '2026-03-23T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (80, 1, '임영웅 노래 좋다', 'POSITIVE', '여가', '2026-03-22T07:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (81, 1, '나훈아가 제일 좋아', 'POSITIVE', '여가', '2026-03-24T07:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (82, 1, '임영웅 콘서트 가고 싶다', 'POSITIVE', '여가', '2026-03-21T09:00:00', NOW());
+
+-- 음식 디테일
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (83, 1, '오렌지 주스 마시고 싶어', 'POSITIVE', '음식', '2026-03-24T10:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (84, 1, '오렌지 주스 맛있어', 'POSITIVE', '음식', '2026-03-23T10:30:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (85, 1, '계란죽 먹고 싶어', 'POSITIVE', '음식', '2026-03-24T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (86, 1, '계란죽 부드러워서 좋아', 'POSITIVE', '음식', '2026-03-23T08:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (87, 1, '초코우유 줘', 'NEUTRAL', '음식', '2026-03-24T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (88, 1, '초코우유 마시고 싶어', 'POSITIVE', '음식', '2026-03-23T15:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (89, 1, '오렌지 주스 한 잔만', 'NEUTRAL', '음식', '2026-03-22T11:00:00', NOW());
+INSERT IGNORE INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)
+VALUES (90, 1, '오늘 계란죽이야', 'NEUTRAL', '음식', '2026-03-24T08:30:00', NOW());
+
+-- 추가 EXPRESSION_KEYWORDS
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (71, '전준우');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (71, '치다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (72, '전준우');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (72, '타율');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (73, '김원중');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (73, '등판');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (74, '김원중');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (74, '던지다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (75, '최동원');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (75, '투수');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (76, '최동원');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (76, '최고');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (77, '최동원');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (77, '경기');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (78, '나훈아');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (78, '테스형');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (79, '임영웅');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (79, '노래');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (80, '임영웅');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (80, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (81, '나훈아');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (81, '좋다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (82, '임영웅');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (82, '콘서트');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (83, '오렌지 주스');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (83, '마시다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (84, '오렌지 주스');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (84, '맛있다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (85, '계란죽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (85, '먹다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (86, '계란죽');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (86, '부드럽다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (87, '초코우유');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (88, '초코우유');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (88, '마시다');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (89, '오렌지 주스');
+INSERT IGNORE INTO expression_keywords (expr_id, keyword) VALUES (90, '계란죽');
+
+-- 추가 USAGE_LOG (새 expressions)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 71, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 72, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 73, 3, '2026-03-24T13:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 74, 6, '2026-03-23T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 75, 3, '2026-03-22T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 76, 4, '2026-03-21T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 77, 3, '2026-03-20T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 78, 1, '2026-03-24T07:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 79, 1, '2026-03-23T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 80, 1, '2026-03-22T07:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 81, 1, '2026-03-24T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 82, 2, '2026-03-21T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 83, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 84, 2, '2026-03-23T10:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 85, 1, '2026-03-24T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 86, 1, '2026-03-23T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 87, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 88, 4, '2026-03-23T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 89, 2, '2026-03-22T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 90, 1, '2026-03-24T08:30:00');
+
+-- 자주 쓰는 표현 usage_log 추가 (오렌지 주스, 나훈아, 전준우)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 83, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 83, 4, '2026-03-22T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 78, 1, '2026-03-23T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 78, 1, '2026-03-22T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 71, 3, '2026-03-23T14:30:00');
+
+-- 5. USAGE_LOG
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 1, 1, '2026-03-24T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 2, 2, '2026-03-24T09:15:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 3, 2, '2026-03-23T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 4, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 5, 2, '2026-03-24T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 6, 4, '2026-03-23T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 7, 4, '2026-03-22T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 8, 1, '2026-03-24T07:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 9, 1, '2026-03-23T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 10, 5, '2026-03-22T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 11, 2, '2026-03-21T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 12, 2, '2026-03-24T10:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 13, 4, '2026-03-23T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 14, 2, '2026-03-22T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 15, 1, '2026-03-21T06:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 16, 5, '2026-03-24T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 17, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 18, 2, '2026-03-23T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 19, 4, '2026-03-23T17:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 20, 5, '2026-03-22T19:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 21, 3, '2026-03-22T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 22, 5, '2026-03-21T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 23, 4, '2026-03-20T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 24, 2, '2026-03-23T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 25, 5, '2026-03-22T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 26, 3, '2026-03-24T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 27, 6, '2026-03-21T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 28, 2, '2026-03-24T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 29, 3, '2026-03-24T13:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 30, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 31, 3, '2026-03-24T14:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 32, 6, '2026-03-23T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 33, 6, '2026-03-22T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 34, 3, '2026-03-24T13:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 35, 4, '2026-03-20T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 36, 6, '2026-03-23T22:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 37, 1, '2026-03-24T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 38, 1, '2026-03-24T06:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 39, 1, '2026-03-23T07:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 40, 1, '2026-03-22T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 41, 1, '2026-03-23T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 42, 1, '2026-03-24T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 43, 1, '2026-03-23T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 44, 3, '2026-03-24T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 45, 2, '2026-03-24T11:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 46, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 47, 4, '2026-03-23T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 48, 3, '2026-03-22T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 49, 3, '2026-03-21T12:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 50, 1, '2026-03-24T08:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 51, 2, '2026-03-24T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 52, 3, '2026-03-23T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 53, 6, '2026-03-22T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 54, 5, '2026-03-23T20:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 55, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 56, 2, '2026-03-24T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 57, 6, '2026-03-23T22:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 58, 6, '2026-03-22T23:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 59, 6, '2026-03-21T22:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 60, 4, '2026-03-22T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 61, 2, '2026-03-24T10:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 62, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 63, 2, '2026-03-23T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 64, 4, '2026-03-24T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 65, 6, '2026-03-23T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 66, 2, '2026-03-24T10:30:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 67, 6, '2026-03-23T22:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 68, 3, '2026-03-24T14:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 69, 2, '2026-03-23T11:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 70, 5, '2026-03-24T20:00:00');
+
+-- 자주 쓰는 표현은 usage_log 추가 (왼쪽 어깨, 예승이, 트로트)
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 1, 2, '2026-03-23T09:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 1, 4, '2026-03-22T15:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 1, 5, '2026-03-21T19:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 3, 1, '2026-03-22T08:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 3, 5, '2026-03-21T18:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 16, 4, '2026-03-23T16:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 16, 6, '2026-03-22T21:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 37, 1, '2026-03-23T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 37, 1, '2026-03-22T07:00:00');
+INSERT IGNORE INTO usage_log (matching_id, expr_id, time_slot_id, used_at) VALUES (1, 46, 3, '2026-03-23T14:00:00');
+
+-- 6. USER_WORDS (matching_id=1) — 박윤환 페르소나
 INSERT IGNORE INTO user_words (matching_id, subjects, objects, verbs, created_at, updated_at)
-VALUES (1, '["나", "우리", "손녀딸", "딸", "아들", "할머니", "할아버지", "엄마", "아빠", "며느리", "친구", "간호사", "선생님", "가족", "손자", "동생", "형", "누나", "어깨", "허리", "다리", "머리", "등", "목", "배", "손", "발", "몸", "가슴"]', '["물", "음식", "약", "밥", "김치찌개", "과일", "커피", "우유", "국", "손녀딸", "손녀딸 사진", "TV", "전화", "그림", "책", "창문", "불", "침대", "진통제", "찜질팩", "마사지", "자세", "베개", "방문", "치료", "병원", "식사", "위루술"]', '["좋아하다", "그리워하다", "사랑하다", "먹다", "마시다", "보다", "듣다", "생각하다", "기억하다", "기다리다", "도와주다", "보여주다", "불러주다", "쉬다", "자다", "힘들다", "아프다", "편하다", "고맙다", "행복하다", "슬프다", "우울하다", "화나다", "괜찮다", "원하다", "놀다", "저리다", "불편하다", "쑤시다", "당기다", "짜다", "받다", "만나다"]', NOW(), NOW());
+VALUES (1,
+  '["나", "우리", "예승이", "딸", "아들", "집사람", "가족", "간호사", "선생님", "롯데", "전준우", "김원중", "최동원", "나훈아", "임영웅", "어깨", "왼쪽 어깨", "오른쪽 다리", "허리", "다리", "목", "등", "몸"]',
+  '["물", "약", "밥", "죽", "계란죽", "오렌지 주스", "초코우유", "김치찌개", "국밥", "된장찌개", "과일", "커피", "트로트", "야구", "TV", "전화", "사진", "편지", "창문", "불", "베개", "진통제", "찜질", "마사지", "경기", "노래"]',
+  '["좋아하다", "보고 싶다", "먹다", "마시다", "보다", "듣다", "틀다", "아프다", "저리다", "불편하다", "힘들다", "괜찮다", "좋다", "나아지다", "주다", "해주다", "올리다", "바꾸다", "열다", "끄다", "켜다", "받다", "던지다", "치다", "이기다", "응원하다"]',
+  NOW(), NOW());
 
--- 7. DAILY_MOOD (테스트용)
+-- 7. DAILY_MOOD
 INSERT IGNORE INTO daily_mood (matching_id, mood_date, mood_type, mood_level, created_at)
-VALUES (1, CURDATE(), 'HAPPY', 4, NOW());
+VALUES (1, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'CALM', 3, NOW());

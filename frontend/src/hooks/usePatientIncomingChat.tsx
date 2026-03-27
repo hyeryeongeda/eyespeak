@@ -9,7 +9,9 @@ import {
   buildManualWordBank,
 } from '../services/mockSuggestionService'
 import {
+  fetchSuggestedReplyCategories,
   fetchSuggestedReplies,
+  fetchSuggestedSentences,
   playPatientUtteranceTts,
   sendPatientReply,
 } from '../services/recommendationService'
@@ -30,11 +32,14 @@ import type { StompChatInbound } from '../services/websocket'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
+  PatientRecommendationCategory,
   PatientChatRouteContext,
   PatientChatSendOutcome,
   PatientChatSessionState,
   PatientSuggestedResponse,
 } from '../types/chat'
+import type { RecommendationCategoryKey } from '../types/recommendation'
+import { createClientMessageId } from '../utils/clientMessageId'
 
 type PatientChatAction =
   | { type: 'SET_ROUTE_CONTEXT'; route: PatientChatRouteContext }
@@ -49,8 +54,11 @@ type PatientChatAction =
       pauseMedia: boolean
       focusMessageId: string
     }
-  | { type: 'ENTER_REPLY_MODE'; messageId: string }
-  | { type: 'SUGGESTION_LOADING'; messageId: string }
+  | { type: 'ENTER_REPLY_MODE'; messageId: string; pauseMedia: boolean }
+  | { type: 'CATEGORY_LOADING'; messageId: string }
+  | { type: 'CATEGORY_READY'; categories: PatientRecommendationCategory[] }
+  | { type: 'SET_CATEGORY_PAGE'; page: number }
+  | { type: 'SUGGESTION_LOADING'; messageId: string; categoryKey?: RecommendationCategoryKey | null }
   | { type: 'SUGGESTION_READY'; suggestions: PatientSuggestedResponse[] }
   | { type: 'SUGGESTION_FAILED'; error: string }
   | { type: 'OPEN_MANUAL_INPUT_SELECT' }
@@ -67,6 +75,7 @@ type PatientChatAction =
   | { type: 'ARM_TIMEOUT'; messageId: string; timeoutAt: number }
   | { type: 'CLEAR_TIMEOUT' }
   | { type: 'TIMEOUT_EXPIRED'; messageId: string }
+  | { type: 'COMPLETE_REPLY_COMPLETION' }
   | { type: 'DEFER_ACTIVE_MESSAGE' }
   | { type: 'START_RESTORE' }
   | { type: 'FINISH_RESTORE' }
@@ -77,13 +86,18 @@ const initialState: PatientChatSessionState = {
   status: 'idle',
   interruptState: 'none',
   fallbackState: 'none',
+  recommendationMode: 'category',
+  categoryState: 'idle',
   suggestionState: 'idle',
   messages: [],
+  categories: [],
   suggestions: [],
   currentRoute: null,
   previousRoute: null,
   activeMessageId: null,
   activeReplyMessageId: null,
+  selectedCategoryKey: null,
+  categoryPage: 0,
   manualInputMode: null,
   manualDraft: '',
   suggestionError: null,
@@ -99,19 +113,69 @@ const initialState: PatientChatSessionState = {
 }
 
 const LOCAL_OUTGOING_MATCH_WINDOW_MS = 60_000
-
+const OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS = 600_000
 function normalizeTimestampForCompare(value: string) {
   return value.includes('T') ? value : value.replace(' ', 'T')
 }
 
+function hasExplicitTimestampTimezone(value: string) {
+  return /(?:[zZ]|[+-]\d{2}:\d{2})$/.test(value)
+}
+
+function getTimestampCandidates(
+  value: string,
+  options?: { includeUtcFallback?: boolean },
+) {
+  const normalizedValue = normalizeTimestampForCompare(value)
+  const candidates = new Set<number>()
+  const parsedTimestamp = Date.parse(normalizedValue)
+
+  if (!Number.isNaN(parsedTimestamp)) {
+    candidates.add(parsedTimestamp)
+  }
+
+  if (options?.includeUtcFallback && !hasExplicitTimestampTimezone(normalizedValue)) {
+    const parsedUtcTimestamp = Date.parse(`${normalizedValue}Z`)
+
+    if (!Number.isNaN(parsedUtcTimestamp)) {
+      candidates.add(parsedUtcTimestamp)
+    }
+  }
+
+  return [...candidates]
+}
+
 function getMessageTimestamp(message: PatientChatMessage) {
-  const timestamp = Date.parse(normalizeTimestampForCompare(message.createdAt))
+  const timestamp = getTimestampCandidates(message.createdAt)[0] ?? 0
 
   return Number.isNaN(timestamp) ? 0 : timestamp
 }
 
 function getMessageContentType(message: PatientChatMessage) {
   return message.meta?.contentType ?? 'TEXT'
+}
+
+function getMessageClientMessageId(message: PatientChatMessage) {
+  const clientMessageId = message.meta?.clientMessageId?.trim()
+  return clientMessageId ? clientMessageId : null
+}
+
+function isTimestampWithinWindow(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+  windowMs: number,
+  options?: { includeUtcFallback?: boolean },
+) {
+  const currentCandidates = getTimestampCandidates(currentMessage.createdAt, options)
+  const nextCandidates = getTimestampCandidates(nextMessage.createdAt, options)
+
+  if (currentCandidates.length === 0 || nextCandidates.length === 0) {
+    return true
+  }
+
+  return currentCandidates.some(currentTimestamp =>
+    nextCandidates.some(nextTimestamp => Math.abs(currentTimestamp - nextTimestamp) <= windowMs),
+  )
 }
 
 function resolveGuardianStatus(
@@ -163,42 +227,142 @@ function mergeMessagePair(
   }
 }
 
-function isSamePatientMessage(
+function getOptimisticPatientEchoPair(
   currentMessage: PatientChatMessage,
   nextMessage: PatientChatMessage,
 ) {
-  if (currentMessage.sender !== nextMessage.sender) {
+  if (currentMessage.sender !== 'patient' || nextMessage.sender !== 'patient') {
+    return null
+  }
+
+  const currentIsOptimistic = currentMessage.meta?.isOptimistic === true
+  const nextIsOptimistic = nextMessage.meta?.isOptimistic === true
+
+  if (currentIsOptimistic === nextIsOptimistic) {
+    return null
+  }
+
+  return {
+    optimistic: currentIsOptimistic ? currentMessage : nextMessage,
+    confirmed: currentIsOptimistic ? nextMessage : currentMessage,
+  }
+}
+
+function hasCompatibleEchoReplyTarget(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair) {
+    return (currentMessage.replyToId ?? null) === (nextMessage.replyToId ?? null)
+  }
+
+  const optimisticReplyToId = pair.optimistic.replyToId ?? null
+  const confirmedReplyToId = pair.confirmed.replyToId ?? null
+
+  return optimisticReplyToId === confirmedReplyToId || confirmedReplyToId == null
+}
+
+function matchesOptimisticMessageByClientMessageId(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair) {
     return false
   }
 
-  if (currentMessage.content !== nextMessage.content) {
+  const optimisticClientMessageId = getMessageClientMessageId(pair.optimistic)
+  const confirmedClientMessageId = getMessageClientMessageId(pair.confirmed)
+
+  return (
+    optimisticClientMessageId != null &&
+    confirmedClientMessageId != null &&
+    optimisticClientMessageId === confirmedClientMessageId
+  )
+}
+
+function matchesOptimisticMessageByStructuredContent(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair || !hasCompatibleEchoReplyTarget(currentMessage, nextMessage)) {
     return false
   }
 
-  if ((currentMessage.replyToId ?? null) !== (nextMessage.replyToId ?? null)) {
+  if (getMessageContentType(pair.optimistic) !== getMessageContentType(pair.confirmed)) {
     return false
   }
 
-  if (getMessageContentType(currentMessage) !== getMessageContentType(nextMessage)) {
+  const matchesExpressionId =
+    pair.optimistic.meta?.exprId != null &&
+    pair.optimistic.meta.exprId === (pair.confirmed.meta?.exprId ?? null)
+  const matchesPhraseId =
+    pair.optimistic.meta?.phraseId != null &&
+    pair.optimistic.meta.phraseId === (pair.confirmed.meta?.phraseId ?? null)
+
+  if (!matchesExpressionId && !matchesPhraseId) {
     return false
   }
 
-  if ((currentMessage.meta?.phraseId ?? null) !== (nextMessage.meta?.phraseId ?? null)) {
+  return isTimestampWithinWindow(
+    pair.optimistic,
+    pair.confirmed,
+    OPTIMISTIC_ECHO_REPLY_TARGET_GRACE_MS,
+    { includeUtcFallback: true },
+  )
+}
+
+function matchesOptimisticMessageByLegacyFallback(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  const pair = getOptimisticPatientEchoPair(currentMessage, nextMessage)
+
+  if (!pair || !hasCompatibleEchoReplyTarget(currentMessage, nextMessage)) {
     return false
   }
 
-  if ((currentMessage.meta?.exprId ?? null) !== (nextMessage.meta?.exprId ?? null)) {
+  if (pair.optimistic.content !== pair.confirmed.content) {
     return false
   }
 
-  const currentTimestamp = getMessageTimestamp(currentMessage)
-  const nextTimestamp = getMessageTimestamp(nextMessage)
+  const currentTimestamp = getMessageTimestamp(pair.optimistic)
+  const nextTimestamp = getMessageTimestamp(pair.confirmed)
 
   if (currentTimestamp === 0 || nextTimestamp === 0) {
     return true
   }
 
-  return Math.abs(currentTimestamp - nextTimestamp) <= LOCAL_OUTGOING_MATCH_WINDOW_MS
+  return isTimestampWithinWindow(
+    pair.optimistic,
+    pair.confirmed,
+    LOCAL_OUTGOING_MATCH_WINDOW_MS,
+    { includeUtcFallback: true },
+  )
+}
+
+function getOptimisticPatientMatchStrategy(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  if (matchesOptimisticMessageByClientMessageId(currentMessage, nextMessage)) {
+    return 'clientMessageId'
+  }
+
+  if (matchesOptimisticMessageByStructuredContent(currentMessage, nextMessage)) {
+    return 'structuredContent'
+  }
+
+  if (matchesOptimisticMessageByLegacyFallback(currentMessage, nextMessage)) {
+    return 'legacyFallback'
+  }
+
+  return null
 }
 
 function shouldReconcileOptimisticMessage(
@@ -209,7 +373,32 @@ function shouldReconcileOptimisticMessage(
     return false
   }
 
-  return isSamePatientMessage(currentMessage, nextMessage)
+  return getOptimisticPatientMatchStrategy(currentMessage, nextMessage) !== null
+}
+
+function shouldIgnoreLateOptimisticMessage(
+  currentMessage: PatientChatMessage,
+  nextMessage: PatientChatMessage,
+) {
+  if (currentMessage.meta?.isOptimistic || !nextMessage.meta?.isOptimistic) {
+    return false
+  }
+
+  return getOptimisticPatientMatchStrategy(currentMessage, nextMessage) !== null
+}
+
+function findLastMatchingMessageIndex(
+  messages: PatientChatMessage[],
+  nextMessage: PatientChatMessage,
+  predicate: (currentMessage: PatientChatMessage, nextMessage: PatientChatMessage) => boolean,
+) {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (predicate(messages[index], nextMessage)) {
+      return index
+    }
+  }
+
+  return -1
 }
 
 function sortPatientMessages(messages: PatientChatMessage[]) {
@@ -245,8 +434,10 @@ function mergePatientMessages(
       return
     }
 
-    const optimisticIndex = mergedMessages.findIndex(message =>
-      shouldReconcileOptimisticMessage(message, nextMessage),
+    const optimisticIndex = findLastMatchingMessageIndex(
+      mergedMessages,
+      nextMessage,
+      shouldReconcileOptimisticMessage,
     )
 
     if (optimisticIndex >= 0) {
@@ -254,6 +445,16 @@ function mergePatientMessages(
         mergedMessages[optimisticIndex],
         nextMessage,
       )
+      return
+    }
+
+    const staleOptimisticIndex = findLastMatchingMessageIndex(
+      mergedMessages,
+      nextMessage,
+      shouldIgnoreLateOptimisticMessage,
+    )
+
+    if (staleOptimisticIndex >= 0) {
       return
     }
 
@@ -322,7 +523,7 @@ function patientChatReducer(
         messages: mergePatientMessages(state.messages, [action.message]),
         previousRoute: action.previousRoute,
         activeMessageId:
-          state.activeMessageId ?? (action.message.sender === 'guardian' ? action.message.id : null),
+          action.message.sender === 'guardian' ? action.message.id : state.activeMessageId,
         lastEventLabel: '보호자 선발화를 수신했습니다.',
       }
 
@@ -356,15 +557,21 @@ function patientChatReducer(
         status: 'reply_mode',
         interruptState: 'reply_mode',
         fallbackState: 'none',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         suggestionState: 'idle',
         activeMessageId: action.messageId,
         activeReplyMessageId: action.messageId,
+        categories: [],
         suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
         suggestionError: null,
         sendError: null,
         selectedSuggestionId: null,
         manualInputMode: null,
         manualDraft: '',
+        isMediaPausedByInterrupt: action.pauseMedia,
         messages: state.messages.map(message =>
           message.id === action.messageId && message.sender === 'guardian'
             ? { ...message, status: 'pending_reply' }
@@ -373,12 +580,54 @@ function patientChatReducer(
         lastEventLabel: '응답 모드로 전환했습니다.',
       }
 
+    case 'CATEGORY_LOADING':
+      return {
+        ...state,
+        status: 'category_loading',
+        recommendationMode: 'category',
+        categoryState: 'loading',
+        suggestionState: 'idle',
+        categories: [],
+        suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
+        suggestionError: null,
+        sendError: null,
+        fallbackState: 'none',
+        lastEventLabel: '카테고리를 불러오고 있습니다.',
+      }
+
+    case 'CATEGORY_READY':
+      return {
+        ...state,
+        status: 'category_ready',
+        recommendationMode: 'category',
+        categoryState: 'ready',
+        suggestionState: 'idle',
+        categories: action.categories,
+        suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
+        suggestionError: null,
+        sendError: null,
+        fallbackState: 'none',
+        lastEventLabel: '추천 카테고리를 준비했습니다.',
+      }
+
+    case 'SET_CATEGORY_PAGE':
+      return {
+        ...state,
+        categoryPage: Math.max(0, action.page),
+      }
+
     case 'SUGGESTION_LOADING':
       return {
         ...state,
         status: 'suggestion_loading',
+        recommendationMode: 'sentence',
         suggestionState: 'loading',
         suggestions: [],
+        selectedCategoryKey: action.categoryKey ?? null,
         suggestionError: null,
         fallbackState: 'none',
         suggestionAttempts: {
@@ -392,6 +641,7 @@ function patientChatReducer(
       return {
         ...state,
         status: 'suggestion_ready',
+        recommendationMode: 'sentence',
         suggestionState: 'ready',
         suggestions: action.suggestions,
         suggestionError: null,
@@ -403,6 +653,7 @@ function patientChatReducer(
       return {
         ...state,
         status: 'suggestion_failed',
+        recommendationMode: 'sentence',
         suggestionState: 'failed',
         suggestions: [],
         suggestionError: action.error,
@@ -470,25 +721,32 @@ function patientChatReducer(
       )
       const mergedMessages = mergePatientMessages(nextMessages, [action.replyMessage])
       const nextActiveMessage = getLatestUnresolvedGuardianMessage(mergedMessages)
+      const shouldKeepLeisureFollowup =
+        isLeisureRouteContext(state.currentRoute) && state.isMediaPausedByInterrupt
 
       return {
         ...state,
-        status: 'sent',
-        interruptState: 'none',
+        status: shouldKeepLeisureFollowup ? 'reply_completion_pending' : 'sent',
+        interruptState: shouldKeepLeisureFollowup ? 'completion_pending' : 'none',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         messages: mergedMessages,
         activeMessageId: nextActiveMessage?.id ?? null,
         activeReplyMessageId: null,
+        categories: [],
         sendError: null,
         suggestionError: null,
         selectedSuggestionId: null,
         suggestionState: 'idle',
         suggestions: [],
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
         responseTimeoutAt: null,
         responseTimeoutMessageId: null,
-        isMediaPausedByInterrupt: false,
+        isMediaPausedByInterrupt: shouldKeepLeisureFollowup,
         lastEventLabel: '응답을 전송했습니다.',
       }
     }
@@ -540,10 +798,15 @@ function patientChatReducer(
         ...state,
         status: 'timeout',
         interruptState: 'restoring',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         activeReplyMessageId: null,
         activeMessageId: action.messageId,
+        categories: [],
         suggestions: [],
         suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -553,14 +816,28 @@ function patientChatReducer(
         lastEventLabel: '응답 시간이 지나 이전 화면으로 복귀합니다.',
       }
 
+    case 'COMPLETE_REPLY_COMPLETION':
+      return {
+        ...state,
+        status: state.messages.length > 0 ? 'conversation_active' : 'waiting_message',
+        interruptState: 'none',
+        isMediaPausedByInterrupt: false,
+        lastEventLabel: 'Reply completion flow cleared.',
+      }
+
     case 'DEFER_ACTIVE_MESSAGE':
       return {
         ...state,
         status: 'deferred',
         interruptState: 'deferred',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         activeReplyMessageId: null,
+        categories: [],
         suggestions: [],
         suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -578,9 +855,14 @@ function patientChatReducer(
         ...state,
         status: 'restoring',
         interruptState: 'restoring',
+        recommendationMode: 'category',
+        categoryState: 'idle',
         activeReplyMessageId: null,
+        categories: [],
         suggestions: [],
         suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
         fallbackState: 'none',
         manualInputMode: null,
         manualDraft: '',
@@ -628,7 +910,7 @@ function getRouteContext(pathname: string): PatientChatRouteContext {
       pathname,
       label: '대화하기',
       kind: 'talk',
-      responseSurface: 'overlay',
+      responseSurface: 'inline',
       canEnterReplyMode: true,
       shouldPauseMediaOnInterrupt: false,
     }
@@ -740,6 +1022,10 @@ function getPreferredReplyTargetId(state: PatientChatSessionState) {
   return getLatestUnresolvedGuardianMessage(state.messages)?.id ?? null
 }
 
+function isLeisureRouteContext(route: PatientChatRouteContext | null) {
+  return route?.kind === 'leisure' || route?.kind === 'leisure_player'
+}
+
 function toPatientChatMessage(payload: StompChatInbound): PatientChatMessage {
   const isFromGuardian = payload.senderRole === 'GUARDIAN'
 
@@ -752,6 +1038,7 @@ function toPatientChatMessage(payload: StompChatInbound): PatientChatMessage {
     status: 'received',
     meta: {
       contentType: payload.contentType,
+      clientMessageId: payload.clientMessageId ?? null,
       phraseId: payload.phraseId,
       exprId: payload.exprId,
       historySource: 'stomp',
@@ -773,6 +1060,7 @@ function createOutgoingPatientMessage(
     replyToId: input.replyToId,
     meta: {
       contentType: input.contentType ?? 'TEXT',
+      clientMessageId: input.clientMessageId ?? null,
       phraseId: input.phraseId ?? null,
       exprId: input.exprId ?? null,
       isOptimistic: true,
@@ -863,10 +1151,15 @@ export function PatientIncomingChatProvider({
       const route = currentState.currentRoute ?? getRouteContext(pathname)
       const alreadyHandling =
         currentState.interruptState === 'incoming_interrupt' ||
-        currentState.interruptState === 'reply_mode'
+        currentState.interruptState === 'reply_mode' ||
+        currentState.interruptState === 'completion_pending'
 
       if (route.responseSurface === 'inline') {
-        dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId })
+        if (!alreadyHandling) {
+          void enterReplyModeInternal(messageId, incomingMessage, {
+            pauseMedia: route.shouldPauseMediaOnInterrupt,
+          })
+        }
         return
       }
 
@@ -877,7 +1170,6 @@ export function PatientIncomingChatProvider({
           pauseMedia: route.shouldPauseMediaOnInterrupt,
           focusMessageId: messageId,
         })
-        armTimeout(messageId)
       }
     },
     [pathname],
@@ -905,10 +1197,12 @@ export function PatientIncomingChatProvider({
 
       const currentState = stateRef.current
       const resolvedReplyToId = input.replyToId ?? getPreferredReplyTargetId(currentState)
+      const clientMessageId = input.clientMessageId ?? createClientMessageId()
 
       const outgoingMessage = createOutgoingPatientMessage(
         {
           ...input,
+          clientMessageId,
           text,
           replyToId: resolvedReplyToId ?? undefined,
         },
@@ -927,6 +1221,7 @@ export function PatientIncomingChatProvider({
           sendChat({
             text,
             contentType: input.contentType ?? 'TEXT',
+            clientMessageId,
             phraseId: input.phraseId,
             exprId: input.exprId,
           })
@@ -1028,7 +1323,7 @@ export function PatientIncomingChatProvider({
 
     const timerId = window.setTimeout(() => {
       dispatch({ type: 'CLEAR_SENT_FEEDBACK' })
-    }, 900)
+    }, 1500)
 
     return () => {
       window.clearTimeout(timerId)
@@ -1057,14 +1352,6 @@ export function PatientIncomingChatProvider({
 
   function setRoutePathname(nextPathname: string) {
     dispatch({ type: 'SET_ROUTE_CONTEXT', route: getRouteContext(nextPathname) })
-  }
-
-  function armTimeout(messageId: string) {
-    dispatch({
-      type: 'ARM_TIMEOUT',
-      messageId,
-      timeoutAt: Date.now() + PATIENT_CHAT_RESPONSE_TIMEOUT_MS,
-    })
   }
 
   function clearTimeoutState() {
@@ -1097,10 +1384,15 @@ export function PatientIncomingChatProvider({
     const route = currentState.currentRoute ?? getRouteContext(pathname)
     const alreadyHandlingConversation =
       currentState.interruptState === 'incoming_interrupt' ||
-      currentState.interruptState === 'reply_mode'
+      currentState.interruptState === 'reply_mode' ||
+      currentState.interruptState === 'completion_pending'
 
     if (route.responseSurface === 'inline') {
-      dispatch({ type: 'SET_ACTIVE_MESSAGE', messageId: incomingMessage.id })
+      if (!alreadyHandlingConversation) {
+        void enterReplyModeInternal(incomingMessage.id, incomingMessage, {
+          pauseMedia: route.shouldPauseMediaOnInterrupt,
+        })
+      }
       return
     }
 
@@ -1111,7 +1403,6 @@ export function PatientIncomingChatProvider({
         pauseMedia: route.shouldPauseMediaOnInterrupt,
         focusMessageId: incomingMessage.id,
       })
-      armTimeout(incomingMessage.id)
     }
   }
 
@@ -1122,7 +1413,105 @@ export function PatientIncomingChatProvider({
     triggerIncomingPreset('water', { messageId: duplicateId })
   }
 
-  async function enterReplyModeInternal(messageId: string, knownMessage?: PatientChatMessage) {
+  async function loadSuggestionChoices(
+    messageId: string,
+    message: PatientChatMessage,
+    options?: { categoryKey?: RecommendationCategoryKey | null },
+  ) {
+    const currentAttempts = stateRef.current.suggestionAttempts[messageId] ?? 0
+
+    if (currentAttempts >= MAX_SUGGESTION_RETRIES) {
+      dispatch({
+        type: 'SUGGESTION_FAILED',
+        error: '추천 재시도 횟수를 초과했습니다. 직접 입력으로 전환해 주세요.',
+      })
+      return
+    }
+
+    dispatch({
+      type: 'SUGGESTION_LOADING',
+      messageId,
+      categoryKey: options?.categoryKey ?? null,
+    })
+
+    try {
+      let suggestions: PatientSuggestedResponse[] = []
+
+      if (options?.categoryKey) {
+        try {
+          suggestions = await fetchSuggestedSentences({
+            categoryKey: options.categoryKey,
+            message,
+            history: stateRef.current.messages,
+          })
+        } catch (error) {
+          console.warn('Category sentence suggestion failed, falling back to replies.', error)
+        }
+
+        if (suggestions.length === 0) {
+          suggestions = await fetchSuggestedReplies({
+            message,
+            history: stateRef.current.messages,
+          })
+        }
+      } else {
+        suggestions = await fetchSuggestedReplies({
+          message,
+          history: stateRef.current.messages,
+        })
+      }
+
+      if (suggestions.length === 0) {
+        dispatch({
+          type: 'SUGGESTION_FAILED',
+          error: '추천 결과가 비어 있습니다. 직접 입력으로 답변해 주세요.',
+        })
+        return
+      }
+
+      dispatch({ type: 'SUGGESTION_READY', suggestions })
+    } catch (error) {
+      const messageText =
+        error instanceof Error
+          ? error.message
+          : '추천 응답을 불러오지 못했습니다. 다시 시도해 주세요.'
+
+      dispatch({
+        type: 'SUGGESTION_FAILED',
+        error: messageText,
+      })
+    }
+  }
+
+  async function loadRecommendationCategories(
+    messageId: string,
+    message: PatientChatMessage,
+  ) {
+    dispatch({ type: 'CATEGORY_LOADING', messageId })
+
+    try {
+      const categories = await fetchSuggestedReplyCategories({
+        message,
+        history: stateRef.current.messages,
+      })
+
+      if (categories.length === 0) {
+        await loadSuggestionChoices(messageId, message)
+        return
+      }
+
+      dispatch({ type: 'CATEGORY_READY', categories })
+    } catch (error) {
+      console.warn('Recommendation categories failed, falling back to replies.', error)
+      await loadSuggestionChoices(messageId, message)
+    }
+  }
+
+  async function enterReplyModeInternal(
+    messageId: string,
+    knownMessage?: PatientChatMessage,
+    options?: { pauseMedia?: boolean },
+  ) {
     const currentState = stateRef.current
     const message = knownMessage ?? getMessageById(currentState.messages, messageId)
 
@@ -1131,7 +1520,15 @@ export function PatientIncomingChatProvider({
     }
 
     clearTimeoutState()
-    dispatch({ type: 'ENTER_REPLY_MODE', messageId })
+    dispatch({
+      type: 'ENTER_REPLY_MODE',
+      messageId,
+      pauseMedia: options?.pauseMedia ?? currentState.isMediaPausedByInterrupt,
+    })
+
+    await loadRecommendationCategories(messageId, message)
+    return
+    /*
 
     const nextState = stateRef.current
     const attempts = nextState.suggestionAttempts[messageId] ?? 0
@@ -1172,6 +1569,9 @@ export function PatientIncomingChatProvider({
         error: messageText,
       })
     }
+  }
+
+    */
   }
 
   function enterReplyMode(messageId?: string) {
@@ -1218,7 +1618,42 @@ export function PatientIncomingChatProvider({
       return
     }
 
-    void enterReplyModeInternal(targetMessageId)
+    const message = getMessageById(stateRef.current.messages, targetMessageId)
+
+    if (!message) {
+      return
+    }
+
+    if (stateRef.current.recommendationMode === 'category') {
+      void loadRecommendationCategories(targetMessageId, message)
+      return
+    }
+
+    void loadSuggestionChoices(targetMessageId, message, {
+      categoryKey: stateRef.current.selectedCategoryKey,
+    })
+  }
+
+  async function selectRecommendationCategory(categoryKey: RecommendationCategoryKey) {
+    const targetMessageId =
+      stateRef.current.activeReplyMessageId ?? stateRef.current.activeMessageId
+
+    if (!targetMessageId) {
+      return
+    }
+
+    const message = getMessageById(stateRef.current.messages, targetMessageId)
+
+    if (!message) {
+      return
+    }
+
+    clearTimeoutState()
+    await loadSuggestionChoices(targetMessageId, message, { categoryKey })
+  }
+
+  function setRecommendationCategoryPage(page: number) {
+    dispatch({ type: 'SET_CATEGORY_PAGE', page })
   }
 
   function openManualInputSelect() {
@@ -1333,6 +1768,10 @@ export function PatientIncomingChatProvider({
     })
   }
 
+  function completeReplyCompletion() {
+    dispatch({ type: 'COMPLETE_REPLY_COMPLETION' })
+  }
+
   function deferActiveMessage() {
     clearTimeoutState()
     dispatch({ type: 'DEFER_ACTIVE_MESSAGE' })
@@ -1367,6 +1806,8 @@ export function PatientIncomingChatProvider({
     openLatestPendingReply,
     enterReplyMode,
     retrySuggestions,
+    selectRecommendationCategory,
+    setRecommendationCategoryPage,
     openManualInputSelect,
     setManualInputMode,
     updateManualDraft,
@@ -1374,6 +1815,7 @@ export function PatientIncomingChatProvider({
     clearManualDraft,
     sendSuggestedReply,
     sendManualReply,
+    completeReplyCompletion,
     deferActiveMessage,
     closeReplyMode,
     setNextSendOutcome,

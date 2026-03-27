@@ -405,6 +405,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh 'docker image prune -f || true'
+                sh 'docker builder prune -f || true'
             }
         }
     }

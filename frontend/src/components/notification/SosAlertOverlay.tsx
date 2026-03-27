@@ -3,6 +3,7 @@ import { useNotificationStore } from '../../shared/stores/notificationStore';
 import { apiClient } from '../../services/apiClient';
 import { API_ENDPOINTS } from '../../services/apiEndpoints';
 import { getActiveAuthSession } from '../../services/authSessionRegistry';
+import { stopNotificationSound } from '../../utils/notificationSound';
 
 export default function SosAlertOverlay() {
   const notification = useNotificationStore((s) => s.notification);
@@ -33,6 +34,7 @@ export default function SosAlertOverlay() {
       }
     }
 
+    stopNotificationSound();
     clearNotification();
   };
 

@@ -81,25 +81,39 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
       return
     }
 
+    // 이전 리스너 정리 후 새로 등록
+    SpeechRecognition.removeAllListeners()
+
     setIsListening(true)
     setTranscript('')
-
-    await SpeechRecognition.start({
-      language: 'ko-KR',
-      partialResults: true,
-      popup: false,
-    })
 
     SpeechRecognition.addListener('partialResults', (data: { matches: string[] }) => {
       if (data.matches.length > 0) {
         setTranscript(data.matches[0])
       }
     })
+
+    // 네이티브 STT가 자연 종료되었을 때 상태 동기화
+    SpeechRecognition.addListener('listeningState', (state: { status: string }) => {
+      if (state.status === 'stopped') {
+        setIsListening(false)
+      }
+    })
+
+    await SpeechRecognition.start({
+      language: 'ko-KR',
+      partialResults: true,
+      popup: false,
+    })
   }, [])
 
   const stopNative = useCallback(async () => {
     const SpeechRecognition = CapacitorSpeechRecognition
-    await SpeechRecognition.stop()
+    try {
+      await SpeechRecognition.stop()
+    } catch {
+      // 이미 종료된 인식을 stop()하면 에러 발생 가능 — 무시
+    }
     SpeechRecognition.removeAllListeners()
     setIsListening(false)
   }, [])

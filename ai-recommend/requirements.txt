@@ -2,7 +2,9 @@
 flask>=2.0.0
 numpy>=1.24.0,<3.0.0
 python-dotenv>=1.0.0
-sentence-transformers>=2.2.0
 openai>=1.0.0
 requests>=2.28.0
-mlflow>=2.0.0
+# ONNX Runtime (PyTorch/sentence-transformers 대체 — ~2GB 경량화)
+onnxruntime>=1.17.0
+transformers>=4.36.0
+# tokenizers는 transformers 의존성으로 자동 설치

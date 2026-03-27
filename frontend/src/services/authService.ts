@@ -3,6 +3,7 @@ import type { ApiMode, ServiceResult } from '../types/api'
 import type {
   AuthSession,
   EmailCheckRequestDto,
+  EmailCheckResponseDto,
   LoginFormValues,
   LoginRequestDto,
   PasswordResetRequestDto,
@@ -19,7 +20,18 @@ import {
   requestPasswordResetMockApi,
   withdrawMockApi,
 } from './mockAuthApi'
-import { logAuthSuccessSilently } from './usageLogService'
+
+function isExpectedEmailCheckFailure(code?: string, statusCode?: number) {
+  if (code === 'AUTH-204') {
+    return true
+  }
+
+  if (code === 'GUARDIAN_EMAIL_DUPLICATED' || code === 'PATIENT_LOGIN_ID_DUPLICATED') {
+    return true
+  }
+
+  return statusCode === 409
+}
 
 function mapLoginValuesToRequest(values: LoginFormValues): LoginRequestDto {
   return {
@@ -40,20 +52,24 @@ export async function checkEmailAvailability(email: string) {
   }
 
   try {
+    let response: EmailCheckResponseDto | null = null
+
     if (authMode === 'mock') {
-      await checkEmailMockApi(request)
+      response = await checkEmailMockApi(request)
     } else {
-      await checkEmailApi(request)
+      response = await checkEmailApi(request)
     }
 
     return {
       success: true,
       source: resolveApiSource(authMode),
-      data: null,
+      data: response,
     } as const
   } catch (error) {
     const failure = createServiceFailure(error, '이메일 중복 확인에 실패했습니다.')
-    logServiceFailure('auth.check-email', error, failure, { email: request.email })
+    if (!isExpectedEmailCheckFailure(failure.code, failure.statusCode)) {
+      logServiceFailure('auth.check-email', error, failure, { email: request.email })
+    }
     return failure
   }
 }
@@ -68,8 +84,6 @@ export async function login(values: LoginFormValues): Promise<ServiceResult<Auth
         : await loginApi(mapLoginValuesToRequest(values))
 
     const session = mapAuthResponseToSession(response, authMode)
-
-    logAuthSuccessSilently(session, 'login')
 
     return {
       success: true,

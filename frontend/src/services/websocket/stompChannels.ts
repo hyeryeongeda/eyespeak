@@ -76,6 +76,8 @@ export function parseChatMessage(stompMessage: IMessage): StompChatInbound | nul
       senderRole: obj.senderRole as StompChatInbound['senderRole'],
       contentType: obj.contentType as StompChatInbound['contentType'],
       text: obj.text as string,
+      clientMessageId:
+        typeof obj.clientMessageId === 'string' ? obj.clientMessageId : null,
       phraseId: (obj.phraseId as number) ?? null,
       exprId: (obj.exprId as number) ?? null,
       isRead: (obj.isRead as boolean) ?? false,
@@ -168,6 +170,7 @@ export function buildChatPayload(params: {
   matchingId: number
   text: string
   contentType: StompContentType
+  clientMessageId?: string | null
   phraseId?: number | null
   exprId?: number | null
 }): Record<string, unknown> {
@@ -175,6 +178,10 @@ export function buildChatPayload(params: {
     matchingId: params.matchingId,
     text: params.text,
     contentType: params.contentType,
+  }
+
+  if (params.clientMessageId != null) {
+    payload.clientMessageId = params.clientMessageId
   }
 
   // null/undefined 필드는 JSON 직렬화 시 생략되므로 명시적 할당

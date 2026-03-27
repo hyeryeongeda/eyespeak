@@ -138,9 +138,18 @@ save/
 __pycache__/
 *.py[cod]
 
+# AI 서버 ONNX 모델 (서버에서 직접 변환)
+ai-recommend/onnx_model/
+ai-recommend/onnx_model_quantized/
+ai-recommend/mlruns/
+
 FCM_key.json
 
 # 임시 CI 빌드 디렉토리
 tmp-frontend-ci/
 tmp-frontend-ci-2/
+tmp-frontend-ci-3/
+tmp-frontend-ci4/
+tmp-frontend-ci5/
+tmp-frontend-ci6/
 tmp-frontend-head/

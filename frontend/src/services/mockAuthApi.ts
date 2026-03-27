@@ -3,6 +3,7 @@ import { ROUTINE_ACTIVITY_TAG_IDS, ROUTINE_TIME_SLOT_IDS } from '../constants/ro
 import type {
   AuthResponseDto,
   EmailCheckRequestDto,
+  EmailCheckResponseDto,
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
@@ -575,7 +576,10 @@ function handleCheckEmail(request: EmailCheckRequestDto) {
     })
   }
 
-  return undefined
+  return {
+    code: 'SUCCESS',
+    message: '요청이 성공하였습니다',
+  } satisfies EmailCheckResponseDto
 }
 
 function handleRegisterPatientInfo(
@@ -988,7 +992,7 @@ export function loginMockApi(request: LoginRequestDto) {
 }
 
 export function checkEmailMockApi(request: EmailCheckRequestDto) {
-  return callMockApi<void, EmailCheckRequestDto>({
+  return callMockApi<EmailCheckResponseDto, EmailCheckRequestDto>({
     method: 'POST',
     url: API_ENDPOINTS.AUTH_CHECK_EMAIL,
     data: request,

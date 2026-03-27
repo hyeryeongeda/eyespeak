@@ -9,30 +9,33 @@ const thumbnailStyleByEmphasis: Record<LeisureContentCardEmphasis, CSSProperties
     width: '100%',
     height: '100%',
     minHeight: 0,
-    objectFit: 'cover',
+    objectFit: 'contain',
     display: 'block',
   },
   hero: {
     width: '100%',
     height: '100%',
     minHeight: 0,
-    objectFit: 'cover',
+    objectFit: 'contain',
     display: 'block',
   },
 }
 
 const imageWrapStyle: CSSProperties = {
-  flex: 1,
-  minHeight: 0,
+  width: '100%',
+  aspectRatio: '16 / 9',
+  flex: '0 0 auto',
   borderRadius: '20px',
   overflow: 'hidden',
   border: '1px solid rgba(215, 223, 235, 0.8)',
-  backgroundColor: '#eef2f6',
+  backgroundColor: '#0f172a',
 }
 
 const metaWrapStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
+  flex: 1,
+  minHeight: 0,
   gap: '6px',
   padding: '16px 16px 18px',
 }
@@ -76,6 +79,7 @@ export default function LeisureContentCard({
       className="leisure-interactive"
       onClick={onSelect}
       data-leisure-slot={slotId}
+      data-tracking-id={slotId}
       data-patient-target={slotId}
       style={{
         ...leisureCardBaseStyle,

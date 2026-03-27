@@ -53,10 +53,17 @@ export function useDwell<TTarget extends string>({
 
     const tick = (now: number) => {
       if (now < lockEndsAt) {
+        const lockingProgress =
+          normalizedActivationDelayMs <= 0
+            ? 1
+            : clampTrackingProgress(
+                (now - (lockEndsAt - normalizedActivationDelayMs)) / normalizedActivationDelayMs,
+              )
+
         setDwellState({
           activeTargetId: hoveredTargetId,
           phase: 'locking',
-          progress: 0,
+          progress: lockingProgress,
           remainingMs: Math.max(0, Math.ceil(lockEndsAt - now)),
         })
         frameId = window.requestAnimationFrame(tick)

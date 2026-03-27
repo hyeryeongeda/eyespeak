@@ -1,100 +1,72 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
-import { getBodyMindMainCardByKey } from './bodyMindMock'
-import BodyMindFixedGrid from './components/BodyMindFixedGrid'
-import BodyMindLayout from './components/BodyMindLayout'
-import BodyMindOptionCard from './components/BodyMindOptionCard'
+import { bodyMindMainPages, type BodyMindRouteOption } from './bodyMindMock'
+import BodyMindPagedMenuPage from './components/BodyMindPagedMenuPage'
 
-function getMainFeedbackText(status: BodyMindUiStatus) {
-  return status === 'transitioning'
-    ? '선택한 화면으로 이동합니다.'
-    : '클릭 기반으로 우선 동작하며, dwell 입력 연결이 가능하도록 버튼 구조를 유지합니다.'
+interface BodyMindPageRouteState {
+  initialPageIndex?: number
+}
+
+function getInitialPageIndex(value: number | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return 0
+  }
+
+  return Math.min(Math.max(value, 0), bodyMindMainPages.length - 1)
+}
+
+function getMainFeedbackText(status: BodyMindUiStatus, pageIndex: number) {
+  if (status === 'transitioning') {
+    return '선택한 화면으로 이동합니다.'
+  }
+
+  if (pageIndex === 0) {
+    return '몸 상태와 돌봄 요청을 빠르게 전달합니다.'
+  }
+
+  return '상황에 맞는 카테고리를 선택해 상세 문구로 이동합니다.'
 }
 
 export default function BodyMindPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const routeState = location.state as BodyMindPageRouteState | null
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
-  const secretionCard = getBodyMindMainCardByKey('secretion')
-  const breathingCard = getBodyMindMainCardByKey('breathing')
-  const postureCard = getBodyMindMainCardByKey('posture')
-  const painCard = getBodyMindMainCardByKey('pain')
-  const categoriesCard = getBodyMindMainCardByKey('categories')
-  const backCard = getBodyMindMainCardByKey('back')
+  const [pageIndex, setPageIndex] = useState(getInitialPageIndex(routeState?.initialPageIndex))
 
-  const handleSelectCard = (route: string) => {
+  const handleSelectOption = (option: BodyMindRouteOption) => {
     setStatus('transitioning')
-    navigate(route)
+    navigate(option.route)
   }
 
-  if (
-    !secretionCard ||
-    !breathingCard ||
-    !postureCard ||
-    !painCard ||
-    !categoriesCard ||
-    !backCard
-  ) {
-    return null
+  const handlePageChange = (nextPageIndex: number) => {
+    setStatus('transitioning')
+    setPageIndex(nextPageIndex)
+    setStatus('visible')
+  }
+
+  const handleBack = () => {
+    setStatus('transitioning')
+    navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
   }
 
   return (
-    <BodyMindLayout
+    <BodyMindPagedMenuPage
       code="PAT-BM-001"
-      title="몸과마음"
+      title="몸과 마음"
       description="몸 상태와 돌봄 요청을 빠르게 전달합니다."
       status={status}
-      contextLabel="클릭 기반 · dwell 연동 준비"
-      feedbackText={getMainFeedbackText(status)}
-    >
-      <BodyMindFixedGrid
-        primaryCards={[
-          <BodyMindOptionCard
-            key={secretionCard.key}
-            title={secretionCard.label}
-            description={secretionCard.description}
-            tone={secretionCard.tone}
-            onSelect={() => handleSelectCard(secretionCard.route)}
-          />,
-          <BodyMindOptionCard
-            key={breathingCard.key}
-            title={breathingCard.label}
-            description={breathingCard.description}
-            tone={breathingCard.tone}
-            onSelect={() => handleSelectCard(breathingCard.route)}
-          />,
-          <BodyMindOptionCard
-            key={postureCard.key}
-            title={postureCard.label}
-            description={postureCard.description}
-            tone={postureCard.tone}
-            onSelect={() => handleSelectCard(postureCard.route)}
-          />,
-          <BodyMindOptionCard
-            key={painCard.key}
-            title={painCard.label}
-            description={painCard.description}
-            tone={painCard.tone}
-            onSelect={() => handleSelectCard(painCard.route)}
-          />,
-        ]}
-        topRightCard={
-          <BodyMindOptionCard
-            title="다음"
-            description={categoriesCard.label}
-            tone={categoriesCard.tone}
-            onSelect={() => handleSelectCard(categoriesCard.route)}
-          />
-        }
-        bottomRightCard={
-          <BodyMindOptionCard
-            title={backCard.label}
-            description={backCard.description}
-            tone={backCard.tone}
-            onSelect={() => handleSelectCard(backCard.route)}
-          />
-        }
-      />
-    </BodyMindLayout>
+      pages={bodyMindMainPages}
+      pageIndex={pageIndex}
+      feedbackText={getMainFeedbackText(status, pageIndex)}
+      contextLabel={pageIndex === 0 ? '메인 요청' : `카테고리 페이지 ${pageIndex} / 2`}
+      rootBackDescription="대화 메인으로 이동"
+      previousPageDescription="이전 페이지로 이동"
+      onSelectOption={handleSelectOption}
+      onPageChange={handlePageChange}
+      onRootBack={handleBack}
+    />
   )
 }

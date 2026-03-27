@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { checkEmailAvailability } from '../../../services/authService'
 import {
   clearVerifiedTeamCode,
   getStoredVerifiedTeamCode,
+  normalizeTeamCode,
   storeVerifiedTeamCode,
 } from '../../../services/authStorage'
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
-import { isValidEmail, validatePassword } from '../../../utils/validators'
+import { isValidEmail, normalizeEmailAddress, validatePassword } from '../../../utils/validators'
 import { resolveAuthSuccessNavigation } from '../authRedirect'
 import { useAuth } from './useAuth'
 
@@ -28,17 +30,26 @@ export function usePatientSignup() {
   const [patientAccount, setPatientAccount] =
     useState<PatientAccountFormValues>(INITIAL_PATIENT_ACCOUNT)
   const [errorMessage, setErrorMessage] = useState('')
-  const [infoMessage, setInfoMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isVerifyingTeamCode, setIsVerifyingTeamCode] = useState(false)
+  const [isCheckingPatientEmail, setIsCheckingPatientEmail] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [checkedPatientEmail, setCheckedPatientEmail] = useState('')
+  const [patientEmailCheckMessage, setPatientEmailCheckMessage] = useState('')
+  const [patientEmailCheckMessageType, setPatientEmailCheckMessageType] = useState<
+    'success' | 'error' | null
+  >(null)
+
+  const normalizedPatientEmail = normalizeEmailAddress(patientAccount.loginId)
+  const isPatientEmailChecked =
+    normalizedPatientEmail.length > 0 && checkedPatientEmail === normalizedPatientEmail
 
   const handleVerifyTeamCode = async () => {
     setErrorMessage('')
-    setInfoMessage('')
-    setIsLoading(true)
+    setIsVerifyingTeamCode(true)
 
     const result = await verifyTeamCode(teamCode)
 
-    setIsLoading(false)
+    setIsVerifyingTeamCode(false)
 
     if (!result.success) {
       setVerifiedTeamCode(null)
@@ -53,24 +64,102 @@ export function usePatientSignup() {
       name: prev.name || result.data.patientName || '',
     }))
     storeVerifiedTeamCode(result.data.teamCode)
-    setInfoMessage(
-      result.data.verificationMode === 'provisional'
-        ? '팀코드를 저장했습니다. 실제 유효성은 회원가입 요청 시 백엔드에서 확인됩니다.'
-        : '팀코드 확인이 완료되었습니다.',
-    )
   }
 
-  const handleResetTeamCode = () => {
-    clearVerifiedTeamCode()
-    setVerifiedTeamCode(null)
-    setTeamCode('')
+  const setTeamCodeValue = (
+    nextState: string | ((previousState: string) => string),
+  ) => {
     setErrorMessage('')
-    setInfoMessage('')
+    setTeamCode(previousState => {
+      const resolvedState =
+        typeof nextState === 'function'
+          ? nextState(previousState)
+          : nextState
+      const normalizedNextTeamCode = normalizeTeamCode(resolvedState)
+
+      if (verifiedTeamCode && normalizedNextTeamCode !== verifiedTeamCode.teamCode) {
+        clearVerifiedTeamCode()
+        setVerifiedTeamCode(null)
+      }
+
+      return resolvedState
+    })
+  }
+
+  const setPatientAccountValues = (
+    nextState:
+      | PatientAccountFormValues
+      | ((previousState: PatientAccountFormValues) => PatientAccountFormValues),
+  ) => {
+    setErrorMessage('')
+    setPatientAccount(previousState => {
+      const resolvedState =
+        typeof nextState === 'function'
+          ? nextState(previousState)
+          : nextState
+      const normalizedNextEmail = normalizeEmailAddress(resolvedState.loginId)
+
+      if (normalizedNextEmail !== checkedPatientEmail) {
+        setCheckedPatientEmail('')
+        setPatientEmailCheckMessage('')
+        setPatientEmailCheckMessageType(null)
+      }
+
+      return resolvedState
+    })
+  }
+
+  const handleCheckPatientEmail = async () => {
+    setErrorMessage('')
+    setPatientEmailCheckMessage('')
+    setPatientEmailCheckMessageType(null)
+    setCheckedPatientEmail('')
+
+    if (!patientAccount.loginId.trim()) {
+      setErrorMessage('로그인 이메일을 입력해 주세요.')
+      return
+    }
+
+    if (!isValidEmail(patientAccount.loginId)) {
+      setErrorMessage('이메일 형식의 로그인 계정을 입력해 주세요.')
+      return
+    }
+
+    setIsCheckingPatientEmail(true)
+
+    let result: Awaited<ReturnType<typeof checkEmailAvailability>>
+
+    try {
+      result = await checkEmailAvailability(normalizedPatientEmail)
+    } finally {
+      setIsCheckingPatientEmail(false)
+    }
+
+    if (!result.success) {
+      if (
+        result.code === 'AUTH-204' ||
+        result.code === 'GUARDIAN_EMAIL_DUPLICATED' ||
+        result.code === 'PATIENT_LOGIN_ID_DUPLICATED'
+      ) {
+        setPatientEmailCheckMessage('이미 사용 중인 로그인 이메일입니다.')
+        setPatientEmailCheckMessageType('error')
+        setErrorMessage('')
+        return
+      }
+
+      setPatientEmailCheckMessage(result.message)
+      setPatientEmailCheckMessageType('error')
+      setErrorMessage('')
+      return
+    }
+
+    setCheckedPatientEmail(normalizedPatientEmail)
+    setPatientEmailCheckMessage('사용 가능한 로그인 이메일입니다.')
+    setPatientEmailCheckMessageType('success')
   }
 
   const handleSubmit = async () => {
     setErrorMessage('')
-    setInfoMessage('')
 
     if (!verifiedTeamCode) {
       setErrorMessage('팀코드 확인을 먼저 완료해 주세요.')
@@ -87,6 +176,11 @@ export function usePatientSignup() {
       return
     }
 
+    if (!isPatientEmailChecked) {
+      setErrorMessage('로그인 이메일 중복확인을 완료해 주세요.')
+      return
+    }
+
     const passwordMessage = validatePassword(patientAccount.password)
 
     if (passwordMessage) {
@@ -99,14 +193,14 @@ export function usePatientSignup() {
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
 
     const result = await signUpPatient({
       teamCode: verifiedTeamCode.teamCode,
       account: patientAccount,
     })
 
-    setIsLoading(false)
+    setIsSubmitting(false)
 
     if (!result.success) {
       setPatientPostAuth(null)
@@ -132,13 +226,18 @@ export function usePatientSignup() {
     teamCode,
     verifiedTeamCode,
     patientAccount,
+    normalizedPatientEmail,
+    isPatientEmailChecked,
+    patientEmailCheckMessage,
+    patientEmailCheckMessageType,
     errorMessage,
-    infoMessage,
-    isLoading,
-    setTeamCode,
-    setPatientAccount,
+    isVerifyingTeamCode,
+    isCheckingPatientEmail,
+    isSubmitting,
+    setTeamCode: setTeamCodeValue,
+    setPatientAccount: setPatientAccountValues,
     handleVerifyTeamCode,
-    handleResetTeamCode,
+    handleCheckPatientEmail,
     handleSubmit,
   }
 }

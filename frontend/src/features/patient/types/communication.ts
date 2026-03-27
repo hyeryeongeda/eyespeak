@@ -37,14 +37,14 @@ export type PainAreaKey =
   | 'head'
   | 'neck'
   | 'shoulder'
-  | 'arm_hand'
+  | 'arm'
+  | 'hand'
   | 'chest'
   | 'stomach'
-  | 'back'
+  | 'waist'
+  | 'leg'
+  | 'whole_body'
   | 'hip'
-  | 'thigh'
-  | 'knee'
-  | 'calf'
   | 'foot'
 
 export type PainAreaGroupKey = 'upper_body' | 'middle_body' | 'lower_body'
@@ -74,11 +74,7 @@ export type BodyMindExpressionType =
   | 'posture'
   | 'category'
 
-export type BodyMindExpressionOptionKey =
-  | SecretionOptionKey
-  | BreathingOptionKey
-  | PainDetailKey
-  | BodyMindCategoryKey
+export type BodyMindExpressionOptionKey = string
 
 export interface BodyMindCardOption<TKey extends string = string> {
   key: TKey
@@ -101,7 +97,7 @@ export interface PainAreaGroup {
 export interface BodyMindExpressionDraft {
   patientId: string
   type: BodyMindExpressionType
-  optionKey: BodyMindExpressionOptionKey
+  optionKey: string
   areaKey?: PainAreaKey
   categoryKey?: BodyMindCategoryKey
 }

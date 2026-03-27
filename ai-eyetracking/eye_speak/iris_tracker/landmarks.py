@@ -63,3 +63,9 @@ L_IRIS: Final[List[int]] = RIGHT_IRIS
 R_EAR: Final[List[int]] = [33, 160, 158, 133, 153, 144]
 # 왼쪽 눈 EAR: p1=263, p2=387, p3=385, p4=362, p5=380, p6=373
 L_EAR: Final[List[int]] = [263, 387, 385, 362, 380, 373]
+
+# 눈썹 하단 (시선과 무관하게 고정 — Y축 안정 기준점)
+# R_ = 카메라 우측 = MediaPipe left eyebrow
+R_EYEBROW: Final[List[int]] = [70, 63, 105, 66, 107]
+# L_ = 카메라 좌측 = MediaPipe right eyebrow
+L_EYEBROW: Final[List[int]] = [336, 296, 334, 293, 300]

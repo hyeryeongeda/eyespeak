@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from './apiEndpoints'
 import type {
   AuthResponseDto,
   EmailCheckRequestDto,
+  EmailCheckResponseDto,
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
@@ -13,7 +14,7 @@ import type {
 } from '../types/auth'
 
 export function checkEmailApi(request: EmailCheckRequestDto) {
-  return apiClient.post<void, EmailCheckRequestDto>(API_ENDPOINTS.AUTH_CHECK_EMAIL, request)
+  return apiClient.post<EmailCheckResponseDto, EmailCheckRequestDto>(API_ENDPOINTS.AUTH_CHECK_EMAIL, request)
 }
 
 export function loginApi(request: LoginRequestDto) {

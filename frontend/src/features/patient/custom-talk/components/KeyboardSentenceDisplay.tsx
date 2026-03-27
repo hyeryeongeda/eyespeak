@@ -6,31 +6,38 @@ interface KeyboardSentenceDisplayProps {
 }
 
 const wrapStyle: CSSProperties = {
-  padding: '18px 20px',
-  borderRadius: '24px',
+  minHeight: 0,
+  height: '100%',
+  width: '100%',
+  padding: '14px 18px',
+  borderRadius: '22px',
   backgroundColor: '#ffffff',
   border: '1px solid #dde7ed',
   boxShadow: '0 18px 40px rgba(63, 86, 111, 0.08)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '10px',
+  justifyContent: 'center',
+  gap: '8px',
+  overflow: 'hidden',
 }
 
 const helperStyle: CSSProperties = {
   margin: 0,
   color: '#607389',
-  fontSize: '13px',
+  fontSize: 'clamp(0.72rem, 1.1vmin, 0.82rem)',
   fontWeight: 700,
+  lineHeight: 1.45,
 }
 
 const sentenceStyle: CSSProperties = {
   margin: 0,
-  minHeight: '60px',
+  minHeight: '48px',
   color: '#223247',
-  fontSize: 'clamp(1.2rem, 2vw, 1.7rem)',
+  fontSize: 'clamp(1.05rem, 2.05vmin, 1.55rem)',
   fontWeight: 900,
-  lineHeight: 1.55,
+  lineHeight: 1.45,
   whiteSpace: 'pre-wrap',
+  overflow: 'auto',
 }
 
 export default function KeyboardSentenceDisplay({
@@ -39,7 +46,7 @@ export default function KeyboardSentenceDisplay({
 }: KeyboardSentenceDisplayProps) {
   return (
     <div style={wrapStyle}>
-      <p style={helperStyle}>{helperText}</p>
+      {helperText ? <p style={helperStyle}>{helperText}</p> : null}
       <p style={sentenceStyle}>{sentence || '입력한 문장이 여기에 표시됩니다.'}</p>
     </div>
   )

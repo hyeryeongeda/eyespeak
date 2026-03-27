@@ -42,6 +42,7 @@ export interface StompChatInbound {
   contentType: StompContentType
   /** message.content — 메시지 본문 */
   text: string
+  clientMessageId: string | null
   /** message.phrase_id → phrase.id FK. PHRASE 타입일 때만 값 존재 */
   phraseId: number | null
   /** message.expr_id → expressions.id FK. EXPRESSION 타입일 때만 값 존재 */
@@ -102,6 +103,7 @@ export interface StompPublishChat {
   senderRole: StompSenderRole
   /** message.content — 메시지 본문 */
   text: string
+  clientMessageId?: string | null
   /** message.content_type */
   contentType: StompContentType
   /** phrase.id — contentType=PHRASE 일 때만 값 전달 */
