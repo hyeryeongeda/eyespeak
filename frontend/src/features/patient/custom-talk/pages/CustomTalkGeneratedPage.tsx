@@ -122,7 +122,9 @@ export default function CustomTalkGeneratedPage() {
         ? '안내'
         : centerTone === 'success'
           ? '완료'
-          : '문장 미리보기'
+          : previewText
+            ? undefined
+            : '문장 미리보기'
   const centerText =
     centerTone === 'loading'
       ? '생성 문장을 준비하는 중입니다.'
@@ -242,7 +244,9 @@ export default function CustomTalkGeneratedPage() {
       centerChildren={
         <div style={centerStackStyle}>
           <div style={{ ...sentenceDisplayStyle, ...centerToneStyle }} aria-live="polite">
-            <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>{centerLabel}</p>
+            {centerLabel ? (
+              <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>{centerLabel}</p>
+            ) : null}
             <p style={{ ...sentenceTextStyle, ...centerTextToneStyle }}>{centerText}</p>
           </div>
         </div>

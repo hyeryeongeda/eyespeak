@@ -303,6 +303,8 @@ export function useGuardianSignupFlow() {
   const activeSubmissionIdRef = useRef(0)
 
   useEffect(() => {
+    isMountedRef.current = true
+
     return () => {
       isMountedRef.current = false
     }
