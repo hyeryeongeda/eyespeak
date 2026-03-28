@@ -6,11 +6,7 @@ import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMain
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
-} from '../components/customTalkUi'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import type {
   CustomTalkKeyboardOption,
@@ -24,9 +20,6 @@ import {
 } from '../utils/hangulComposer'
 
 const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
   minHeight: 0,
   height: '100%',
   padding: '12px',
@@ -165,6 +158,7 @@ export default function CustomTalkKeyboardPage() {
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onAfterNavigate: resetCustomTalkSession,
   })
+  useAutoDismissCustomTalkError(keyboardErrorMessage)
 
   useEffect(() => {
     if (!hasEntrySource || keyboardStatus !== 'idle') {
@@ -194,6 +188,25 @@ export default function CustomTalkKeyboardPage() {
     keyboardNavigation.currentRootMenu,
   )
   const hasPendingComposition = hasPendingKeyboardComposition(keyboardComposition)
+  const centerStatusTone = keyboardStatus === 'loading'
+    ? 'loading'
+    : keyboardErrorMessage
+      ? 'error'
+      : completionMessage
+        ? 'success'
+        : 'default'
+  const centerStatusLabel =
+    centerStatusTone === 'loading'
+      ? '불러오는 중'
+      : centerStatusTone === 'error'
+        ? '안내'
+        : centerStatusTone === 'success'
+          ? '완료'
+          : undefined
+  const centerStatusMessage =
+    centerStatusTone === 'loading'
+      ? '직접 말하기 키보드를 준비하고 있습니다.'
+      : keyboardErrorMessage || completionMessage || null
 
   const handleSelectOption = (option: CustomTalkKeyboardOption) => {
     if (isInputBlocked || !option.value) {
@@ -406,22 +419,14 @@ export default function CustomTalkKeyboardPage() {
       centerChildren={
         <div style={centerStackStyle}>
           <div style={sentenceSlotStyle}>
-            <KeyboardSentenceDisplay sentence={displayedSentence} helperText={helperText} />
+            <KeyboardSentenceDisplay
+              sentence={displayedSentence}
+              helperText={helperText}
+              statusLabel={centerStatusLabel}
+              statusMessage={centerStatusMessage}
+              statusTone={centerStatusTone}
+            />
           </div>
-
-          {keyboardStatus === 'loading' ? (
-            <div style={customTalkLoadingNoticeStyle}>
-              \uc9c1\uc811 \ub9d0\ud558\uae30 \ud0a4\ubcf4\ub4dc\ub97c \uc900\ube44\ud558\uace0 \uc788\uc2b5\ub2c8\ub2e4.
-            </div>
-          ) : null}
-          {keyboardErrorMessage ? (
-            <div style={getCustomTalkNoticeStyle(keyboardErrorMessage)}>
-              {keyboardErrorMessage}
-            </div>
-          ) : null}
-          {completionMessage ? (
-            <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
-          ) : null}
         </div>
       }
     />

@@ -9,6 +9,9 @@ interface CustomTalkContextPanelProps {
   conversationLog: CustomTalkConversationLogItem[]
   previewText?: string
   mode?: 'default' | 'entry'
+  statusLabel?: string
+  statusMessage?: string | null
+  statusTone?: 'default' | 'loading' | 'error' | 'success'
 }
 
 const wrapStyle: CSSProperties = {
@@ -65,21 +68,49 @@ function getBubbleStyle(
   sender: CustomTalkConversationLogItem['sender'],
   isPreview = false,
   mode: 'default' | 'entry' = 'default',
+  statusTone: 'default' | 'loading' | 'error' | 'success' = 'default',
 ): CSSProperties {
   const isGuardian = sender === 'guardian'
   const isPatient = sender === 'patient' || isPreview
 
   if (mode === 'entry') {
+    const entryToneStyle: Record<
+      NonNullable<CustomTalkContextPanelProps['statusTone']>,
+      CSSProperties
+    > = {
+      default: {
+        backgroundColor: '#ffffff',
+        border: '1px solid rgba(219, 223, 228, 0.96)',
+        color: '#2f3742',
+        boxShadow: '0 20px 44px rgba(104, 116, 132, 0.12)',
+      },
+      loading: {
+        backgroundColor: '#f7fbff',
+        border: '1px solid #d7e4ef',
+        color: '#5f738a',
+        boxShadow: '0 20px 44px rgba(91, 122, 155, 0.1)',
+      },
+      error: {
+        backgroundColor: '#fff5f5',
+        border: '1px solid #efc8c8',
+        color: '#a54f4f',
+        boxShadow: '0 20px 44px rgba(178, 77, 77, 0.08)',
+      },
+      success: {
+        backgroundColor: '#eef8f1',
+        border: '1px solid #cce4d2',
+        color: '#3f6e4c',
+        boxShadow: '0 20px 44px rgba(63, 110, 76, 0.08)',
+      },
+    }
+
     return {
       alignSelf: 'center',
       width: 'fit-content',
       maxWidth: '88%',
       padding: '24px 28px',
       borderRadius: '22px',
-      backgroundColor: '#ffffff',
-      border: '1px solid rgba(219, 223, 228, 0.96)',
-      color: '#2f3742',
-      boxShadow: '0 20px 44px rgba(104, 116, 132, 0.12)',
+      ...entryToneStyle[statusTone],
     }
   }
 
@@ -116,11 +147,15 @@ export default function CustomTalkContextPanel({
   conversationLog,
   previewText,
   mode = 'default',
+  statusLabel,
+  statusMessage,
+  statusTone = 'default',
 }: CustomTalkContextPanelProps) {
   const bottomRef = useRef<HTMLDivElement | null>(null)
   const isEntryMode = mode === 'entry'
   const visibleConversationLog = getVisibleConversationLog(conversationLog, mode)
   const shouldShowPreview = mode === 'default' && Boolean(previewText)
+  const shouldShowEntryStatus = isEntryMode && Boolean(statusMessage)
   const panelStyleByMode: CSSProperties = {
     ...panelStyle,
     borderRadius: isEntryMode ? '24px' : panelStyle.borderRadius,
@@ -153,7 +188,45 @@ export default function CustomTalkContextPanel({
     <section style={wrapStyle} aria-label="\ub9de\ucda4 \ub300\ud654 \ub9e5\ub77d">
       <div style={panelStyleByMode}>
         <div style={chatListStyleByMode}>
-          {visibleConversationLog.length === 0 ? (
+          {shouldShowEntryStatus ? (
+            <div
+              style={{
+                ...rowBaseStyle,
+                alignItems: 'center',
+                width: '100%',
+              }}
+            >
+              <div style={getBubbleStyle('guardian', false, mode, statusTone)}>
+                {statusLabel ? (
+                  <p
+                    style={{
+                      margin: '0 0 8px',
+                      color: statusTone === 'default' ? '#6d7f95' : 'currentColor',
+                      fontSize: '0.82rem',
+                      fontWeight: 800,
+                      letterSpacing: '0.02em',
+                      textTransform: 'uppercase',
+                      opacity: statusTone === 'default' ? 1 : 0.92,
+                    }}
+                  >
+                    {statusLabel}
+                  </p>
+                ) : null}
+                <div
+                  style={{
+                    fontSize: 'clamp(1.05rem, 1.35vmax, 1.3rem)',
+                    fontWeight: 800,
+                    lineHeight: 1.55,
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'keep-all',
+                    textAlign: 'center',
+                  }}
+                >
+                  {statusMessage}
+                </div>
+              </div>
+            </div>
+          ) : visibleConversationLog.length === 0 ? (
             isEntryMode ? null : (
               <div style={emptyStyle}>
                 \ud45c\uc2dc\ud560 \ub300\ud654 \ub9e5\ub77d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.
@@ -176,7 +249,7 @@ export default function CustomTalkContextPanel({
                     width: '100%',
                   }}
                 >
-                  <div style={getBubbleStyle(item.sender, false, mode)}>
+                  <div style={getBubbleStyle(item.sender, false, mode, statusTone)}>
                     <div
                       style={{
                         fontSize: isEntryMode ? 'clamp(1.15rem, 1.45vmax, 1.4rem)' : '19px',
