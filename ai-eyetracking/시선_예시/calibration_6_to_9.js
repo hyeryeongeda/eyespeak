@@ -152,6 +152,8 @@ const CalibrationRegion = (function () {
 
   // ---------------------------------------------------------------------------
   // 3) 영역 인덱스 (6분할 / 9분할)
+  // These helpers are only for the standalone demo runtime in gaze_server_9grid.html.
+  // The frontend integration path keeps using the calibration fit/predict helpers above.
   // ---------------------------------------------------------------------------
 
   /**
