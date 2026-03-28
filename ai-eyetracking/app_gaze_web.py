@@ -118,7 +118,15 @@ def api_calibrate_load():
     ok = pl.load_calibration(user_id)
     if ok:
         log.info("캘리 로드 완료: %s", user_id)
-    return jsonify({"ok": ok, "calibrated": pl.calibration is not None})
+    response = {"ok": ok, "calibrated": pl.calibration is not None}
+    if ok and pl._poly.is_fitted:
+        try:
+            cx, cy = pl._poly.export_coefficients()
+            response["poly_coeff_x"] = cx
+            response["poly_coeff_y"] = cy
+        except Exception:
+            pass
+    return jsonify(response)
 
 
 @app.route("/api/selection", methods=["POST"])

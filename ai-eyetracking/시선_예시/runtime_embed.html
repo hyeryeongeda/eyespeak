@@ -210,7 +210,7 @@
           const response = await fetch('./api/gaze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image }),
+            body: JSON.stringify({ image, user_id: profileId || 'default' }),
           });
           const frame = await response.json().catch(() => null);
 
@@ -351,8 +351,24 @@
           }
         }
 
+        async function loadCalibrationForProfile() {
+          if (!profileId) {
+            return;
+          }
+          try {
+            await fetch('./api/calibrate/load', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user_id: profileId }),
+            });
+          } catch (_error) {
+            // 캘리브레이션 파일이 없거나 로드 실패 시 무시 (미캘리 상태로 진행)
+          }
+        }
+
         async function startRuntime() {
           await fetchRuntimeConfig();
+          await loadCalibrationForProfile();
 
           mediaStream = await acquireCamera(3, 1500);
 
