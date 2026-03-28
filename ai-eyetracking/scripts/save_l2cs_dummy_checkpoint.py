@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from models.l2cs_net import L2CSNet
+from eye_speak.iris_model.model import L2CSNet
 import torch
 
 def main():
