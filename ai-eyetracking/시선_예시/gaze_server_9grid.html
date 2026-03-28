@@ -901,7 +901,7 @@
     fetch(buildApiUrl('api/selection'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cell: idx })
+      body: JSON.stringify({ cell: idx, user_id: EMBED_USER_ID || 'default' })
     }).catch(() => {});
   }
   function commitSelection(idx, source) {

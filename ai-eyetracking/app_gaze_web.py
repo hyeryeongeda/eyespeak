@@ -118,7 +118,15 @@ def api_calibrate_load():
     ok = pl.load_calibration(user_id)
     if ok:
         log.info("캘리 로드 완료: %s", user_id)
-    return jsonify({"ok": ok, "calibrated": pl.calibration is not None})
+    response = {"ok": ok, "calibrated": pl.calibration is not None}
+    if ok and pl._poly.is_fitted:
+        try:
+            cx, cy = pl._poly.export_coefficients()
+            response["poly_coeff_x"] = cx
+            response["poly_coeff_y"] = cy
+        except Exception:
+            pass
+    return jsonify(response)
 
 
 @app.route("/api/selection", methods=["POST"])
@@ -149,8 +157,9 @@ def api_health():
 
 @app.route("/api/runtime-config", methods=["GET"])
 def api_runtime_config():
-    runtime = dict(_get_pipeline("default")._cfg.get("runtime", {}))
-    trigger = dict(_get_pipeline("default")._cfg.get("trigger", {}))
+    user_id = (request.args.get("user_id") or "default").strip() or "default"
+    runtime = dict(_get_pipeline(user_id)._cfg.get("runtime", {}))
+    trigger = dict(_get_pipeline(user_id)._cfg.get("trigger", {}))
     return jsonify(
         {
             "poll_interval_ms": int(runtime.get("poll_interval_ms", 100)),
