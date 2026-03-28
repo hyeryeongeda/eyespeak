@@ -246,6 +246,8 @@ export default function CustomTalkKeyboardPage() {
     navigate(
       result.entrySource === 'generated'
         ? ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED
+        : result.entrySource === 'recommend'
+          ? ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND
         : result.entrySource === 'compose'
           ? ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE
           : ROUTE_PATHS.PATIENT_CUSTOM_TALK,
