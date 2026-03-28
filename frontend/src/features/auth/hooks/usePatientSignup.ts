@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { checkEmailAvailability } from '../../../services/authService'
 import {
   clearVerifiedTeamCode,
-  getStoredVerifiedTeamCode,
   normalizeTeamCode,
   storeVerifiedTeamCode,
 } from '../../../services/authStorage'
@@ -20,12 +19,32 @@ const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   passwordConfirm: '',
 }
 
+const TEAM_CODE_PREFILL_SOURCE = 'guardian-signup-complete'
+
+interface PatientSignupLocationState {
+  prefilledTeamCode?: string
+  prefilledTeamCodeSource?: typeof TEAM_CODE_PREFILL_SOURCE
+}
+
+function getPrefilledTeamCode(state: unknown) {
+  if (!state || typeof state !== 'object') {
+    return ''
+  }
+
+  const { prefilledTeamCode, prefilledTeamCodeSource } = state as PatientSignupLocationState
+
+  if (prefilledTeamCodeSource !== TEAM_CODE_PREFILL_SOURCE || typeof prefilledTeamCode !== 'string') {
+    return ''
+  }
+
+  return normalizeTeamCode(prefilledTeamCode)
+}
+
 export function usePatientSignup() {
   const navigate = useNavigate()
   const location = useLocation()
   const { setSession, setPatientPostAuth } = useAuth()
-  const storedVerifiedTeamCode = getStoredVerifiedTeamCode()
-  const [teamCode, setTeamCode] = useState(storedVerifiedTeamCode ?? '')
+  const [teamCode, setTeamCode] = useState(() => getPrefilledTeamCode(location.state))
   const [verifiedTeamCode, setVerifiedTeamCode] = useState<VerifiedTeamCode | null>(null)
   const [patientAccount, setPatientAccount] =
     useState<PatientAccountFormValues>(INITIAL_PATIENT_ACCOUNT)
