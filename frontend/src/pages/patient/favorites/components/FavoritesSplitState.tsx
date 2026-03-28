@@ -83,14 +83,14 @@ const descriptionStyle: CSSProperties = {
 }
 
 const interactiveCss = `
-  .favorites-split-state-action:hover:not(:disabled),
-  .favorites-split-state-action:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .favorites-split-state-action:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .favorites-split-state-action:focus-visible:not(:disabled) {
     filter: brightness(0.98);
     transform: scale(0.995);
     outline: none;
   }
 
-  .favorites-split-state-action:active:not(:disabled) {
+  html:not([data-patient-mode='true']) .favorites-split-state-action:active:not(:disabled) {
     filter: brightness(0.95);
   }
 `

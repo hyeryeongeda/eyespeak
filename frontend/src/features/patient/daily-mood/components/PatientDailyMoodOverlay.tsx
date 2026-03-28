@@ -159,8 +159,8 @@ const centerErrorStyle: CSSProperties = {
 }
 
 const overlayCss = `
-  .patient-daily-mood-card:hover:not(:disabled),
-  .patient-daily-mood-card:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .patient-daily-mood-card:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .patient-daily-mood-card:focus-visible:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 24px 52px rgba(86, 97, 118, 0.14);
     outline: none;

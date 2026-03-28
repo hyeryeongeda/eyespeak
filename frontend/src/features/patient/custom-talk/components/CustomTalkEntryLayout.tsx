@@ -202,12 +202,12 @@ const layoutCss = `
     overflow-x: hidden;
   }
 
-  .custom-talk-entry-card:hover:not(:disabled) {
+  html:not([data-patient-mode='true']) .custom-talk-entry-card:hover:not(:disabled) {
     transform: translateY(-4px);
     box-shadow: 0 26px 56px rgba(53, 77, 103, 0.14);
   }
 
-  .custom-talk-entry-card:focus-visible {
+  html:not([data-patient-mode='true']) .custom-talk-entry-card:focus-visible {
     outline: 3px solid #6b91c7;
     outline-offset: 3px;
   }

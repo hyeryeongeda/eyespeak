@@ -974,16 +974,14 @@ export function usePatientGazeClick({
   )
   const effectiveDwellDurationMs = PATIENT_DWELL_CONFIRM_MS
 
-  const currentVisualTarget = mouseTarget ?? stableGazeTarget ?? null
-  const currentVisualInputSource: 'pointer' | 'gaze' | null = mouseTarget
-    ? 'pointer'
-    : stableGazeTarget
-      ? 'gaze'
-      : null
-  const currentDwellTarget =
-    ENABLE_MOUSE_DWELL_CONFIRM && mouseTarget ? mouseTarget : stableGazeTarget
-  const currentDwellInputSource: 'pointer' | 'gaze' | null =
-    ENABLE_MOUSE_DWELL_CONFIRM && mouseTarget ? 'pointer' : stableGazeTarget ? 'gaze' : null
+  const currentVisualTarget = stableGazeTarget ?? null
+  const currentVisualInputSource: 'pointer' | 'gaze' | null = stableGazeTarget
+    ? 'gaze'
+    : null
+  const currentDwellTarget = stableGazeTarget
+  const currentDwellInputSource: 'pointer' | 'gaze' | null = stableGazeTarget
+    ? 'gaze'
+    : null
   const isCurrentSelectionCommitSuppressed =
     currentDwellTarget?.key === suppressedCommitTargetKey
   const currentSelectionBlockReason = currentDwellTarget
@@ -1336,7 +1334,7 @@ export function usePatientGazeClick({
   }, [currentDwellTarget?.key, currentSelectionBlockReason, suppressedCommitTargetKey])
 
   useEffect(() => {
-    if (!enabled || typeof window === 'undefined') {
+    if (!enabled || !ENABLE_MOUSE_DWELL_CONFIRM || typeof window === 'undefined') {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setMouseTarget(null)
       return

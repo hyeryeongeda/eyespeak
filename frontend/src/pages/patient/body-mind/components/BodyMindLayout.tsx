@@ -43,14 +43,14 @@ const srOnlyStyle: CSSProperties = {
 }
 
 const responsiveStyle = `
-  .body-mind-option-card:hover:not(:disabled),
-  .body-mind-option-card:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .body-mind-option-card:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .body-mind-option-card:focus-visible:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 28px 54px rgba(40, 66, 90, 0.16);
     outline: none;
   }
 
-  .body-mind-option-card:active:not(:disabled) {
+  html:not([data-patient-mode='true']) .body-mind-option-card:active:not(:disabled) {
     transform: translateY(0);
   }
 `
