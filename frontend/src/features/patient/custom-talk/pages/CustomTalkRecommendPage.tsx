@@ -1,37 +1,13 @@
-import { type CSSProperties, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
-} from '../components/customTalkUi'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import { filterSelectableRecommendedSentences } from '../utils/recommendedSentenceGuards'
-
-const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-  minHeight: 0,
-  height: '100%',
-}
-
-const promptPanelSlotStyle: CSSProperties = {
-  flex: 1,
-  minHeight: 0,
-}
-
-const noticeStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  flexShrink: 0,
-}
 
 function getVisibleSentences(sentences: string[]) {
   return filterSelectableRecommendedSentences(sentences).slice(0, 3)
@@ -69,6 +45,7 @@ export default function CustomTalkRecommendPage() {
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onAfterNavigate: resetCustomTalkSession,
   })
+  useAutoDismissCustomTalkError(errorMessage)
 
   useEffect(() => {
     if (!hasCategoryKey || recommendedSentences.length > 0) {
@@ -83,6 +60,24 @@ export default function CustomTalkRecommendPage() {
   }
 
   const visibleSentences = getVisibleSentences(recommendedSentences)
+  const centerStatusTone = isRecommendationLoading
+    ? 'loading'
+    : errorMessage
+      ? 'error'
+      : completionMessage
+        ? 'success'
+        : 'default'
+  const centerStatusLabel =
+    centerStatusTone === 'loading'
+      ? '불러오는 중'
+      : centerStatusTone === 'error'
+        ? '안내'
+        : centerStatusTone === 'success'
+          ? '완료'
+          : undefined
+  const centerStatusMessage = isRecommendationLoading
+    ? '추천 문장을 불러오는 중입니다.'
+    : errorMessage || completionMessage || null
 
   return (
     <CustomTalkGuardianPromptLayout
@@ -134,31 +129,14 @@ export default function CustomTalkRecommendPage() {
       }}
       dwellFeedback={dwellFeedback}
       centerChildren={
-        <div style={centerStackStyle}>
-          <div style={promptPanelSlotStyle}>
-            <CustomTalkContextPanel
-              context={context}
-              conversationLog={conversationLog}
-              mode="entry"
-            />
-          </div>
-
-          {status === 'loading' || errorMessage || completionMessage ? (
-            <div style={noticeStackStyle}>
-              {status === 'loading' ? (
-                <div style={customTalkLoadingNoticeStyle}>
-                  추천 문장을 불러오는 중입니다.
-                </div>
-              ) : null}
-              {errorMessage ? (
-                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-              ) : null}
-              {completionMessage ? (
-                <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+        <CustomTalkContextPanel
+          context={context}
+          conversationLog={conversationLog}
+          mode="entry"
+          statusLabel={centerStatusLabel}
+          statusMessage={centerStatusMessage}
+          statusTone={centerStatusTone}
+        />
       }
     />
   )

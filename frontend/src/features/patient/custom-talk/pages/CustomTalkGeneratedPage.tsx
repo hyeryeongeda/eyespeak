@@ -3,38 +3,42 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-  customTalkSuccessNoticeStyle,
-} from '../components/customTalkUi'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-  minHeight: 0,
   height: '100%',
+  minHeight: 0,
   padding: '18px',
   boxSizing: 'border-box',
-  justifyContent: 'center',
 }
 
 const sentenceDisplayStyle: CSSProperties = {
-  flex: 1,
+  height: '100%',
   minHeight: 0,
   borderRadius: '24px',
   border: '1px solid #dde7ed',
   backgroundColor: '#ffffff',
   boxShadow: '0 18px 40px rgba(63, 86, 111, 0.08)',
   display: 'flex',
-  alignItems: 'center',
   justifyContent: 'center',
-  padding: '16px 24px',
+  alignItems: 'center',
+  flexDirection: 'column',
+  gap: '10px',
+  padding: '20px 24px',
   textAlign: 'center',
+  transition: 'border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
+}
+
+const sentenceLabelStyle: CSSProperties = {
+  margin: 0,
+  color: '#6d7f95',
+  fontSize: '0.85rem',
+  fontWeight: 800,
+  letterSpacing: '0.02em',
+  textTransform: 'uppercase',
 }
 
 const sentenceTextStyle: CSSProperties = {
@@ -44,6 +48,7 @@ const sentenceTextStyle: CSSProperties = {
   fontWeight: 900,
   lineHeight: 1.45,
   wordBreak: 'keep-all',
+  whiteSpace: 'pre-wrap',
 }
 
 type CustomTalkGeneratedTrackingId =
@@ -84,6 +89,7 @@ export default function CustomTalkGeneratedPage() {
   useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
     onAfterNavigate: resetCustomTalkSession,
   })
+  useAutoDismissCustomTalkError(errorMessage)
 
   useEffect(() => {
     if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {
@@ -102,6 +108,61 @@ export default function CustomTalkGeneratedPage() {
   }
 
   const visibleGeneratedSentences = getVisibleGeneratedSentences(generatedSentences)
+  const centerTone = isGeneratedLoading
+    ? 'loading'
+    : errorMessage
+      ? 'error'
+      : completionMessage
+        ? 'success'
+        : 'default'
+  const centerLabel =
+    centerTone === 'loading'
+      ? '불러오는 중'
+      : centerTone === 'error'
+        ? '안내'
+        : centerTone === 'success'
+          ? '완료'
+          : '문장 미리보기'
+  const centerText =
+    centerTone === 'loading'
+      ? '생성 문장을 준비하는 중입니다.'
+      : errorMessage || completionMessage || previewText || '조합한 문장이 여기에 표시됩니다.'
+  const centerToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? {
+          borderColor: '#d7e4ef',
+          backgroundColor: '#f7fbff',
+          boxShadow: '0 18px 40px rgba(91, 122, 155, 0.1)',
+        }
+      : centerTone === 'error'
+        ? {
+            borderColor: '#efc8c8',
+            backgroundColor: '#fff5f5',
+            boxShadow: '0 18px 40px rgba(178, 77, 77, 0.08)',
+          }
+        : centerTone === 'success'
+          ? {
+              borderColor: '#cce4d2',
+              backgroundColor: '#eef8f1',
+              boxShadow: '0 18px 40px rgba(63, 110, 76, 0.08)',
+            }
+          : {}
+  const centerLabelToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? { color: '#5f738a' }
+      : centerTone === 'error'
+        ? { color: '#a54f4f' }
+        : centerTone === 'success'
+          ? { color: '#3f6e4c' }
+          : {}
+  const centerTextToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? { color: '#5f738a', fontSize: 'clamp(1.2rem, 2.2vw, 1.8rem)' }
+      : centerTone === 'error'
+        ? { color: '#a54f4f', fontSize: 'clamp(1.15rem, 2vw, 1.65rem)' }
+        : centerTone === 'success'
+          ? { color: '#3f6e4c', fontSize: 'clamp(1.15rem, 2vw, 1.7rem)' }
+          : {}
 
   return (
     <CustomTalkEntryLayout
@@ -180,19 +241,10 @@ export default function CustomTalkGeneratedPage() {
       dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <div style={sentenceDisplayStyle}>
-            <p style={sentenceTextStyle}>{previewText || '조합한 문장이 여기에 표시됩니다.'}</p>
+          <div style={{ ...sentenceDisplayStyle, ...centerToneStyle }} aria-live="polite">
+            <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>{centerLabel}</p>
+            <p style={{ ...sentenceTextStyle, ...centerTextToneStyle }}>{centerText}</p>
           </div>
-
-          {status === 'loading' ? (
-            <div style={customTalkLoadingNoticeStyle}>생성 문장을 준비하는 중입니다.</div>
-          ) : null}
-          {errorMessage ? (
-            <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-          ) : null}
-          {completionMessage ? (
-            <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
-          ) : null}
         </div>
       }
     />

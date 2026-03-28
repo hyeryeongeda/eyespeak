@@ -2,45 +2,56 @@ import { type CSSProperties, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-} from '../components/customTalkUi'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import type { PatientChatMessage } from '../../../../types/chat'
 
-const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center',
-  gap: '10px',
-  minHeight: 0,
-  height: '100%',
-  padding: '10px 12px',
-  boxSizing: 'border-box',
-}
-
 const promptPanelStyle: CSSProperties = {
   minHeight: 0,
+  height: '100%',
   borderRadius: '22px',
   border: '1px solid rgba(220, 228, 237, 0.96)',
   backgroundColor: '#ffffff',
   boxShadow: '0 14px 32px rgba(72, 96, 124, 0.08)',
-  padding: '18px 22px',
+  padding: '16px 22px',
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'center',
+  overflow: 'hidden',
+  transition: 'border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
+}
+
+const promptContentStyle: CSSProperties = {
+  width: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '6px',
+  minHeight: 0,
+}
+
+const promptLabelStyle: CSSProperties = {
+  margin: 0,
+  color: '#6d7f95',
+  fontSize: '0.85rem',
+  fontWeight: 800,
+  letterSpacing: '0.02em',
+  textTransform: 'uppercase',
 }
 
 const promptTextStyle: CSSProperties = {
   margin: 0,
   color: '#2f3742',
-  fontSize: 'clamp(1.15rem, 1.55vw, 1.4rem)',
+  fontSize: 'clamp(1rem, 1.45vw, 1.3rem)',
   fontWeight: 800,
   lineHeight: 1.45,
   wordBreak: 'keep-all',
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
 }
 
 type CustomTalkDirectionTrackingId =
@@ -166,6 +177,7 @@ export default function CustomTalkDirectionPage() {
       recentMessages,
     })
   }, [guardianMessage, initializeCustomTalk, recentMessagesSignature])
+  useAutoDismissCustomTalkError(errorMessage)
 
   const categoryCards = buildCategoryCards(visibleCategories)
   const composeCategory = pickComposeCategory(visibleCategories)
@@ -173,6 +185,37 @@ export default function CustomTalkDirectionPage() {
     status === 'loading' || status === 'refreshing' || status === 'submitting'
   const promptText =
     guardianMessage || context?.guardianMessage?.trim() || '대화 내용을 불러오는 중입니다.'
+  const isCategoryNoticeVisible = status === 'loading' || status === 'refreshing'
+  const promptTone = isCategoryNoticeVisible ? 'loading' : errorMessage ? 'error' : 'default'
+  const promptHeading =
+    promptTone === 'loading'
+      ? '불러오는 중'
+      : promptTone === 'error'
+        ? '안내'
+        : '보호자 메시지'
+  const promptDisplayText = isCategoryNoticeVisible
+    ? '맞춤문장 카테고리를 불러오는 중입니다.'
+    : errorMessage || promptText
+  const promptPanelToneStyle: CSSProperties =
+    promptTone === 'loading'
+      ? {
+          borderColor: '#d7e4ef',
+          backgroundColor: '#f7fbff',
+          boxShadow: '0 14px 32px rgba(91, 122, 155, 0.1)',
+        }
+      : promptTone === 'error'
+        ? {
+            borderColor: '#efc8c8',
+            backgroundColor: '#fff5f5',
+            boxShadow: '0 14px 32px rgba(178, 77, 77, 0.08)',
+          }
+        : {}
+  const promptTextToneStyle: CSSProperties =
+    promptTone === 'loading'
+      ? { color: '#5f738a' }
+      : promptTone === 'error'
+        ? { color: '#a54f4f' }
+        : {}
 
   const handleSelectCategory = (category: CustomTalkCategoryOption | null) => {
     if (!category) {
@@ -246,26 +289,17 @@ export default function CustomTalkDirectionPage() {
         trackingId: 'custom-talk-direction-back',
       }}
       dwellFeedback={dwellFeedback}
-      gridTemplateRows="minmax(0, 1fr) minmax(72px, 0.28fr) minmax(0, 1fr)"
       centerChildren={
-        <div style={centerStackStyle}>
-          <section style={promptPanelStyle} aria-label="보호자 선발화">
-            <p style={promptTextStyle}>{promptText}</p>
-          </section>
-
-          {status === 'loading' || status === 'refreshing' || errorMessage ? (
-            <>
-              {status === 'loading' || status === 'refreshing' ? (
-                <div style={customTalkLoadingNoticeStyle}>
-                  맞춤문장 카테고리를 불러오는 중입니다.
-                </div>
-              ) : null}
-              {errorMessage ? (
-                <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+        <section
+          style={{ ...promptPanelStyle, ...promptPanelToneStyle }}
+          aria-label="보호자 선발화"
+          aria-live="polite"
+        >
+          <div style={promptContentStyle}>
+            <p style={promptLabelStyle}>{promptHeading}</p>
+            <p style={{ ...promptTextStyle, ...promptTextToneStyle }}>{promptDisplayText}</p>
+          </div>
+        </section>
       }
     />
   )

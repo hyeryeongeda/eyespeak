@@ -2,10 +2,7 @@ import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
-import {
-  getCustomTalkNoticeStyle,
-  customTalkLoadingNoticeStyle,
-} from '../components/customTalkUi'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import type { ComposeStep } from '../types'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
@@ -19,28 +16,36 @@ const composeStepLabelMap: Record<ComposeStep, string> = {
 }
 
 const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-  minHeight: 0,
   height: '100%',
+  minHeight: 0,
   padding: '18px',
   boxSizing: 'border-box',
-  justifyContent: 'center',
 }
 
 const sentenceDisplayStyle: CSSProperties = {
-  flex: 1,
+  height: '100%',
   minHeight: 0,
   borderRadius: '24px',
   border: '1px solid #dde7ed',
   backgroundColor: '#ffffff',
   boxShadow: '0 18px 40px rgba(63, 86, 111, 0.08)',
   display: 'flex',
-  alignItems: 'center',
   justifyContent: 'center',
-  padding: '16px 24px',
+  alignItems: 'center',
+  flexDirection: 'column',
+  gap: '10px',
+  padding: '20px 24px',
   textAlign: 'center',
+  transition: 'border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
+}
+
+const sentenceLabelStyle: CSSProperties = {
+  margin: 0,
+  color: '#6d7f95',
+  fontSize: '0.85rem',
+  fontWeight: 800,
+  letterSpacing: '0.02em',
+  textTransform: 'uppercase',
 }
 
 const sentenceTextStyle: CSSProperties = {
@@ -50,6 +55,7 @@ const sentenceTextStyle: CSSProperties = {
   fontWeight: 900,
   lineHeight: 1.35,
   wordBreak: 'keep-all',
+  whiteSpace: 'pre-wrap',
 }
 
 type CustomTalkComposeTrackingId =
@@ -103,10 +109,49 @@ export default function CustomTalkComposePage() {
 
     void refreshComposeStep(composeStep)
   }, [composeOptions, composeStep, hasCategoryKey, refreshComposeStep])
+  useAutoDismissCustomTalkError(errorMessage)
 
   if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
+
+  const centerTone = status === 'loading' || status === 'refreshing' ? 'loading' : errorMessage ? 'error' : 'default'
+  const centerLabel =
+    centerTone === 'loading'
+      ? '불러오는 중'
+      : centerTone === 'error'
+        ? '안내'
+        : '문장 미리보기'
+  const centerText =
+    centerTone === 'loading'
+      ? `${composeStepLabelMap[composeStep]} 추천을 불러오는 중입니다.`
+      : errorMessage || composedText || '입력한 단어'
+  const centerToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? {
+          borderColor: '#d7e4ef',
+          backgroundColor: '#f7fbff',
+          boxShadow: '0 18px 40px rgba(91, 122, 155, 0.1)',
+        }
+      : centerTone === 'error'
+        ? {
+            borderColor: '#efc8c8',
+            backgroundColor: '#fff5f5',
+            boxShadow: '0 18px 40px rgba(178, 77, 77, 0.08)',
+          }
+        : {}
+  const centerTextToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? { color: '#5f738a', fontSize: 'clamp(1.25rem, 2.4vw, 2rem)' }
+      : centerTone === 'error'
+        ? { color: '#a54f4f', fontSize: 'clamp(1.2rem, 2.2vw, 1.8rem)' }
+        : {}
+  const centerLabelToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? { color: '#5f738a' }
+      : centerTone === 'error'
+        ? { color: '#a54f4f' }
+        : {}
 
   return (
     <CustomTalkEntryLayout
@@ -206,18 +251,12 @@ export default function CustomTalkComposePage() {
       dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <div style={sentenceDisplayStyle}>
-            <p style={sentenceTextStyle}>{composedText || '입력한 단어'}</p>
+          <div style={{ ...sentenceDisplayStyle, ...centerToneStyle }} aria-live="polite">
+            <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>
+              {centerLabel}
+            </p>
+            <p style={{ ...sentenceTextStyle, ...centerTextToneStyle }}>{centerText}</p>
           </div>
-
-          {status === 'loading' || status === 'refreshing' ? (
-            <div style={customTalkLoadingNoticeStyle}>
-              {composeStepLabelMap[composeStep]} 추천을 불러오는 중입니다.
-            </div>
-          ) : null}
-          {errorMessage ? (
-            <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
-          ) : null}
         </div>
       }
     />
