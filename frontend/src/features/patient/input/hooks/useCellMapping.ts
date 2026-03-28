@@ -1,28 +1,60 @@
-import { useEffect, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import type { PatientCellMapping } from '../services/patientCellMapping'
-import { useCellMappingStore } from '../stores/cellMappingStore'
+import {
+  useCellMappingStore,
+  type CellMappingOwnerOptions,
+} from '../stores/cellMappingStore'
 
 let cellMappingOwnerSequence = 0
 
-export function useCellMapping(mapping: PatientCellMapping): void {
+export function useCellMapping(
+  mapping: PatientCellMapping,
+  options?: CellMappingOwnerOptions,
+): void {
   const ownerIdRef = useRef(`cell-mapping-${++cellMappingOwnerSequence}`)
-  const previousMappingRef = useRef(mapping)
+  const previousRegistrationRef = useRef({
+    active: options?.active ?? true,
+    debugLabel: options?.debugLabel,
+    mapping,
+    priority: options?.priority ?? 0,
+  })
+  const active = options?.active ?? true
+  const debugLabel = options?.debugLabel
+  const priority = options?.priority ?? 0
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const { registerCellMapping, unregisterCellMapping } = useCellMappingStore.getState()
-    registerCellMapping(ownerIdRef.current, mapping)
+    registerCellMapping(ownerIdRef.current, mapping, {
+      active,
+      debugLabel,
+      priority,
+    })
 
     return () => {
       unregisterCellMapping(ownerIdRef.current)
     }
   }, [])
 
-  useEffect(() => {
-    if (previousMappingRef.current === mapping) {
+  useLayoutEffect(() => {
+    if (
+      previousRegistrationRef.current.mapping === mapping &&
+      previousRegistrationRef.current.active === active &&
+      previousRegistrationRef.current.debugLabel === debugLabel &&
+      previousRegistrationRef.current.priority === priority
+    ) {
       return
     }
 
-    previousMappingRef.current = mapping
-    useCellMappingStore.getState().updateCellMapping(ownerIdRef.current, mapping)
-  }, [mapping])
+    previousRegistrationRef.current = {
+      active,
+      debugLabel,
+      mapping,
+      priority,
+    }
+    useCellMappingStore.getState().updateCellMapping(ownerIdRef.current, mapping, {
+      active,
+      debugLabel,
+      priority,
+    })
+  }, [active, debugLabel, mapping, priority])
 }

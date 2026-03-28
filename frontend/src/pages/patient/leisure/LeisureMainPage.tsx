@@ -117,7 +117,9 @@ export default function LeisureMainPage() {
     [],
   )
 
-  useCellMapping(leisureMainCellMapping)
+  useCellMapping(leisureMainCellMapping, {
+    debugLabel: 'leisure-main-page',
+  })
 
   useEffect(() => {
     let isMounted = true

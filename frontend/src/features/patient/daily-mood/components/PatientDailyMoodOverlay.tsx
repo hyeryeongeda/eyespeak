@@ -527,14 +527,19 @@ export default function PatientDailyMoodOverlay({
     }
 
     actionCards.forEach(card => {
+      // Keep busy or hidden overlay slots out of the shared 6-cell mapping.
       mapping[cellIndexBySlot[card.slot]] =
-        card.disabled || !card.trackingId ? null : card.trackingId
+        card.disabled || submitting || !card.onSelect || !card.trackingId ? null : card.trackingId
     })
 
     return mapping
-  }, [actionCards])
+  }, [actionCards, submitting])
 
-  useCellMapping(cellMapping)
+  useCellMapping(cellMapping, {
+    active: visible,
+    debugLabel: 'daily-mood-overlay',
+    priority: 1400,
+  })
 
   if (!visible) {
     return null

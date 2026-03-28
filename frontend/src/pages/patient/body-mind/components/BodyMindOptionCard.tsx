@@ -142,7 +142,7 @@ export default function BodyMindOptionCard({
       disabled={disabled}
       aria-pressed={selected}
       style={resolvedStyle}
-      data-tracking-id={trackingId}
+      data-tracking-id={disabled ? undefined : trackingId}
       onMouseEnter={onGazeEnter}
       onMouseLeave={onGazeLeave}
     >

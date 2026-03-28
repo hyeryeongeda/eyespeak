@@ -103,7 +103,9 @@ export default function LeisureCategoryPage() {
     5: 'category-back',
   } as Record<number, string | null>), [])
 
-  useCellMapping(categoryCellMapping)
+  useCellMapping(categoryCellMapping, {
+    debugLabel: 'leisure-category-page',
+  })
 
   useEffect(() => {
     if (!category) {

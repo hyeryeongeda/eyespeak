@@ -272,7 +272,9 @@ export default function LeisurePlayerPage() {
     [],
   )
 
-  useCellMapping(isRelatedOverlayOpen ? relatedOverlayCellMapping : playerCellMapping)
+  useCellMapping(isRelatedOverlayOpen ? relatedOverlayCellMapping : playerCellMapping, {
+    debugLabel: isRelatedOverlayOpen ? 'leisure-related-overlay' : 'leisure-player-page',
+  })
 
   useEffect(() => {
     let isMounted = true

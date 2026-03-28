@@ -279,7 +279,9 @@ export default function PatientMainPage() {
     5: 'leisure',
   } as Record<number, string | null>), [])
 
-  useCellMapping(patientMainCellMapping)
+  useCellMapping(patientMainCellMapping, {
+    debugLabel: 'patient-main-page',
+  })
 
   const isOverlayVisible = callStatus === 'requesting' || callStatus === 'success'
   const overlayStatus = isOverlayVisible ? callStatus : null

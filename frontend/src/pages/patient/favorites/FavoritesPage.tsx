@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -8,6 +8,8 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
+import type { PatientCellMapping } from '../../../features/patient/input/services/patientCellMapping'
 import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import {
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
@@ -146,6 +148,7 @@ const TRACKING_BACK_BUTTON = 'favorites-back'
 const TRACKING_PAGINATION_PREV = 'favorites-pagination-prev'
 const TRACKING_PAGINATION_NEXT = 'favorites-pagination-next'
 const TRACKING_RETRY_FETCH = 'favorites-retry-fetch'
+const TRACKING_RETRY_SUBMIT = 'favorites-retry-submit'
 
 function getFavoriteTrackingId(itemId: string) {
   return `favorites-item-${itemId}`
@@ -178,6 +181,82 @@ export default function FavoritesPage() {
     dwellFeedback,
     TRACKING_BACK_BUTTON,
   )
+  const isGridBusy = status === 'selecting' || status === 'transitioning'
+
+  const cellMapping = useMemo<PatientCellMapping>(() => {
+    if (status === 'completed') {
+      return {
+        0: null,
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: null,
+      }
+    }
+
+    if (status === 'loading' && list.length === 0) {
+      return {
+        0: null,
+        1: null,
+        2: null,
+        3: TRACKING_BACK_BUTTON,
+        4: TRACKING_BACK_BUTTON,
+        5: TRACKING_BACK_BUTTON,
+      }
+    }
+
+    if (status === 'empty' || (status === 'error' && errorKind === 'fetch')) {
+      return {
+        0: TRACKING_RETRY_FETCH,
+        1: null,
+        2: TRACKING_BACK_BUTTON,
+        3: TRACKING_RETRY_FETCH,
+        4: null,
+        5: TRACKING_BACK_BUTTON,
+      }
+    }
+
+    if (status === 'error' && errorKind === 'submit') {
+      return {
+        0: TRACKING_RETRY_SUBMIT,
+        1: TRACKING_RETRY_SUBMIT,
+        2: TRACKING_RETRY_SUBMIT,
+        3: TRACKING_RETRY_SUBMIT,
+        4: TRACKING_RETRY_SUBMIT,
+        5: TRACKING_BACK_BUTTON,
+      }
+    }
+
+    const hasPrevPage = totalPages > 1 && pageIndex > 0
+    const hasNextPage = totalPages > 1 && pageIndex < totalPages - 1
+    const paginationTarget =
+      isGridBusy || (!hasPrevPage && !hasNextPage)
+        ? null
+        : hasPrevPage && hasNextPage
+          ? {
+              // Keep the shared pagination slot deterministic while still letting DOM proximity
+              // choose the actual prev/next button when the gaze point is clearly inside one.
+              targets: [TRACKING_PAGINATION_NEXT, TRACKING_PAGINATION_PREV],
+              groupId: 'favorites-pagination',
+            }
+          : hasNextPage
+            ? TRACKING_PAGINATION_NEXT
+            : TRACKING_PAGINATION_PREV
+
+    return {
+      0: !isGridBusy && currentItems[0] ? getFavoriteTrackingId(currentItems[0].id) : null,
+      1: !isGridBusy && currentItems[1] ? getFavoriteTrackingId(currentItems[1].id) : null,
+      2: paginationTarget,
+      3: !isGridBusy && currentItems[2] ? getFavoriteTrackingId(currentItems[2].id) : null,
+      4: !isGridBusy && currentItems[3] ? getFavoriteTrackingId(currentItems[3].id) : null,
+      5: !isGridBusy ? TRACKING_BACK_BUTTON : null,
+    }
+  }, [currentItems, errorKind, isGridBusy, list.length, pageIndex, status, totalPages])
+
+  useCellMapping(cellMapping, {
+    debugLabel: 'favorites-page',
+  })
 
   useReturnToTalkMainAfterDelay(status === 'completed')
 
@@ -411,7 +490,7 @@ export default function FavoritesPage() {
             description={errorMessage}
             onRetry={() => setStatus('visible')}
             retryLabel="다시 선택"
-            retryTrackingId="favorites-retry-submit"
+            retryTrackingId={TRACKING_RETRY_SUBMIT}
             dwellFeedback={dwellFeedback}
           />
           <div style={bottomBarStyle}>
@@ -448,7 +527,7 @@ export default function FavoritesPage() {
                     category={item.category}
                     description={tileMeta.description}
                     tone={tileMeta.tone}
-                    disabled={status === 'selecting' || status === 'transitioning'}
+                    disabled={isGridBusy}
                     onSelect={() => handleSelect(item)}
                     trackingId={getFavoriteTrackingId(item.id)}
                     dwellFeedback={dwellFeedback}
@@ -465,6 +544,7 @@ export default function FavoritesPage() {
               totalPages={totalPages}
               onPrev={handlePrevPage}
               onNext={handleNextPage}
+              disabled={isGridBusy}
               prevTrackingId={TRACKING_PAGINATION_PREV}
               nextTrackingId={TRACKING_PAGINATION_NEXT}
               dwellFeedback={dwellFeedback}
@@ -476,6 +556,7 @@ export default function FavoritesPage() {
               description="대화 메인으로 이동"
               tone="slate"
               onClick={handleBack}
+              disabled={isGridBusy}
               trackingId={TRACKING_BACK_BUTTON}
               dwellFeedback={dwellFeedback}
             />
