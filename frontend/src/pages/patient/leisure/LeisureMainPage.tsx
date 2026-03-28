@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   ROUTE_PATHS,
@@ -9,7 +9,7 @@ import { fetchLeisureMain } from '../../../services/leisureService'
 import type { LeisureMainStatus, LeisureShortcut } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureLayout from './components/LeisureLayout'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 
 const MAX_SHORTCUT_CARDS = 5
 
@@ -104,21 +104,6 @@ export default function LeisureMainPage() {
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
   const [shortcutCards, setShortcutCards] = useState<LeisureShortcut[]>([])
 
-  const leisureMainCellMapping = useMemo(
-    () =>
-      ({
-        0: 'main-shortcut-1',
-        1: 'main-shortcut-2',
-        2: 'main-shortcut-3',
-        3: 'main-shortcut-4',
-        4: 'main-shortcut-5',
-        5: 'main-back',
-      }) as Record<number, string | null>,
-    [],
-  )
-
-  useCellMapping(leisureMainCellMapping)
-
   useEffect(() => {
     let isMounted = true
 
@@ -211,6 +196,15 @@ export default function LeisureMainPage() {
   })
 
   const isBusy = status === 'selecting' || status === 'transitioning'
+
+  usePatientPageCellMapping([
+    isBusy || (!slots[0]?.contentId && !slots[0]?.categoryId) ? null : 'main-shortcut-1',
+    isBusy || (!slots[1]?.contentId && !slots[1]?.categoryId) ? null : 'main-shortcut-2',
+    isBusy || (!slots[2]?.contentId && !slots[2]?.categoryId) ? null : 'main-shortcut-3',
+    isBusy || (!slots[3]?.contentId && !slots[3]?.categoryId) ? null : 'main-shortcut-4',
+    isBusy || (!slots[4]?.contentId && !slots[4]?.categoryId) ? null : 'main-shortcut-5',
+    'main-back',
+  ] as const)
 
   return (
     <LeisureLayout

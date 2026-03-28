@@ -9,13 +9,13 @@ import {
   useDwellFeedback,
   type DwellFeedbackViewModel,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { requestPatientRecalibration } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   requestMockPatientCall,
 } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import PatientCallOverlay from './PatientCallOverlay'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 type PatientMainTargetId = 'talk' | 'call' | 'leisure'
 
@@ -270,16 +270,14 @@ export default function PatientMainPage() {
   })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
 
-  const patientMainCellMapping = useMemo(() => ({
-    0: 'talk',
-    1: 'talk',
-    2: 'talk',
-    3: 'call',
-    4: 'call',
-    5: 'leisure',
-  } as Record<number, string | null>), [])
-
-  useCellMapping(patientMainCellMapping)
+  usePatientPageCellMapping([
+    'talk',
+    'talk',
+    'talk',
+    callStatus === 'requesting' ? null : 'call',
+    callStatus === 'requesting' ? null : 'call',
+    'leisure',
+  ] as const)
 
   const isOverlayVisible = callStatus === 'requesting' || callStatus === 'success'
   const overlayStatus = isOverlayVisible ? callStatus : null
