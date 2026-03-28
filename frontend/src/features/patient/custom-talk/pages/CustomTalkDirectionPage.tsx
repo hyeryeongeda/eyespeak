@@ -1,13 +1,12 @@
 import { type CSSProperties, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
-import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
-import CustomTalkGuardianPromptLayout from '../components/CustomTalkGuardianPromptLayout'
-import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import {
   getCustomTalkNoticeStyle,
   customTalkLoadingNoticeStyle,
 } from '../components/customTalkUi'
+import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
@@ -16,37 +15,52 @@ import type { PatientChatMessage } from '../../../../types/chat'
 const centerStackStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  justifyContent: 'center',
+  gap: '10px',
   minHeight: 0,
   height: '100%',
+  padding: '10px 12px',
+  boxSizing: 'border-box',
 }
 
-const promptPanelSlotStyle: CSSProperties = {
-  flex: 1,
+const promptPanelStyle: CSSProperties = {
   minHeight: 0,
+  borderRadius: '22px',
+  border: '1px solid rgba(220, 228, 237, 0.96)',
+  backgroundColor: '#ffffff',
+  boxShadow: '0 14px 32px rgba(72, 96, 124, 0.08)',
+  padding: '18px 22px',
+  display: 'flex',
+  alignItems: 'center',
 }
 
-const noticeStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  flexShrink: 0,
+const promptTextStyle: CSSProperties = {
+  margin: 0,
+  color: '#2f3742',
+  fontSize: 'clamp(1.15rem, 1.55vw, 1.4rem)',
+  fontWeight: 800,
+  lineHeight: 1.45,
+  wordBreak: 'keep-all',
 }
 
 type CustomTalkDirectionTrackingId =
   | 'custom-talk-direction-recommendation-1'
   | 'custom-talk-direction-recommendation-2'
   | 'custom-talk-direction-recommendation-3'
+  | 'custom-talk-direction-recommendation-4'
+  | 'custom-talk-direction-keyboard'
   | 'custom-talk-direction-back'
 
 type CategoryCardModel = {
   title: string
-  tone: 'sky' | 'sand' | 'mint'
+  description: string
+  tone: 'sand' | 'sky' | 'slate'
   disabled: boolean
   trackingId:
     | 'custom-talk-direction-recommendation-1'
     | 'custom-talk-direction-recommendation-2'
     | 'custom-talk-direction-recommendation-3'
+    | 'custom-talk-direction-recommendation-4'
   category: CustomTalkCategoryOption | null
 }
 
@@ -78,11 +92,12 @@ function buildRecentMessages(
 }
 
 function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): CategoryCardModel[] {
-  const tones = ['sky', 'mint', 'sand'] as const
+  const tones = ['sand', 'sky', 'slate', 'sand'] as const
   const trackingIds = [
     'custom-talk-direction-recommendation-1',
     'custom-talk-direction-recommendation-2',
     'custom-talk-direction-recommendation-3',
+    'custom-talk-direction-recommendation-4',
   ] as const
 
   return trackingIds.map((trackingId, index) => {
@@ -91,6 +106,7 @@ function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): Cate
     if (!category) {
       return {
         title: '카테고리 준비 중',
+        description: '추천 카테고리를 불러오고 있습니다.',
         tone: tones[index],
         disabled: true,
         trackingId,
@@ -100,12 +116,24 @@ function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): Cate
 
     return {
       title: category.title,
+      description: category.hint?.trim() || category.description,
       tone: tones[index],
       disabled: false,
       trackingId,
       category,
     }
   })
+}
+
+function pickComposeCategory(
+  visibleCategories: CustomTalkCategoryOption[],
+): CustomTalkCategoryOption | null {
+  return (
+    visibleCategories.find(category => category.key === 'mood') ??
+    visibleCategories.find(category => category.key === 'schedule') ??
+    visibleCategories[0] ??
+    null
+  )
 }
 
 export default function CustomTalkDirectionPage() {
@@ -115,12 +143,12 @@ export default function CustomTalkDirectionPage() {
     enabled: true,
   })
   const context = useCustomTalkStore(state => state.context)
-  const conversationLog = useCustomTalkStore(state => state.conversationLog)
   const visibleCategories = useCustomTalkStore(state => state.visibleCategories)
   const status = useCustomTalkStore(state => state.status)
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
   const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
+  const startCompose = useCustomTalkStore(state => state.startCompose)
   const currentGuardianMessage =
     chat.latestUnresolvedMessage ??
     (chat.activeMessage?.sender === 'guardian' ? chat.activeMessage : null) ??
@@ -137,15 +165,14 @@ export default function CustomTalkDirectionPage() {
       guardianMessage,
       recentMessages,
     })
-  }, [
-    guardianMessage,
-    initializeCustomTalk,
-    recentMessagesSignature,
-  ])
+  }, [guardianMessage, initializeCustomTalk, recentMessagesSignature])
 
   const categoryCards = buildCategoryCards(visibleCategories)
+  const composeCategory = pickComposeCategory(visibleCategories)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const promptText =
+    guardianMessage || context?.guardianMessage?.trim() || '대화 내용을 불러오는 중입니다.'
 
   const handleSelectCategory = (category: CustomTalkCategoryOption | null) => {
     if (!category) {
@@ -156,58 +183,87 @@ export default function CustomTalkDirectionPage() {
     navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
   }
 
+  const handleStartCompose = async () => {
+    if (!composeCategory) {
+      return
+    }
+
+    selectCategory(composeCategory.key)
+    await startCompose()
+    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
+  }
+
   return (
-    <CustomTalkGuardianPromptLayout
-      title="보호자 선발화-카테고리"
+    <CustomTalkEntryLayout
+      title="맞춤문장"
       topLeft={{
         title: categoryCards[0].title,
+        description: categoryCards[0].description,
         tone: categoryCards[0].tone,
         onSelect: () => handleSelectCategory(categoryCards[0].category),
         disabled: isBusy || categoryCards[0].disabled,
         trackingId: categoryCards[0].trackingId,
       }}
-      topRight={{
+      topCenter={{
         title: categoryCards[1].title,
+        description: categoryCards[1].description,
         tone: categoryCards[1].tone,
         onSelect: () => handleSelectCategory(categoryCards[1].category),
         disabled: isBusy || categoryCards[1].disabled,
         trackingId: categoryCards[1].trackingId,
       }}
-      bottomLeft={{
+      topRight={{
         title: categoryCards[2].title,
+        description: categoryCards[2].description,
         tone: categoryCards[2].tone,
         onSelect: () => handleSelectCategory(categoryCards[2].category),
         disabled: isBusy || categoryCards[2].disabled,
         trackingId: categoryCards[2].trackingId,
       }}
+      bottomLeft={{
+        title: categoryCards[3].title,
+        description: categoryCards[3].description,
+        tone: categoryCards[3].tone,
+        onSelect: () => handleSelectCategory(categoryCards[3].category),
+        disabled: isBusy || categoryCards[3].disabled,
+        trackingId: categoryCards[3].trackingId,
+      }}
+      bottomCenter={{
+        title: '직접말해요',
+        description: '추천 문장보다 기본적으로 바로 문장을 만듭니다.',
+        tone: 'mint',
+        onSelect: () => {
+          void handleStartCompose()
+        },
+        disabled: status === 'submitting' || !composeCategory,
+        trackingId: 'custom-talk-direction-keyboard',
+      }}
       bottomRight={{
         title: '뒤로가기',
+        description: '대화 메인 화면으로 돌아갑니다.',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN),
         trackingId: 'custom-talk-direction-back',
       }}
       dwellFeedback={dwellFeedback}
+      gridTemplateRows="minmax(0, 1fr) minmax(72px, 0.28fr) minmax(0, 1fr)"
       centerChildren={
         <div style={centerStackStyle}>
-          <div style={promptPanelSlotStyle}>
-            <CustomTalkContextPanel
-              context={context}
-              conversationLog={conversationLog}
-              mode="entry"
-            />
-          </div>
+          <section style={promptPanelStyle} aria-label="보호자 선발화">
+            <p style={promptTextStyle}>{promptText}</p>
+          </section>
 
           {status === 'loading' || status === 'refreshing' || errorMessage ? (
-            <div style={noticeStackStyle}>
+            <>
               {status === 'loading' || status === 'refreshing' ? (
                 <div style={customTalkLoadingNoticeStyle}>
-                  맞춤대화 카테고리를 불러오는 중입니다.
+                  맞춤문장 카테고리를 불러오는 중입니다.
                 </div>
               ) : null}
               {errorMessage ? (
                 <div style={getCustomTalkNoticeStyle(errorMessage)}>{errorMessage}</div>
               ) : null}
-            </div>
+            </>
           ) : null}
         </div>
       }
