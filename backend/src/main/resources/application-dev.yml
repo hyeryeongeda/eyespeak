@@ -1,0 +1,26 @@
+# dev 프로필 — docker-compose.dev, Jenkins 등
+# application-local.yml 은 profile=local 일 때만 적용되므로 JWT 를 여기서도 연결합니다.
+jwt:
+  secret: ${JWT_SECRET:my-local-dev-secret-key-must-be-at-least-32-characters-long}
+  access-token-expiry: ${JWT_ACCESS_TOKEN_EXPIRY:1800000}
+  refresh-token-expiry: ${JWT_REFRESH_TOKEN_EXPIRY:604800000}
+
+# Nginx 리버스 프록시(/dev) 뒤에서 Swagger가 올바른 경로로 api-docs를 요청하도록 설정
+# AI 서버
+ai:
+  server:
+    url: ${AI_SERVER_URL:http://eyespeak-ai-caregiver:5003}
+  tts:
+    url: ${AI_TTS_URL:http://eyespeak-ai-tts:8000}
+  internal:
+    api-key: ${AI_INTERNAL_API_KEY:eyespeak-ai-internal-2026-s14e205}
+
+swagger:
+  server-url: /dev/api/v1
+
+springdoc:
+  cache:
+    disabled: true
+  swagger-ui:
+    config-url: /dev/api/v1/v3/api-docs/swagger-config
+    url: /dev/api/v1/v3/api-docs

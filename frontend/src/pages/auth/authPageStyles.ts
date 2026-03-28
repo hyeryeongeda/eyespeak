@@ -1,22 +1,31 @@
 import type { CSSProperties } from 'react'
 
 export const pageWrapper: CSSProperties = {
-  minHeight: '100vh',
+  width: '100%',
+  height: '100%',
+  minHeight: '100%',
+  overflowX: 'hidden',
+  overflowY: 'auto',
   background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
   display: 'flex',
+  flexDirection: 'column',
   alignItems: 'center',
-  justifyContent: 'center',
-  padding: '24px 20px',
+  justifyContent: 'flex-start',
+  boxSizing: 'border-box',
+  padding: 'clamp(16px, 4vw, 24px) clamp(12px, 4vw, 20px) clamp(24px, 6vw, 40px)',
+  WebkitOverflowScrolling: 'touch',
 }
 
 export const card: CSSProperties = {
   width: '100%',
   maxWidth: '420px',
+  margin: '0 auto',
   backgroundColor: '#ffffff',
-  borderRadius: '24px',
-  padding: '32px 28px',
+  borderRadius: 'clamp(18px, 4vw, 24px)',
+  padding: 'clamp(20px, 5vw, 32px) clamp(16px, 4vw, 28px)',
   boxShadow: '0 20px 48px rgba(40, 66, 90, 0.12)',
   border: '1px solid #dde7ed',
+  boxSizing: 'border-box',
 }
 
 export const logoWrap: CSSProperties = {
@@ -25,6 +34,13 @@ export const logoWrap: CSSProperties = {
   alignItems: 'center',
   gap: '6px',
   marginBottom: '20px',
+}
+
+export const logoImage: CSSProperties = {
+  display: 'block',
+  width: 'clamp(132px, 36vw, 176px)',
+  maxWidth: '100%',
+  height: 'auto',
 }
 
 export const logoText: CSSProperties = {
@@ -44,7 +60,7 @@ export const subtitle: CSSProperties = {
 
 export const pageTitle: CSSProperties = {
   margin: '0 0 8px',
-  fontSize: '24px',
+  fontSize: 'clamp(22px, 5vw, 24px)',
   fontWeight: 700,
   color: '#203042',
   textAlign: 'center',
@@ -122,13 +138,13 @@ export const textLink: CSSProperties = {
 
 export const roleGrid: CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: '1fr 1fr',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
   gap: '14px',
   marginBottom: '18px',
 }
 
 export const roleCard: CSSProperties = {
-  minHeight: '172px',
+  minHeight: 'clamp(132px, 34vw, 172px)',
   border: '1px solid #d4dfe7',
   borderRadius: '18px',
   padding: '20px 16px',
@@ -221,4 +237,117 @@ export const successMessage: CSSProperties = {
   color: '#36734a',
   fontSize: '13px',
   lineHeight: 1.5,
+}
+
+export const progressRow: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(96px, 1fr))',
+  gap: '8px',
+  marginBottom: '18px',
+}
+
+export const progressStep: CSSProperties = {
+  borderRadius: '14px',
+  border: '1px solid #dbe4ec',
+  backgroundColor: '#f7fafc',
+  padding: '10px 8px',
+  textAlign: 'center',
+}
+
+export const progressStepActive: CSSProperties = {
+  borderColor: '#9ec3e4',
+  backgroundColor: '#eef6fd',
+}
+
+export const progressStepDone: CSSProperties = {
+  borderColor: '#b8d7c0',
+  backgroundColor: '#f2f9f3',
+}
+
+export const sectionTitle: CSSProperties = {
+  margin: '0 0 6px',
+  color: '#203042',
+  fontSize: '16px',
+  fontWeight: 700,
+}
+
+export const sectionDesc: CSSProperties = {
+  margin: '0 0 16px',
+  color: '#708191',
+  fontSize: '13px',
+  lineHeight: 1.55,
+}
+
+export const choiceGrid: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(132px, 1fr))',
+  gap: '10px',
+}
+
+export const choiceButton: CSSProperties = {
+  minHeight: '52px',
+  borderRadius: '14px',
+  border: '1px solid #d4dfe7',
+  backgroundColor: '#ffffff',
+  color: '#203042',
+  fontSize: '14px',
+  fontWeight: 700,
+  cursor: 'pointer',
+}
+
+export const choiceButtonSelected: CSSProperties = {
+  border: '2px solid #8ab6de',
+  backgroundColor: '#f2f8fd',
+}
+
+export const routineSection: CSSProperties = {
+  borderRadius: '18px',
+  border: '1px solid #dce6ee',
+  backgroundColor: '#f7fafc',
+  padding: '16px',
+}
+
+export const tagWrap: CSSProperties = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '8px',
+}
+
+export const tagButton: CSSProperties = {
+  minHeight: '38px',
+  padding: '8px 12px',
+  borderRadius: '999px',
+  border: '1px solid #d4dfe7',
+  backgroundColor: '#ffffff',
+  color: '#4b6073',
+  fontSize: '13px',
+  fontWeight: 600,
+  cursor: 'pointer',
+}
+
+export const tagButtonSelected: CSSProperties = {
+  border: '1px solid #8ab6de',
+  backgroundColor: '#eaf4fd',
+  color: '#2f5d84',
+}
+
+export const buttonRow: CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+  gap: '10px',
+}
+
+export const summaryBox: CSSProperties = {
+  borderRadius: '16px',
+  backgroundColor: '#f8fbfd',
+  border: '1px solid #dce6ee',
+  padding: '16px',
+}
+
+export const teamCodeValue: CSSProperties = {
+  margin: '0 0 12px',
+  color: '#203042',
+  fontSize: 'clamp(24px, 6vw, 28px)',
+  fontWeight: 800,
+  letterSpacing: '0.06em',
 }

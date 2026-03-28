@@ -1,0 +1,14 @@
+TTS
+fastapi
+uvicorn[standard]
+torch
+torchaudio
+transformers<=4.40.0
+numpy
+pydantic
+python-multipart
+faster-whisper
+yt-dlp
+pytest
+httpx
+mlflow

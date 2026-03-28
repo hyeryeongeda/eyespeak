@@ -65,6 +65,64 @@ pipeline {
         }
 
         // =================================================================
+        // 빌드 테스트 (feature 브랜치 - MR 시 실행)
+        // =================================================================
+        stage('Build Test') {
+            when {
+                not { branch 'develop' }
+                not { branch 'release' }
+            }
+            steps {
+                script {
+                    def commitSha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                    def projectId = '1273805'
+
+                    // 빌드 시작 상태 전송
+                    withCredentials([usernamePassword(credentialsId: 'e205-gitlab', usernameVariable: 'GL_USER', passwordVariable: 'GL_TOKEN')]) {
+                        sh """
+                            curl -s --request POST \
+                            --header "PRIVATE-TOKEN: \$GL_TOKEN" \
+                            "https://lab.ssafy.com/api/v4/projects/${projectId}/statuses/${commitSha}?state=running&name=build-test&target_url=${env.BUILD_URL}"
+                        """
+                    }
+                }
+
+                dir('backend') {
+                    sh 'chmod +x gradlew'
+                    sh './gradlew clean compileJava --no-daemon'
+                }
+            }
+            post {
+                success {
+                    script {
+                        def commitSha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                        def projectId = '1273805'
+                        withCredentials([usernamePassword(credentialsId: 'e205-gitlab', usernameVariable: 'GL_USER', passwordVariable: 'GL_TOKEN')]) {
+                            sh """
+                                curl -s --request POST \
+                                --header "PRIVATE-TOKEN: \$GL_TOKEN" \
+                                "https://lab.ssafy.com/api/v4/projects/${projectId}/statuses/${commitSha}?state=success&name=build-test&target_url=${env.BUILD_URL}"
+                            """
+                        }
+                    }
+                }
+                failure {
+                    script {
+                        def commitSha = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                        def projectId = '1273805'
+                        withCredentials([usernamePassword(credentialsId: 'e205-gitlab', usernameVariable: 'GL_USER', passwordVariable: 'GL_TOKEN')]) {
+                            sh """
+                                curl -s --request POST \
+                                --header "PRIVATE-TOKEN: \$GL_TOKEN" \
+                                "https://lab.ssafy.com/api/v4/projects/${projectId}/statuses/${commitSha}?state=failed&name=build-test&target_url=${env.BUILD_URL}"
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        // =================================================================
         // Dev 파이프라인 (develop 브랜치)
         // =================================================================
         stage('Dev Pipeline') {
@@ -81,8 +139,15 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.dev'
                             }
 
-                            // Makefile의 dev-app-up 실행
-                            sh "make dev-app-up"
+                            // FCM 서비스 계정 키 복사 (Secret File)
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY_FILE')]) {
+                                sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
+                            }
+
+                            // YouTube API 키 주입 후 dev-app-up 실행
+                            withCredentials([string(credentialsId: 'vite-youtube-api-key', variable: 'VITE_YOUTUBE_API_KEY')]) {
+                                sh 'export VITE_YOUTUBE_API_KEY=$VITE_YOUTUBE_API_KEY && make dev-app-up'
+                            }
                         }
                     }
                     post {
@@ -107,7 +172,7 @@ pipeline {
 
                             for (int i = 1; i <= maxRetries; i++) {
                                 def result = sh(
-                                    script: 'docker exec eyespeak-was-dev curl -sf http://localhost:8080/actuator/health || echo "failed"',
+                                    script: 'docker exec eyespeak-was-dev curl -sf http://localhost:8080/api/v1/actuator/health || echo "failed"',
                                     returnStdout: true
                                 ).trim()
 
@@ -229,8 +294,15 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.prod'
                             }
 
-                            // Makefile의 prod-app-up 실행
-                            sh "make prod-app-up"
+                            // FCM 서비스 계정 키 복사 (Secret File)
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY_FILE')]) {
+                                sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
+                            }
+
+                            // YouTube API 키 주입 후 prod-app-up 실행
+                            withCredentials([string(credentialsId: 'vite-youtube-api-key', variable: 'VITE_YOUTUBE_API_KEY')]) {
+                                sh 'export VITE_YOUTUBE_API_KEY=$VITE_YOUTUBE_API_KEY && make prod-app-up'
+                            }
                         }
                     }
                     post {
@@ -256,7 +328,7 @@ pipeline {
 
                             for (int i = 1; i <= maxRetries; i++) {
                                 def result = sh(
-                                    script: "docker exec ${containerName} curl -sf http://localhost:8080/actuator/health || echo 'failed'",
+                                    script: "docker exec ${containerName} curl -sf http://localhost:8080/api/v1/actuator/health || echo 'failed'",
                                     returnStdout: true
                                 ).trim()
 
@@ -333,6 +405,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh 'docker image prune -f || true'
+                sh 'docker builder prune -f || true'
             }
         }
     }

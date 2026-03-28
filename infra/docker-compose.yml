@@ -25,6 +25,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./nginx-proxy/nginx.conf:/etc/nginx/nginx.conf
       - /etc/letsencrypt:/etc/letsencrypt:ro
@@ -45,22 +47,6 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
-
-  # ===========================================================================
-  # Jenkins (추후 추가 예정)
-  # ===========================================================================
-  # jenkins:
-  #   build:
-  #     context: ./jenkins
-  #     dockerfile: Dockerfile
-  #   container_name: eyespeak-jenkins
-  #   ...
-
-  # ===========================================================================
-  # Monitoring (추후 추가 예정)
-  # ===========================================================================
-  # grafana, prometheus, loki, promtail 등
-  # profiles: [monitoring] 으로 선택적 실행
 
 # =============================================================================
 # Networks

@@ -1,46 +1,57 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../hooks/useAuth'
-import { setStoredEntryMode, setStoredRole } from '../../services/authService'
+import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
+import { useAuth } from '../../features/auth/hooks/useAuth'
+import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
+import type { AuthRouteState } from '../../types/auth'
+import AuthBrand from './AuthBrand'
 import {
   card,
   errorMessage,
   formStack,
   helperText,
+  infoBox,
   input,
   linkRow,
-  logoText,
-  logoWrap,
   pageTitle,
-  pageWrapper,
   primaryButton,
-  subtitle,
   textLink,
 } from './authPageStyles'
+import AuthPageFrame from './AuthPageFrame'
+
+interface CareLoginLocationState extends AuthRouteState {
+  signupCompleted?: boolean
+  guardianEmail?: string
+  patientName?: string
+  teamCode?: string
+}
 
 export default function CareLoginPage() {
   const navigate = useNavigate()
-  const { login } = useAuth()
+  const location = useLocation()
+  const { login, isPending } = useAuth()
+  const locationState = (location.state as CareLoginLocationState | null) ?? null
+  const guardianSignupRoute = resolveAuthEntryRoute('signup', 'guardian', location.state)
   const [form, setForm] = useState({
-    id: '',
+    identifier: locationState?.guardianEmail ?? '',
     password: '',
   })
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setStoredRole('caregiver')
+    setStoredRole('guardian')
     setStoredEntryMode('login')
   }, [])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
 
-    const result = login({
-      id: form.id,
+    const result = await login({
+      identifier: form.identifier,
       password: form.password,
-      role: 'caregiver',
+      role: 'guardian',
     })
 
     if (!result.success) {
@@ -48,26 +59,56 @@ export default function CareLoginPage() {
       return
     }
 
-    navigate(ROUTE_PATHS.CARE_HOME, { replace: true })
+    const resolvedNavigation = await resolveAuthSuccessNavigation(result.data, {
+      entryPoint: 'login',
+      locationState: location.state,
+    })
+
+    navigate(resolvedNavigation.path, { replace: true, state: resolvedNavigation.state })
   }
 
   return (
-    <div style={pageWrapper}>
+    <AuthPageFrame>
       <div style={card}>
-        <div style={logoWrap}>
-          <p style={logoText}>eyespeak</p>
-          <p style={subtitle}>보호자 로그인</p>
-        </div>
+        <AuthBrand subtitleText="보호자 로그인" />
 
         <h1 style={pageTitle}>보호자 로그인</h1>
 
+        <div style={infoBox}>
+          <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+            현재 로그인 방식
+          </p>
+          <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+            보호자 회원가입에서 사용한 이메일과 비밀번호로 로그인합니다.
+          </p>
+        </div>
+
+        {locationState?.signupCompleted ? (
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+              가입 완료 안내
+            </p>
+            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              보호자 회원가입은 이미 완료되었습니다. 자동 로그인은 되지 않으니, 방금 만든 보호자 계정으로 로그인해 주세요.
+            </p>
+            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              로그인 이메일은 미리 입력되어 있습니다.
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              {locationState.patientName && locationState.teamCode
+                ? `환자 정보와 팀코드(${locationState.teamCode})는 준비된 상태입니다.`
+                : '환자 정보와 팀코드는 회원가입 단계에서 이미 준비된 상태입니다.'}
+            </p>
+          </div>
+        ) : null}
+
         <form onSubmit={handleSubmit} style={formStack}>
           <input
-            type="text"
-            placeholder="보호자 아이디"
+            type="email"
+            placeholder="이메일"
             style={input}
-            value={form.id}
-            onChange={event => setForm(prev => ({ ...prev, id: event.target.value }))}
+            value={form.identifier}
+            onChange={event => setForm(prev => ({ ...prev, identifier: event.target.value }))}
           />
           <input
             type="password"
@@ -79,25 +120,47 @@ export default function CareLoginPage() {
 
           {error ? <p style={errorMessage}>{error}</p> : null}
 
-          <button type="submit" style={primaryButton}>
-            로그인
+          <button
+            type="submit"
+            style={isPending ? { ...primaryButton, opacity: 0.7 } : primaryButton}
+            disabled={isPending}
+          >
+            {isPending ? '로그인 중...' : '로그인'}
           </button>
         </form>
 
         <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <Link to={ROUTE_PATHS.AUTH_RESET_PASSWORD} style={textLink}>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_RESET_PASSWORD,
+              search: '?role=guardian',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             비밀번호 재설정
           </Link>
-          <Link to={ROUTE_PATHS.AUTH_SIGNUP_CARE} style={textLink}>
+          <Link
+            to={guardianSignupRoute.path}
+            state={guardianSignupRoute.state}
+            style={textLink}
+          >
             보호자 회원가입
           </Link>
-          <Link to={`${ROUTE_PATHS.AUTH_ROLE}?mode=login`} style={textLink}>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=login',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             역할 다시 선택
           </Link>
         </div>
       </div>
-    </div>
+    </AuthPageFrame>
   )
 }

@@ -13,9 +13,11 @@
 # 환경 변수 파일 경로
 ENV_PROD = --env-file .env.prod
 ENV_DEV = --env-file .env.dev
+ENV_LOCAL = --env-file .env.local
 
 .PHONY: help \
         data-prod-up data-prod-down data-dev-up data-dev-down \
+        ai-up ai-down ai-local-up ai-local-down \
         infra-up infra-down \
         prod-app-up prod-app-down dev-app-up dev-app-down \
         local-up local-down \
@@ -35,6 +37,12 @@ help:
 	@echo "    make data-prod-down  - Prod 데이터 중지"
 	@echo "    make data-dev-up     - Dev 데이터 시작"
 	@echo "    make data-dev-down   - Dev 데이터 중지"
+	@echo ""
+	@echo "  AI Servers (TTS + Caregiver):"
+	@echo "    make ai-up           - AI 서버 시작 (Dev/Prod)"
+	@echo "    make ai-down         - AI 서버 중지"
+	@echo "    make ai-local-up     - AI 서버 시작 (Local)"
+	@echo "    make ai-local-down   - AI 서버 중지 (Local)"
 	@echo ""
 	@echo "  Infrastructure (Nginx):"
 	@echo "    make infra-up        - Nginx Proxy 시작"
@@ -83,6 +91,28 @@ data-dev-down:
 	cd infra && docker compose -f docker-compose.data.dev.yml down
 
 # =============================================================================
+# AI Servers (Stateful) - 한 번 띄우면 계속 유지
+# =============================================================================
+
+ai-up:
+	@echo "Starting AI Servers (TTS + Caregiver)..."
+	cd infra && docker compose -f docker-compose.ai.yml up -d --build
+	@echo "AI Servers started!"
+
+ai-down:
+	@echo "Stopping AI Servers..."
+	cd infra && docker compose -f docker-compose.ai.yml down
+
+ai-local-up:
+	@echo "Starting AI Servers (Local)..."
+	cd infra && docker compose -f docker-compose.ai.local.yml up -d --build
+	@echo "AI Servers started (local-net)!"
+
+ai-local-down:
+	@echo "Stopping AI Servers (Local)..."
+	cd infra && docker compose -f docker-compose.ai.local.yml down
+
+# =============================================================================
 # Infrastructure (Nginx Proxy)
 # =============================================================================
 
@@ -103,8 +133,8 @@ infra-down:
 
 prod-app-up:
 	@echo "Deploying Prod App (WAS Blue/Green + Frontend)..."
-	cd backend && docker compose -f docker-compose.yml -f docker-compose.prod.yml $(ENV_PROD) up -d --build
-	cd frontend && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+	cd backend && DOCKER_BUILDKIT=1 docker compose -f docker-compose.yml -f docker-compose.prod.yml $(ENV_PROD) up -d --build
+	cd frontend && docker compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache && docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 	@echo "Prod App deployed!"
 
 prod-app-down:
@@ -114,8 +144,8 @@ prod-app-down:
 
 dev-app-up:
 	@echo "Deploying Dev App (WAS + Frontend)..."
-	cd backend && docker compose -f docker-compose.dev.yml $(ENV_DEV) up -d --build
-	cd frontend && docker compose -f docker-compose.dev.yml up -d --build
+	cd backend && DOCKER_BUILDKIT=1 docker compose -f docker-compose.dev.yml $(ENV_DEV) up -d --build
+	cd frontend && docker compose -f docker-compose.dev.yml build --no-cache && docker compose -f docker-compose.dev.yml up -d
 	@echo "Dev App deployed!"
 
 dev-app-down:
@@ -125,7 +155,7 @@ dev-app-down:
 
 local-up:
 	@echo "Starting Local Environment (All-in-One)..."
-	cd backend && docker compose -f docker-compose.local.yml up -d --build
+	cd backend && docker compose -f docker-compose.local.yml $(ENV_LOCAL) up -d --build
 	cd frontend && docker compose -f docker-compose.local.yml up -d --build
 	@echo "Local started! Backend: http://localhost:8080, Frontend: http://localhost:3000"
 
