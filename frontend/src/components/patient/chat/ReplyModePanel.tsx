@@ -285,13 +285,6 @@ const floatingPagerWrapStyle: CSSProperties = {
 }
 
 const panelCss = `
-  .reply-mode-button:hover:not(:disabled),
-  .reply-mode-button:focus-visible:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 34px rgba(76, 91, 108, 0.11);
-    outline: none;
-  }
-
   @media (max-width: 940px) {
     .reply-mode-category-grid,
     .reply-mode-sentence-grid {

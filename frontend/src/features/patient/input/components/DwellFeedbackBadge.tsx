@@ -46,7 +46,7 @@ export default function DwellFeedbackBadge({
   const strokeColor = phase === 'dwelling' ? '#6f82ef' : '#8ea0f7'
 
   return (
-    <span aria-hidden style={shellStyle}>
+    <span aria-hidden style={shellStyle} className="patient-dwell-feedback-badge">
       <svg
         viewBox="0 0 1000 1000"
         preserveAspectRatio="none"

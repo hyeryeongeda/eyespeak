@@ -249,17 +249,6 @@ const responsiveStyle = `
     grid-template-rows: repeat(2, minmax(0, 1fr));
   }
 
-  .patient-main-interactive:hover:not(:disabled),
-  .patient-main-interactive:focus-visible:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 28px 46px rgba(121, 139, 176, 0.18);
-    outline: none;
-  }
-
-  .patient-main-interactive:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
   .patient-main-full {
     grid-column: 1 / -1;
     grid-row: 1;

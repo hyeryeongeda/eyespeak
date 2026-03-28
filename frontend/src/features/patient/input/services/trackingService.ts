@@ -7,13 +7,26 @@ export const TRACKING_TARGET_ATTRIBUTE = 'data-tracking-id'
 export const LOCAL_GAZE_SELECTION_ATTRIBUTE = 'data-gaze-selection'
 export const LOCAL_GAZE_ONLY_VALUE = 'local'
 export const MOUSE_ONLY_GAZE_VALUE = 'mouse-only'
+export const PATIENT_INTERACTION_MARKER_ATTRIBUTE = 'data-patient-interactive'
+export const PATIENT_INTERACTION_STATE_ATTRIBUTE = 'data-interaction-state'
+export const PATIENT_INTERACTION_SOURCE_ATTRIBUTE = 'data-interaction-source'
+export const PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE = '--dwell-progress'
+export const PATIENT_DWELL_CONFIRM_MS = 2000
 
-const INTERACTIVE_ELEMENT_SELECTOR = [
+export type PatientInteractionState =
+  | 'idle'
+  | 'hover'
+  | 'dwell'
+  | 'confirmed'
+  | 'cooldown'
+
+export const PATIENT_INTERACTIVE_ELEMENT_SELECTOR = [
   'button',
   'a[href]',
   'input[type="button"]',
   'input[type="submit"]',
   '[role="button"]',
+  '[tabindex]:not([tabindex="-1"])',
 ].join(', ')
 
 interface InteractiveAreaSample {
@@ -119,7 +132,7 @@ export function getInteractiveElementFromPoint(
       continue
     }
 
-    const interactiveElement = element.closest<HTMLElement>(INTERACTIVE_ELEMENT_SELECTOR)
+    const interactiveElement = element.closest<HTMLElement>(PATIENT_INTERACTIVE_ELEMENT_SELECTOR)
 
     if (!interactiveElement) {
       continue
@@ -297,6 +310,14 @@ export function getTrackingTargetIdFromCell<TTarget extends string>(
 }
 
 function isInteractiveElementDisabled(element: HTMLElement) {
+  if (
+    element.hidden ||
+    element.closest('[hidden], [inert], [aria-hidden="true"]') ||
+    'inert' in element && Boolean((element as HTMLElement & { inert?: boolean }).inert)
+  ) {
+    return true
+  }
+
   if (element.matches(':disabled')) {
     return true
   }

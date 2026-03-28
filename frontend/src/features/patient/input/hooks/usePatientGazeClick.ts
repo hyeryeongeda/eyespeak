@@ -16,6 +16,13 @@ import {
   type PatientSelectionSurface,
 } from '../services/patientSelectionPolicy'
 import {
+  PATIENT_DWELL_CONFIRM_MS,
+  PATIENT_INTERACTION_MARKER_ATTRIBUTE,
+  PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE,
+  PATIENT_INTERACTION_SOURCE_ATTRIBUTE,
+  PATIENT_INTERACTION_STATE_ATTRIBUTE,
+  PATIENT_INTERACTIVE_ELEMENT_SELECTOR,
+  type PatientInteractionState,
   getInteractiveElementFromPoint,
   getInteractiveElementSelectionKey,
   getWeightedInteractiveTargetFromArea,
@@ -42,8 +49,13 @@ interface UsePatientGazeClickOptions {
   selectionSurface?: PatientSelectionSurface
 }
 
-const SELECTION_CONFIRM_FEEDBACK_MS = 3000
+const SELECTION_CONFIRM_FEEDBACK_MS = 420
 const SELECTION_COMMIT_DELAY_MS = 0
+const ROUTE_TRANSITION_COMMIT_GUARD_MS = 450
+const DIALOG_SELECTION_CONTAINER_SELECTOR = '[role="dialog"][aria-modal="true"]'
+const ENABLE_MOUSE_DWELL_CONFIRM =
+  import.meta.env.DEV &&
+  String(import.meta.env.VITE_PATIENT_ENABLE_MOUSE_DWELL_CONFIRM ?? '').toLowerCase() === 'true'
 
 type SelectionTargetSource =
   | 'cell-mapping'
@@ -79,12 +91,102 @@ interface SelectionTarget {
 interface SelectionCooldownEntry {
   element: HTMLElement | null
   expiresAt: number
+  stateTimerId: number | null
   timerId: number
 }
 
 type PatientDebugWindow = Window & {
   __DEV_GAZE_DISABLE_POINT_HIT_TEST?: boolean
   __PATIENT_GAZE_DEBUG_STATE?: unknown
+}
+
+function getNumericZIndex(element: HTMLElement) {
+  const zIndex = window.getComputedStyle(element).zIndex
+  const parsed = Number.parseInt(zIndex, 10)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function isVisibleSelectionContainer(element: HTMLElement) {
+  if (!element.isConnected) {
+    return false
+  }
+
+  const computedStyle = window.getComputedStyle(element)
+  if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+    return false
+  }
+
+  const rect = element.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
+function resolveActiveSelectionContainer(
+  selectionSurface: PatientSelectionSurface,
+) {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  if (isCustomTalkSurface(selectionSurface)) {
+    return getCustomTalkSelectableGroupElement()
+  }
+
+  const dialogContainers = Array.from(
+    document.querySelectorAll<HTMLElement>(DIALOG_SELECTION_CONTAINER_SELECTOR),
+  ).filter(
+    element =>
+      isVisibleSelectionContainer(element) &&
+      element.querySelector(PATIENT_INTERACTIVE_ELEMENT_SELECTOR) !== null,
+  )
+
+  if (dialogContainers.length === 0) {
+    return null
+  }
+
+  return dialogContainers.reduce<HTMLElement | null>((best, current) => {
+    if (!best) {
+      return current
+    }
+
+    const bestZIndex = getNumericZIndex(best)
+    const currentZIndex = getNumericZIndex(current)
+
+    if (currentZIndex !== bestZIndex) {
+      return currentZIndex > bestZIndex ? current : best
+    }
+
+    return best.compareDocumentPosition(current) & Node.DOCUMENT_POSITION_FOLLOWING
+      ? current
+      : best
+  }, null)
+}
+
+function setElementInteractionState(
+  element: HTMLElement,
+  state: Exclude<PatientInteractionState, 'idle'>,
+  source: 'pointer' | 'gaze' | null,
+  progress = 0,
+) {
+  element.setAttribute(PATIENT_INTERACTION_MARKER_ATTRIBUTE, 'true')
+  element.setAttribute(PATIENT_INTERACTION_STATE_ATTRIBUTE, state)
+
+  if (source) {
+    element.setAttribute(PATIENT_INTERACTION_SOURCE_ATTRIBUTE, source)
+  } else {
+    element.removeAttribute(PATIENT_INTERACTION_SOURCE_ATTRIBUTE)
+  }
+
+  element.style.setProperty(
+    PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE,
+    `${Math.min(1, Math.max(0, progress))}`,
+  )
+}
+
+function clearElementInteractionState(element: HTMLElement) {
+  element.removeAttribute(PATIENT_INTERACTION_MARKER_ATTRIBUTE)
+  element.removeAttribute(PATIENT_INTERACTION_STATE_ATTRIBUTE)
+  element.removeAttribute(PATIENT_INTERACTION_SOURCE_ATTRIBUTE)
+  element.style.removeProperty(PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE)
 }
 
 function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
@@ -372,6 +474,9 @@ function isElementVisibleForSelection(element: HTMLElement) {
   const computedStyle = window.getComputedStyle(element)
 
   if (
+    element.hidden ||
+    element.closest('[hidden], [inert], [aria-hidden="true"]') ||
+    ('inert' in element && Boolean((element as HTMLElement & { inert?: boolean }).inert)) ||
     computedStyle.display === 'none' ||
     computedStyle.visibility === 'hidden' ||
     computedStyle.pointerEvents === 'none'
@@ -412,8 +517,7 @@ function getNearestInteractiveTargetFromPoint(
 
   const interactiveElements = Array.from(
     document.querySelectorAll<HTMLElement>(
-      options?.candidateSelector ??
-        'button, a[href], input[type="button"], input[type="submit"], [role="button"]',
+      options?.candidateSelector ?? PATIENT_INTERACTIVE_ELEMENT_SELECTOR,
     ),
   ).filter(
     element =>
@@ -694,11 +798,10 @@ function resolveRawGazeTarget(input: {
   }
 
   const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
-  const customTalkSelectableGroup = isCustomTalkSurface(input.selectionSurface)
-    ? getCustomTalkSelectableGroupElement()
-    : null
-  const candidateContainer = customTalkSelectableGroup
-  const candidateSelector = customTalkSelectableGroup ? CUSTOM_TALK_CARD_SELECTOR : undefined
+  const candidateContainer = resolveActiveSelectionContainer(input.selectionSurface)
+  const candidateSelector = isCustomTalkSurface(input.selectionSurface)
+    ? CUSTOM_TALK_CARD_SELECTOR
+    : undefined
 
   const disablePointHitTest =
     import.meta.env.DEV &&
@@ -794,6 +897,14 @@ function getSelectionBlockReason(element: HTMLElement | null) {
     return 'pointer-events-none'
   }
 
+  if (
+    element.hidden ||
+    element.closest('[hidden], [inert], [aria-hidden="true"]') ||
+    ('inert' in element && Boolean((element as HTMLElement & { inert?: boolean }).inert))
+  ) {
+    return 'inert'
+  }
+
   if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
     return 'mouse-only'
   }
@@ -808,7 +919,6 @@ export function usePatientGazeClick({
   const gazePoint = useGazeInputStore(state => state.point)
   const gazeCell = useGazeInputStore(state => state.cell)
   const cellMapping = useCellMappingStore(state => state.cellMapping)
-  const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const selectionProfile = useMemo(
     () => getPatientSelectionProfile(selectionSurface),
     [selectionSurface],
@@ -827,14 +937,19 @@ export function usePatientGazeClick({
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
   const commitDelayTimerRef = useRef<number | null>(null)
+  const commitGuardTimerRef = useRef<number | null>(null)
   const lastDebugSignatureRef = useRef<string | null>(null)
   const lastCancelReasonRef = useRef<string | null>(null)
   const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
   const highlightedElementRef = useRef<HTMLElement | null>(null)
   const mouseTargetRef = useRef<SelectionTarget | null>(null)
   const stableGazeTargetRef = useRef<SelectionTarget | null>(null)
-  const currentSelectionTargetRef = useRef<SelectionTarget | null>(null)
-  const currentInputSourceRef = useRef<'pointer' | 'gaze' | null>(null)
+  const currentVisualTargetRef = useRef<SelectionTarget | null>(null)
+  const currentDwellTargetRef = useRef<SelectionTarget | null>(null)
+  const currentVisualInputSourceRef = useRef<'pointer' | 'gaze' | null>(null)
+  const currentDwellInputSourceRef = useRef<'pointer' | 'gaze' | null>(null)
+  const currentVisualInteractionStateRef = useRef<Exclude<PatientInteractionState, 'idle'> | null>(null)
+  const currentVisualInteractionProgressRef = useRef(0)
 
   const rawGazeTarget = useMemo(
     () =>
@@ -857,18 +972,22 @@ export function usePatientGazeClick({
       stableGazeTarget,
     ],
   )
-  const effectiveDwellDurationMs = Math.max(dwellDurationMs, selectionProfile.dwellMs)
+  const effectiveDwellDurationMs = PATIENT_DWELL_CONFIRM_MS
 
-  const currentSelectionTarget = mouseTarget ?? stableGazeTarget ?? null
-  const currentInputSource: 'pointer' | 'gaze' | null = mouseTarget
+  const currentVisualTarget = mouseTarget ?? stableGazeTarget ?? null
+  const currentVisualInputSource: 'pointer' | 'gaze' | null = mouseTarget
     ? 'pointer'
     : stableGazeTarget
       ? 'gaze'
       : null
+  const currentDwellTarget =
+    ENABLE_MOUSE_DWELL_CONFIRM && mouseTarget ? mouseTarget : stableGazeTarget
+  const currentDwellInputSource: 'pointer' | 'gaze' | null =
+    ENABLE_MOUSE_DWELL_CONFIRM && mouseTarget ? 'pointer' : stableGazeTarget ? 'gaze' : null
   const isCurrentSelectionCommitSuppressed =
-    currentSelectionTarget?.key === suppressedCommitTargetKey
-  const currentSelectionBlockReason = currentSelectionTarget
-    ? getSelectionBlockReason(currentSelectionTarget.element)
+    currentDwellTarget?.key === suppressedCommitTargetKey
+  const currentSelectionBlockReason = currentDwellTarget
+    ? getSelectionBlockReason(currentDwellTarget.element)
     : null
 
   const clearConfirmedTimer = () => {
@@ -878,15 +997,62 @@ export function usePatientGazeClick({
     }
   }
 
+  const findActiveCooldownEntryByElement = (element: HTMLElement) => {
+    for (const entry of selectionCooldownsRef.current.values()) {
+      if (entry.element === element && entry.expiresAt > Date.now()) {
+        return entry
+      }
+    }
+
+    return null
+  }
+
+  const restoreInteractionStateForElement = (element: HTMLElement) => {
+    if (confirmedElementRef.current === element) {
+      setElementInteractionState(element, 'confirmed', currentDwellInputSourceRef.current, 1)
+      return
+    }
+
+    if (findActiveCooldownEntryByElement(element)) {
+      setElementInteractionState(element, 'cooldown', currentVisualInputSourceRef.current, 0)
+      return
+    }
+
+    if (
+      highlightedElementRef.current === element &&
+      currentVisualInteractionStateRef.current
+    ) {
+      setElementInteractionState(
+        element,
+        currentVisualInteractionStateRef.current,
+        currentVisualInputSourceRef.current,
+        currentVisualInteractionProgressRef.current,
+      )
+      element.setAttribute('data-gaze-active', 'true')
+      return
+    }
+
+    element.removeAttribute('data-gaze-active')
+    clearElementInteractionState(element)
+  }
+
   const clearSelectionCooldown = (targetKey: string) => {
     const entry = selectionCooldownsRef.current.get(targetKey)
     if (!entry) {
       return
     }
 
+    if (entry.stateTimerId !== null) {
+      window.clearTimeout(entry.stateTimerId)
+    }
+
     window.clearTimeout(entry.timerId)
     entry.element?.removeAttribute('data-gaze-cooldown')
     selectionCooldownsRef.current.delete(targetKey)
+
+    if (entry.element) {
+      restoreInteractionStateForElement(entry.element)
+    }
   }
 
   const isTargetCoolingDown = (targetKey: string) => {
@@ -906,10 +1072,12 @@ export function usePatientGazeClick({
   const markSelectionConfirmed = (element: HTMLElement) => {
     if (confirmedElementRef.current && confirmedElementRef.current !== element) {
       confirmedElementRef.current.removeAttribute('data-gaze-confirmed')
+      restoreInteractionStateForElement(confirmedElementRef.current)
     }
 
     clearConfirmedTimer()
     element.setAttribute('data-gaze-confirmed', 'true')
+    setElementInteractionState(element, 'confirmed', currentDwellInputSourceRef.current, 1)
     confirmedElementRef.current = element
     confirmedTimerRef.current = window.setTimeout(() => {
       if (confirmedElementRef.current === element) {
@@ -917,6 +1085,7 @@ export function usePatientGazeClick({
       }
 
       element.removeAttribute('data-gaze-confirmed')
+      restoreInteractionStateForElement(element)
       confirmedTimerRef.current = null
     }, SELECTION_CONFIRM_FEEDBACK_MS)
   }
@@ -931,6 +1100,16 @@ export function usePatientGazeClick({
     element.setAttribute('data-gaze-cooldown', 'true')
 
     const expiresAt = Date.now() + durationMs
+    const stateTimerId = window.setTimeout(() => {
+      const currentEntry = selectionCooldownsRef.current.get(targetKey)
+      if (!currentEntry || currentEntry.element !== element) {
+        return
+      }
+
+      if (confirmedElementRef.current !== element) {
+        setElementInteractionState(element, 'cooldown', currentVisualInputSourceRef.current, 0)
+      }
+    }, Math.min(durationMs, SELECTION_CONFIRM_FEEDBACK_MS))
     const timerId = window.setTimeout(() => {
       const currentEntry = selectionCooldownsRef.current.get(targetKey)
       if (!currentEntry || currentEntry.timerId !== timerId) {
@@ -939,11 +1118,18 @@ export function usePatientGazeClick({
 
       currentEntry.element?.removeAttribute('data-gaze-cooldown')
       selectionCooldownsRef.current.delete(targetKey)
+      if (currentEntry.stateTimerId !== null) {
+        window.clearTimeout(currentEntry.stateTimerId)
+      }
+      if (currentEntry.element) {
+        restoreInteractionStateForElement(currentEntry.element)
+      }
     }, durationMs)
 
     selectionCooldownsRef.current.set(targetKey, {
       element,
       expiresAt,
+      stateTimerId,
       timerId,
     })
   }
@@ -960,10 +1146,10 @@ export function usePatientGazeClick({
       return sourceSnapshot
     }
 
-    const currentSnapshot = currentSelectionTargetRef.current
+    const currentSnapshot = currentDwellTargetRef.current
 
     if (
-      currentInputSourceRef.current === expectedInputSource &&
+      currentDwellInputSourceRef.current === expectedInputSource &&
       currentSnapshot?.key === targetKey
     ) {
       return currentSnapshot
@@ -991,6 +1177,15 @@ export function usePatientGazeClick({
       console.info('[patient-input] selection-commit-blocked', {
         source,
         reason: 'pending-commit',
+        trackingStatus,
+      })
+      return false
+    }
+
+    if (commitGuardTimerRef.current !== null) {
+      console.info('[patient-input] selection-commit-blocked', {
+        source,
+        reason: 'route-transition-guard',
         trackingStatus,
       })
       return false
@@ -1076,6 +1271,9 @@ export function usePatientGazeClick({
 
       resolvedTarget.element.click()
     }, SELECTION_COMMIT_DELAY_MS)
+    commitGuardTimerRef.current = window.setTimeout(() => {
+      commitGuardTimerRef.current = null
+    }, ROUTE_TRANSITION_COMMIT_GUARD_MS)
 
     console.info('[patient-input] selection-commit-success', {
       source,
@@ -1099,16 +1297,25 @@ export function usePatientGazeClick({
   useEffect(() => {
     mouseTargetRef.current = mouseTarget
     stableGazeTargetRef.current = stableGazeTarget
-    currentSelectionTargetRef.current = currentSelectionTarget
-    currentInputSourceRef.current = currentInputSource
-  }, [currentInputSource, currentSelectionTarget, mouseTarget, stableGazeTarget])
+    currentVisualTargetRef.current = currentVisualTarget
+    currentDwellTargetRef.current = currentDwellTarget
+    currentVisualInputSourceRef.current = currentVisualInputSource
+    currentDwellInputSourceRef.current = currentDwellInputSource
+  }, [
+    currentDwellInputSource,
+    currentDwellTarget,
+    currentVisualInputSource,
+    currentVisualTarget,
+    mouseTarget,
+    stableGazeTarget,
+  ])
 
   useEffect(() => {
     if (!suppressedCommitTargetKey) {
       return
     }
 
-    if (currentSelectionTarget?.key !== suppressedCommitTargetKey) {
+    if (currentDwellTarget?.key !== suppressedCommitTargetKey) {
       setSuppressedCommitTargetKey(null)
       return
     }
@@ -1126,7 +1333,7 @@ export function usePatientGazeClick({
     return () => {
       window.cancelAnimationFrame(frameId)
     }
-  }, [currentSelectionBlockReason, currentSelectionTarget?.key, suppressedCommitTargetKey])
+  }, [currentDwellTarget?.key, currentSelectionBlockReason, suppressedCommitTargetKey])
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
@@ -1144,7 +1351,12 @@ export function usePatientGazeClick({
         return
       }
 
-      const element = getInteractiveElementFromPoint(event.clientX, event.clientY)
+      const activeContainer = resolveActiveSelectionContainer(selectionSurface)
+      const element = getInteractiveElementFromPoint(
+        event.clientX,
+        event.clientY,
+        activeContainer,
+      )
 
       if (!element) {
         setMouseTarget(current => (current === null ? current : null))
@@ -1171,15 +1383,19 @@ export function usePatientGazeClick({
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointercancel', resetMouseTarget)
     window.addEventListener('blur', resetMouseTarget)
+    window.addEventListener('resize', resetMouseTarget)
+    window.addEventListener('scroll', resetMouseTarget, true)
     document.addEventListener('mouseout', handleMouseOut)
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointercancel', resetMouseTarget)
       window.removeEventListener('blur', resetMouseTarget)
+      window.removeEventListener('resize', resetMouseTarget)
+      window.removeEventListener('scroll', resetMouseTarget, true)
       document.removeEventListener('mouseout', handleMouseOut)
     }
-  }, [enabled])
+  }, [enabled, selectionSurface])
 
   useEffect(() => {
     const clearTargetSwitchTimer = () => {
@@ -1334,17 +1550,17 @@ export function usePatientGazeClick({
   }, [enabled])
 
   const dwellState = useDwell<string>({
-    hoveredTargetId: currentSelectionTarget?.key ?? null,
+    hoveredTargetId: currentDwellTarget?.key ?? null,
     dwellDurationMs: effectiveDwellDurationMs,
     activationDelayMs,
     disabled:
       !enabled ||
-      !currentSelectionTarget ||
+      !currentDwellTarget ||
       currentSelectionBlockReason !== null ||
       isCurrentSelectionCommitSuppressed,
     onCommit: committedTargetKey => {
       const commitSource =
-        currentInputSourceRef.current === 'pointer' ? 'pointer-dwell' : 'gaze-dwell'
+        currentDwellInputSourceRef.current === 'pointer' ? 'pointer-dwell' : 'gaze-dwell'
 
       if (usePatientModeStore.getState().isGlobalMenuOpen) {
         console.info('[patient-input] skipped dwell commit because the global menu is open', {
@@ -1372,12 +1588,12 @@ export function usePatientGazeClick({
 
     if (
       currentSelectionBlockReason &&
-      currentSelectionTarget &&
+      currentDwellTarget &&
       lastCancelReasonRef.current !== currentSelectionBlockReason
     ) {
       console.info('[patient-input] dwell-cancel', {
-        targetKey: currentSelectionTarget.key,
-        trackingId: currentSelectionTarget.trackingId,
+        targetKey: currentDwellTarget.key,
+        trackingId: currentDwellTarget.trackingId,
         reason: currentSelectionBlockReason,
       })
       lastCancelReasonRef.current = currentSelectionBlockReason
@@ -1396,14 +1612,24 @@ export function usePatientGazeClick({
         },
       })
     }
-  }, [currentSelectionBlockReason, currentSelectionTarget, enabled])
+  }, [currentDwellTarget, currentSelectionBlockReason, enabled])
+
+  const currentVisualInteractionState: Exclude<PatientInteractionState, 'idle'> | null =
+    currentVisualTarget
+      ? currentDwellTarget?.key === currentVisualTarget.key && dwellState.phase !== 'idle'
+        ? 'dwell'
+        : 'hover'
+      : null
+  const currentVisualInteractionProgress =
+    currentVisualInteractionState === 'dwell' ? dwellState.progress : 0
 
   useEffect(() => {
-    const nextHighlightedElement = currentSelectionTarget?.element ?? null
+    const nextHighlightedElement = currentVisualTarget?.element ?? null
     const previousHighlightedElement = highlightedElementRef.current
 
     if (previousHighlightedElement && previousHighlightedElement !== nextHighlightedElement) {
       previousHighlightedElement.removeAttribute('data-gaze-active')
+      restoreInteractionStateForElement(previousHighlightedElement)
     }
 
     if (nextHighlightedElement) {
@@ -1411,20 +1637,28 @@ export function usePatientGazeClick({
     }
 
     highlightedElementRef.current = nextHighlightedElement
-
-    return () => {
-      if (highlightedElementRef.current) {
-        highlightedElementRef.current.removeAttribute('data-gaze-active')
-        highlightedElementRef.current = null
-      }
-    }
-  }, [currentSelectionTarget])
+  }, [currentVisualTarget])
 
   useEffect(() => {
-    const commitSnapshotTarget = currentSelectionTarget
+    currentVisualInteractionStateRef.current = currentVisualInteractionState
+    currentVisualInteractionProgressRef.current = currentVisualInteractionProgress
+
+    if (!highlightedElementRef.current) {
+      return
+    }
+
+    restoreInteractionStateForElement(highlightedElementRef.current)
+  }, [
+    currentVisualInputSource,
+    currentVisualInteractionProgress,
+    currentVisualInteractionState,
+  ])
+
+  useEffect(() => {
+    const commitSnapshotTarget = currentDwellTarget
 
     const nextDebugPayload = {
-      inputSource: currentInputSource,
+      inputSource: currentVisualInputSource,
       clientX: gazePoint?.clientX ?? null,
       clientY: gazePoint?.clientY ?? null,
       gazeCell,
@@ -1438,12 +1672,12 @@ export function usePatientGazeClick({
       stableTargetSource: stableGazeTarget?.source ?? null,
       stableTargetCell: stableGazeTarget?.cell ?? null,
       stableTargetGroupId: stableGazeTarget?.groupId ?? null,
-      hoveredTargetKey: currentSelectionTarget?.key ?? null,
-      hoveredTargetId: currentSelectionTarget?.trackingId ?? null,
+      hoveredTargetKey: currentVisualTarget?.key ?? null,
+      hoveredTargetId: currentVisualTarget?.trackingId ?? null,
       commitTargetKey: commitSnapshotTarget?.key ?? null,
       commitTargetId: commitSnapshotTarget?.trackingId ?? null,
       commitTargetSource: commitSnapshotTarget?.source ?? null,
-      commitTargetInputSource: currentInputSource,
+      commitTargetInputSource: currentDwellInputSource,
       hoveredTargetBlockedReason: currentSelectionBlockReason,
       dwellPhase: dwellState.phase,
       dwellProgress: dwellState.progress,
@@ -1456,11 +1690,11 @@ export function usePatientGazeClick({
 
     useGazeSelectionStore.getState().setSelectionSnapshot({
       enabled,
-      inputSource: currentInputSource,
-      hoveredTargetId: currentSelectionTarget?.trackingId ?? null,
+      inputSource: currentVisualInputSource,
+      hoveredTargetId: currentVisualTarget?.trackingId ?? null,
       activeTargetId:
-        currentSelectionTarget?.trackingId && dwellState.phase !== 'idle'
-          ? currentSelectionTarget.trackingId
+        currentDwellTarget?.trackingId && dwellState.phase !== 'idle'
+          ? currentDwellTarget.trackingId
           : null,
       rawTargetId: rawGazeTarget?.trackingId ?? null,
       stableTargetId: stableGazeTarget?.trackingId ?? null,
@@ -1486,9 +1720,11 @@ export function usePatientGazeClick({
     ;(window as PatientDebugWindow).__PATIENT_GAZE_DEBUG_STATE = nextDebugPayload
     console.info('[patient-input] gaze-selection-state', nextDebugPayload)
   }, [
-    currentInputSource,
+    currentDwellInputSource,
     currentSelectionBlockReason,
-    currentSelectionTarget,
+    currentDwellTarget,
+    currentVisualInputSource,
+    currentVisualTarget,
     dwellState.phase,
     dwellState.progress,
     dwellState.remainingMs,
@@ -1509,6 +1745,11 @@ export function usePatientGazeClick({
         commitDelayTimerRef.current = null
       }
 
+      if (commitGuardTimerRef.current !== null) {
+        window.clearTimeout(commitGuardTimerRef.current)
+        commitGuardTimerRef.current = null
+      }
+
       if (confirmedTimerRef.current !== null) {
         window.clearTimeout(confirmedTimerRef.current)
         confirmedTimerRef.current = null
@@ -1520,10 +1761,22 @@ export function usePatientGazeClick({
       }
 
       for (const entry of selectionCooldowns.values()) {
+        if (entry.stateTimerId !== null) {
+          window.clearTimeout(entry.stateTimerId)
+        }
         window.clearTimeout(entry.timerId)
         entry.element?.removeAttribute('data-gaze-cooldown')
+        if (entry.element) {
+          clearElementInteractionState(entry.element)
+        }
       }
       selectionCooldowns.clear()
+
+      if (highlightedElementRef.current) {
+        highlightedElementRef.current.removeAttribute('data-gaze-active')
+        clearElementInteractionState(highlightedElementRef.current)
+        highlightedElementRef.current = null
+      }
 
       useGazeSelectionStore.getState().resetSelectionSnapshot()
     }
@@ -1532,6 +1785,12 @@ export function usePatientGazeClick({
   useEffect(() => {
     if (enabled) {
       return
+    }
+
+    if (highlightedElementRef.current) {
+      highlightedElementRef.current.removeAttribute('data-gaze-active')
+      clearElementInteractionState(highlightedElementRef.current)
+      highlightedElementRef.current = null
     }
 
     useGazeSelectionStore.getState().resetSelectionSnapshot()

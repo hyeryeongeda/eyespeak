@@ -114,9 +114,16 @@ export default function PatientTrackingGuardOverlay() {
   const navigate = useNavigate()
   const { user, clearPatientPostAuth } = useAuth()
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
+  const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
+  const isGlobalMenuTrackingBypassed = usePatientModeStore(
+    state => state.isGlobalMenuTrackingBypassed,
+  )
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
 
-  if (!isPatientTrackingBlocked(trackingStatus)) {
+  if (
+    !isPatientTrackingBlocked(trackingStatus) ||
+    (isGlobalMenuOpen && isGlobalMenuTrackingBypassed)
+  ) {
     return null
   }
 

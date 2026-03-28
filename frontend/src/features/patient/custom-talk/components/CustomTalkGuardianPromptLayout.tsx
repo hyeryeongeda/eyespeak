@@ -32,51 +32,41 @@ interface CustomTalkGuardianPromptLayoutProps {
 const pageWrapStyle: CSSProperties = {
   height: 'calc(100dvh - var(--sat, 0px) - var(--sab, 0px))',
   width: '100%',
-  padding: '20px 18px 24px',
+  padding: '8px',
   boxSizing: 'border-box',
-  background: 'linear-gradient(180deg, #f6f4f1 0%, #f8f7f4 100%)',
+  background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
   overflow: 'hidden',
 }
 
 const contentStyle: CSSProperties = {
   width: '100%',
-  maxWidth: '1180px',
   height: '100%',
   margin: '0 auto',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-}
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: '#c4c0b9',
-  fontSize: 'clamp(1.6rem, 2.1vw, 2.2rem)',
-  fontWeight: 700,
-  lineHeight: 1.1,
-  letterSpacing: '-0.02em',
+  gap: 0,
 }
 
 const gridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 0.98fr) minmax(0, 1fr)',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
   gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
   gridTemplateAreas: `
     "top-left center top-right"
     "bottom-left center bottom-right"
   `,
-  gap: '18px 14px',
+  gap: '12px',
 }
 
 const cardBaseStyle: CSSProperties = {
   position: 'relative',
   overflow: 'hidden',
-  borderRadius: '18px',
-  border: '1px solid #d9dee5',
-  boxShadow: '0 10px 26px rgba(76, 91, 108, 0.06)',
-  padding: '22px 18px',
+  borderRadius: '24px',
+  border: '1px solid #dde7ed',
+  boxShadow: '0 20px 48px rgba(40, 66, 90, 0.12)',
+  padding: '20px 18px',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
@@ -94,10 +84,10 @@ function getCardStyle(
   loading: boolean,
 ): CSSProperties {
   const backgroundByTone: Record<CustomTalkGuardianPromptTone, string> = {
-    sky: 'linear-gradient(180deg, #f0f1ff 0%, #eaecff 100%)',
-    sand: 'linear-gradient(180deg, #fff5c9 0%, #fff1b6 100%)',
-    mint: 'linear-gradient(180deg, #f3fbfb 0%, #eef8f8 100%)',
-    slate: 'linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%)',
+    sky: 'linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)',
+    sand: 'linear-gradient(135deg, #fff6d7 0%, #fff1bf 100%)',
+    mint: 'linear-gradient(135deg, #eff7f0 0%, #ebf8f6 100%)',
+    slate: 'linear-gradient(135deg, #f5f5f8 0%, #eef0f5 100%)',
   }
 
   return {
@@ -106,9 +96,9 @@ function getCardStyle(
     background: backgroundByTone[tone],
     opacity: disabled && !loading ? 0.58 : 1,
     cursor: disabled ? 'default' : 'pointer',
-    borderColor: loading ? '#c5d1e0' : tone === 'slate' ? '#d5dbe2' : '#d9dee5',
+    borderColor: loading ? '#c5d1e0' : tone === 'slate' ? '#d4dfe7' : '#dde7ed',
     boxShadow: loading
-      ? '0 14px 30px rgba(114, 137, 164, 0.12)'
+      ? '0 24px 52px rgba(114, 137, 164, 0.14)'
       : cardBaseStyle.boxShadow,
   }
 }
@@ -119,9 +109,9 @@ const cardTitleStyle: CSSProperties = {
   margin: 0,
   maxWidth: '12ch',
   color: '#111111',
-  fontSize: 'clamp(2.25rem, 4.1vmin, 3.5rem)',
-  fontWeight: 900,
-  lineHeight: 1.28,
+  fontSize: 'clamp(2.9rem, 5vw, 4.2rem)',
+  fontWeight: 800,
+  lineHeight: 1.24,
   letterSpacing: '-0.03em',
   wordBreak: 'keep-all',
   whiteSpace: 'pre-wrap',
@@ -148,6 +138,8 @@ const centerInnerStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
   display: 'flex',
+  borderRadius: '24px',
+  overflow: 'hidden',
 }
 
 const loadingSheenStyle: CSSProperties = {
@@ -171,23 +163,34 @@ const loadingLabelStyle: CSSProperties = {
 
 const layoutCss = `
   .custom-talk-guardian-prompt-card:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 34px rgba(76, 91, 108, 0.11);
+    transform: scale(1.02);
+    box-shadow: 0 24px 56px rgba(40, 66, 90, 0.16);
   }
 
   .custom-talk-guardian-prompt-card:focus-visible {
-    outline: 3px solid #7f98bc;
-    outline-offset: 3px;
+    outline: 2px solid #5d8ec7;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 1320px) {
+    .custom-talk-guardian-prompt-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      grid-template-rows: minmax(280px, 0.95fr) repeat(2, minmax(0, 1fr)) !important;
+      grid-template-areas:
+        "center center"
+        "top-left top-right"
+        "bottom-left bottom-right" !important;
+    }
   }
 
   @media (max-width: 900px) {
     .custom-talk-guardian-prompt-page {
-      padding: 18px 14px 20px !important;
+      padding: 8px !important;
     }
 
     .custom-talk-guardian-prompt-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      grid-template-rows: minmax(240px, 0.9fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+      grid-template-rows: minmax(240px, 0.9fr) minmax(150px, 1fr) minmax(150px, 1fr) !important;
       grid-template-areas:
         "center center"
         "top-left top-right"
@@ -199,7 +202,7 @@ const layoutCss = `
   @media (max-width: 560px) {
     .custom-talk-guardian-prompt-grid {
       grid-template-columns: minmax(0, 1fr) !important;
-      grid-template-rows: minmax(220px, 0.88fr) repeat(4, minmax(120px, 1fr)) !important;
+      grid-template-rows: minmax(220px, 0.88fr) repeat(4, minmax(130px, 1fr)) !important;
       grid-template-areas:
         "center"
         "top-left"
@@ -283,7 +286,6 @@ export default function CustomTalkGuardianPromptLayout({
     >
       <style>{layoutCss}</style>
       <div style={contentStyle}>
-        <h1 style={titleStyle}>{title}</h1>
         <div
           className="custom-talk-guardian-prompt-grid"
           style={gridStyle}

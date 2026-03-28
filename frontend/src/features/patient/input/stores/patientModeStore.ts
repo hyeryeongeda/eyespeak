@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { CalibrationTrackingStatus } from '../../../../types/calibration'
+import type { PatientDoubleBlinkSource } from '../services/patientModeBridge'
 
 export const PATIENT_GLOBAL_MENU_DWELL_MS = 500
 
@@ -13,12 +14,13 @@ export function isPatientTrackingBlocked(status: CalibrationTrackingStatus) {
 
 interface PatientModeState {
   isGlobalMenuOpen: boolean
+  isGlobalMenuTrackingBypassed: boolean
   globalMenuDwellDurationMs: number
   trackingStatus: CalibrationTrackingStatus
-  openGlobalMenu: () => void
+  openGlobalMenu: (options?: { bypassTracking?: boolean }) => void
   closeGlobalMenu: () => void
-  toggleGlobalMenu: () => void
-  handleDoubleBlink: () => void
+  toggleGlobalMenu: (options?: { bypassTracking?: boolean }) => void
+  handleDoubleBlink: (source?: PatientDoubleBlinkSource) => void
   setTrackingStatus: (status: CalibrationTrackingStatus) => void
   setGlobalMenuDwellDurationMs: (durationMs: number) => void
   resetPatientModeState: () => void
@@ -26,38 +28,68 @@ interface PatientModeState {
 
 const initialState = {
   isGlobalMenuOpen: false,
+  isGlobalMenuTrackingBypassed: false,
   globalMenuDwellDurationMs: PATIENT_GLOBAL_MENU_DWELL_MS,
   trackingStatus: 'idle' as const,
 }
 
 export const usePatientModeStore = create<PatientModeState>((set, get) => ({
   ...initialState,
-  openGlobalMenu: () => {
-    if (!isPatientTrackingAvailable(get().trackingStatus)) {
+  openGlobalMenu: options => {
+    const bypassTracking = options?.bypassTracking === true
+
+    if (!bypassTracking && !isPatientTrackingAvailable(get().trackingStatus)) {
       return
     }
 
-    set({ isGlobalMenuOpen: true })
+    set({
+      isGlobalMenuOpen: true,
+      isGlobalMenuTrackingBypassed: bypassTracking,
+    })
   },
   closeGlobalMenu: () => {
-    set({ isGlobalMenuOpen: false })
+    set({
+      isGlobalMenuOpen: false,
+      isGlobalMenuTrackingBypassed: false,
+    })
   },
-  toggleGlobalMenu: () => {
-    if (!isPatientTrackingAvailable(get().trackingStatus)) {
+  toggleGlobalMenu: options => {
+    const state = get()
+    const bypassTracking = options?.bypassTracking === true
+
+    if (state.isGlobalMenuOpen) {
+      set({
+        isGlobalMenuOpen: false,
+        isGlobalMenuTrackingBypassed: false,
+      })
       return
     }
 
-    set(state => ({
-      isGlobalMenuOpen: !state.isGlobalMenuOpen,
-    }))
+    if (!bypassTracking && !isPatientTrackingAvailable(state.trackingStatus)) {
+      return
+    }
+
+    set({
+      isGlobalMenuOpen: true,
+      isGlobalMenuTrackingBypassed: bypassTracking,
+    })
   },
-  handleDoubleBlink: () => {
-    get().toggleGlobalMenu()
+  handleDoubleBlink: source => {
+    get().toggleGlobalMenu({
+      bypassTracking: source === 'keyboard-shortcut',
+    })
   },
   setTrackingStatus: status => {
     set(state => ({
       trackingStatus: status,
-      isGlobalMenuOpen: isPatientTrackingAvailable(status) ? state.isGlobalMenuOpen : false,
+      isGlobalMenuOpen:
+        state.isGlobalMenuOpen &&
+        (state.isGlobalMenuTrackingBypassed || isPatientTrackingAvailable(status)),
+      isGlobalMenuTrackingBypassed:
+        state.isGlobalMenuOpen &&
+        (state.isGlobalMenuTrackingBypassed || isPatientTrackingAvailable(status))
+          ? state.isGlobalMenuTrackingBypassed
+          : false,
     }))
   },
   setGlobalMenuDwellDurationMs: durationMs => {

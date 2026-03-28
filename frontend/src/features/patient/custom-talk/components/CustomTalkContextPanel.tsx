@@ -73,13 +73,13 @@ function getBubbleStyle(
     return {
       alignSelf: 'center',
       width: 'fit-content',
-      maxWidth: '84%',
-      padding: '16px 22px',
-      borderRadius: '6px',
+      maxWidth: '88%',
+      padding: '24px 28px',
+      borderRadius: '22px',
       backgroundColor: '#ffffff',
-      border: '1px solid rgba(219, 223, 228, 0.92)',
-      color: '#4a4f56',
-      boxShadow: '0 10px 22px rgba(110, 116, 124, 0.08)',
+      border: '1px solid rgba(219, 223, 228, 0.96)',
+      color: '#2f3742',
+      boxShadow: '0 20px 44px rgba(104, 116, 132, 0.12)',
     }
   }
 
@@ -123,16 +123,18 @@ export default function CustomTalkContextPanel({
   const shouldShowPreview = mode === 'default' && Boolean(previewText)
   const panelStyleByMode: CSSProperties = {
     ...panelStyle,
-    borderRadius: isEntryMode ? '18px' : panelStyle.borderRadius,
+    borderRadius: isEntryMode ? '24px' : panelStyle.borderRadius,
     background: isEntryMode
-      ? 'linear-gradient(180deg, #e8e7e6 0%, #e2e2e2 100%)'
+      ? 'linear-gradient(180deg, #eef2f6 0%, #e3e9ef 100%)'
       : panelStyle.backgroundColor,
-    border: isEntryMode ? '1px solid #d8dade' : panelStyle.border,
-    boxShadow: isEntryMode ? 'inset 0 1px 0 rgba(255, 255, 255, 0.52)' : 'none',
+    border: isEntryMode ? '1px solid #d8e0e8' : panelStyle.border,
+    boxShadow: isEntryMode
+      ? 'inset 0 1px 0 rgba(255, 255, 255, 0.72), 0 20px 48px rgba(40, 66, 90, 0.1)'
+      : 'none',
   }
   const chatListStyleByMode: CSSProperties = {
     ...chatListStyle,
-    padding: isEntryMode ? '18px' : chatListStyle.padding,
+    padding: isEntryMode ? '24px' : chatListStyle.padding,
     alignItems: isEntryMode ? 'center' : undefined,
   }
 
@@ -177,7 +179,7 @@ export default function CustomTalkContextPanel({
                   <div style={getBubbleStyle(item.sender, false, mode)}>
                     <div
                       style={{
-                        fontSize: isEntryMode ? 'clamp(1rem, 1.35vmax, 1.2rem)' : '19px',
+                        fontSize: isEntryMode ? 'clamp(1.15rem, 1.45vmax, 1.4rem)' : '19px',
                         fontWeight: 800,
                         lineHeight: 1.55,
                         whiteSpace: 'pre-wrap',
