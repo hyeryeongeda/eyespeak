@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../app/router/routePaths'
+import { useTtsPlaybackStore } from '../stores/ttsPlaybackStore'
 
 interface UseReturnToTalkMainAfterDelayOptions {
   delayMs?: number
@@ -17,6 +18,7 @@ export default function useReturnToTalkMainAfterDelay(
   options?: UseReturnToTalkMainAfterDelayOptions,
 ) {
   const navigate = useNavigate()
+  const hasActiveTtsRequest = useTtsPlaybackStore(state => state.activeRequestId !== null)
   const onBeforeNavigateRef = useRef(options?.onBeforeNavigate)
   const onAfterNavigateRef = useRef(options?.onAfterNavigate)
   const targetPathRef = useRef(options?.targetPath ?? ROUTE_PATHS.PATIENT_TALK_MAIN)
@@ -36,7 +38,7 @@ export default function useReturnToTalkMainAfterDelay(
   }, [options?.targetPath])
 
   useEffect(() => {
-    if (!enabled) {
+    if (!enabled || hasActiveTtsRequest) {
       return
     }
 
@@ -53,5 +55,5 @@ export default function useReturnToTalkMainAfterDelay(
     return () => {
       window.clearTimeout(timerId)
     }
-  }, [delayMs, enabled, navigate, replace])
+  }, [delayMs, enabled, hasActiveTtsRequest, navigate, replace])
 }

@@ -121,7 +121,9 @@ export default function CustomTalkComposePage() {
       ? '불러오는 중'
       : centerTone === 'error'
         ? '안내'
-        : '문장 미리보기'
+        : composedText
+          ? undefined
+          : '문장 미리보기'
   const centerText =
     centerTone === 'loading'
       ? `${composeStepLabelMap[composeStep]} 추천을 불러오는 중입니다.`
@@ -252,9 +254,11 @@ export default function CustomTalkComposePage() {
       centerChildren={
         <div style={centerStackStyle}>
           <div style={{ ...sentenceDisplayStyle, ...centerToneStyle }} aria-live="polite">
-            <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>
-              {centerLabel}
-            </p>
+            {centerLabel ? (
+              <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>
+                {centerLabel}
+              </p>
+            ) : null}
             <p style={{ ...sentenceTextStyle, ...centerTextToneStyle }}>{centerText}</p>
           </div>
         </div>
