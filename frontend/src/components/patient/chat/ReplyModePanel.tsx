@@ -4,7 +4,9 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
+import usePatientPageCellMapping, {
+  type PatientSixCellTrackingIds,
+} from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import usePatientGlobalMenuActionTarget from '../../../features/patient/input/hooks/usePatientGlobalMenuActionTarget'
 import type {
   PatientChatCategoryState,
@@ -550,26 +552,26 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     enabled: overlay,
   })
 
-  const cellMapping = useMemo<Record<number, ReplyTrackingId | null>>(() => {
+  const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
     if (recommendationMode === 'category') {
-      return {
-        0: firstVisibleCategory && !isSending ? 'reply-category-1' : null,
-        1: null,
-        2: secondVisibleCategory && !isSending ? 'reply-category-2' : null,
-        3: thirdVisibleCategory && !isSending ? 'reply-category-3' : null,
-        4: null,
-        5: !isSending ? 'reply-back' : null,
-      }
+      return [
+        firstVisibleCategory && !isSending ? 'reply-category-1' : null,
+        null,
+        secondVisibleCategory && !isSending ? 'reply-category-2' : null,
+        thirdVisibleCategory && !isSending ? 'reply-category-3' : null,
+        null,
+        !isSending ? 'reply-back' : null,
+      ]
     }
 
-    return {
-      0: firstTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-1' : null,
-      1: null,
-      2: secondTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
-      3: thirdTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
-      4: null,
-      5: !isSending ? 'reply-back' : null,
-    }
+    return [
+      firstTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-1' : null,
+      null,
+      secondTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
+      thirdTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
+      null,
+      !isSending ? 'reply-back' : null,
+    ]
   }, [
     firstTopCard,
     firstVisibleCategory,
@@ -582,7 +584,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     thirdVisibleCategory,
   ])
 
-  useCellMapping(cellMapping)
+  usePatientPageCellMapping(cellTargets)
 
   usePatientGlobalMenuActionTarget({
     enabled: overlay,
@@ -790,9 +792,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     <section
       style={panelStyle}
       aria-label="추천 응답"
-      ref={element => {
-        dwellFeedback.containerRef.current = element
-      }}
+      ref={dwellFeedback.setContainerElement}
     >
       <style>{panelCss}</style>
       {pagerControls ? <div style={floatingPagerWrapStyle}>{pagerControls}</div> : null}

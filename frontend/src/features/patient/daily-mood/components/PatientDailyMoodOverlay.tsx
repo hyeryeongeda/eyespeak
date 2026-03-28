@@ -4,7 +4,9 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../input/hooks/useDwellFeedback'
-import { useCellMapping } from '../../input/hooks/useCellMapping'
+import usePatientPageCellMapping, {
+  type PatientSixCellTrackingIds,
+} from '../../input/hooks/usePatientPageCellMapping'
 import type {
   DailyMoodCreateRequestDto,
   DailyMoodType,
@@ -507,34 +509,31 @@ export default function PatientDailyMoodOverlay({
     ]
   }, [onSubmit, selectedMoodLevel, selectedMoodType, step, submitting])
 
-  const cellMapping = useMemo(() => {
-    const mapping: Record<number, string | null> = {
-      0: null,
-      1: null,
-      2: null,
-      3: null,
-      4: null,
-      5: null,
-    }
-
-    const cellIndexBySlot: Record<GridSlot, number> = {
-      'top-left': 0,
-      'top-center': 1,
-      'top-right': 2,
-      'bottom-left': 3,
-      'bottom-center': 4,
-      'bottom-right': 5,
+  const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
+    const slots: Record<GridSlot, string | null> = {
+      'top-left': null,
+      'top-center': null,
+      'top-right': null,
+      'bottom-left': null,
+      'bottom-center': null,
+      'bottom-right': null,
     }
 
     actionCards.forEach(card => {
-      mapping[cellIndexBySlot[card.slot]] =
-        card.disabled || !card.trackingId ? null : card.trackingId
+      slots[card.slot] = card.disabled || !card.trackingId ? null : card.trackingId
     })
 
-    return mapping
+    return [
+      slots['top-left'],
+      slots['top-center'],
+      slots['top-right'],
+      slots['bottom-left'],
+      slots['bottom-center'],
+      slots['bottom-right'],
+    ]
   }, [actionCards])
 
-  useCellMapping(cellMapping)
+  usePatientPageCellMapping(cellTargets)
 
   if (!visible) {
     return null
@@ -557,9 +556,7 @@ export default function PatientDailyMoodOverlay({
         <div
           className="patient-daily-mood-grid"
           style={gridStyle}
-          ref={element => {
-            dwellFeedback.containerRef.current = element
-          }}
+          ref={dwellFeedback.setContainerElement}
         >
           {actionCards.map(card => (
             <ActionCard

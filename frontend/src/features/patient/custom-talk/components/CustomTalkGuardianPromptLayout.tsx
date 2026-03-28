@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
+import usePatientPageCellMapping from '../../input/hooks/usePatientPageCellMapping'
 import {
   isDwellFeedbackTargetActive,
   type UseDwellFeedbackResult,
@@ -277,6 +278,15 @@ export default function CustomTalkGuardianPromptLayout({
   bottomRight,
   dwellFeedback,
 }: CustomTalkGuardianPromptLayoutProps) {
+  usePatientPageCellMapping([
+    topLeft.disabled ? null : topLeft.trackingId,
+    null,
+    topRight.disabled ? null : topRight.trackingId,
+    bottomLeft.disabled ? null : bottomLeft.trackingId,
+    null,
+    bottomRight.disabled ? null : bottomRight.trackingId,
+  ])
+
   return (
     <main
       className="custom-talk-guardian-prompt-page"

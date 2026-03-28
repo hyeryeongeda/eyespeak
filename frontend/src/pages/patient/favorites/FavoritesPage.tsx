@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -8,6 +8,9 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientPageCellMapping, {
+  type PatientSixCellTrackingIds,
+} from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import {
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
@@ -146,6 +149,7 @@ const TRACKING_BACK_BUTTON = 'favorites-back'
 const TRACKING_PAGINATION_PREV = 'favorites-pagination-prev'
 const TRACKING_PAGINATION_NEXT = 'favorites-pagination-next'
 const TRACKING_RETRY_FETCH = 'favorites-retry-fetch'
+const TRACKING_RETRY_SUBMIT = 'favorites-retry-submit'
 
 function getFavoriteTrackingId(itemId: string) {
   return `favorites-item-${itemId}`
@@ -174,10 +178,73 @@ export default function FavoritesPage() {
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
   const currentItems = paginate(list, pageIndex, PAGE_SIZE)
+  const isGridBusy = status === 'selecting' || status === 'transitioning'
   const isBackButtonDwellActive = isDwellFeedbackTargetActive(
     dwellFeedback,
     TRACKING_BACK_BUTTON,
   )
+  const paginationPrimaryTrackingId =
+    totalPages > 1
+      ? pageIndex < totalPages - 1
+        ? TRACKING_PAGINATION_NEXT
+        : pageIndex > 0
+          ? TRACKING_PAGINATION_PREV
+          : null
+      : null
+
+  const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
+    if (status === 'loading' && list.length === 0) {
+      return [null, null, null, null, null, TRACKING_BACK_BUTTON]
+    }
+
+    if (status === 'empty') {
+      return [
+        TRACKING_RETRY_FETCH,
+        null,
+        TRACKING_BACK_BUTTON,
+        TRACKING_RETRY_FETCH,
+        null,
+        TRACKING_BACK_BUTTON,
+      ]
+    }
+
+    if (status === 'error' && errorKind === 'fetch') {
+      return [
+        TRACKING_RETRY_FETCH,
+        null,
+        TRACKING_BACK_BUTTON,
+        TRACKING_RETRY_FETCH,
+        null,
+        TRACKING_BACK_BUTTON,
+      ]
+    }
+
+    if (status === 'error' && errorKind === 'submit') {
+      return [
+        TRACKING_RETRY_SUBMIT,
+        TRACKING_RETRY_SUBMIT,
+        TRACKING_RETRY_SUBMIT,
+        null,
+        null,
+        TRACKING_BACK_BUTTON,
+      ]
+    }
+
+    if (status === 'completed') {
+      return [null, null, null, null, null, null]
+    }
+
+    return [
+      currentItems[0] && !isGridBusy ? getFavoriteTrackingId(currentItems[0].id) : null,
+      currentItems[1] && !isGridBusy ? getFavoriteTrackingId(currentItems[1].id) : null,
+      paginationPrimaryTrackingId,
+      currentItems[2] && !isGridBusy ? getFavoriteTrackingId(currentItems[2].id) : null,
+      currentItems[3] && !isGridBusy ? getFavoriteTrackingId(currentItems[3].id) : null,
+      TRACKING_BACK_BUTTON,
+    ]
+  }, [currentItems, errorKind, isGridBusy, list.length, paginationPrimaryTrackingId, status])
+
+  usePatientPageCellMapping(cellTargets)
 
   useReturnToTalkMainAfterDelay(status === 'completed')
 
@@ -300,9 +367,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <div style={loadingMessageStyle}>즐겨찾기를 불러오는 중이에요.</div>
         <div style={bottomBarStyle}>
@@ -331,9 +396,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <FavoritesSplitState
           title="등록된 즐겨찾기가 없어요"
@@ -355,9 +418,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <FavoritesSplitState
           title="즐겨찾기를 불러올 수 없어요"
@@ -380,9 +441,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <section style={completedStateStyle} role="status" aria-live="polite">
           <div style={completedCardStyle}>
@@ -400,9 +459,7 @@ export default function FavoritesPage() {
     <main
       style={pageWrapStyle}
       aria-label="즐겨찾기"
-      ref={element => {
-        dwellFeedback.containerRef.current = element
-      }}
+      ref={dwellFeedback.setContainerElement}
     >
       {status === 'error' && errorKind === 'submit' ? (
         <>
@@ -411,7 +468,7 @@ export default function FavoritesPage() {
             description={errorMessage}
             onRetry={() => setStatus('visible')}
             retryLabel="다시 선택"
-            retryTrackingId="favorites-retry-submit"
+            retryTrackingId={TRACKING_RETRY_SUBMIT}
             dwellFeedback={dwellFeedback}
           />
           <div style={bottomBarStyle}>
