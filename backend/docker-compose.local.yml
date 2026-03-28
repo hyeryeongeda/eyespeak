@@ -29,8 +29,6 @@ services:
     depends_on:
       db-local:
         condition: service_healthy
-      redis-local:
-        condition: service_healthy
       rabbitmq-local:
         condition: service_healthy
     healthcheck:
@@ -66,18 +64,18 @@ services:
   # ===========================================================================
   # Redis (로컬용)
   # ===========================================================================
-  redis-local:
-    image: redis:7-alpine
-    container_name: eyespeak-redis-local
-    ports:
-      - "6379:6379"
-    networks:
-      - local-net
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+#  redis-local:
+#    image: redis:7-alpine
+#    container_name: eyespeak-redis-local
+#    ports:
+#      - "6379:6379"
+#    networks:
+#      - local-net
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
 
   # ===========================================================================
   # RabbitMQ (로컬용)
