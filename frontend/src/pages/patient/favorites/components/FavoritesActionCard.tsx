@@ -52,15 +52,6 @@ const descriptionStyle: CSSProperties = {
   wordBreak: 'keep-all',
 }
 
-const interactiveCss = `
-  .favorites-action-card:hover:not(:disabled),
-  .favorites-action-card:focus-visible:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 28px 54px rgba(40, 66, 90, 0.16);
-    outline: none;
-  }
-`
-
 export interface FavoritesActionCardProps {
   primaryText: string
   description: string
@@ -90,7 +81,6 @@ export default function FavoritesActionCard({
 
   return (
     <>
-      <style>{interactiveCss}</style>
       <button
         type="button"
         className="favorites-action-card"

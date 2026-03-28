@@ -1,3 +1,5 @@
+import { PATIENT_DWELL_CONFIRM_MS } from './trackingService'
+
 export type PatientSelectionSurface =
   | 'common'
   | 'main'
@@ -20,7 +22,7 @@ const PATIENT_SELECTION_COMMON_DEFAULTS = {
   stableHoldMs: 230,
   switchHoldMs: 230,
   switchMargin: 0.09,
-  dwellMs: 1200,
+  dwellMs: PATIENT_DWELL_CONFIRM_MS,
   cooldownMs: 1000,
   areaHitRadiusPx: 26,
 } as const
@@ -29,18 +31,15 @@ const PATIENT_SELECTION_SURFACE_OVERRIDES: Partial<
   Record<PatientSelectionSurface, Partial<Omit<PatientSelectionProfile, 'surface'>>>
 > = {
   main: {
-    dwellMs: 1150,
     cooldownMs: 950,
   },
   menu: {
-    dwellMs: 1150,
     cooldownMs: 950,
   },
   'custom-talk': {
     stableHoldMs: 240,
     switchHoldMs: 240,
     switchMargin: 0.1,
-    dwellMs: 1500,
     cooldownMs: 1050,
     areaHitRadiusPx: 28,
   },
@@ -48,7 +47,6 @@ const PATIENT_SELECTION_SURFACE_OVERRIDES: Partial<
     stableHoldMs: 220,
     switchHoldMs: 220,
     switchMargin: 0.08,
-    dwellMs: 1100,
     cooldownMs: 900,
     areaHitRadiusPx: 24,
   },
@@ -56,7 +54,6 @@ const PATIENT_SELECTION_SURFACE_OVERRIDES: Partial<
     stableHoldMs: 220,
     switchHoldMs: 220,
     switchMargin: 0.08,
-    dwellMs: 1100,
     cooldownMs: 900,
     areaHitRadiusPx: 26,
   },

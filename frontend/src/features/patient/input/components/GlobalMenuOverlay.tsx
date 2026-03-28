@@ -8,6 +8,7 @@ import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
+import { PATIENT_DWELL_CONFIRM_MS } from '../services/trackingService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import { requestPatientCall as requestPatientSosCall } from '../../../../services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
@@ -16,6 +17,9 @@ import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patie
 type GlobalMenuTargetId = PatientGlobalMenuActionId
 
 const ACTION_FEEDBACK_DELAY_MS = 180
+const ENABLE_MOUSE_DWELL_CONFIRM =
+  import.meta.env.DEV &&
+  String(import.meta.env.VITE_PATIENT_ENABLE_MOUSE_DWELL_CONFIRM ?? '').toLowerCase() === 'true'
 
 const responsiveStyle = `
   @media (max-width: 768px) {
@@ -105,11 +109,9 @@ const helperTextStyle: CSSProperties = {
 
 function getMenuButtonStyle(args: {
   targetId: GlobalMenuTargetId
-  isHovered: boolean
-  isPending: boolean
   disabled: boolean
 }): CSSProperties {
-  const { targetId, isHovered, isPending, disabled } = args
+  const { targetId, disabled } = args
 
   const toneByTargetId: Record<
     GlobalMenuTargetId,
@@ -185,30 +187,14 @@ function getMenuButtonStyle(args: {
   }
 
   const tone = toneByTargetId[targetId]
-  const isEmphasized = isHovered || isPending
-
   return {
     ...buttonBaseStyle,
-    background: isPending
-      ? tone.pendingBackground
-      : isHovered
-        ? tone.hoverBackground
-        : tone.background,
+    background: tone.background,
     color: tone.color,
-    borderColor: isPending
-      ? tone.pendingBorderColor
-      : isHovered
-        ? tone.hoverBorderColor
-        : tone.borderColor,
-    boxShadow: isPending
-      ? tone.pendingBoxShadow
-      : isHovered
-        ? tone.hoverBoxShadow
-        : tone.boxShadow,
+    borderColor: tone.borderColor,
+    boxShadow: tone.boxShadow,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.54 : 1,
-    transform: isPending ? 'scale(0.985)' : isHovered ? 'scale(1.01)' : 'scale(1)',
-    filter: isEmphasized ? 'saturate(1.04)' : 'none',
   }
 }
 
@@ -218,34 +204,73 @@ export default function GlobalMenuOverlay() {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const actionTimerRef = useRef<number | null>(null)
   const isOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
+  const isTrackingBypassed = usePatientModeStore(state => state.isGlobalMenuTrackingBypassed)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
-  const dwellDurationMs = usePatientModeStore(state => state.globalMenuDwellDurationMs)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
 
   const isTrackingReady = isPatientTrackingAvailable(trackingStatus)
+  const isMenuInteractionEnabled = isTrackingReady || isTrackingBypassed
   const { gazeHoveredTargetId, pointerHoveredTargetId } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
-    enabled: isOpen && isTrackingReady && pendingTargetId === null,
+    enabled: isOpen && pendingTargetId === null,
     selectionSurface: 'global-menu',
   })
   const highlightedTargetId =
     pendingTargetId === null
       ? (pointerHoveredTargetId ?? gazeHoveredTargetId)
       : null
+  const dwellTargetId =
+    pendingTargetId === null
+      ? (ENABLE_MOUSE_DWELL_CONFIRM && pointerHoveredTargetId
+          ? pointerHoveredTargetId
+          : gazeHoveredTargetId)
+      : null
   const dwellInputSource = pointerHoveredTargetId
-    ? 'pointer'
+    ? ENABLE_MOUSE_DWELL_CONFIRM
+      ? 'pointer'
+      : gazeHoveredTargetId
+        ? 'gaze'
+        : null
     : gazeHoveredTargetId
       ? 'gaze'
       : null
 
-  useDwell<GlobalMenuTargetId>({
-    hoveredTargetId: highlightedTargetId,
-    dwellDurationMs,
-    disabled: !isOpen || !isTrackingReady || pendingTargetId !== null || !highlightedTargetId,
+  const dwellState = useDwell<GlobalMenuTargetId>({
+    hoveredTargetId: dwellTargetId,
+    dwellDurationMs: PATIENT_DWELL_CONFIRM_MS,
+    disabled:
+      !isOpen ||
+      pendingTargetId !== null ||
+      !dwellTargetId ||
+      !isMenuInteractionEnabled ||
+      (dwellInputSource === 'gaze' && !isTrackingReady),
     onCommit: targetId => {
       queueAction(targetId, dwellInputSource ?? 'pointer')
     },
+  })
+
+  const isDwellVisualActive = dwellState.phase === 'locking' || dwellState.phase === 'dwelling'
+
+  const getInteractionState = (targetId: GlobalMenuTargetId) => {
+    if (pendingTargetId === targetId) {
+      return 'confirmed'
+    }
+
+    if (highlightedTargetId !== targetId) {
+      return undefined
+    }
+
+    if (dwellTargetId === targetId && isDwellVisualActive) {
+      return 'dwell'
+    }
+
+    return 'hover'
+  }
+
+  const getProgressStyle = (targetId: GlobalMenuTargetId): CSSProperties => ({
+    ['--dwell-progress' as string]:
+      dwellTargetId === targetId && isDwellVisualActive ? `${dwellState.progress}` : '0',
   })
 
   useEffect(() => {
@@ -273,7 +298,11 @@ export default function GlobalMenuOverlay() {
     targetId: GlobalMenuTargetId,
     source: 'pointer' | 'gaze' = 'pointer',
   ) {
-    if (!isOpen || !isTrackingReady || pendingTargetId !== null) {
+    if (!isOpen || pendingTargetId !== null) {
+      return
+    }
+
+    if (source === 'gaze' && !isTrackingReady) {
       return
     }
 
@@ -294,11 +323,6 @@ export default function GlobalMenuOverlay() {
   }
 
   async function commitAction(targetId: GlobalMenuTargetId) {
-    if (!isTrackingReady) {
-      setPendingTargetId(null)
-      return
-    }
-
     try {
       if (targetId === 'yes') {
         emitPatientGlobalMenuAction('yes')
@@ -362,14 +386,17 @@ export default function GlobalMenuOverlay() {
               type="button"
               data-tracking-id={pendingTargetId === null ? 'yes' : undefined}
               data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('yes')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('yes')}
-              style={getMenuButtonStyle({
-                targetId: 'yes',
-                isHovered: highlightedTargetId === 'yes',
-                isPending: pendingTargetId === 'yes',
-                disabled: pendingTargetId !== null,
-              })}
+              style={{
+                ...getMenuButtonStyle({
+                  targetId: 'yes',
+                  disabled: pendingTargetId !== null,
+                }),
+                ...getProgressStyle('yes'),
+              }}
             >
               <p style={labelStyle}>네</p>
               <p style={helperTextStyle}>공통 positive action 진입점</p>
@@ -379,14 +406,17 @@ export default function GlobalMenuOverlay() {
               type="button"
               data-tracking-id={pendingTargetId === null ? 'no' : undefined}
               data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('no')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('no')}
-              style={getMenuButtonStyle({
-                targetId: 'no',
-                isHovered: highlightedTargetId === 'no',
-                isPending: pendingTargetId === 'no',
-                disabled: pendingTargetId !== null,
-              })}
+              style={{
+                ...getMenuButtonStyle({
+                  targetId: 'no',
+                  disabled: pendingTargetId !== null,
+                }),
+                ...getProgressStyle('no'),
+              }}
             >
               <p style={labelStyle}>아니요</p>
               <p style={helperTextStyle}>공통 negative action 진입점</p>
@@ -396,14 +426,17 @@ export default function GlobalMenuOverlay() {
               type="button"
               data-tracking-id={pendingTargetId === null ? 'sos' : undefined}
               data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('sos')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('sos')}
-              style={getMenuButtonStyle({
-                targetId: 'sos',
-                isHovered: highlightedTargetId === 'sos',
-                isPending: pendingTargetId === 'sos',
-                disabled: pendingTargetId !== null,
-              })}
+              style={{
+                ...getMenuButtonStyle({
+                  targetId: 'sos',
+                  disabled: pendingTargetId !== null,
+                }),
+                ...getProgressStyle('sos'),
+              }}
             >
               <p style={labelStyle}>SOS</p>
               <p style={helperTextStyle}>긴급 호출을 바로 전송합니다</p>
@@ -413,14 +446,17 @@ export default function GlobalMenuOverlay() {
               type="button"
               data-tracking-id={pendingTargetId === null ? 'home' : undefined}
               data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('home')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('home')}
-              style={getMenuButtonStyle({
-                targetId: 'home',
-                isHovered: highlightedTargetId === 'home',
-                isPending: pendingTargetId === 'home',
-                disabled: pendingTargetId !== null,
-              })}
+              style={{
+                ...getMenuButtonStyle({
+                  targetId: 'home',
+                  disabled: pendingTargetId !== null,
+                }),
+                ...getProgressStyle('home'),
+              }}
             >
               <p style={labelStyle}>홈</p>
               <p style={helperTextStyle}>환자 메인 화면으로 이동</p>

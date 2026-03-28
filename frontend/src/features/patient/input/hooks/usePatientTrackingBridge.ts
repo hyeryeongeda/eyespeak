@@ -60,7 +60,7 @@ export function usePatientTrackingBridge({
           })
         }
 
-        usePatientModeStore.getState().handleDoubleBlink()
+        usePatientModeStore.getState().handleDoubleBlink(detail?.source)
       })
     }
 
