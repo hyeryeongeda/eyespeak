@@ -177,6 +177,7 @@ export default function FavoritesPage() {
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
   const currentItems = paginate(list, pageIndex, PAGE_SIZE)
+  const isGridBusy = status === 'selecting' || status === 'transitioning'
   const isBackButtonDwellActive = isDwellFeedbackTargetActive(
     dwellFeedback,
     TRACKING_BACK_BUTTON,
@@ -379,9 +380,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <div style={loadingMessageStyle}>즐겨찾기를 불러오는 중이에요.</div>
         <div style={bottomBarStyle}>
@@ -410,9 +409,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <FavoritesSplitState
           title="등록된 즐겨찾기가 없어요"
@@ -434,9 +431,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <FavoritesSplitState
           title="즐겨찾기를 불러올 수 없어요"
@@ -459,9 +454,7 @@ export default function FavoritesPage() {
       <main
         style={pageWrapStyle}
         aria-label="즐겨찾기"
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <section style={completedStateStyle} role="status" aria-live="polite">
           <div style={completedCardStyle}>
@@ -479,9 +472,7 @@ export default function FavoritesPage() {
     <main
       style={pageWrapStyle}
       aria-label="즐겨찾기"
-      ref={element => {
-        dwellFeedback.containerRef.current = element
-      }}
+      ref={dwellFeedback.setContainerElement}
     >
       {status === 'error' && errorKind === 'submit' ? (
         <>

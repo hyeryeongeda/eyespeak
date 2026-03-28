@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react'
+import type { CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
@@ -8,8 +8,8 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 type TalkMainTrackingId =
   | 'talk-main-body-mind'
@@ -153,26 +153,6 @@ export default function TalkMainPage() {
     enabled: true,
   })
 
-  const talkMainCellMapping = useMemo(() => ({
-    0: 'talk-main-body-mind',
-    1: null,
-    2: 'talk-main-custom-talk',
-    3: 'talk-main-favorites',
-    4: null,
-    5: 'talk-main-back-main',
-  } as Record<number, string | null>), [])
-  const emptyTalkCellMapping = useMemo(
-    () =>
-      ({
-        0: null,
-        1: null,
-        2: null,
-        3: null,
-        4: null,
-        5: null,
-      }) as Record<number, string | null>,
-    [],
-  )
   const shouldShowInlineReply =
     chat.state.currentRoute?.responseSurface === 'inline' && Boolean(chat.activeReplyMessage)
 
@@ -230,9 +210,7 @@ export default function TalkMainPage() {
       <style>{cardHoverStyle}</style>
       <div
         style={threeColLayout}
-        ref={element => {
-          dwellFeedback.containerRef.current = element
-        }}
+        ref={dwellFeedback.setContainerElement}
       >
         <button
           type="button"

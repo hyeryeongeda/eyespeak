@@ -1,4 +1,4 @@
-import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
 import {
@@ -14,7 +14,7 @@ import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 
 function getCategoryStatusText(status: LeisureCategoryStatus) {
   switch (status) {
@@ -146,6 +146,29 @@ export default function LeisureCategoryPage() {
       isMounted = false
     }
   }, [category])
+
+  usePatientPageCellMapping(
+    !category
+      ? [null, null, null, null, null, 'invalid-category-back']
+      : [
+          contents[0] && status !== 'loading' && status !== 'refreshing'
+            ? 'category-content-1'
+            : null,
+          contents[1] && status !== 'loading' && status !== 'refreshing'
+            ? 'category-content-2'
+            : null,
+          status === 'loading' || status === 'selecting' || status === 'refreshing'
+            ? null
+            : 'category-refresh',
+          contents[2] && status !== 'loading' && status !== 'refreshing'
+            ? 'category-content-3'
+            : null,
+          contents[3] && status !== 'loading' && status !== 'refreshing'
+            ? 'category-content-4'
+            : null,
+          status === 'selecting' ? null : 'category-back',
+        ],
+  )
 
   if (!category) {
     return (

@@ -9,13 +9,13 @@ import {
   useDwellFeedback,
   type DwellFeedbackViewModel,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { requestPatientRecalibration } from '../../../features/patient/input/services/calibration/patientCalibrationService'
 import {
   requestMockPatientCall,
 } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import PatientCallOverlay from './PatientCallOverlay'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 type PatientMainTargetId = 'talk' | 'call' | 'leisure'
 
