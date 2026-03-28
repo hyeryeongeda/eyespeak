@@ -60,6 +60,7 @@ const ENABLE_MOUSE_DWELL_CONFIRM =
 
 type SelectionTargetSource =
   | 'cell-mapping'
+  | 'initial-fallback'
   | 'patient-main-point'
   | 'area-hit-test'
   | 'point-hit-test'
@@ -104,6 +105,15 @@ type PatientDebugWindow = Window & {
 type SelectableTrackingTarget = {
   element: HTMLElement
   trackingId: string
+  inActiveContainer: boolean | null
+  blockReason: string | null
+}
+
+interface TrackingTargetInspection {
+  trackingId: string
+  exists: boolean
+  inActiveContainer: boolean | null
+  blockReason: string | null
 }
 
 let lastMappedTargetDebugKey: string | null = null
@@ -641,10 +651,12 @@ function getSelectableTrackingTargets(
     container?: HTMLElement | null
   },
 ) {
-  return trackingIds
-    .map(trackingId => ({
-      trackingId,
-      element: getElementByTrackingId(trackingId),
+  return inspectTrackingTargets(trackingIds, options)
+    .map(inspection => ({
+      trackingId: inspection.trackingId,
+      element: getElementByTrackingId(inspection.trackingId),
+      blockReason: inspection.blockReason,
+      inActiveContainer: inspection.inActiveContainer,
     }))
     .filter(
       (
@@ -654,13 +666,116 @@ function getSelectableTrackingTargets(
           return false
         }
 
-        if (options?.container && !options.container.contains(entry.element)) {
-          return false
-        }
-
-        return getSelectionBlockReason(entry.element) === null
+        return entry.inActiveContainer !== false && entry.blockReason === null
       },
     )
+}
+
+function inspectTrackingTargets(
+  trackingIds: string[],
+  options?: {
+    container?: HTMLElement | null
+  },
+): TrackingTargetInspection[] {
+  return trackingIds
+    .map(trackingId => {
+      const element = getElementByTrackingId(trackingId)
+      const inActiveContainer = element
+        ? options?.container
+          ? options.container.contains(element)
+          : true
+        : null
+      const blockReason =
+        element && inActiveContainer !== false
+          ? getSelectionBlockReason(element)
+          : element
+            ? 'outside-active-container'
+            : 'missing-target'
+
+      return {
+        trackingId,
+        exists: element !== null,
+        inActiveContainer,
+        blockReason,
+      }
+    })
+}
+
+function summarizeCellMapping(mapping: PatientCellMapping | null) {
+  if (!mapping) {
+    return null
+  }
+
+  return Object.fromEntries(
+    Array.from({ length: 6 }, (_, cell) => [
+      cell,
+      normalizePatientCellMappingTarget(mapping[cell] ?? null).allTargets,
+    ]),
+  )
+}
+
+function getFirstVisibleInteractiveTarget(options?: {
+  container?: HTMLElement | null
+  candidateSelector?: string
+}): SelectionTarget | null {
+  if (typeof document === 'undefined') {
+    return null
+  }
+
+  const interactiveElements = Array.from(
+    document.querySelectorAll<HTMLElement>(
+      options?.candidateSelector ?? PATIENT_INTERACTIVE_ELEMENT_SELECTOR,
+    ),
+  ).filter(
+    element =>
+      (!options?.container || options.container.contains(element)) &&
+      isElementVisuallyInteractive(element),
+  )
+
+  const element = interactiveElements[0] ?? null
+
+  return element ? createSelectionTarget(element, 'initial-fallback', null, null, 0.18) : null
+}
+
+function getInitialVisualFallbackTarget(input: {
+  enabled: boolean
+  selectionSurface: PatientSelectionSurface
+  cellMapping: PatientCellMapping | null
+}): SelectionTarget | null {
+  if (!input.enabled) {
+    return null
+  }
+
+  const activeCellMapping = input.cellMapping ?? getFallbackPatientMainCellMapping()
+  const candidateContainer = resolveActiveSelectionContainer(input.selectionSurface)
+  const candidateSelector = isCustomTalkSurface(input.selectionSurface)
+    ? CUSTOM_TALK_CARD_SELECTOR
+    : undefined
+
+  if (activeCellMapping) {
+    for (let cell = 0; cell < 6; cell += 1) {
+      const normalizedTarget = normalizePatientCellMappingTarget(activeCellMapping[cell] ?? null)
+      const selectableTargets = getSelectableTrackingTargets(normalizedTarget.allTargets, {
+        container: candidateContainer,
+      })
+      const fallbackTarget = selectableTargets[0] ?? null
+
+      if (fallbackTarget) {
+        return createSelectionTarget(
+          fallbackTarget.element,
+          'initial-fallback',
+          cell,
+          normalizedTarget.groupId,
+          0.18,
+        )
+      }
+    }
+  }
+
+  return getFirstVisibleInteractiveTarget({
+    container: candidateContainer,
+    candidateSelector,
+  })
 }
 
 function getNearestTrackingId(
@@ -721,10 +836,26 @@ function resolveMappedGazeTarget(input: {
   const normalizedTarget = normalizePatientCellMappingTarget(mapping[cell] ?? null)
 
   if (normalizedTarget.allTargets.length === 0) {
+    debugMappedTarget('empty-cell-mapping', {
+      cell,
+      groupId: normalizedTarget.groupId,
+      activeContainer: Boolean(activeContainer),
+    })
     return null
   }
 
   const stableTrackingId = stableTarget?.trackingId ?? null
+  const inspectedTargets = inspectTrackingTargets(normalizedTarget.allTargets, {
+    container: activeContainer,
+  })
+
+  debugMappedTarget('cell-evaluation', {
+    cell,
+    groupId: normalizedTarget.groupId,
+    stableTrackingId,
+    pointTrackingId: pointTarget?.trackingId ?? null,
+    targets: inspectedTargets,
+  })
 
   const resolveTrackingId = (trackingIds: string[]) => {
     const selectableTargets = getSelectableTrackingTargets(trackingIds, {
@@ -786,7 +917,7 @@ function resolveMappedGazeTarget(input: {
       debugMappedTarget('filtered-out', {
         cell,
         groupId: normalizedTarget.groupId,
-        targets: normalizedTarget.allTargets,
+        targets: inspectedTargets,
         reason: activeContainer ? 'unavailable-in-active-container' : 'unavailable',
       })
     }
@@ -868,16 +999,14 @@ function getPreferredSelectionTarget(input: {
   nearestTarget: SelectionTarget | null
 }) {
   const { stableTarget, pointTarget, mappedTarget, nearestTarget } = input
-  const hasObservedCandidate = Boolean(pointTarget || mappedTarget || nearestTarget)
   const candidateTargets = dedupeSelectionTargets([
     pointTarget,
     mappedTarget,
     nearestTarget,
-    hasObservedCandidate && isSelectionTargetVisible(stableTarget) ? stableTarget : null,
   ])
 
   if (candidateTargets.length === 0) {
-    return null
+    return isSelectionTargetVisible(stableTarget) ? stableTarget : null
   }
 
   return candidateTargets.reduce<SelectionTarget | null>((bestTarget, currentTarget) => {
@@ -997,6 +1126,7 @@ export function usePatientGazeClick({
     useState(ACTIVATION_DELAY_OPTIONS.short.value)
   const [mouseTarget, setMouseTarget] = useState<SelectionTarget | null>(null)
   const [stableGazeTarget, setStableGazeTarget] = useState<SelectionTarget | null>(null)
+  const [entryHasReceivedGazeInput, setEntryHasReceivedGazeInput] = useState(false)
   const [suppressedCommitTargetKey, setSuppressedCommitTargetKey] =
     useState<string | null>(null)
   const targetSwitchTimerRef = useRef<number | null>(null)
@@ -1010,6 +1140,12 @@ export function usePatientGazeClick({
   const commitGuardTimerRef = useRef<number | null>(null)
   const lastDebugSignatureRef = useRef<string | null>(null)
   const lastCancelReasonRef = useRef<string | null>(null)
+  const lastHighlightDebugSignatureRef = useRef<string | null>(null)
+  const lastPipelineDebugSignatureRef = useRef<string | null>(null)
+  const lastDwellDebugSignatureRef = useRef<string | null>(null)
+  const entryDebugSignatureRef = useRef<string | null>(null)
+  const entryStartedAtRef = useRef<number | null>(null)
+  const entryFirstHighlightLoggedRef = useRef(false)
   const selectionCooldownsRef = useRef<Map<string, SelectionCooldownEntry>>(new Map())
   const highlightedElementRef = useRef<HTMLElement | null>(null)
   const mouseTargetRef = useRef<SelectionTarget | null>(null)
@@ -1042,10 +1178,28 @@ export function usePatientGazeClick({
       stableGazeTarget,
     ],
   )
+  const initialVisualFallbackTarget = useMemo(
+    () =>
+      stableGazeTarget || rawGazeTarget || entryHasReceivedGazeInput
+        ? null
+        : getInitialVisualFallbackTarget({
+            enabled,
+            selectionSurface,
+            cellMapping,
+          }),
+    [
+      cellMapping,
+      enabled,
+      entryHasReceivedGazeInput,
+      rawGazeTarget,
+      selectionSurface,
+      stableGazeTarget,
+    ],
+  )
   const effectiveDwellDurationMs = PATIENT_DWELL_CONFIRM_MS
 
-  const currentVisualTarget = stableGazeTarget ?? null
-  const currentVisualInputSource: 'pointer' | 'gaze' | null = stableGazeTarget
+  const currentVisualTarget = stableGazeTarget ?? initialVisualFallbackTarget ?? null
+  const currentVisualInputSource: 'pointer' | 'gaze' | null = currentVisualTarget
     ? 'gaze'
     : null
   const currentDwellTarget = stableGazeTarget
@@ -1054,6 +1208,14 @@ export function usePatientGazeClick({
     : null
   const isCurrentSelectionCommitSuppressed =
     currentDwellTarget?.key === suppressedCommitTargetKey
+  const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
+  const currentCellTrackingIds = useMemo(
+    () =>
+      gazeCell === null || !activeCellMapping
+        ? []
+        : normalizePatientCellMappingTarget(activeCellMapping[gazeCell] ?? null).allTargets,
+    [activeCellMapping, gazeCell],
+  )
   const currentSelectionBlockReason = currentDwellTarget
     ? getSelectionBlockReason(currentDwellTarget.element)
     : null
@@ -1299,6 +1461,9 @@ export function usePatientGazeClick({
         trackingId: resolvedTarget.trackingId,
         targetSource: resolvedTarget.source,
         targetCell: resolvedTarget.cell,
+        activeCellMappingOwner,
+        gazeCell,
+        currentCellTrackingIds,
         trackingStatus,
       })
       setSuppressedCommitTargetKey(current =>
@@ -1348,6 +1513,9 @@ export function usePatientGazeClick({
       targetKey: resolvedTarget.key,
       trackingId: resolvedTarget.trackingId,
       targetSource: resolvedTarget.source,
+      activeCellMappingOwner,
+      gazeCell,
+      currentCellTrackingIds,
       trackingStatus,
     })
 
@@ -1516,16 +1684,6 @@ export function usePatientGazeClick({
 
     if (
       stableGazeTarget &&
-      rawGazeTarget &&
-      areTargetsInSameCell(stableGazeTarget, rawGazeTarget)
-    ) {
-      clearTargetSwitchTimer()
-      resetSwitchGrace()
-      return
-    }
-
-    if (
-      stableGazeTarget &&
       rawGazeTarget
     ) {
       const requiredMargin = areTargetsInSameSemanticGroup(stableGazeTarget, rawGazeTarget)
@@ -1640,6 +1798,10 @@ export function usePatientGazeClick({
       console.info('[patient-input] dwell commit', {
         source: commitSource,
         targetKey: committedTargetKey,
+        trackingId: currentDwellTargetRef.current?.trackingId ?? null,
+        activeCellMappingOwner,
+        gazeCell,
+        currentCellTrackingIds,
         dwellDurationMs: effectiveDwellDurationMs,
         activationDelayMs,
       })
@@ -1681,6 +1843,167 @@ export function usePatientGazeClick({
       })
     }
   }, [currentDwellTarget, currentSelectionBlockReason, enabled])
+
+  useEffect(() => {
+    if (entryHasReceivedGazeInput || (!gazePoint && gazeCell === null)) {
+      return
+    }
+
+    setEntryHasReceivedGazeInput(true)
+  }, [entryHasReceivedGazeInput, gazeCell, gazePoint])
+
+  useEffect(() => {
+    const nextEntrySignature = JSON.stringify({
+      selectionSurface,
+      activeCellMappingOwner,
+      mapping: summarizeCellMapping(activeCellMapping),
+    })
+
+    if (entryDebugSignatureRef.current === nextEntrySignature) {
+      return
+    }
+
+    entryDebugSignatureRef.current = nextEntrySignature
+    entryStartedAtRef.current = Date.now()
+    entryFirstHighlightLoggedRef.current = false
+    setEntryHasReceivedGazeInput(false)
+
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    console.info('[patient-input] selection-entry', {
+      selectionSurface,
+      activeCellMappingOwner,
+      mapping: summarizeCellMapping(activeCellMapping),
+    })
+  }, [activeCellMapping, activeCellMappingOwner, selectionSurface])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const activeContainer = resolveActiveSelectionContainer(selectionSurface)
+    const currentCellInspection =
+      gazeCell === null || !activeCellMapping
+        ? []
+        : inspectTrackingTargets(currentCellTrackingIds, {
+            container: activeContainer,
+          })
+    const nextPipelinePayload = {
+      activeCellMappingOwner,
+      selectionSurface,
+      gazeCell,
+      currentCellTrackingIds,
+      currentCellInspection,
+      mapping: summarizeCellMapping(activeCellMapping),
+    }
+    const nextPipelineSignature = JSON.stringify(nextPipelinePayload)
+
+    if (lastPipelineDebugSignatureRef.current === nextPipelineSignature) {
+      return
+    }
+
+    lastPipelineDebugSignatureRef.current = nextPipelineSignature
+    console.info('[patient-input] target-pipeline', nextPipelinePayload)
+  }, [
+    activeCellMapping,
+    activeCellMappingOwner,
+    currentCellTrackingIds,
+    gazeCell,
+    selectionSurface,
+  ])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const nextHighlightPayload = {
+      selectionSurface,
+      activeCellMappingOwner,
+      highlightTargetId: currentVisualTarget?.trackingId ?? null,
+      highlightTargetSource: currentVisualTarget?.source ?? null,
+      highlightMissing: currentVisualTarget === null,
+      commitTargetId: currentDwellTarget?.trackingId ?? null,
+      commitTargetSource: currentDwellTarget?.source ?? null,
+      highlightMatchesCommit:
+        currentVisualTarget?.key != null
+          ? currentVisualTarget.key === currentDwellTarget?.key
+          : currentDwellTarget === null,
+    }
+    const nextHighlightSignature = JSON.stringify(nextHighlightPayload)
+
+    if (lastHighlightDebugSignatureRef.current === nextHighlightSignature) {
+      return
+    }
+
+    lastHighlightDebugSignatureRef.current = nextHighlightSignature
+    console.info('[patient-input] highlight-state', nextHighlightPayload)
+
+    if (
+      currentVisualTarget &&
+      entryStartedAtRef.current !== null &&
+      !entryFirstHighlightLoggedRef.current
+    ) {
+      entryFirstHighlightLoggedRef.current = true
+      console.info('[patient-input] first-highlight', {
+        selectionSurface,
+        activeCellMappingOwner,
+        targetId: currentVisualTarget.trackingId,
+        targetSource: currentVisualTarget.source,
+        delayMs: Math.max(0, Date.now() - entryStartedAtRef.current),
+      })
+    }
+  }, [
+    activeCellMappingOwner,
+    currentDwellTarget,
+    currentVisualTarget,
+    selectionSurface,
+  ])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const nextDwellPayload = {
+      phase: dwellState.phase,
+      targetKey: currentDwellTarget?.key ?? null,
+      trackingId: currentDwellTarget?.trackingId ?? null,
+      activeCellMappingOwner,
+      gazeCell,
+      currentCellTrackingIds,
+    }
+    const nextDwellSignature = JSON.stringify(nextDwellPayload)
+
+    if (lastDwellDebugSignatureRef.current === nextDwellSignature) {
+      return
+    }
+
+    lastDwellDebugSignatureRef.current = nextDwellSignature
+
+    if (dwellState.phase === 'locking') {
+      console.info('[patient-input] dwell-start', nextDwellPayload)
+      return
+    }
+
+    if (dwellState.phase === 'dwelling') {
+      console.info('[patient-input] dwell-maintain', nextDwellPayload)
+      return
+    }
+
+    if (dwellState.phase === 'idle' && currentDwellTarget === null) {
+      console.info('[patient-input] dwell-reset', nextDwellPayload)
+    }
+  }, [
+    activeCellMappingOwner,
+    currentCellTrackingIds,
+    currentDwellTarget,
+    dwellState.phase,
+    gazeCell,
+  ])
 
   const currentVisualInteractionState: Exclude<PatientInteractionState, 'idle'> | null =
     currentVisualTarget

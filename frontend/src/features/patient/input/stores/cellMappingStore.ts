@@ -56,7 +56,11 @@ function createCellMappingEntry(
 
 function getActiveCellMappingEntry(entries: CellMappingEntry[]) {
   return entries.reduce<CellMappingEntry | null>((activeEntry, currentEntry) => {
-    if (!currentEntry.active || Object.keys(currentEntry.mapping).length === 0) {
+    if (
+      !currentEntry.active ||
+      Object.keys(currentEntry.mapping).length === 0 ||
+      summarizeCellMapping(currentEntry.mapping).populatedSlots === 0
+    ) {
       return activeEntry
     }
 
@@ -122,6 +126,16 @@ function buildStateFromEntries(entries: CellMappingEntry[]) {
   }
 }
 
+function getActiveOwnerDebugPayload(entries: CellMappingEntry[]) {
+  const activeEntry = getActiveCellMappingEntry(entries)
+
+  return {
+    owner: activeEntry?.debugLabel ?? null,
+    summary: activeEntry ? summarizeCellMapping(activeEntry.mapping) : null,
+    mapping: activeEntry?.mapping ?? null,
+  }
+}
+
 export const useCellMappingStore = create<CellMappingState>((set) => ({
   cellMapping: null,
   activeOwnerId: null,
@@ -159,9 +173,7 @@ export const useCellMappingStore = create<CellMappingState>((set) => ({
       }
 
       if (state.activeOwnerId !== nextState.activeOwnerId) {
-        debugLogCellMapping('active-owner', {
-          owner: nextState.activeOwnerDebugLabel,
-        })
+        debugLogCellMapping('active-owner', getActiveOwnerDebugPayload(nextEntries))
       }
 
       return nextState
@@ -192,9 +204,7 @@ export const useCellMappingStore = create<CellMappingState>((set) => ({
         }
 
         if (state.activeOwnerId !== nextState.activeOwnerId) {
-          debugLogCellMapping('active-owner', {
-            owner: nextState.activeOwnerDebugLabel,
-          })
+          debugLogCellMapping('active-owner', getActiveOwnerDebugPayload(nextEntries))
         }
 
         return nextState
@@ -222,9 +232,7 @@ export const useCellMappingStore = create<CellMappingState>((set) => ({
       }
 
       if (state.activeOwnerId !== nextState.activeOwnerId) {
-        debugLogCellMapping('active-owner', {
-          owner: nextState.activeOwnerDebugLabel,
-        })
+        debugLogCellMapping('active-owner', getActiveOwnerDebugPayload(nextEntries))
       }
 
       return nextState
@@ -242,9 +250,7 @@ export const useCellMappingStore = create<CellMappingState>((set) => ({
       }
 
       if (state.activeOwnerId !== nextState.activeOwnerId) {
-        debugLogCellMapping('active-owner', {
-          owner: nextState.activeOwnerDebugLabel,
-        })
+        debugLogCellMapping('active-owner', getActiveOwnerDebugPayload(nextEntries))
       }
 
       return nextState

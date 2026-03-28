@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -7,6 +7,7 @@ import type {
   PainAreaGroupKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
 import { getPainAreaGroupByAreaKey, getPainAreaGroupByKey } from './bodyMindMock'
@@ -37,6 +38,22 @@ export default function BodyMindPainAreaPage() {
   const highlightGroupModel = getPainAreaGroupModelByKey(hoveredGroupKey)
   const highlightModelUrl = highlightGroupModel?.modelUrl ?? null
   const gazePoint = useGazeInputStore(state => state.point)
+  const cellMapping = useMemo(
+    () =>
+      ({
+        0: 'upper_body',
+        1: null,
+        2: 'lower_body',
+        3: 'middle_body',
+        4: null,
+        5: 'body-mind-pain-area-back',
+      }) as Record<number, string | null>,
+    [],
+  )
+
+  useCellMapping(cellMapping, {
+    debugLabel: 'body-mind-pain-area-page',
+  })
 
   useEffect(() => {
     if (!gazePoint) {

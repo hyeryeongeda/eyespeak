@@ -31,6 +31,12 @@ export default function EyeTrackingRuntimeHost({
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const requestIdRef = useRef(`eye-tracking-runtime-${Date.now()}`)
   const lastDoubleBlinkAtRef = useRef(0)
+  const lastRuntimeFrameRef = useRef<{
+    screenX: number
+    screenY: number
+    cell: number | null
+  } | null>(null)
+  const lastRuntimeMessageAtRef = useRef<number | null>(null)
   const eyeTrackingUiUrl = getEyeTrackingUiUrl()
 
   const runtimeUrl = useMemo(() => {
@@ -70,6 +76,34 @@ export default function EyeTrackingRuntimeHost({
           break
         }
         case 'GAZE_POINT_UPDATE':
+          if (import.meta.env.DEV) {
+            const now = Date.now()
+            const previousFrame = lastRuntimeFrameRef.current
+            const intervalMs =
+              lastRuntimeMessageAtRef.current === null
+                ? null
+                : now - lastRuntimeMessageAtRef.current
+
+            lastRuntimeFrameRef.current = {
+              screenX: event.data.payload.screenX,
+              screenY: event.data.payload.screenY,
+              cell: event.data.payload.cell,
+            }
+            lastRuntimeMessageAtRef.current = now
+
+            console.info('[patient-input] runtime-frame', {
+              screenX: event.data.payload.screenX,
+              screenY: event.data.payload.screenY,
+              cell: event.data.payload.cell,
+              screenXChanged: previousFrame?.screenX !== event.data.payload.screenX,
+              screenYChanged: previousFrame?.screenY !== event.data.payload.screenY,
+              cellChanged: previousFrame?.cell !== event.data.payload.cell,
+              intervalMs,
+              status: event.data.payload.status,
+              trigger: event.data.payload.trigger,
+            })
+          }
+
           useGazeInputStore.getState().setSnapshot({
             clientX: clampToViewport(event.data.payload.screenX, window.innerWidth),
             clientY: clampToViewport(event.data.payload.screenY, window.innerHeight),

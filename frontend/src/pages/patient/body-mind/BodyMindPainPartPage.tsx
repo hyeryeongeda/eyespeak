@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -7,6 +7,7 @@ import type {
   PainAreaKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import {
   getStoredPainAreaSelection,
@@ -97,7 +98,30 @@ export default function BodyMindPainPartPage() {
     [],
   )
 
-  if (!group) {
+  const groupOptions = group?.options ?? []
+  const primaryLeftTop = groupOptions[0] ?? null
+  const primaryTopRight = groupOptions[1] ?? null
+  const primaryLeftBottom = groupOptions[2] ?? null
+  const primaryBottomCenter = groupOptions[3] ?? null
+  const cellMapping = useMemo(
+    () =>
+      ({
+        0: primaryLeftTop?.key ?? null,
+        1: null,
+        2: primaryTopRight?.key ?? null,
+        3: primaryLeftBottom?.key ?? null,
+        4: primaryBottomCenter?.key ?? null,
+        5: 'body-mind-pain-part-back',
+      }) as Record<number, string | null>,
+    [primaryBottomCenter?.key, primaryLeftBottom?.key, primaryLeftTop?.key, primaryTopRight?.key],
+  )
+
+  useCellMapping(cellMapping, {
+    active: Boolean(group),
+    debugLabel: 'body-mind-pain-part-page',
+  })
+
+  if (!group || !primaryLeftTop || !primaryTopRight || !primaryLeftBottom || !primaryBottomCenter) {
     return <Navigate to={ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA} replace />
   }
 
@@ -108,7 +132,6 @@ export default function BodyMindPainPartPage() {
   const hoveredModel = getPainAreaModelByKey(hoveredAreaKey)
   const highlightModelUrl = hoveredModel?.modelUrl ?? null
   const guideRotationY = hoveredAreaKey && REAR_VIEW_PARTS.includes(hoveredAreaKey) ? Math.PI : 0
-  const [primaryLeftTop, primaryTopRight, primaryLeftBottom, primaryBottomCenter] = group.options
 
   const handleSelectArea = (areaKey: PainAreaKey) => {
     if (navigationTimeoutRef.current !== null) {

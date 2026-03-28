@@ -356,10 +356,28 @@
             return;
           }
           try {
-            await fetch('./api/calibrate/load', {
+            const response = await fetch('./api/calibrate/load', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ user_id: profileId }),
+            });
+            const payload = await response.json().catch(() => null);
+
+            console.info('[EyeTracking Runtime] calibration load', {
+              profileId,
+              ok: response.ok,
+              calibrated:
+                payload && typeof payload === 'object' && 'calibrated' in payload
+                  ? payload.calibrated
+                  : null,
+              polyCoeffXCount:
+                payload && typeof payload === 'object' && Array.isArray(payload.poly_coeff_x)
+                  ? payload.poly_coeff_x.length
+                  : 0,
+              polyCoeffYCount:
+                payload && typeof payload === 'object' && Array.isArray(payload.poly_coeff_y)
+                  ? payload.poly_coeff_y.length
+                  : 0,
             });
           } catch (_error) {
             // 캘리브레이션 파일이 없거나 로드 실패 시 무시 (미캘리 상태로 진행)

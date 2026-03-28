@@ -1,8 +1,9 @@
-import type { CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import type {
   BodyMindCardOption,
   BodyMindUiStatus,
 } from '../../../../features/patient/body-mind/types/bodyMind'
+import { useCellMapping } from '../../../../features/patient/input/hooks/useCellMapping'
 import type { BodyMindMenuPageDefinition } from '../bodyMindMock'
 import BodyMindFixedGrid from './BodyMindFixedGrid'
 import BodyMindLayout from './BodyMindLayout'
@@ -63,8 +64,31 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
 }: BodyMindPagedMenuPageProps<TOption>) {
   const currentPage = pages[pageIndex] ?? pages[0]
   const hasNextPage = pageIndex < pages.length - 1
-  const primaryOptions = currentPage?.options.slice(0, 4) ?? []
-  const topRightOption = hasNextPage ? null : (currentPage?.options[4] ?? null)
+  const primaryOptions = useMemo(() => currentPage?.options.slice(0, 4) ?? [], [currentPage])
+  const topRightOption = useMemo(
+    () => (hasNextPage ? null : (currentPage?.options[4] ?? null)),
+    [currentPage, hasNextPage],
+  )
+  const cellMapping = useMemo(
+    () =>
+      ({
+        0: primaryOptions[0] ? getBodyMindTrackingId(primaryOptions[0].key) : null,
+        1: primaryOptions[1] ? getBodyMindTrackingId(primaryOptions[1].key) : null,
+        2: hasNextPage
+          ? 'body-mind-next'
+          : topRightOption
+            ? getBodyMindTrackingId(topRightOption.key)
+            : null,
+        3: primaryOptions[2] ? getBodyMindTrackingId(primaryOptions[2].key) : null,
+        4: primaryOptions[3] ? getBodyMindTrackingId(primaryOptions[3].key) : null,
+        5: 'body-mind-back',
+      }) as Record<number, string | null>,
+    [hasNextPage, primaryOptions, topRightOption],
+  )
+
+  useCellMapping(cellMapping, {
+    debugLabel: `body-mind-paged-menu:${code}`,
+  })
 
   const handleBack = () => {
     if (pageIndex > 0) {

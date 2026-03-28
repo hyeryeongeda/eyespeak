@@ -1,9 +1,10 @@
-import type { CSSProperties, ReactNode } from 'react'
+import { useMemo, type CSSProperties, type ReactNode } from 'react'
 import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
   type UseDwellFeedbackResult,
 } from '../../input/hooks/useDwellFeedback'
+import { useCellMapping } from '../../input/hooks/useCellMapping'
 import type { CustomTalkStageActionCard } from './CustomTalkStageLayout'
 import { CUSTOM_TALK_SELECTION_SCOPE_ID } from '../utils/selectionScope'
 
@@ -356,6 +357,42 @@ export default function CustomTalkEntryLayout({
   dwellFeedback,
   gridTemplateRows,
 }: CustomTalkEntryLayoutProps) {
+  const cellMapping = useMemo(
+    () =>
+      ({
+        0: !topLeft.disabled && !topLeft.loading ? topLeft.trackingId ?? null : null,
+        1: !topCenter.disabled && !topCenter.loading ? topCenter.trackingId ?? null : null,
+        2: !topRight.disabled && !topRight.loading ? topRight.trackingId ?? null : null,
+        3: !bottomLeft.disabled && !bottomLeft.loading ? bottomLeft.trackingId ?? null : null,
+        4: !bottomCenter.disabled && !bottomCenter.loading ? bottomCenter.trackingId ?? null : null,
+        5: !bottomRight.disabled && !bottomRight.loading ? bottomRight.trackingId ?? null : null,
+      }) as Record<number, string | null>,
+    [
+      bottomCenter.disabled,
+      bottomCenter.loading,
+      bottomCenter.trackingId,
+      bottomLeft.disabled,
+      bottomLeft.loading,
+      bottomLeft.trackingId,
+      bottomRight.disabled,
+      bottomRight.loading,
+      bottomRight.trackingId,
+      topCenter.disabled,
+      topCenter.loading,
+      topCenter.trackingId,
+      topLeft.disabled,
+      topLeft.loading,
+      topLeft.trackingId,
+      topRight.disabled,
+      topRight.loading,
+      topRight.trackingId,
+    ],
+  )
+
+  useCellMapping(cellMapping, {
+    debugLabel: 'custom-talk-entry-layout',
+  })
+
   return (
     <main
       className="custom-talk-entry-page"

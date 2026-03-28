@@ -516,14 +516,11 @@ class HybridTracker:
         cell = self._mapper.stabilize(raw_cell)
         logger.debug("[DIAG] cell=%s stable=%s", cell, self._mapper.stable_cell)
         # --- Grid Snap: 캘리브레이션 완료 후에만 셀 중심 스냅 ---
-        gr = self._cfg["grid"]
-        snap_rows = int(gr["rows"])
-        snap_cols = int(gr["cols"])
-        if self._calibrated:
-            # 캘리브 완료 → 셀 중심으로 스냅 (환자용 안정적 UI)
-            cell_row, cell_col = divmod(cell, snap_cols)
-            screen_x = (cell_col + 0.5) / snap_cols
-            screen_y = (cell_row + 0.5) / snap_rows
+        if stabilized.space == "screen":
+            # Keep calibrated screen coordinates continuous so the frontend can
+            # disambiguate targets inside the same 2x3 cell.
+            screen_x = max(0.0, min(1.0, float(stabilized.x)))
+            screen_y = max(0.0, min(1.0, float(stabilized.y)))
         else:
             # 캘리브 전 → 연속 좌표 (빨간 점이 실시간 추적되어야 함)
             screen_x = stabilized.x if stabilized.x is not None else float(rx_s)

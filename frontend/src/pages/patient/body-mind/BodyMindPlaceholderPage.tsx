@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
@@ -26,6 +27,22 @@ export default function BodyMindPlaceholderPage({
 }: BodyMindPlaceholderPageProps) {
   const navigate = useNavigate()
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
+  const cellMapping = useMemo(
+    () =>
+      ({
+        0: null,
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: 'body-mind-placeholder-back',
+      }) as Record<number, string | null>,
+    [],
+  )
+
+  useCellMapping(cellMapping, {
+    debugLabel: `body-mind-placeholder:${code}`,
+  })
 
   const handleBack = () => {
     setStatus('transitioning')
@@ -64,6 +81,7 @@ export default function BodyMindPlaceholderPage({
             title="뒤로가기"
             description={backDescription}
             tone="slate"
+            trackingId="body-mind-placeholder-back"
             onSelect={handleBack}
           />
         }
