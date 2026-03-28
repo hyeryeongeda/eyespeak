@@ -411,6 +411,10 @@
   const EMBED_PROFILE_ID = (searchParams.get('profileId') || EMBED_USER_ID).trim();
   const RETURN_URL = (searchParams.get('returnUrl') || '').trim();
   const RETURN_REQUEST_ID = (searchParams.get('requestId') || '').trim();
+  // The real frontend uses a full-page calibration redirect with returnUrl.
+  // In that path we keep calibration only and leave local selection demo features dormant.
+  const INTEGRATED_CALIBRATION_SESSION = Boolean(RETURN_URL);
+  const ENABLE_STANDALONE_RUNTIME_DEMO = !INTEGRATED_CALIBRATION_SESSION;
   const MESSAGE_SOURCE = 'eyespeak-eye-tracking';
   const EMBED_MESSAGE_TYPES = Object.freeze({
     EMBED_LOADED: 'EMBED_LOADED',
@@ -638,7 +642,7 @@
     }
   }
 
-  if (EMBED_MODE && topbarEl) {
+  if ((EMBED_MODE || INTEGRATED_CALIBRATION_SESSION) && topbarEl) {
     topbarEl.style.display = 'none';
   }
 
@@ -895,7 +899,7 @@
     return -1;
   }
   function persistSelection(idx, source) {
-    if (source !== 'dwell') {
+    if (!ENABLE_STANDALONE_RUNTIME_DEMO || source !== 'dwell') {
       return;
     }
     fetch(buildApiUrl('api/selection'), {
@@ -922,6 +926,10 @@
     return true;
   }
   async function loadRuntimeConfig() {
+    if (!ENABLE_STANDALONE_RUNTIME_DEMO) {
+      return;
+    }
+
     try {
       const response = await fetch(buildApiUrl('api/runtime-config'));
       const result = await response.json().catch(() => ({}));
@@ -1083,16 +1091,20 @@
         const mean = earSamples.reduce((a, b) => a + b, 0) / earSamples.length;
         trigger.setThreshold(Math.max(0.10, mean * 0.6));
       }
-      setSystemState('ACTIVE');
+      setSystemState(ENABLE_STANDALONE_RUNTIME_DEMO ? 'ACTIVE' : 'IDLE');
       calibEl.classList.remove('show');
       countdownBig.classList.remove('show');
       calibArrow.classList.remove('show');
       calibPointCounterEl.style.display = 'none';
       document.getElementById('camWrap').classList.remove('guiding');
       document.getElementById('btnCal').disabled = false;
-      statusEl.textContent = '캘리브레이션 완료! 바로 선택할 수 있습니다.';
+      statusEl.textContent = ENABLE_STANDALONE_RUNTIME_DEMO
+        ? '캘리브레이션 완료! 바로 선택할 수 있습니다.'
+        : '캘리브레이션 완료. 저장 중…';
       showToast('캘리브레이션 완료');
-      setTimeout(() => statusEl.textContent = '', 2000);
+      if (ENABLE_STANDALONE_RUNTIME_DEMO) {
+        setTimeout(() => statusEl.textContent = '', 2000);
+      }
 
       void finalizeCalibrationSession();
       return;
@@ -1269,6 +1281,11 @@
       return;
     }
 
+    if (!ENABLE_STANDALONE_RUNTIME_DEMO) {
+      resetGazeSelectionState(true);
+      return;
+    }
+
     // 캘리 없으면 대기
     if (!coef) {
       resetGazeSelectionState(true);
@@ -1371,49 +1388,51 @@
     startCalibration();
   });
 
-  document.getElementById('btnSave').addEventListener('click', () => {
-    const userId = prompt('저장할 사용자 ID를 입력하세요:');
-    if (!userId) return;
-    fetch(buildApiUrl('api/calibrate/save'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId })
-    })
-      .then(r => r.json())
-      .then(d => showToast(d.ok ? '저장 완료: ' + userId : '저장 실패'))
-      .catch(() => showToast('서버 연결 실패'));
-  });
-
-  document.getElementById('btnLoad').addEventListener('click', () => {
-    const userId = prompt('불러올 사용자 ID를 입력하세요:');
-    if (!userId) return;
-    fetch(buildApiUrl('api/calibrate/load'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id: userId })
-    })
-      .then(r => r.json())
-      .then(d => {
-        if (d.ok) {
-          if (Array.isArray(d.poly_coeff_x) && Array.isArray(d.poly_coeff_y)) {
-            coef = { cx: d.poly_coeff_x, cy: d.poly_coeff_y };
-          }
-          showToast('불러오기 완료: ' + userId);
-          setSystemState('ACTIVE');
-        } else {
-          showToast('불러오기 실패: 데이터 없음');
-        }
+  if (ENABLE_STANDALONE_RUNTIME_DEMO) {
+    document.getElementById('btnSave').addEventListener('click', () => {
+      const userId = prompt('저장할 사용자 ID를 입력하세요:');
+      if (!userId) return;
+      fetch(buildApiUrl('api/calibrate/save'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
       })
-      .catch(() => showToast('서버 연결 실패'));
-  });
+        .then(r => r.json())
+        .then(d => showToast(d.ok ? '저장 완료: ' + userId : '저장 실패'))
+        .catch(() => showToast('서버 연결 실패'));
+    });
 
-  document.getElementById('btnFullscreen').addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen();
-    }
-  });
+    document.getElementById('btnLoad').addEventListener('click', () => {
+      const userId = prompt('불러올 사용자 ID를 입력하세요:');
+      if (!userId) return;
+      fetch(buildApiUrl('api/calibrate/load'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId })
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.ok) {
+            if (Array.isArray(d.poly_coeff_x) && Array.isArray(d.poly_coeff_y)) {
+              coef = { cx: d.poly_coeff_x, cy: d.poly_coeff_y };
+            }
+            showToast('불러오기 완료: ' + userId);
+            setSystemState('ACTIVE');
+          } else {
+            showToast('불러오기 실패: 데이터 없음');
+          }
+        })
+        .catch(() => showToast('서버 연결 실패'));
+    });
+
+    document.getElementById('btnFullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    });
+  }
 
   document.addEventListener('fullscreenchange', () => {
     // Esc 복귀 시에는 브라우저가 fullscreen 상태를 토글하므로 CSS만으로 처리됩니다.
@@ -1474,12 +1493,18 @@
       console.info(EMBED_LOG_PREFIX, 'camera init success');
       console.info(EMBED_LOG_PREFIX, 'detector init success');
       notifyParent(EMBED_MESSAGE_TYPES.CALIBRATION_READY);
-      startGazeCursorPolling();
+      if (ENABLE_STANDALONE_RUNTIME_DEMO) {
+        startGazeCursorPolling();
+      }
       if (AUTO_START && !autoStartRequested) {
         autoStartRequested = true;
         startCalibration();
       }
-      debugEl.textContent = coef ? '이전 캘리 불러옴 — 바로 사용 가능' : '카메라 준비됨 — 캘리브레이션 버튼을 눌러주세요';
+      debugEl.textContent = ENABLE_STANDALONE_RUNTIME_DEMO
+        ? coef
+          ? '이전 캘리 불러옴 — 바로 사용 가능'
+          : '카메라 준비됨 — 캘리브레이션 버튼을 눌러주세요'
+        : '카메라 준비됨 — 캘리브레이션을 시작합니다';
       statusEl.textContent = '';
     } catch(e) {
       console.error(EMBED_LOG_PREFIX, 'camera or detector init failed', e);
@@ -1491,7 +1516,9 @@
   }
 
   // CDN 스크립트가 로드된 후 초기화
-  void loadRuntimeConfig();
+  if (ENABLE_STANDALONE_RUNTIME_DEMO) {
+    void loadRuntimeConfig();
+  }
   if (typeof FaceMesh !== 'undefined' && typeof Camera !== 'undefined') {
     initMediaPipe();
   } else {
