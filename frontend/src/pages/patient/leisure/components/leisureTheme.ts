@@ -75,14 +75,14 @@ export const leisurePillStyle: CSSProperties = {
 }
 
 export const leisureInteractiveCss = `
-  .leisure-interactive:hover:not(:disabled),
-  .leisure-interactive:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .leisure-interactive:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .leisure-interactive:focus-visible:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 28px 54px rgba(66, 86, 113, 0.16);
     outline: none;
   }
 
-  .leisure-interactive:active:not(:disabled) {
+  html:not([data-patient-mode='true']) .leisure-interactive:active:not(:disabled) {
     transform: translateY(0);
   }
 `
