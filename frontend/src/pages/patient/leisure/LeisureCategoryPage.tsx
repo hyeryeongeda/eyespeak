@@ -94,19 +94,6 @@ export default function LeisureCategoryPage() {
   const [contents, setContents] = useState<LeisureContent[]>([])
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null)
 
-  const categoryCellMapping = useMemo(() => ({
-    0: 'category-content-1',
-    1: 'category-content-2',
-    2: 'category-refresh',
-    3: 'category-content-3',
-    4: 'category-content-4',
-    5: 'category-back',
-  } as Record<number, string | null>), [])
-
-  useCellMapping(categoryCellMapping, {
-    debugLabel: 'leisure-category-page',
-  })
-
   useEffect(() => {
     if (!category) {
       return

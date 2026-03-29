@@ -274,23 +274,6 @@ export default function LeisurePlayerPage() {
               ],
   )
 
-  const relatedOverlayCellMapping = useMemo(
-    () =>
-      ({
-        0: 'related-content-1',
-        1: 'related-content-2',
-        2: 'related-refresh',
-        3: 'related-content-3',
-        4: 'related-content-4',
-        5: 'related-close',
-      }) as Record<number, string | null>,
-    [],
-  )
-
-  useCellMapping(isRelatedOverlayOpen ? relatedOverlayCellMapping : playerCellMapping, {
-    debugLabel: isRelatedOverlayOpen ? 'leisure-related-overlay' : 'leisure-player-page',
-  })
-
   useEffect(() => {
     let isMounted = true
 

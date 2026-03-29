@@ -182,7 +182,6 @@ export default function FavoritesPage() {
     dwellFeedback,
     TRACKING_BACK_BUTTON,
   )
-  const isGridBusy = status === 'selecting' || status === 'transitioning'
 
   const cellMapping = useMemo<PatientCellMapping>(() => {
     if (status === 'completed') {

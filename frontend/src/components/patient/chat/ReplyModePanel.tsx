@@ -554,23 +554,14 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
 
   const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
     if (recommendationMode === 'category') {
-      return {
-        0:
-          firstVisibleCategory && !isSending && categoryState !== 'loading'
-            ? 'reply-category-1'
-            : null,
-        1: null,
-        2:
-          secondVisibleCategory && !isSending && categoryState !== 'loading'
-            ? 'reply-category-2'
-            : null,
-        3:
-          thirdVisibleCategory && !isSending && categoryState !== 'loading'
-            ? 'reply-category-3'
-            : null,
-        4: null,
-        5: !isSending ? 'reply-back' : null,
-      }
+      return [
+        firstVisibleCategory && !isSending ? 'reply-category-1' : null,
+        null,
+        secondVisibleCategory && !isSending ? 'reply-category-2' : null,
+        thirdVisibleCategory && !isSending ? 'reply-category-3' : null,
+        null,
+        !isSending ? 'reply-back' : null,
+      ]
     }
 
     return [
@@ -594,10 +585,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     thirdVisibleCategory,
   ])
 
-  useCellMapping(cellMapping, {
-    debugLabel: overlay ? 'reply-overlay' : 'reply-inline-panel',
-    priority: overlay ? 1120 : 0,
-  })
+  usePatientPageCellMapping(cellTargets)
 
   usePatientGlobalMenuActionTarget({
     enabled: overlay,

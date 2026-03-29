@@ -156,9 +156,18 @@ export default function TalkMainPage() {
   const shouldShowInlineReply =
     chat.state.currentRoute?.responseSurface === 'inline' && Boolean(chat.activeReplyMessage)
 
-  useCellMapping(shouldShowInlineReply ? emptyTalkCellMapping : talkMainCellMapping, {
-    debugLabel: 'talk-main-page',
-  })
+  usePatientPageCellMapping(
+    shouldShowInlineReply
+      ? [null, null, null, null, null, null]
+      : [
+          'talk-main-body-mind',
+          null,
+          'talk-main-custom-talk',
+          'talk-main-favorites',
+          null,
+          'talk-main-back-main',
+        ],
+  )
 
   const moveToReplyRoute = (routePath: string) => {
     chat.focusLatestPendingMessage()

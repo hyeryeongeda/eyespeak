@@ -270,18 +270,14 @@ export default function PatientMainPage() {
   })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
 
-  const patientMainCellMapping = useMemo(() => ({
-    0: 'talk',
-    1: 'talk',
-    2: 'talk',
-    3: 'call',
-    4: 'call',
-    5: 'leisure',
-  } as Record<number, string | null>), [])
-
-  useCellMapping(patientMainCellMapping, {
-    debugLabel: 'patient-main-page',
-  })
+  usePatientPageCellMapping([
+    'talk',
+    'talk',
+    'talk',
+    callStatus === 'requesting' ? null : 'call',
+    callStatus === 'requesting' ? null : 'call',
+    'leisure',
+  ] as const)
 
   const isOverlayVisible = callStatus === 'requesting' || callStatus === 'success'
   const overlayStatus = isOverlayVisible ? callStatus : null

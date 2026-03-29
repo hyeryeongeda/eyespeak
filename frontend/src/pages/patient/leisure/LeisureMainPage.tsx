@@ -104,23 +104,6 @@ export default function LeisureMainPage() {
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
   const [shortcutCards, setShortcutCards] = useState<LeisureShortcut[]>([])
 
-  const leisureMainCellMapping = useMemo(
-    () =>
-      ({
-        0: 'main-shortcut-1',
-        1: 'main-shortcut-2',
-        2: 'main-shortcut-3',
-        3: 'main-shortcut-4',
-        4: 'main-shortcut-5',
-        5: 'main-back',
-      }) as Record<number, string | null>,
-    [],
-  )
-
-  useCellMapping(leisureMainCellMapping, {
-    debugLabel: 'leisure-main-page',
-  })
-
   useEffect(() => {
     let isMounted = true
 
