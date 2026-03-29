@@ -169,17 +169,7 @@ export default function PatientTrackingGuardOverlay() {
             </div>
           </section>
 
-          <button
-            type="button"
-            className="patient-tracking-guard-action"
-            data-smoke-id="patient-tracking-guard-recalibrate"
-            onClick={handleRecalibration}
-            style={actionPanelStyle}
-          >
-            재캘리브레이션
-            <br />
-            하기
-          </button>
+          <div style={actionPanelStyle} />
         </div>
       </div>
     </>

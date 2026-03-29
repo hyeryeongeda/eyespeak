@@ -1,21 +1,16 @@
 import { type CSSProperties, useEffect, useRef } from 'react'
 import { useGazeInputStore } from '../stores/gazeInputStore'
 
-const DOT_SIZE = 28
-const DOT_BORDER = 3
-
 const dotStyle: CSSProperties = {
   position: 'fixed',
-  width: `${DOT_SIZE}px`,
-  height: `${DOT_SIZE}px`,
+  width: '10px',
+  height: '10px',
   borderRadius: '50%',
-  backgroundColor: 'rgba(239, 68, 68, 0.45)',
-  border: `${DOT_BORDER}px solid rgba(239, 68, 68, 0.8)`,
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
   pointerEvents: 'none',
   zIndex: 99999,
   transform: 'translate(-50%, -50%)',
   transition: 'left 80ms linear, top 80ms linear',
-  boxShadow: '0 0 12px 4px rgba(239, 68, 68, 0.25)',
 }
 
 export default function GazeDebugOverlay() {
