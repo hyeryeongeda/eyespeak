@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
 import { emitPatientTrackingStatus } from '../services/patientModeBridge'
 import { useGazeInputStore } from '../stores/gazeInputStore'
+import { usePatientModeStore } from '../stores/patientModeStore'
 
 interface EyeTrackingRuntimeHostProps {
   enabled?: boolean
@@ -36,6 +37,9 @@ const BLINK_EAR_THRESHOLD = 0.18
 const BLINK_MIN_MS = 60
 const BLINK_MAX_MS = 400
 const BLINK_COOLDOWN_MS = 500
+
+// 더블/트리플 블링크
+const MULTI_BLINK_WINDOW_MS = 800  // 이 시간 안에 연속 블링크 카운트
 
 const WASM_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/wasm'
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
@@ -122,7 +126,59 @@ function fireClick(target: HTMLElement, clientX: number, clientY: number) {
   target.dispatchEvent(new MouseEvent('click', { clientX, clientY, bubbles: true, cancelable: true }))
 }
 
-// ── 1€ 필터 ──
+// ── HUD 오버레이 (블링크 표시 + 인식 메뉴) ──
+function createHUD() {
+  const hud = document.createElement('div')
+  hud.id = 'eye-tracking-hud'
+  hud.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:999998;'
+
+  // 오른쪽 상단: 블링크 알림
+  const blinkBadge = document.createElement('div')
+  blinkBadge.id = 'eye-blink-badge'
+  blinkBadge.style.cssText = 'position:absolute;top:16px;right:16px;padding:8px 18px;border-radius:24px;font-size:15px;font-weight:800;color:white;opacity:0;transition:opacity 0.15s;pointer-events:none;'
+  hud.appendChild(blinkBadge)
+
+  // 왼쪽 상단: 현재 인식 메뉴
+  const targetBadge = document.createElement('div')
+  targetBadge.id = 'eye-target-badge'
+  targetBadge.style.cssText = 'position:absolute;top:16px;left:16px;padding:6px 14px;border-radius:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);opacity:0;transition:opacity 0.2s;pointer-events:none;'
+  hud.appendChild(targetBadge)
+
+  document.body.appendChild(hud)
+  return { blinkBadge, targetBadge }
+}
+
+let hudBlink: HTMLElement | null = null
+let hudTarget: HTMLElement | null = null
+let blinkTimer: ReturnType<typeof setTimeout> | null = null
+
+function showBlinkFeedback(type: 'double' | 'triple') {
+  if (!hudBlink) return
+  hudBlink.textContent = type === 'double' ? '  CLICK' : '  MENU'
+  hudBlink.style.background = type === 'double' ? 'rgba(59,130,246,0.85)' : 'rgba(168,85,247,0.85)'
+  hudBlink.style.opacity = '1'
+  if (blinkTimer) clearTimeout(blinkTimer)
+  blinkTimer = setTimeout(() => { if (hudBlink) hudBlink.style.opacity = '0' }, 800)
+}
+
+function updateTargetHUD(clientX: number, clientY: number) {
+  if (!hudTarget) return
+  const el = document.elementFromPoint(clientX, clientY)
+  if (el instanceof HTMLElement) {
+    const clickable = el.closest<HTMLElement>(CLICK_SELECTOR)
+    if (clickable) {
+      const name = clickable.dataset.trackingId ?? clickable.textContent?.trim().slice(0, 15) ?? ''
+      if (name) {
+        hudTarget.textContent = name
+        hudTarget.style.opacity = '1'
+        return
+      }
+    }
+  }
+  hudTarget.style.opacity = '0'
+}
+
+// ── 1유로 필터 ──
 class OneEuroFilter {
   private freq: number
   private minCutoff: number
@@ -180,7 +236,40 @@ export default function EyeTrackingRuntimeHost({
     let frameCount = 0
     let eyesClosed = false
     let eyeClosedAt = 0
-    let lastClickAt = 0
+
+    // 멀티블링크 상태
+    let blinkCount = 0
+    let firstBlinkAt = 0
+    let multiBlinkTimer: ReturnType<typeof setTimeout> | null = null
+
+    // HUD
+    const { blinkBadge, targetBadge } = createHUD()
+    hudBlink = blinkBadge
+    hudTarget = targetBadge
+
+    function handleMultiBlink(now: number) {
+      if (now - firstBlinkAt > MULTI_BLINK_WINDOW_MS) {
+        blinkCount = 0
+      }
+      if (blinkCount === 0) firstBlinkAt = now
+      blinkCount++
+
+      if (multiBlinkTimer) clearTimeout(multiBlinkTimer)
+
+      multiBlinkTimer = setTimeout(() => {
+        const gaze = useGazeInputStore.getState().point
+        if (blinkCount === 2) {
+          // 더블블링크 → 클릭
+          showBlinkFeedback('double')
+          if (gaze) clickElementAtPoint(gaze.clientX, gaze.clientY)
+        } else if (blinkCount >= 3) {
+          // 트리플블링크 → 글로벌 메뉴 토글
+          showBlinkFeedback('triple')
+          usePatientModeStore.getState().toggleGlobalMenu({ bypassTracking: true })
+        }
+        blinkCount = 0
+      }, BLINK_COOLDOWN_MS)
+    }
 
     async function init() {
       try {
@@ -210,7 +299,6 @@ export default function EyeTrackingRuntimeHost({
         filterXRef.current.reset()
         filterYRef.current.reset()
 
-        // 자동 베이스라인
         const baselineRx: number[] = []
         const baselineRy: number[] = []
         const baselinePitch: number[] = []
@@ -220,7 +308,7 @@ export default function EyeTrackingRuntimeHost({
         let baselineReady = false
 
         emitPatientTrackingStatus('ready')
-        console.info('[Eye] Tracking started — auto-baseline, EAR-weighted, head pose fusion')
+        console.info('[Eye] Tracking started — double-blink=click, triple-blink=menu')
 
         let lastTs = -1
 
@@ -247,16 +335,13 @@ export default function EyeTrackingRuntimeHost({
               } else if (eyesClosed) {
                 const dur = now - eyeClosedAt
                 eyesClosed = false
-                const gaze = useGazeInputStore.getState().point
-                if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS && now - lastClickAt > BLINK_COOLDOWN_MS && gaze) {
-                  lastClickAt = now
-                  clickElementAtPoint(gaze.clientX, gaze.clientY)
+                if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS) {
+                  handleMultiBlink(now)
                 }
                 animFrameId = requestAnimationFrame(detect); return
               }
               if (eyesClosed) { animFrameId = requestAnimationFrame(detect); return }
 
-              // 홍채 5점 평균
               const leftIris = avgPoint(lm, L_IRIS)
               const rightIris = avgPoint(lm, R_IRIS)
               const lInner = lm[L_INNER], lOuter = lm[L_OUTER]
@@ -275,7 +360,6 @@ export default function EyeTrackingRuntimeHost({
 
               const head = estimateHeadPose(lm)
 
-              // 자동 베이스라인 수집 (처음 ~2초)
               if (!baselineReady) {
                 baselineRx.push(irisRx)
                 baselineRy.push(irisRy)
@@ -296,7 +380,6 @@ export default function EyeTrackingRuntimeHost({
                 animFrameId = requestAnimationFrame(detect); return
               }
 
-              // EAR 기반 가중치
               const earConf = clamp((avgEAR - 0.12) / 0.2, 0, 1)
               const irisYW = 0.3 + earConf * 0.4
               const pitchW = 0.7 - earConf * 0.4
@@ -314,9 +397,12 @@ export default function EyeTrackingRuntimeHost({
 
               useGazeInputStore.getState().setSnapshot({ clientX, clientY, cell: null })
 
+              // HUD: 인식 중인 메뉴 표시
+              if (frameCount % 5 === 0) updateTargetHUD(clientX, clientY)
+
               frameCount++
               if (frameCount <= 3 || frameCount % 300 === 0) {
-                console.info(`[Eye] #${frameCount} iris=(${irisRx.toFixed(3)},${irisRy.toFixed(3)}) head=(${head.yaw.toFixed(3)},${head.pitch.toFixed(3)}) earConf=${earConf.toFixed(2)} → (${clientX.toFixed(0)},${clientY.toFixed(0)})`)
+                console.info(`[Eye] #${frameCount} iris=(${irisRx.toFixed(3)},${irisRy.toFixed(3)}) head=(${head.yaw.toFixed(3)},${head.pitch.toFixed(3)}) → (${clientX.toFixed(0)},${clientY.toFixed(0)})`)
               }
             }
           } catch { /* skip */ }
@@ -333,6 +419,7 @@ export default function EyeTrackingRuntimeHost({
 
     return () => {
       active = false
+      if (multiBlinkTimer) clearTimeout(multiBlinkTimer)
       cancelAnimationFrame(animFrameId)
       if (videoEl?.srcObject) {
         ;(videoEl.srcObject as MediaStream).getTracks().forEach(t => t.stop())
@@ -343,6 +430,9 @@ export default function EyeTrackingRuntimeHost({
       faceLandmarker = null
       filterXRef.current.reset()
       filterYRef.current.reset()
+      document.getElementById('eye-tracking-hud')?.remove()
+      hudBlink = null
+      hudTarget = null
       useGazeInputStore.getState().clearPoint()
       emitPatientTrackingStatus('idle')
     }

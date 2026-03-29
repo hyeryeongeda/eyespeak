@@ -136,10 +136,7 @@ function PatientLayoutShell() {
     enabled: !isCalibrationRoute,
   })
   usePatientGazeClick({
-    enabled:
-      !isCalibrationRoute &&
-      !isGlobalMenuOpen &&
-      isPatientTrackingAvailable(trackingStatus),
+    enabled: false, // 블링크 클릭으로 대체 — dwell 비활성화
     selectionSurface: currentSelectionSurface,
   })
 
