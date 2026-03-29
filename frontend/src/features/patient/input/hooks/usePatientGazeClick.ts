@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useDwell } from './useDwell'
+import { useDwell, type DwellPhase } from './useDwell'
 import {
   CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
   getActivationDelayPreset,
@@ -16,7 +16,6 @@ import {
   type PatientSelectionSurface,
 } from '../services/patientSelectionPolicy'
 import {
-  PATIENT_DWELL_CONFIRM_MS,
   PATIENT_INTERACTION_MARKER_ATTRIBUTE,
   PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE,
   PATIENT_INTERACTION_SOURCE_ATTRIBUTE,
@@ -96,7 +95,6 @@ interface SelectionCooldownEntry {
 }
 
 type PatientDebugWindow = Window & {
-  __DEV_GAZE_DISABLE_POINT_HIT_TEST?: boolean
   __PATIENT_GAZE_DEBUG_STATE?: unknown
 }
 
@@ -785,7 +783,6 @@ function getPreferredSelectionTarget(input: {
 function resolveRawGazeTarget(input: {
   enabled: boolean
   selectionSurface: PatientSelectionSurface
-  selectionProfile: PatientSelectionProfile
   gazePoint: GazePoint
   gazeCell: number | null
   cellMapping: PatientCellMapping | null
@@ -798,67 +795,14 @@ function resolveRawGazeTarget(input: {
   }
 
   const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
-  const candidateContainer = resolveActiveSelectionContainer(input.selectionSurface)
-  const candidateSelector = isCustomTalkSurface(input.selectionSurface)
-    ? CUSTOM_TALK_CARD_SELECTOR
-    : undefined
 
-  const disablePointHitTest =
-    import.meta.env.DEV &&
-    typeof window !== 'undefined' &&
-    (window as PatientDebugWindow).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
-
-  if (gazePoint && !disablePointHitTest) {
-    const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
-    if (patientMainPointTarget) {
-      return patientMainPointTarget
-    }
-  }
-
-  let pointTarget: SelectionTarget | null = null
-
-  if (gazePoint && !disablePointHitTest) {
-    pointTarget = getAreaHitTarget({
-      gazePoint,
-      gazeCell,
-      radiusPx: input.selectionProfile.areaHitRadiusPx,
-      container: candidateContainer,
-      candidateSelector,
-    })
-
-    if (!pointTarget) {
-      const pointElement = getInteractiveElementFromPoint(
-        gazePoint.clientX,
-        gazePoint.clientY,
-        candidateContainer,
-      )
-      if (pointElement) {
-        pointTarget = createSelectionTarget(pointElement, 'point-hit-test', gazeCell, null, 0.88)
-      }
-    }
-  }
-
-  const mappedTarget = resolveMappedGazeTarget({
+  // Cell mapping only — point/area/nearest fallback 비활성화 (셀 기반 안정성)
+  return resolveMappedGazeTarget({
     cell: gazeCell,
     mapping: activeCellMapping,
     gazePoint,
     stableTarget,
-    pointTarget,
-  })
-
-  const nearestTarget = getNearestInteractiveTargetFromPoint(
-    gazePoint,
-    {
-      container: candidateContainer,
-      candidateSelector,
-    },
-  )
-
-  return getPreferredSelectionTarget({
-    stableTarget,
-    pointTarget,
-    mappedTarget,
-    nearestTarget,
+    pointTarget: null,
   })
 }
 
@@ -923,8 +867,7 @@ export function usePatientGazeClick({
     () => getPatientSelectionProfile(selectionSurface),
     [selectionSurface],
   )
-  const [activationDelayMs, setActivationDelayMs] =
-    useState(ACTIVATION_DELAY_OPTIONS.short.value)
+  const [activationDelayMs, setActivationDelayMs] = useState(0)
   const [mouseTarget, setMouseTarget] = useState<SelectionTarget | null>(null)
   const [stableGazeTarget, setStableGazeTarget] = useState<SelectionTarget | null>(null)
   const [suppressedCommitTargetKey, setSuppressedCommitTargetKey] =
@@ -934,6 +877,7 @@ export function usePatientGazeClick({
   const pendingTargetSwitchKeyRef = useRef<string | null>(null)
   const pendingTargetSwitchRef = useRef<SelectionTarget | null>(null)
   const activeSwitchGraceMsRef = useRef<number | null>(null)
+  const dwellPhaseRef = useRef<DwellPhase>('idle')
   const confirmedElementRef = useRef<HTMLElement | null>(null)
   const confirmedTimerRef = useRef<number | null>(null)
   const commitDelayTimerRef = useRef<number | null>(null)
@@ -956,7 +900,6 @@ export function usePatientGazeClick({
       resolveRawGazeTarget({
         enabled,
         selectionSurface,
-        selectionProfile,
         gazePoint,
         gazeCell,
         cellMapping,
@@ -967,12 +910,11 @@ export function usePatientGazeClick({
       enabled,
       gazeCell,
       gazePoint,
-      selectionProfile,
       selectionSurface,
       stableGazeTarget,
     ],
   )
-  const effectiveDwellDurationMs = PATIENT_DWELL_CONFIRM_MS
+  const effectiveDwellDurationMs = selectionProfile.dwellMs
 
   const currentVisualTarget = mouseTarget ?? stableGazeTarget ?? null
   const currentVisualInputSource: 'pointer' | 'gaze' | null = mouseTarget
@@ -1473,10 +1415,14 @@ export function usePatientGazeClick({
 
     clearTargetSwitchTimer()
 
-    const switchGraceMs =
+    const baseSwitchGraceMs =
       nextKey !== null
         ? selectionProfile.switchHoldMs
         : selectionProfile.stableHoldMs
+    const switchGraceMs =
+      dwellPhaseRef.current === 'dwelling' || dwellPhaseRef.current === 'locking'
+        ? Math.max(baseSwitchGraceMs, 500)
+        : baseSwitchGraceMs
     const pendingSwitchKey = `${currentKey ?? 'null'}=>${nextKey ?? 'null'}`
 
     if (pendingTargetSwitchKeyRef.current !== pendingSwitchKey) {
@@ -1579,6 +1525,8 @@ export function usePatientGazeClick({
       commitSelection(commitSource, committedTargetKey)
     },
   })
+
+  dwellPhaseRef.current = dwellState.phase
 
   useEffect(() => {
     if (!enabled) {
