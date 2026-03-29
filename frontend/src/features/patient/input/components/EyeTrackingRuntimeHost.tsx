@@ -28,7 +28,6 @@ const R_CHEEK = 454
 // ── 파라미터 ──
 const SENSITIVITY_X = 8.0
 const SENSITIVITY_Y = 12.0
-const SMOOTHING = 0.55
 const EDGE_MARGIN = 3
 const AUTO_BASELINE_FRAMES = 60
 

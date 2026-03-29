@@ -1,8 +1,4 @@
 import { ROUTE_PATHS } from '../../../../../app/router/routePaths'
-import { PATIENT_CALIBRATION_STORAGE_KEY } from '../../../../../services/calibration/calibrationConstants'
-import { isAbortError, waitForAbortableDelay } from '../../../../../services/eyeTrackingCore'
-import { loadEyeTrackingCalibrationApi } from '../../../../../services/eyeTrackingApi'
-import { isEyeTrackingApiEnabled } from '../../../../../services/eyeTrackingServiceConfig'
 import type { ServiceResult } from '../../../../../types/api'
 import type { AuthSession } from '../../../../../types/auth'
 import type {
@@ -14,11 +10,7 @@ import type {
   StoredPatientCalibrationRecord,
 } from '../../../../../types/calibration'
 
-type StoredPatientCalibrationMap = Record<string, StoredPatientCalibrationRecord>
-
 const PATIENT_RECALIBRATION_SESSION_KEY = 'patientRecalibrationRequired'
-const EYE_TRACKING_CALIBRATION_SYNC_ATTEMPTS = 5
-const EYE_TRACKING_CALIBRATION_SYNC_DELAY_MS = 400
 
 interface ResolvePatientPostAuthDestinationOptions {
   entryPoint: PatientAuthEntryPoint
@@ -64,100 +56,12 @@ export function getPatientEyeTrackingProfileId(session: AuthSession | null) {
   return normalizeIdentifier(session.userId) ?? normalizeIdentifier(session.id)
 }
 
-function normalizeStoredCalibrationRecord(
-  value: StoredPatientCalibrationRecord | null | undefined,
-): StoredPatientCalibrationRecord | null {
-  if (!value || typeof value !== 'object') {
-    return null
-  }
-
-  const completedAt = normalizeIdentifier(value.completedAt)
-
-  if (!completedAt) {
-    return null
-  }
-
-  return {
-    completedAt,
-    eyeTrackingProfileId: normalizeIdentifier(value.eyeTrackingProfileId),
-    runtimeVerifiedAt: normalizeIdentifier(value.runtimeVerifiedAt),
-  }
-}
-
-function readStoredCalibrationMap(): StoredPatientCalibrationMap {
-  if (!isBrowser()) {
-    return {}
-  }
-
-  const rawValue = localStorage.getItem(PATIENT_CALIBRATION_STORAGE_KEY)
-
-  if (!rawValue) {
-    return {}
-  }
-
-  try {
-    const parsed = JSON.parse(rawValue) as Record<string, StoredPatientCalibrationRecord>
-
-    if (!parsed || typeof parsed !== 'object') {
-      localStorage.removeItem(PATIENT_CALIBRATION_STORAGE_KEY)
-      return {}
-    }
-
-    return Object.entries(parsed).reduce<StoredPatientCalibrationMap>((accumulator, entry) => {
-      const [patientId, record] = entry
-      const normalizedPatientId = normalizeIdentifier(patientId)
-      const normalizedRecord = normalizeStoredCalibrationRecord(record)
-
-      if (normalizedPatientId && normalizedRecord) {
-        accumulator[normalizedPatientId] = normalizedRecord
-      }
-
-      return accumulator
-    }, {})
-  } catch {
-    localStorage.removeItem(PATIENT_CALIBRATION_STORAGE_KEY)
-    return {}
-  }
-}
-
-function writeStoredCalibrationMap(value: StoredPatientCalibrationMap) {
-  if (!isBrowser()) {
-    return
-  }
-
-  localStorage.setItem(PATIENT_CALIBRATION_STORAGE_KEY, JSON.stringify(value))
-}
-
-function getEyeTrackingCalibrationFailureMessage(error: unknown) {
-  return error instanceof Error && error.message.trim()
-    ? error.message
-    : 'Failed to load the stored eye tracking calibration.'
-}
-
-function getForcedRecalibrationPatientId() {
-  if (!isBrowser()) {
-    return null
-  }
-
-  return sessionStorage.getItem(PATIENT_RECALIBRATION_SESSION_KEY)
-}
-
 function setForcedRecalibrationPatientId(patientId: string) {
   if (!isBrowser()) {
     return
   }
 
   sessionStorage.setItem(PATIENT_RECALIBRATION_SESSION_KEY, patientId)
-}
-
-function clearForcedRecalibrationPatientId(patientId: string) {
-  if (!isBrowser()) {
-    return
-  }
-
-  if (getForcedRecalibrationPatientId() === patientId) {
-    sessionStorage.removeItem(PATIENT_RECALIBRATION_SESSION_KEY)
-  }
 }
 
 function buildCalibrationStatus(
@@ -227,8 +131,8 @@ export function buildPatientCalibrationLocationState(
 }
 
 export async function ensurePatientEyeTrackingRuntimeReady(
-  profileId: string,
-  options?: {
+  _profileId: string,
+  _options?: {
     attempts?: number
     delayMs?: number
     signal?: AbortSignal
