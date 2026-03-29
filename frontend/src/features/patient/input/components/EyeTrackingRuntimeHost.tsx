@@ -91,7 +91,7 @@ function estimateHeadPose(lm: { x: number; y: number }[]) {
 
 function clickElementAtPoint(clientX: number, clientY: number) {
   const direct = document.elementFromPoint(clientX, clientY)
-  if (direct instanceof HTMLElement) {
+  if (direct instanceof Element) {
     const clickable = direct.closest<HTMLElement>(CLICK_SELECTOR)
     if (clickable) { fireClick(clickable, clientX, clientY); return }
   }
@@ -240,6 +240,7 @@ export default function EyeTrackingRuntimeHost({
     // 멀티블링크 상태
     let blinkCount = 0
     let firstBlinkAt = 0
+    let blinkGazeSnapshot: { clientX: number; clientY: number } | null = null
     let multiBlinkTimer: ReturnType<typeof setTimeout> | null = null
 
     // HUD
@@ -251,23 +252,28 @@ export default function EyeTrackingRuntimeHost({
       if (now - firstBlinkAt > MULTI_BLINK_WINDOW_MS) {
         blinkCount = 0
       }
-      if (blinkCount === 0) firstBlinkAt = now
+      if (blinkCount === 0) {
+        firstBlinkAt = now
+        // 첫 블링크 시점의 시선 위치 스냅샷 (가장 신뢰할 수 있는 위치)
+        const gaze = useGazeInputStore.getState().point
+        blinkGazeSnapshot = gaze ? { clientX: gaze.clientX, clientY: gaze.clientY } : null
+      }
       blinkCount++
 
       if (multiBlinkTimer) clearTimeout(multiBlinkTimer)
 
       multiBlinkTimer = setTimeout(() => {
-        const gaze = useGazeInputStore.getState().point
         if (blinkCount === 2) {
           // 더블블링크 → 클릭
           showBlinkFeedback('double')
-          if (gaze) clickElementAtPoint(gaze.clientX, gaze.clientY)
+          if (blinkGazeSnapshot) clickElementAtPoint(blinkGazeSnapshot.clientX, blinkGazeSnapshot.clientY)
         } else if (blinkCount >= 3) {
           // 트리플블링크 → 글로벌 메뉴 토글
           showBlinkFeedback('triple')
           usePatientModeStore.getState().toggleGlobalMenu({ bypassTracking: true })
         }
         blinkCount = 0
+        blinkGazeSnapshot = null
       }, BLINK_COOLDOWN_MS)
     }
 
