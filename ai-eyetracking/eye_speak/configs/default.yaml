@@ -29,7 +29,7 @@ smoothing:
   screen_outlier_distance: 0.5
   screen_fallback_jump_margin: 0.10
   readiness_valid_streak: 2
-  blink_ear_threshold: 0.22
+  blink_ear_threshold: 0.15
 
 weights:
   head_pose_weight: 0.0
