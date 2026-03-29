@@ -79,6 +79,45 @@ function sanitizeDailyMoodRequest(request: DailyMoodCreateRequestDto) {
   }
 }
 
+function isDailyMoodResponseDto(value: unknown): value is DailyMoodResponseDto {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const response = value as Partial<DailyMoodResponseDto>
+
+  return (
+    typeof response.moodId === 'number' &&
+    typeof response.moodDate === 'string' &&
+    typeof response.moodType === 'string' &&
+    typeof response.moodLevel === 'number'
+  )
+}
+
+function normalizeTodayDailyMoodResponse(value: unknown): DailyMoodResponseDto | null {
+  if (value == null) {
+    return null
+  }
+
+  if (isDailyMoodResponseDto(value)) {
+    return value
+  }
+
+  if (typeof value === 'object') {
+    const envelope = value as Record<string, unknown>
+    const isSuccessEnvelopeWithoutData =
+      envelope.code === 'SUCCESS' &&
+      typeof envelope.message === 'string' &&
+      !('data' in envelope)
+
+    if (isSuccessEnvelopeWithoutData) {
+      return null
+    }
+  }
+
+  return value as DailyMoodResponseDto
+}
+
 export async function getTodayDailyMood(
   accessToken?: string | null,
 ): Promise<ServiceResult<DailyMoodResponseDto | null>> {
@@ -107,7 +146,9 @@ export async function getTodayDailyMood(
   }
 
   try {
-    const data = await getTodayDailyMoodApi(resolvedAccessToken)
+    const data = normalizeTodayDailyMoodResponse(
+      await getTodayDailyMoodApi(resolvedAccessToken),
+    )
 
     return {
       success: true,
