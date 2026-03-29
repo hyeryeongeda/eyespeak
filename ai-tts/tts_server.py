@@ -12,7 +12,7 @@ TTS API 서버 (FastAPI) - 공유 모델 + 환자별 레퍼런스 음성
 
 디렉토리 구조:
   checkpoints/shared/             ← 공유 모델 (1벌)
-  ├── best_model.pth (5.3G)
+  ├── best_model.pth (2.0G)
   ├── config.json
   ├── vocab.json
   ├── dvae.pth
@@ -29,6 +29,7 @@ import io
 import json
 import base64
 import os
+import random
 import shutil
 from collections import OrderedDict
 from datetime import datetime
@@ -37,6 +38,24 @@ from typing import List, Optional
 
 import numpy as np
 import torch
+
+# torch.load weights_only 호환성 패치
+_original_load = torch.load
+def _force_unsafe_load(*args, **kwargs):
+    if "weights_only" not in kwargs:
+        kwargs["weights_only"] = False
+    return _original_load(*args, **kwargs)
+torch.load = _force_unsafe_load
+
+# transformers isin_mps_friendly 호환성 패치
+import transformers.pytorch_utils as _pt_utils
+if not hasattr(_pt_utils, "isin_mps_friendly"):
+    def _isin_mps_friendly(elements=None, test_elements=None, **kwargs):
+        if elements is not None and test_elements is not None:
+            return torch.isin(elements, test_elements)
+        return torch.tensor(False, device=elements.device if hasattr(elements, "device") else None)
+    _pt_utils.isin_mps_friendly = _isin_mps_friendly
+
 import torchaudio
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
@@ -60,16 +79,42 @@ MIN_AUDIO_DURATION = 3.0   # 초
 MAX_AUDIO_DURATION = 30.0  # 초
 MAX_REFS_PER_SPEAKER = 5   # 환자당 최대 레퍼런스 수
 
-# 추론 파라미터
+# 추론 파라미터 (HR 모델 최적화 완료)
 INFERENCE_PARAMS = {
-    "gpt_cond_len": 12,
-    "temperature": 0.72,
+    "gpt_cond_len": 6,
+    "gpt_cond_chunk_len": 4,
+    "temperature": 0.8,
     "length_penalty": 1.0,
-    "repetition_penalty": 2.5,
-    "top_k": 50,
-    "top_p": 0.88,
+    "repetition_penalty": 10.0,
+    "top_k": 30,
+    "top_p": 0.85,
     "speed": 1.2,
 }
+
+# 짧은 문장 패딩 (XTTS 한국어 토큰 부족 대응)
+SHORT_TEXT_PAD_PREFIX = "사실 처음에는 좀 걱정이 됐는데 막상 시작해보니까 생각보다 할만하더라고요. "
+SHORT_TEXT_MIN_LEN = 25
+SEED = 42
+
+
+def _set_seed(seed=SEED):
+    """재현성을 위한 시드 고정."""
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+
+
+def _trim_pad_prefix(full_wav, pad_len, target_len, sr=24000):
+    """패딩 텍스트 비율 기반으로 앞부분 잘라내기."""
+    total_len = pad_len + target_len
+    ratio = pad_len / total_len
+    cut = int(len(full_wav) * ratio) - int(sr * 0.1)
+    cut = max(0, cut)
+    if cut >= len(full_wav):
+        return full_wav
+    return full_wav[cut:]
 
 app = FastAPI(
     title="TTS API",
@@ -97,10 +142,10 @@ def _load_shared_model():
     from TTS.tts.models.xtts import Xtts
 
     config_path = SHARED_MODEL_DIR / "config.json"
-    ckpt_path = SHARED_MODEL_DIR / "model.pth"
+    ckpt_path = SHARED_MODEL_DIR / "best_model.pth"
     vocab_path = SHARED_MODEL_DIR / "vocab.json"
 
-    for p, name in [(config_path, "config.json"), (ckpt_path, "model.pth"), (vocab_path, "vocab.json")]:
+    for p, name in [(config_path, "config.json"), (ckpt_path, "best_model.pth"), (vocab_path, "vocab.json")]:
         if not p.exists():
             raise FileNotFoundError(f"공유 모델 파일이 없습니다: {p}\ncheckpoints/shared/{name}을 확인하세요.")
 
@@ -244,21 +289,43 @@ def _synthesize_wav_bytes(text: str, patient_id: str) -> tuple[bytes, bool]:
             detail=f"환자 '{patient_id}'의 레퍼런스 음성이 없습니다. 먼저 POST /patients/{patient_id}/voice 로 등록하세요.",
         )
 
-    speaker_wav = ref_wavs if len(ref_wavs) > 1 else ref_wavs[0]
+    # speaker conditioning 계산
+    gpt_cond_latent, speaker_embedding = model.get_conditioning_latents(
+        audio_path=ref_wavs,
+        gpt_cond_len=INFERENCE_PARAMS["gpt_cond_len"],
+        gpt_cond_chunk_len=INFERENCE_PARAMS["gpt_cond_chunk_len"],
+    )
+
+    # 시드 고정 (재현성)
+    _set_seed()
+
+    # 짧은 문장 패딩 처리
+    is_short = len(text) < SHORT_TEXT_MIN_LEN
+
+    inference_kwargs = dict(
+        language="ko",
+        gpt_cond_latent=gpt_cond_latent,
+        speaker_embedding=speaker_embedding,
+        temperature=INFERENCE_PARAMS["temperature"],
+        length_penalty=INFERENCE_PARAMS["length_penalty"],
+        repetition_penalty=INFERENCE_PARAMS["repetition_penalty"],
+        top_k=INFERENCE_PARAMS["top_k"],
+        top_p=INFERENCE_PARAMS["top_p"],
+        speed=INFERENCE_PARAMS["speed"],
+        enable_text_splitting=True,
+    )
 
     try:
-        out = model.synthesize(
-            text, config,
-            speaker_wav=speaker_wav,
-            language="ko",
-            **INFERENCE_PARAMS,
-        )
+        if is_short:
+            padded_text = SHORT_TEXT_PAD_PREFIX + text
+            out = model.inference(text=padded_text, **inference_kwargs)
+            wav = _trim_pad_prefix(out["wav"], len(SHORT_TEXT_PAD_PREFIX), len(text))
+        else:
+            out = model.inference(text=text, **inference_kwargs)
+            wav = out["wav"]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"합성 실패: {str(e)}")
 
-    wav = out["wav"]
-    if hasattr(wav, "numpy"):
-        wav = wav.numpy()
     wav = np.asarray(wav, dtype=np.float32)
     if wav.ndim == 1:
         wav = wav[np.newaxis, :]
