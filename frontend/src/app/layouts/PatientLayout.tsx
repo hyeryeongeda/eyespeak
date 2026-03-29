@@ -6,11 +6,11 @@ import GazeDebugOverlay from '../../features/patient/input/components/GazeDebugO
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
 import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGazeClick'
+import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
 import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import type { PatientSelectionSurface } from '../../features/patient/input/services/patientSelectionPolicy'
 import {
-  isPatientTrackingAvailable,
   isPatientTrackingBlocked,
   usePatientModeStore,
 } from '../../features/patient/input/stores/patientModeStore'
@@ -128,14 +128,14 @@ function PatientLayoutShell() {
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
+  usePatientModeDwellSync({
+    enabled: !isCalibrationRoute,
+  })
   usePatientGlobalMenuActionListener({
     enabled: !isCalibrationRoute,
   })
   usePatientGazeClick({
-    enabled:
-      !isCalibrationRoute &&
-      !isGlobalMenuOpen &&
-      isPatientTrackingAvailable(trackingStatus),
+    enabled: false, // 블링크 클릭으로 대체 — dwell 비활성화
     selectionSurface: currentSelectionSurface,
   })
 
@@ -403,7 +403,7 @@ function PatientLayoutShell() {
         </Suspense>
       ) : null}
       {!isCalibrationRoute ? <PatientTrackingGuardOverlay /> : null}
-      {import.meta.env.DEV && !isCalibrationRoute ? <GazeDebugOverlay /> : null}
+      {!isCalibrationRoute ? <GazeDebugOverlay /> : null}
 
       {!isCalibrationRoute && chat.shouldShowInterruptOverlay ? (
         <Suspense fallback={null}>

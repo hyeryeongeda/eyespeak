@@ -33,6 +33,8 @@ _FAIL: Dict[str, Any] = {
     "ry": None,
     "raw_rx": None,
     "raw_ry": None,
+    "raw_iris_rx": None,
+    "raw_iris_ry": None,
     "ear": 0.0,
     "face": False,
     "blink": False,
@@ -175,7 +177,7 @@ class HybridTracker:
     def set_calibration(self, points: List[Dict[str, Any]]) -> None:
         if self._ear_samples:
             mean_ear = sum(self._ear_samples) / len(self._ear_samples)
-            th = max(0.10, mean_ear * 0.6)
+            th = max(0.04, mean_ear * 0.55)
             self.iris_normalizer.blink_threshold = th
             self.trigger.set_threshold(th)
             self._ear_samples.clear()
@@ -204,11 +206,11 @@ class HybridTracker:
             top_mean = sum(top_rys) / len(top_rys)
             bot_mean = sum(bot_rys) / len(bot_rys)
             y_range = abs(bot_mean - top_mean)
-            if y_range > 0.02:
+            if y_range > 0.04:
                 # 목표: 상단~하단의 iris 차이가 0.6 범위를 커버하도록
                 dynamic_y_gain = 0.6 / y_range
-                # gain 범위 제한: 최소 3.0, 최대 15.0
-                dynamic_y_gain = max(3.0, min(15.0, dynamic_y_gain))
+                # gain 범위 제한: 최소 3.0, 최대 8.0
+                dynamic_y_gain = max(3.0, min(8.0, dynamic_y_gain))
                 self.iris_normalizer.set_y_gain(dynamic_y_gain)
                 logger.info(
                     "Dynamic Y gain: %.2f (top_mean=%.4f bot_mean=%.4f range=%.4f)",
@@ -515,25 +517,15 @@ class HybridTracker:
                 )
         cell = self._mapper.stabilize(raw_cell)
         logger.debug("[DIAG] cell=%s stable=%s", cell, self._mapper.stable_cell)
-        # --- Grid Snap: 캘리브레이션 완료 후에만 셀 중심 스냅 ---
-        gr = self._cfg["grid"]
-        snap_rows = int(gr["rows"])
-        snap_cols = int(gr["cols"])
-        if self._calibrated:
-            # 캘리브 완료 → 셀 중심으로 스냅 (환자용 안정적 UI)
-            cell_row, cell_col = divmod(cell, snap_cols)
-            screen_x = (cell_col + 0.5) / snap_cols
-            screen_y = (cell_row + 0.5) / snap_rows
-        else:
-            # 캘리브 전 → 연속 좌표 (빨간 점이 실시간 추적되어야 함)
-            screen_x = stabilized.x if stabilized.x is not None else float(rx_s)
-            screen_y = stabilized.y if stabilized.y is not None else float(ry_s)
-            # CalibrationRefiner 후보정 (캘리브 전에도 적용 가능)
-            if self._cal_refiner.is_fitted:
-                screen_x, screen_y = self._cal_refiner.correct(screen_x, screen_y)
-                screen_x = max(0.0, min(1.0, screen_x))
-                screen_y = max(0.0, min(1.0, screen_y))
-            # 드리프트 보정
+        # 캘리브 여부와 관계없이 연속 좌표 사용 (cell은 별도 전달)
+        screen_x = stabilized.x if stabilized.x is not None else float(rx_s)
+        screen_y = stabilized.y if stabilized.y is not None else float(ry_s)
+        if self._cal_refiner.is_fitted:
+            screen_x, screen_y = self._cal_refiner.correct(screen_x, screen_y)
+            screen_x = max(0.0, min(1.0, screen_x))
+            screen_y = max(0.0, min(1.0, screen_y))
+        if not self._calibrated:
+            # 드리프트 보정 (캘리브 전에만)
             self._recent_screen.append((screen_x, screen_y))
             if self._drift_baseline_x is not None and self._recent_screen:
                 n_rs = len(self._recent_screen)
@@ -560,17 +552,17 @@ class HybridTracker:
         )
 
         if not self._mark_valid_ready_frame():
+            _iris_rx_val = round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
+            _iris_ry_val = round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
             out.update(
                 {
                     "cell": None,
                     "raw_rx": round(float(raw_rx), 4),
                     "raw_ry": round(float(raw_ry), 4),
-                    "diag_iris_rx": (
-                        round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
-                    ),
-                    "diag_iris_ry": (
-                        round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
-                    ),
+                    "raw_iris_rx": _iris_rx_val,
+                    "raw_iris_ry": _iris_ry_val,
+                    "diag_iris_rx": _iris_rx_val,
+                    "diag_iris_ry": _iris_ry_val,
                     "diag_gain_y": (
                         round(float(self.iris_normalizer.y_gain), 2)
                         if self.iris_normalizer.y_gain is not None
@@ -586,18 +578,18 @@ class HybridTracker:
             )
             return out
 
+        _iris_rx_val = round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
+        _iris_ry_val = round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
         result = {
             "cell": cell,
             "rx": round(float(rx_s), 4),
             "ry": round(float(ry_s), 4),
             "raw_rx": round(float(raw_rx), 4),
             "raw_ry": round(float(raw_ry), 4),
-            "diag_iris_rx": (
-                round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
-            ),
-            "diag_iris_ry": (
-                round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
-            ),
+            "raw_iris_rx": _iris_rx_val,
+            "raw_iris_ry": _iris_ry_val,
+            "diag_iris_rx": _iris_rx_val,
+            "diag_iris_ry": _iris_ry_val,
             "diag_gain_y": (
                 round(float(self.iris_normalizer.y_gain), 2)
                 if self.iris_normalizer.y_gain is not None

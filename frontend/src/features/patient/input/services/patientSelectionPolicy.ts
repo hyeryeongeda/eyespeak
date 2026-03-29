@@ -1,5 +1,3 @@
-import { PATIENT_DWELL_CONFIRM_MS } from './trackingService'
-
 export type PatientSelectionSurface =
   | 'common'
   | 'main'
@@ -13,18 +11,16 @@ export interface PatientSelectionProfile {
   stableHoldMs: number
   switchHoldMs: number
   switchMargin: number
-  dwellMs: number
   cooldownMs: number
   areaHitRadiusPx: number
 }
 
 const PATIENT_SELECTION_COMMON_DEFAULTS = {
-  stableHoldMs: 230,
-  switchHoldMs: 230,
+  stableHoldMs: 120,
+  switchHoldMs: 120,
   switchMargin: 0.09,
-  dwellMs: PATIENT_DWELL_CONFIRM_MS,
-  cooldownMs: 1000,
-  areaHitRadiusPx: 26,
+  cooldownMs: 600,
+  areaHitRadiusPx: 40,
 } as const
 
 const PATIENT_SELECTION_SURFACE_OVERRIDES: Partial<
@@ -41,21 +37,21 @@ const PATIENT_SELECTION_SURFACE_OVERRIDES: Partial<
     switchHoldMs: 240,
     switchMargin: 0.1,
     cooldownMs: 1050,
-    areaHitRadiusPx: 28,
+    areaHitRadiusPx: 44,
   },
   keyboard: {
     stableHoldMs: 220,
     switchHoldMs: 220,
     switchMargin: 0.08,
     cooldownMs: 900,
-    areaHitRadiusPx: 24,
+    areaHitRadiusPx: 36,
   },
   'global-menu': {
     stableHoldMs: 220,
     switchHoldMs: 220,
     switchMargin: 0.08,
     cooldownMs: 900,
-    areaHitRadiusPx: 26,
+    areaHitRadiusPx: 40,
   },
 }
 

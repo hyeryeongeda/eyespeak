@@ -10,9 +10,9 @@ from eye_speak.iris_tracker.grid_mapper import GridMapper
 def test_map_center_cell_2x3() -> None:
     g = GridMapper(2, 3, 3, buffer_size=5, hysteresis_threshold=0.0)
     assert g.map_to_cell(0.5, 0.5) == 4
-    # rx>0.55 -> col 0 ; rx<0.45 -> col 2
-    assert g.map_to_cell(0.6, 0.3) == 0
-    assert g.map_to_cell(0.2, 0.3) == 2
+    # rx<0.45 -> col 0 ; rx>0.55 -> col 2 (col=0 is screen-left)
+    assert g.map_to_cell(0.6, 0.3) == 2
+    assert g.map_to_cell(0.2, 0.3) == 0
     assert g.map_to_cell(0.5, 0.2) == 1
 
 

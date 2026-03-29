@@ -25,7 +25,7 @@ import RelatedContentOverlay from './components/RelatedContentOverlay'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 import { usePatientLeisureResumeStore } from '../../../stores/patientLeisureResumeStore'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {
@@ -246,33 +246,33 @@ export default function LeisurePlayerPage() {
   const [relatedContents, setRelatedContents] = useState<LeisureContent[]>([])
   const [relatedNoticeMessage, setRelatedNoticeMessage] = useState<string | null>(null)
 
-  const playerCellMapping = useMemo(
-    () =>
-      ({
-        0: 'player-related',
-        1: 'player-back',
-        2: 'player-related',
-        3: 'player-back',
-        4: 'player-related',
-        5: 'player-back',
-      }) as Record<number, string | null>,
-    [],
+  usePatientPageCellMapping(
+    isRelatedOverlayOpen
+      ? [
+          relatedContents[0] ? 'related-content-1' : null,
+          relatedContents[1] ? 'related-content-2' : null,
+          relatedStatus === 'loading' || relatedStatus === 'refreshing' || relatedStatus === 'selecting'
+            ? null
+            : 'related-refresh',
+          relatedContents[2] ? 'related-content-3' : null,
+          relatedContents[3] ? 'related-content-4' : null,
+          relatedStatus === 'selecting' ? null : 'related-close',
+        ]
+      : status === 'empty'
+        ? [null, null, null, null, null, 'player-empty-back']
+        : status === 'error' || !content
+          ? [null, null, null, null, null, 'player-error-back']
+          : status === 'loading'
+            ? [null, null, null, null, null, null]
+            : [
+                'player-related',
+                'player-back',
+                'player-related',
+                'player-back',
+                'player-related',
+                'player-back',
+              ],
   )
-
-  const relatedOverlayCellMapping = useMemo(
-    () =>
-      ({
-        0: 'related-content-1',
-        1: 'related-content-2',
-        2: 'related-refresh',
-        3: 'related-content-3',
-        4: 'related-content-4',
-        5: 'related-close',
-      }) as Record<number, string | null>,
-    [],
-  )
-
-  useCellMapping(isRelatedOverlayOpen ? relatedOverlayCellMapping : playerCellMapping)
 
   useEffect(() => {
     let isMounted = true

@@ -73,14 +73,9 @@
           poll_interval_ms: 100,
           frame_max_width: 480,
           jpeg_quality: 0.72,
-          lerp_factor: 0.15,
         };
         let pollingAbort = false;
-        let animationFrameId = 0;
         let currentStatus = 'idle';
-        let targetPoint = null;
-        let currentPoint = null;
-        let lastEmitAt = 0;
         let lastDoubleBlinkAt = 0;
 
         function postMessage(type, payload) {
@@ -189,10 +184,6 @@
                 Number.isFinite(Number(data.jpeg_quality))
                   ? Number(data.jpeg_quality)
                   : runtimeConfig.jpeg_quality,
-              lerp_factor:
-                Number.isFinite(Number(data.lerp_factor)) && Number(data.lerp_factor) > 0
-                  ? Math.min(1, Number(data.lerp_factor))
-                  : runtimeConfig.lerp_factor,
             };
           } catch (_error) {
             // Keep defaults when config sync fails.
@@ -200,9 +191,19 @@
         }
 
         function clearRuntimePoint(status) {
-          targetPoint = null;
-          currentPoint = null;
           setStatus(status);
+        }
+
+        function emitRuntimePoint(point) {
+          // app_gaze_web.py already returns calibrated and smoothed screen coordinates.
+          // Keep the iframe as a transport bridge so React consumes the server result directly.
+          postMessage('GAZE_POINT_UPDATE', {
+            screenX: point.screenX,
+            screenY: point.screenY,
+            cell: point.cell,
+            status: 'ready',
+            trigger: point.trigger,
+          });
         }
 
         async function analyzeCurrentFrame() {
@@ -224,7 +225,7 @@
             return;
           }
 
-          targetPoint = {
+          const runtimePoint = {
             screenX: Number(frame.screen_x),
             screenY: Number(frame.screen_y),
             cell: Number.isInteger(frame.cell) ? frame.cell : null,
@@ -238,13 +239,14 @@
           };
           setStatus('ready');
 
-          if (targetPoint.trigger === 'start') {
+          if (runtimePoint.trigger === 'start') {
             const now = Date.now();
             if (now - lastDoubleBlinkAt >= 1000) {
               lastDoubleBlinkAt = now;
               postMessage('RUNTIME_DOUBLE_BLINK', { trigger: 'start' });
             }
           }
+          emitRuntimePoint(runtimePoint);
         }
 
         async function runPollingLoop() {
@@ -265,46 +267,6 @@
           }
         }
 
-        function emitPointIfNeeded(now) {
-          if (!currentPoint) {
-            return;
-          }
-
-          if (now - lastEmitAt < 16) {
-            return;
-          }
-
-          lastEmitAt = now;
-          postMessage('GAZE_POINT_UPDATE', {
-            screenX: currentPoint.screenX,
-            screenY: currentPoint.screenY,
-            cell: currentPoint.cell,
-            status: 'ready',
-            trigger: currentPoint.trigger,
-          });
-        }
-
-        function runAnimationLoop(now) {
-          if (targetPoint) {
-            if (!currentPoint) {
-              currentPoint = { ...targetPoint };
-            } else {
-              const lerpFactor = Math.min(1, Math.max(0.01, runtimeConfig.lerp_factor));
-              currentPoint = {
-                screenX:
-                  currentPoint.screenX + (targetPoint.screenX - currentPoint.screenX) * lerpFactor,
-                screenY:
-                  currentPoint.screenY + (targetPoint.screenY - currentPoint.screenY) * lerpFactor,
-                cell: targetPoint.cell,
-                trigger: targetPoint.trigger,
-              };
-            }
-          }
-
-          emitPointIfNeeded(now);
-          animationFrameId = window.requestAnimationFrame(runAnimationLoop);
-        }
-
         function stopMediaStream() {
           if (mediaStream) {
             mediaStream.getTracks().forEach(track => track.stop());
@@ -315,10 +277,6 @@
 
         function stopRuntime() {
           pollingAbort = true;
-          if (animationFrameId) {
-            window.cancelAnimationFrame(animationFrameId);
-            animationFrameId = 0;
-          }
           stopMediaStream();
           clearRuntimePoint('idle');
         }
@@ -376,12 +334,9 @@
           await videoEl.play().catch(() => undefined);
 
           pollingAbort = false;
-          currentPoint = null;
-          targetPoint = null;
           setStatus('face-not-detected');
           postMessage('RUNTIME_READY', { autostart });
           void runPollingLoop();
-          animationFrameId = window.requestAnimationFrame(runAnimationLoop);
         }
 
         window.addEventListener('message', event => {

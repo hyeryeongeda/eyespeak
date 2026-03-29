@@ -22,6 +22,7 @@ export interface FavoritesPaginationCardProps {
   totalPages: number
   onPrev: () => void
   onNext: () => void
+  disabled?: boolean
   prevTrackingId?: string
   nextTrackingId?: string
   dwellFeedback?: DwellFeedbackViewModel<string>
@@ -32,6 +33,7 @@ export default function FavoritesPaginationCard({
   totalPages,
   onPrev,
   onNext,
+  disabled = false,
   prevTrackingId,
   nextTrackingId,
   dwellFeedback,
@@ -51,6 +53,7 @@ export default function FavoritesPaginationCard({
           description="이전 페이지 보기"
           tone="sky"
           onClick={onPrev}
+          disabled={disabled}
           trackingId={prevTrackingId}
           dwellFeedback={dwellFeedback}
         />
@@ -59,6 +62,7 @@ export default function FavoritesPaginationCard({
           description="다음 페이지 보기"
           tone="mint"
           onClick={onNext}
+          disabled={disabled}
           trackingId={nextTrackingId}
           dwellFeedback={dwellFeedback}
         />
@@ -73,6 +77,7 @@ export default function FavoritesPaginationCard({
         description="다음 페이지 보기"
         tone="mint"
         onClick={onNext}
+        disabled={disabled}
         trackingId={nextTrackingId}
         dwellFeedback={dwellFeedback}
       />
@@ -85,6 +90,7 @@ export default function FavoritesPaginationCard({
       description="이전 페이지 보기"
       tone="sky"
       onClick={onPrev}
+      disabled={disabled}
       trackingId={prevTrackingId}
       dwellFeedback={dwellFeedback}
     />

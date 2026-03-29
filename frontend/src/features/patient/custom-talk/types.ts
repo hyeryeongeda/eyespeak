@@ -33,7 +33,7 @@ export type CustomTalkStatus =
   | 'completed'
   | 'error'
 
-export type KeyboardEntrySource = 'custom_entry' | 'compose' | 'generated'
+export type KeyboardEntrySource = 'custom_entry' | 'recommend' | 'compose' | 'generated'
 
 export interface CustomTalkContextSummary {
   guardianMessage?: string

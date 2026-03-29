@@ -9,13 +9,12 @@ import {
   useDwellFeedback,
   type DwellFeedbackViewModel,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
-import { requestPatientRecalibration } from '../../../features/patient/input/services/calibration/patientCalibrationService'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import {
   requestMockPatientCall,
 } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import PatientCallOverlay from './PatientCallOverlay'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 
 type PatientMainTargetId = 'talk' | 'call' | 'leisure'
 
@@ -201,12 +200,6 @@ const topBarActionRowStyle: CSSProperties = {
   flexWrap: 'wrap',
 }
 
-const recalibrationButtonStyle: CSSProperties = {
-  ...logoutButtonStyle,
-  border: '1px solid rgba(111, 147, 199, 0.28)',
-  color: '#44648a',
-}
-
 const featureGridStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
@@ -262,24 +255,21 @@ const responsiveStyle = `
 
 export default function PatientMainPage() {
   const navigate = useNavigate()
-  const { logout, user, clearPatientPostAuth } = useAuth()
-  const isMouseRecalibrationIntentRef = useRef(false)
+  const { logout, user } = useAuth()
   const isMouseLogoutIntentRef = useRef(false)
   const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
     enabled: true,
   })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
 
-  const patientMainCellMapping = useMemo(() => ({
-    0: 'talk',
-    1: 'talk',
-    2: 'talk',
-    3: 'call',
-    4: 'call',
-    5: 'leisure',
-  } as Record<number, string | null>), [])
-
-  useCellMapping(patientMainCellMapping)
+  usePatientPageCellMapping([
+    'talk',
+    'talk',
+    'talk',
+    callStatus === 'requesting' ? null : 'call',
+    callStatus === 'requesting' ? null : 'call',
+    'leisure',
+  ] as const)
 
   const isOverlayVisible = callStatus === 'requesting' || callStatus === 'success'
   const overlayStatus = isOverlayVisible ? callStatus : null
@@ -295,22 +285,6 @@ export default function PatientMainPage() {
   const handleLogout = async () => {
     await logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
-  }
-
-  const handleRecalibrationPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    isMouseRecalibrationIntentRef.current = event.pointerType === 'mouse'
-  }
-
-  const handleRecalibrationClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    if (!isMouseRecalibrationIntentRef.current || event.detail === 0) {
-      isMouseRecalibrationIntentRef.current = false
-      return
-    }
-
-    isMouseRecalibrationIntentRef.current = false
-    clearPatientPostAuth()
-    requestPatientRecalibration(user)
-    navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
   }
 
   const handleLogoutPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -383,24 +357,6 @@ export default function PatientMainPage() {
               <p style={trackingTextStyle}>{trackingStatusText}</p>
             </div>
             <div style={topBarActionRowStyle}>
-              <button
-                type="button"
-                onPointerDown={handleRecalibrationPointerDown}
-                onClick={handleRecalibrationClick}
-                onPointerLeave={() => {
-                  isMouseRecalibrationIntentRef.current = false
-                }}
-                onPointerCancel={() => {
-                  isMouseRecalibrationIntentRef.current = false
-                }}
-                onBlur={() => {
-                  isMouseRecalibrationIntentRef.current = false
-                }}
-                style={recalibrationButtonStyle}
-                data-gaze-selection="mouse-only"
-              >
-                재캘리브레이션
-              </button>
               <button
                 type="button"
                 onPointerDown={handleLogoutPointerDown}

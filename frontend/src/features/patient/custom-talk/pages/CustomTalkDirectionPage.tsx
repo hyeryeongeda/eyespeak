@@ -136,17 +136,6 @@ function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): Cate
   })
 }
 
-function pickComposeCategory(
-  visibleCategories: CustomTalkCategoryOption[],
-): CustomTalkCategoryOption | null {
-  return (
-    visibleCategories.find(category => category.key === 'mood') ??
-    visibleCategories.find(category => category.key === 'schedule') ??
-    visibleCategories[0] ??
-    null
-  )
-}
-
 export default function CustomTalkDirectionPage() {
   const navigate = useNavigate()
   const chat = usePatientIncomingChat()
@@ -159,7 +148,7 @@ export default function CustomTalkDirectionPage() {
   const errorMessage = useCustomTalkStore(state => state.errorMessage)
   const initializeCustomTalk = useCustomTalkStore(state => state.initializeCustomTalk)
   const selectCategory = useCustomTalkStore(state => state.selectCategory)
-  const startCompose = useCustomTalkStore(state => state.startCompose)
+  const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
   const currentGuardianMessage =
     chat.latestUnresolvedMessage ??
     (chat.activeMessage?.sender === 'guardian' ? chat.activeMessage : null) ??
@@ -180,7 +169,6 @@ export default function CustomTalkDirectionPage() {
   useAutoDismissCustomTalkError(errorMessage)
 
   const categoryCards = buildCategoryCards(visibleCategories)
-  const composeCategory = pickComposeCategory(visibleCategories)
   const isBusy =
     status === 'loading' || status === 'refreshing' || status === 'submitting'
   const promptText =
@@ -226,16 +214,6 @@ export default function CustomTalkDirectionPage() {
     navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
   }
 
-  const handleStartCompose = async () => {
-    if (!composeCategory) {
-      return
-    }
-
-    selectCategory(composeCategory.key)
-    await startCompose()
-    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
-  }
-
   return (
     <CustomTalkEntryLayout
       title="맞춤문장"
@@ -273,12 +251,13 @@ export default function CustomTalkDirectionPage() {
       }}
       bottomCenter={{
         title: '직접말해요',
-        description: '추천 문장보다 기본적으로 바로 문장을 만듭니다.',
+        description: '추천을 건너뛰고 키보드로 바로 문장을 입력합니다.',
         tone: 'mint',
         onSelect: () => {
-          void handleStartCompose()
+          openKeyboard('custom_entry')
+          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
-        disabled: status === 'submitting' || !composeCategory,
+        disabled: status === 'submitting',
         trackingId: 'custom-talk-direction-keyboard',
       }}
       bottomRight={{
