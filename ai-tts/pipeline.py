@@ -46,7 +46,7 @@ def parse_args():
     )
     parser.add_argument("--patient_id", required=True, help="화자 ID (예: yh, kim)")
     parser.add_argument("--audio_path", required=True, help="원본 음성 파일 (m4a, mp3, wav 등)")
-    parser.add_argument("--epochs", type=int, default=80, help="학습 에포크 (기본: 80, 최대: 100)")
+    parser.add_argument("--epochs", type=int, default=60, help="학습 에포크 (기본: 60, 최대: 100)")
     parser.add_argument("--batch_size", type=int, default=2, help="배치 크기 (기본: 2)")
     parser.add_argument("--lr", type=float, default=2e-6, help="학습률 (기본: 2e-6, 최대: 3e-6)")
     parser.add_argument("--gpu", type=int, default=0, help="GPU 번호 (기본: 0)")
@@ -92,7 +92,7 @@ def step_preprocess(audio_path, patient_id, data_dir):
     if dur_match:
         print(f"  원본 길이: {dur_match.group(1)}")
 
-    print(f"\n  Whisper 전사 + 분할 (정규화 OFF, 2~12초)")
+    print(f"\n  Whisper 전사 + 분할 (loudnorm 정규화, 2~12초)")
     subprocess.run(
         [
             PYTHON_EXE, os.path.join(PROJECT_ROOT, "build_dataset.py"),
@@ -103,7 +103,6 @@ def step_preprocess(audio_path, patient_id, data_dir):
             "--language", "ko",
             "--min_duration", "2",
             "--max_duration", "12",
-            "--no_normalize",
         ],
         check=True, cwd=PROJECT_ROOT,
     )
@@ -115,22 +114,73 @@ def step_preprocess(audio_path, patient_id, data_dir):
     return num
 
 
-def step_train(patient_id, data_dir, epochs, batch_size, lr, gpu):
-    """[2/4] 학습 실행"""
+def find_latest_checkpoint(patient_id):
+    """최신 run 디렉토리에서 가장 최근 full checkpoint (optimizer state 포함) 찾기"""
+    latest_run = find_latest_run(patient_id)
+    if not latest_run:
+        return None
+
+    # checkpoint_XXXX.pth 파일 중 가장 큰 step 번호 찾기 (full state 포함)
+    import glob
+    ckpts = glob.glob(os.path.join(latest_run, "checkpoint_*.pth"))
+    if not ckpts:
+        return None
+
+    # step 번호로 정렬하여 최신 것 반환
+    def get_step(path):
+        base = os.path.basename(path)
+        try:
+            return int(base.replace("checkpoint_", "").replace(".pth", ""))
+        except ValueError:
+            return -1
+
+    ckpts.sort(key=get_step)
+    return ckpts[-1] if ckpts else None
+
+
+def step_train(patient_id, data_dir, epochs, batch_size, lr, gpu, max_retries=5):
+    """[2/4] 학습 실행 (중단 시 자동 재시작)"""
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = str(gpu)
 
-    subprocess.run(
-        [
+    restore_path = None
+    for attempt in range(max_retries + 1):
+        cmd = [
             PYTHON_EXE, os.path.join(PROJECT_ROOT, "train_gpt_xtts.py"),
             "--patient_id", patient_id,
             "--epochs", str(epochs),
             "--batch_size", str(batch_size),
             "--lr", str(lr),
             "--data_dir", data_dir,
-        ],
-        check=True, cwd=PROJECT_ROOT, env=env,
-    )
+        ]
+        if restore_path:
+            cmd.extend(["--restore_path", restore_path])
+
+        label = f"(시도 {attempt + 1}/{max_retries + 1})"
+        if restore_path:
+            print(f"\n  {label} 체크포인트에서 이어받기: {os.path.basename(restore_path)}")
+        else:
+            print(f"\n  {label} 학습 시작")
+
+        result = subprocess.run(cmd, cwd=PROJECT_ROOT, env=env)
+
+        if result.returncode == 0:
+            return  # 정상 완료
+
+        print(f"\n  학습이 중단되었습니다 (exit code: {result.returncode})")
+
+        if attempt < max_retries:
+            # 최신 체크포인트 찾아서 이어받기 준비
+            restore_path = find_latest_checkpoint(patient_id)
+            if restore_path:
+                print(f"  최신 체크포인트 발견: {os.path.basename(restore_path)}")
+                print(f"  5초 후 자동 재시작...")
+                time.sleep(5)
+            else:
+                print(f"  체크포인트를 찾을 수 없어 재시작 불가")
+                raise RuntimeError("학습 실패: 체크포인트 없음")
+        else:
+            raise RuntimeError(f"학습 실패: {max_retries + 1}회 시도 후 포기")
 
 
 def find_latest_run(patient_id=None):
