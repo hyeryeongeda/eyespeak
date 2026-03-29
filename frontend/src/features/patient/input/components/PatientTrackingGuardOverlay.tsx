@@ -1,8 +1,4 @@
 import { type CSSProperties } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../../app/router/routePaths'
-import { useAuth } from '../../../auth/hooks/useAuth'
-import { requestPatientRecalibration } from '../services/calibration/patientCalibrationService'
 import { isPatientTrackingBlocked, usePatientModeStore } from '../stores/patientModeStore'
 import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 
@@ -111,8 +107,6 @@ function getWarningCopy(status: CalibrationTrackingStatus) {
 }
 
 export default function PatientTrackingGuardOverlay() {
-  const navigate = useNavigate()
-  const { user, clearPatientPostAuth } = useAuth()
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const isGlobalMenuOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const isGlobalMenuTrackingBypassed = usePatientModeStore(
@@ -132,13 +126,6 @@ export default function PatientTrackingGuardOverlay() {
   const handleRefresh = () => {
     closeGlobalMenu()
     window.location.reload()
-  }
-
-  const handleRecalibration = () => {
-    closeGlobalMenu()
-    clearPatientPostAuth()
-    requestPatientRecalibration(user)
-    navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
   }
 
   return (

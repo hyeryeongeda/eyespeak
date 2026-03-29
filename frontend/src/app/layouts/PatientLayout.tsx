@@ -11,7 +11,6 @@ import usePatientTrackingBridge from '../../features/patient/input/hooks/usePati
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import type { PatientSelectionSurface } from '../../features/patient/input/services/patientSelectionPolicy'
 import {
-  isPatientTrackingAvailable,
   isPatientTrackingBlocked,
   usePatientModeStore,
 } from '../../features/patient/input/stores/patientModeStore'
