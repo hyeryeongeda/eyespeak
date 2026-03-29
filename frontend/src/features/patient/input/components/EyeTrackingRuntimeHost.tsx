@@ -33,13 +33,13 @@ const EDGE_MARGIN = 3
 const AUTO_BASELINE_FRAMES = 60
 
 // 블링크
-const BLINK_EAR_THRESHOLD = 0.18
-const BLINK_MIN_MS = 60
-const BLINK_MAX_MS = 400
-const BLINK_COOLDOWN_MS = 500
+const BLINK_EAR_THRESHOLD = 0.24
+const BLINK_MIN_MS = 50
+const BLINK_MAX_MS = 600
+const BLINK_COOLDOWN_MS = 350
 
 // 더블/트리플 블링크
-const MULTI_BLINK_WINDOW_MS = 800  // 이 시간 안에 연속 블링크 카운트
+const MULTI_BLINK_WINDOW_MS = 1000  // 이 시간 안에 연속 블링크 카운트
 
 const WASM_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/wasm'
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
@@ -132,16 +132,16 @@ function createHUD() {
   hud.id = 'eye-tracking-hud'
   hud.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:999998;'
 
-  // 오른쪽 상단: 블링크 알림
+  // 오른쪽 하단: 블링크 알림
   const blinkBadge = document.createElement('div')
   blinkBadge.id = 'eye-blink-badge'
-  blinkBadge.style.cssText = 'position:absolute;top:16px;right:16px;padding:8px 18px;border-radius:24px;font-size:15px;font-weight:800;color:white;opacity:0;transition:opacity 0.15s;pointer-events:none;'
+  blinkBadge.style.cssText = 'position:absolute;bottom:12px;right:12px;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;color:white;opacity:0;transition:opacity 0.15s;pointer-events:none;'
   hud.appendChild(blinkBadge)
 
-  // 왼쪽 상단: 현재 인식 메뉴
+  // 왼쪽 하단: 현재 인식 메뉴
   const targetBadge = document.createElement('div')
   targetBadge.id = 'eye-target-badge'
-  targetBadge.style.cssText = 'position:absolute;top:16px;left:16px;padding:6px 14px;border-radius:12px;font-size:13px;font-weight:700;color:rgba(255,255,255,0.9);background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);opacity:0;transition:opacity 0.2s;pointer-events:none;'
+  targetBadge.style.cssText = 'position:absolute;bottom:12px;left:12px;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:600;color:rgba(255,255,255,0.8);background:rgba(0,0,0,0.4);backdrop-filter:blur(4px);opacity:0;transition:opacity 0.2s;pointer-events:none;'
   hud.appendChild(targetBadge)
 
   document.body.appendChild(hud)
