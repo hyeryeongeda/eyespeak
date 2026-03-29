@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 import type { PatientDoubleBlinkSource } from '../services/patientModeBridge'
 
-export const PATIENT_GLOBAL_MENU_DWELL_MS = 500
+export const DEFAULT_PATIENT_SELECTION_DWELL_MS = 2000
 
 export function isPatientTrackingAvailable(status: CalibrationTrackingStatus) {
   return status === 'ready'
@@ -15,21 +15,21 @@ export function isPatientTrackingBlocked(status: CalibrationTrackingStatus) {
 interface PatientModeState {
   isGlobalMenuOpen: boolean
   isGlobalMenuTrackingBypassed: boolean
-  globalMenuDwellDurationMs: number
+  selectionDwellDurationMs: number
   trackingStatus: CalibrationTrackingStatus
   openGlobalMenu: (options?: { bypassTracking?: boolean }) => void
   closeGlobalMenu: () => void
   toggleGlobalMenu: (options?: { bypassTracking?: boolean }) => void
   handleDoubleBlink: (source?: PatientDoubleBlinkSource) => void
   setTrackingStatus: (status: CalibrationTrackingStatus) => void
-  setGlobalMenuDwellDurationMs: (durationMs: number) => void
+  setSelectionDwellDurationMs: (durationMs: number) => void
   resetPatientModeState: () => void
 }
 
 const initialState = {
   isGlobalMenuOpen: false,
   isGlobalMenuTrackingBypassed: false,
-  globalMenuDwellDurationMs: PATIENT_GLOBAL_MENU_DWELL_MS,
+  selectionDwellDurationMs: DEFAULT_PATIENT_SELECTION_DWELL_MS,
   trackingStatus: 'idle' as const,
 }
 
@@ -92,9 +92,9 @@ export const usePatientModeStore = create<PatientModeState>((set, get) => ({
           : false,
     }))
   },
-  setGlobalMenuDwellDurationMs: durationMs => {
+  setSelectionDwellDurationMs: durationMs => {
     set({
-      globalMenuDwellDurationMs: Math.max(1, Math.round(durationMs)),
+      selectionDwellDurationMs: Math.max(1, Math.round(durationMs)),
     })
   },
   resetPatientModeState: () => {

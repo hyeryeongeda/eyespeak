@@ -235,8 +235,8 @@ export default function FavoritesPage() {
         ? null
         : hasPrevPage && hasNextPage
           ? {
-              // Keep the shared pagination slot deterministic while still letting DOM proximity
-              // choose the actual prev/next button when the gaze point is clearly inside one.
+              // This is the one remaining ambiguous slot: when both buttons coexist in one cell,
+              // the gaze click hook logs the ambiguity and falls back to direct point hit-testing.
               targets: [TRACKING_PAGINATION_NEXT, TRACKING_PAGINATION_PREV],
               groupId: 'favorites-pagination',
             }

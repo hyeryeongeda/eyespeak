@@ -8,7 +8,6 @@ import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
-import { PATIENT_DWELL_CONFIRM_MS } from '../services/trackingService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import { requestPatientCall as requestPatientSosCall } from '../../../../services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
@@ -202,6 +201,7 @@ export default function GlobalMenuOverlay() {
   const isOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const isTrackingBypassed = usePatientModeStore(state => state.isGlobalMenuTrackingBypassed)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
+  const selectionDwellDurationMs = usePatientModeStore(state => state.selectionDwellDurationMs)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
 
@@ -218,7 +218,7 @@ export default function GlobalMenuOverlay() {
 
   const dwellState = useDwell<GlobalMenuTargetId>({
     hoveredTargetId: dwellTargetId,
-    dwellDurationMs: PATIENT_DWELL_CONFIRM_MS,
+    dwellDurationMs: selectionDwellDurationMs,
     disabled:
       !isOpen ||
       pendingTargetId !== null ||
