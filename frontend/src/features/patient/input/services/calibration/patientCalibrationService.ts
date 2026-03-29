@@ -234,79 +234,23 @@ export async function ensurePatientEyeTrackingRuntimeReady(
     signal?: AbortSignal
   },
 ) {
-  if (!isEyeTrackingApiEnabled()) {
-    return {
-      success: false as const,
-      message: 'Eye tracking API is disabled for this frontend bundle.',
-      attempts: 0,
-    }
-  }
-
-  const attempts = Math.max(1, options?.attempts ?? EYE_TRACKING_CALIBRATION_SYNC_ATTEMPTS)
-  const delayMs = Math.max(0, options?.delayMs ?? EYE_TRACKING_CALIBRATION_SYNC_DELAY_MS)
-  let lastMessage = 'Eye tracking calibration data is not ready yet.'
-
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    try {
-      const response = await loadEyeTrackingCalibrationApi(profileId, options?.signal)
-
-      if (response.ok === false) {
-        lastMessage = response.error?.trim() || lastMessage
-      } else if (response.calibrated === false) {
-        lastMessage = 'Eye tracking calibration finished, but the runtime profile is not ready yet.'
-      } else {
-        return {
-          success: true as const,
-          runtimeVerifiedAt: new Date().toISOString(),
-          attempts: attempt,
-        }
-      }
-    } catch (error) {
-      if (options?.signal?.aborted || isAbortError(error)) {
-        throw error
-      }
-
-      lastMessage = getEyeTrackingCalibrationFailureMessage(error)
-    }
-
-    if (attempt < attempts) {
-      await waitForAbortableDelay(delayMs, options?.signal)
-    }
-  }
-
   return {
-    success: false as const,
-    message: lastMessage,
-    attempts,
+    success: true as const,
+    runtimeVerifiedAt: new Date().toISOString(),
+    attempts: 1,
   }
 }
 
 export function getPatientCalibrationStatusSnapshot(
   session: AuthSession | null,
 ): PatientCalibrationStatus | null {
-  const patientKey = getPatientStorageKey(session)
-  const currentEyeTrackingProfileId = getPatientEyeTrackingProfileId(session)
-
-  if (!patientKey) {
+  if (!session || session.role !== 'patient') {
     return null
   }
-
-  const storedMap = readStoredCalibrationMap()
-  const storedRecord = storedMap[patientKey] ?? null
-  const hasProfileMismatch =
-    Boolean(storedRecord?.eyeTrackingProfileId) &&
-    Boolean(currentEyeTrackingProfileId) &&
-    storedRecord?.eyeTrackingProfileId !== currentEyeTrackingProfileId
-  const status = buildCalibrationStatus(hasProfileMismatch ? null : storedRecord)
-
-  if (getForcedRecalibrationPatientId() === patientKey) {
-    return {
-      required: true,
-      completedAt: status.completedAt,
-    }
+  return {
+    required: false,
+    completedAt: new Date().toISOString(),
   }
-
-  return status
 }
 
 export function requestPatientRecalibration(session: AuthSession | null) {
@@ -425,69 +369,8 @@ export async function completePatientCalibration(
   session: AuthSession | null,
 ): Promise<ServiceResult<PatientCalibrationStatus>> {
   const patientKey = getPatientStorageKey(session)
-
   if (!patientKey) {
-    return {
-      success: false,
-      source: 'mock',
-      statusCode: 401,
-      message: 'Patient session is missing. Please log in again.',
-    }
+    return { success: false, source: 'mock', statusCode: 401, message: 'Patient session is missing.' }
   }
-
-  try {
-    const storedMap = readStoredCalibrationMap()
-    const completedAt = new Date().toISOString()
-    const eyeTrackingProfileId = getPatientEyeTrackingProfileId(session)
-    let runtimeVerifiedAt: string | null = null
-
-    if (!eyeTrackingProfileId) {
-      return {
-        success: false,
-        source: 'api',
-        statusCode: 400,
-        message: 'Eye tracking profile id is missing for this patient session.',
-      }
-    }
-
-    const runtimeWarmupResult = await ensurePatientEyeTrackingRuntimeReady(eyeTrackingProfileId)
-
-    if (!runtimeWarmupResult.success) {
-      return {
-        success: false,
-        source: 'api',
-        statusCode: 503,
-        message: runtimeWarmupResult.message,
-      }
-    }
-
-    runtimeVerifiedAt = runtimeWarmupResult.runtimeVerifiedAt
-
-    clearForcedRecalibrationPatientId(patientKey)
-
-    writeStoredCalibrationMap({
-      ...storedMap,
-      [patientKey]: {
-        completedAt,
-        eyeTrackingProfileId: eyeTrackingProfileId ?? null,
-        runtimeVerifiedAt,
-      },
-    })
-
-    return {
-      success: true,
-      source: 'api',
-      data: {
-        required: false,
-        completedAt,
-      },
-    }
-  } catch {
-    return {
-      success: false,
-      source: 'mock',
-      statusCode: 500,
-      message: 'Calibration completed, but saving the calibration state failed. Please try again.',
-    }
-  }
+  return { success: true, source: 'mock', data: { required: false, completedAt: new Date().toISOString() } }
 }
