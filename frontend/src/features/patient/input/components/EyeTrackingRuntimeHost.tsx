@@ -111,7 +111,6 @@ export default function EyeTrackingRuntimeHost({
 
       switch (event.data.type) {
         case 'RUNTIME_READY':
-          emitPatientTrackingStatus('face-not-detected')
           break
         case 'RUNTIME_STATUS': {
           const status = clampTrackingStatus(event.data.payload.status)

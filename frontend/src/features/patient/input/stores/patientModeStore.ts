@@ -30,7 +30,7 @@ const initialState = {
   isGlobalMenuOpen: false,
   isGlobalMenuTrackingBypassed: false,
   selectionDwellDurationMs: DEFAULT_PATIENT_SELECTION_DWELL_MS,
-  trackingStatus: 'idle' as const,
+  trackingStatus: 'ready' as const,
 }
 
 export const usePatientModeStore = create<PatientModeState>((set, get) => ({
