@@ -55,7 +55,6 @@ const ENABLE_MOUSE_DWELL_CONFIRM =
 
 type SelectionTargetSource = 'cell-mapping' | 'pointer-hit-test'
 
-type GazePoint = { clientX: number; clientY: number; updatedAt?: number } | null
 type CellMappingFallbackReason =
   | 'missing-cell'
   | 'missing-mapping'

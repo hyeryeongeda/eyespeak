@@ -407,7 +407,7 @@ function PatientLayoutShell() {
         </Suspense>
       ) : null}
       {!isCalibrationRoute ? <PatientTrackingGuardOverlay /> : null}
-      {import.meta.env.DEV && !isCalibrationRoute ? <GazeDebugOverlay /> : null}
+      {!isCalibrationRoute ? <GazeDebugOverlay /> : null}
 
       {!isCalibrationRoute && chat.shouldShowInterruptOverlay ? (
         <Suspense fallback={null}>
