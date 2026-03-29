@@ -7,16 +7,13 @@ import {
 } from '../../../../services/careSettingService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
-  CUSTOM_TALK_CARD_SELECTOR,
   getCustomTalkSelectableGroupElement,
 } from '../../custom-talk/utils/selectionScope'
 import {
   getPatientSelectionProfile,
-  type PatientSelectionProfile,
   type PatientSelectionSurface,
 } from '../services/patientSelectionPolicy'
 import {
-  PATIENT_DWELL_CONFIRM_MS,
   PATIENT_INTERACTION_MARKER_ATTRIBUTE,
   PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE,
   PATIENT_INTERACTION_SOURCE_ATTRIBUTE,
@@ -25,7 +22,6 @@ import {
   type PatientInteractionState,
   getInteractiveElementFromPoint,
   getInteractiveElementSelectionKey,
-  getWeightedInteractiveTargetFromArea,
   isInteractiveElementEligibleForGlobalGazeSelection,
 } from '../services/trackingService'
 import {
@@ -52,7 +48,6 @@ interface UsePatientGazeClickOptions {
 const SELECTION_CONFIRM_FEEDBACK_MS = 420
 const SELECTION_COMMIT_DELAY_MS = 0
 const ROUTE_TRANSITION_COMMIT_GUARD_MS = 450
-const MAPPED_TARGET_AMBIGUITY_PX = 28
 const DIALOG_SELECTION_CONTAINER_SELECTOR = '[role="dialog"][aria-modal="true"]'
 const ENABLE_MOUSE_DWELL_CONFIRM =
   import.meta.env.DEV &&
@@ -60,21 +55,19 @@ const ENABLE_MOUSE_DWELL_CONFIRM =
 
 type SelectionTargetSource =
   | 'cell-mapping'
-  | 'patient-main-point'
-  | 'area-hit-test'
-  | 'point-hit-test'
-  | 'point-nearest'
+  | 'fallback-point-hit-test'
+  | 'pointer-hit-test'
 
 type GazePoint = { clientX: number; clientY: number; updatedAt?: number } | null
-type SelectionSemanticRole =
-  | 'action'
-  | 'back'
-  | 'keyboard'
-  | 'main'
-  | 'option'
-  | 'other'
-  | 'refresh'
-  | 'skip'
+type CellMappingFallbackReason =
+  | 'missing-cell'
+  | 'missing-mapping'
+  | 'unmapped-cell'
+  | 'ambiguous-cell-target'
+  | 'missing-element'
+  | 'outside-active-container'
+  | 'blocked-element'
+type CellMappingSource = 'active-store' | 'patient-main-fallback'
 
 interface SelectionTarget {
   element: HTMLElement
@@ -83,10 +76,14 @@ interface SelectionTarget {
   source: SelectionTargetSource
   cell: number | null
   groupId: string | null
-  namespace: string | null
-  semanticRole: SelectionSemanticRole
-  isBackTarget: boolean
-  confidence: number
+}
+
+interface CanonicalCellTargetResolution {
+  target: SelectionTarget | null
+  fallbackReason: CellMappingFallbackReason | null
+  mappingSource: CellMappingSource | null
+  mappedTargets: string[]
+  groupId: string | null
 }
 
 interface SelectionCooldownEntry {
@@ -99,11 +96,6 @@ interface SelectionCooldownEntry {
 type PatientDebugWindow = Window & {
   __DEV_GAZE_DISABLE_POINT_HIT_TEST?: boolean
   __PATIENT_GAZE_DEBUG_STATE?: unknown
-}
-
-type SelectableTrackingTarget = {
-  element: HTMLElement
-  trackingId: string
 }
 
 let lastMappedTargetDebugKey: string | null = null
@@ -214,188 +206,8 @@ function getElementByTrackingId(trackingId: string) {
   return document.querySelector<HTMLElement>(`[data-tracking-id="${escapedTrackingId}"]`)
 }
 
-function getElementSelectionCell(element: HTMLElement | null) {
-  if (!element) {
-    return null
-  }
-
-  const rawCell = element.dataset.cell
-
-  if (typeof rawCell !== 'string' || rawCell.trim().length === 0) {
-    return null
-  }
-
-  const parsedCell = Number.parseInt(rawCell, 10)
-
-  return Number.isFinite(parsedCell) ? parsedCell : null
-}
-
 function isCustomTalkSurface(surface: PatientSelectionSurface) {
   return surface === 'custom-talk' || surface === 'keyboard'
-}
-
-function getSelectionNamespace(trackingId: string | null | undefined) {
-  if (!trackingId) {
-    return null
-  }
-
-  if (isPatientMainTrackingId(trackingId)) {
-    return 'patient-main'
-  }
-
-  if (trackingId.startsWith('talk-main-')) {
-    return 'talk-main'
-  }
-
-  const match = trackingId.match(
-    /^(.*?)-(?:option-\d+|recommendation-\d+|item-[^-]+|level-\d+|pagination-(?:prev|next)|back(?:-[a-z]+)?|next|prev|refresh|skip|keyboard|action|confirm|retry(?:-[a-z]+)?|home|yes|no|sos)$/,
-  )
-
-  return match?.[1] ?? null
-}
-
-function getSelectionSemanticRole(
-  trackingId: string | null | undefined,
-): SelectionSemanticRole {
-  if (!trackingId) {
-    return 'other'
-  }
-
-  if (/(^|-)back($|-)/.test(trackingId)) {
-    return 'back'
-  }
-
-  if (/(^|-)(option|recommendation|item|level)-/.test(trackingId)) {
-    return 'option'
-  }
-
-  if (trackingId.endsWith('-refresh')) {
-    return 'refresh'
-  }
-
-  if (trackingId.endsWith('-skip')) {
-    return 'skip'
-  }
-
-  if (trackingId.endsWith('-keyboard')) {
-    return 'keyboard'
-  }
-
-  if (trackingId.endsWith('-action')) {
-    return 'action'
-  }
-
-  if (
-    trackingId.endsWith('-confirm') ||
-    trackingId.endsWith('-next') ||
-    trackingId.endsWith('-prev') ||
-    trackingId.endsWith('-retry') ||
-    trackingId === 'yes' ||
-    trackingId === 'no' ||
-    trackingId === 'sos' ||
-    trackingId === 'home'
-  ) {
-    return 'action'
-  }
-
-  if (isPatientMainTrackingId(trackingId) || trackingId.startsWith('talk-main-')) {
-    return 'main'
-  }
-
-  return 'other'
-}
-
-function isSelectionTargetVisible(target: SelectionTarget | null) {
-  return Boolean(target && isElementVisibleForSelection(target.element))
-}
-
-function areTargetsInSameCell(
-  left: SelectionTarget | null,
-  right: SelectionTarget | null,
-) {
-  return left?.cell !== null && left?.cell !== undefined && left.cell === right?.cell
-}
-
-function areTargetsInSameSemanticGroup(
-  left: SelectionTarget | null,
-  right: SelectionTarget | null,
-) {
-  if (!left || !right) {
-    return false
-  }
-
-  if (left.groupId && right.groupId && left.groupId === right.groupId) {
-    return true
-  }
-
-  if (
-    left.namespace &&
-    left.namespace === right.namespace &&
-    left.semanticRole === right.semanticRole &&
-    left.semanticRole !== 'back'
-  ) {
-    return true
-  }
-
-  return false
-}
-
-function isOptionSelectionTarget(target: SelectionTarget | null) {
-  return target?.semanticRole === 'option'
-}
-
-function getNearestTargetConfidence(distance: number) {
-  const normalizedDistance = Math.min(1, distance / 420)
-  return 0.24 + (1 - normalizedDistance) * 0.2
-}
-
-function getSelectionTargetPreferenceScore(
-  target: SelectionTarget,
-  stableTarget: SelectionTarget | null,
-) {
-  let score = target.confidence
-
-  if (stableTarget?.key === target.key) {
-    score += 0.34
-  }
-
-  if (areTargetsInSameCell(target, stableTarget)) {
-    score += 0.16
-  }
-
-  if (areTargetsInSameSemanticGroup(target, stableTarget)) {
-    score += 0.12
-  }
-
-  if (isOptionSelectionTarget(target)) {
-    score += 0.08
-  }
-
-  if (
-    target.semanticRole === 'action' ||
-    target.semanticRole === 'keyboard' ||
-    target.semanticRole === 'main'
-  ) {
-    score += 0.06
-  }
-
-  if (target.source === 'cell-mapping') {
-    score += 0.05
-  }
-
-  if (target.source === 'area-hit-test') {
-    score += 0.03
-  }
-
-  if (target.isBackTarget) {
-    score -= 0.18
-
-    if (stableTarget && !stableTarget.isBackTarget) {
-      score -= 0.22
-    }
-  }
-
-  return score
 }
 
 function createSelectionTarget(
@@ -403,47 +215,15 @@ function createSelectionTarget(
   source: SelectionTargetSource,
   cell: number | null,
   groupId: string | null = null,
-  confidence = 0.5,
 ): SelectionTarget {
-  const trackingId = element.dataset.trackingId ?? null
-  const semanticRole = getSelectionSemanticRole(trackingId)
-
   return {
     element,
     key: getInteractiveElementSelectionKey(element),
-    trackingId,
+    trackingId: element.dataset.trackingId ?? null,
     source,
-    cell: cell ?? getElementSelectionCell(element),
+    cell,
     groupId,
-    namespace: getSelectionNamespace(trackingId),
-    semanticRole,
-    isBackTarget: semanticRole === 'back',
-    confidence,
   }
-}
-
-function isPatientMainTrackingId(value: string | null | undefined) {
-  return value === 'talk' || value === 'call' || value === 'leisure'
-}
-
-function getPatientMainPointTarget(gazePoint: GazePoint): SelectionTarget | null {
-  if (!gazePoint) {
-    return null
-  }
-
-  const element = getInteractiveElementFromPoint(gazePoint.clientX, gazePoint.clientY)
-
-  if (!element || !isPatientMainTrackingId(element.dataset.trackingId)) {
-    return null
-  }
-
-  return createSelectionTarget(
-    element,
-    'patient-main-point',
-    null,
-    element.dataset.trackingId ?? null,
-    0.92,
-  )
 }
 
 function getFallbackPatientMainCellMapping(): PatientCellMapping | null {
@@ -520,465 +300,221 @@ function getSelectionBlockReason(element: HTMLElement | null) {
   return null
 }
 
-function debugMappedTarget(event: string, payload: Record<string, unknown>) {
-  if (!import.meta.env.DEV) {
-    return
-  }
-
+function debugSelectionResolution(event: string, payload: Record<string, unknown>) {
   const nextDebugKey = `${event}:${JSON.stringify(payload)}`
   if (lastMappedTargetDebugKey === nextDebugKey) {
     return
   }
 
   lastMappedTargetDebugKey = nextDebugKey
-  console.info('[patient-input] mapped-target', {
+  console.info('[patient-input] selection-resolution', {
     event,
     ...payload,
   })
 }
 
-function isElementVisibleForSelection(element: HTMLElement) {
-  if (!element.isConnected) {
-    return false
-  }
-
-  if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
-    return false
-  }
-
-  const computedStyle = window.getComputedStyle(element)
-
-  if (
-    element.hidden ||
-    element.closest('[hidden], [inert], [aria-hidden="true"]') ||
-    ('inert' in element && Boolean((element as HTMLElement & { inert?: boolean }).inert)) ||
-    computedStyle.display === 'none' ||
-    computedStyle.visibility === 'hidden' ||
-    computedStyle.pointerEvents === 'none'
-  ) {
-    return false
-  }
-
-  const rect = element.getBoundingClientRect()
-  return rect.width > 0 && rect.height > 0
-}
-
-function isElementVisuallyInteractive(element: HTMLElement) {
-  return isElementVisibleForSelection(element) && getSelectionBlockReason(element) === null
-}
-
-function getNearestInteractiveTargetFromPoint(
-  gazePoint: GazePoint,
-  options?: {
-    container?: HTMLElement | null
-    candidateSelector?: string
-    source?: SelectionTargetSource
-  },
-): SelectionTarget | null {
-  if (typeof document === 'undefined' || !gazePoint) {
-    return null
-  }
-
-  const interactiveElements = Array.from(
-    document.querySelectorAll<HTMLElement>(
-      options?.candidateSelector ?? PATIENT_INTERACTIVE_ELEMENT_SELECTOR,
-    ),
-  ).filter(
-    element =>
-      (!options?.container || options.container.contains(element)) &&
-      isElementVisuallyInteractive(element),
-  )
-
-  if (interactiveElements.length === 0) {
-    return null
-  }
-
-  const nearest = interactiveElements.reduce<{
-    element: HTMLElement
-    distance: number
-  } | null>((best, current) => {
-    if (!best) {
-      const rect = current.getBoundingClientRect()
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
-
-      return {
-        element: current,
-        distance: Math.hypot(gazePoint.clientX - centerX, gazePoint.clientY - centerY),
-      }
-    }
-
-    const currentRect = current.getBoundingClientRect()
-    const currentCenterX = currentRect.left + currentRect.width / 2
-    const currentCenterY = currentRect.top + currentRect.height / 2
-    const currentDistance = Math.hypot(
-      gazePoint.clientX - currentCenterX,
-      gazePoint.clientY - currentCenterY,
-    )
-
-    return currentDistance < best.distance
-      ? {
-          element: current,
-          distance: currentDistance,
-        }
-      : best
-  }, null)
-
-  return nearest
-    ? createSelectionTarget(
-        nearest.element,
-        options?.source ?? 'point-nearest',
-        null,
-        null,
-        getNearestTargetConfidence(nearest.distance),
-      )
-    : null
-}
-
-function getSelectableTrackingTargets(
-  trackingIds: string[],
-  options?: {
-    container?: HTMLElement | null
-  },
-) {
-  return trackingIds
-    .map(trackingId => ({
-      trackingId,
-      element: getElementByTrackingId(trackingId),
-    }))
-    .filter(
-      (
-        entry,
-      ): entry is SelectableTrackingTarget => {
-        if (!entry.element) {
-          return false
-        }
-
-        if (options?.container && !options.container.contains(entry.element)) {
-          return false
-        }
-
-        return getSelectionBlockReason(entry.element) === null
-      },
-    )
-}
-
-function getNearestTrackingId(
-  targets: SelectableTrackingTarget[],
-  gazePoint: GazePoint,
-) {
-  if (!gazePoint || targets.length === 0) {
-    return null
-  }
-
-  const distances = targets
-    .map(current => {
-      const rect = current.element.getBoundingClientRect()
-      const centerX = rect.left + rect.width / 2
-      const centerY = rect.top + rect.height / 2
-      return {
-        ...current,
-        distance: Math.hypot(gazePoint.clientX - centerX, gazePoint.clientY - centerY),
-      }
-    })
-    .sort((left, right) => left.distance - right.distance)
-
-  const nearestElement = distances[0] ?? null
-  const secondNearestElement = distances[1] ?? null
-
-  if (
-    nearestElement &&
-    secondNearestElement &&
-    Math.abs(secondNearestElement.distance - nearestElement.distance) <= MAPPED_TARGET_AMBIGUITY_PX
-  ) {
-    return targets[0]?.trackingId ?? nearestElement.trackingId
-  }
-
-  return nearestElement?.trackingId ?? null
-}
-
-function resolveMappedGazeTarget(input: {
+function resolveCanonicalCellMappedTarget(input: {
   cell: number | null
   mapping: PatientCellMapping | null
-  gazePoint: GazePoint
-  stableTarget: SelectionTarget | null
-  pointTarget: SelectionTarget | null
   activeContainer?: HTMLElement | null
-}): SelectionTarget | null {
-  const {
-    cell,
-    mapping,
-    gazePoint,
-    stableTarget,
-    pointTarget,
-    activeContainer,
-  } = input
+  mappingSource: CellMappingSource | null
+}): CanonicalCellTargetResolution {
+  const { cell, mapping, activeContainer, mappingSource } = input
 
-  if (cell === null || !mapping) {
-    return null
+  if (cell === null) {
+    return {
+      target: null,
+      fallbackReason: 'missing-cell',
+      mappingSource,
+      mappedTargets: [],
+      groupId: null,
+    }
+  }
+
+  if (!mapping) {
+    return {
+      target: null,
+      fallbackReason: 'missing-mapping',
+      mappingSource,
+      mappedTargets: [],
+      groupId: null,
+    }
   }
 
   const normalizedTarget = normalizePatientCellMappingTarget(mapping[cell] ?? null)
 
   if (normalizedTarget.allTargets.length === 0) {
-    return null
+    return {
+      target: null,
+      fallbackReason: 'unmapped-cell',
+      mappingSource,
+      mappedTargets: [],
+      groupId: normalizedTarget.groupId,
+    }
   }
 
-  const stableTrackingId = stableTarget?.trackingId ?? null
+  if (normalizedTarget.targets.length > 1 || normalizedTarget.fallbackTargets.length > 1) {
+    return {
+      target: null,
+      fallbackReason: 'ambiguous-cell-target',
+      mappingSource,
+      mappedTargets: normalizedTarget.allTargets,
+      groupId: normalizedTarget.groupId,
+    }
+  }
 
-  const resolveTrackingId = (trackingIds: string[]) => {
-    const selectableTargets = getSelectableTrackingTargets(trackingIds, {
-      container: activeContainer,
-    })
+  const candidateTrackingIds = [
+    normalizedTarget.targets[0] ?? null,
+    normalizedTarget.fallbackTargets[0] ?? null,
+  ].filter((trackingId): trackingId is string => Boolean(trackingId))
 
-    if (selectableTargets.length === 0) {
-      return {
-        element: null,
-        trackingId: null,
-        confidence: 0,
-      }
+  let fallbackReason: CellMappingFallbackReason = 'missing-element'
+
+  for (const trackingId of candidateTrackingIds) {
+    const mappedElement = getElementByTrackingId(trackingId)
+
+    if (!mappedElement) {
+      fallbackReason = 'missing-element'
+      continue
     }
 
-    const pointTrackingId = pointTarget?.trackingId ?? null
-
-    if (pointTrackingId && selectableTargets.some(target => target.trackingId === pointTrackingId)) {
-      return {
-        element:
-          selectableTargets.find(target => target.trackingId === pointTrackingId)?.element ?? null,
-        trackingId: pointTrackingId,
-        confidence: 0.94,
-      }
+    if (activeContainer && !activeContainer.contains(mappedElement)) {
+      fallbackReason = 'outside-active-container'
+      continue
     }
 
-    if (
-      stableTrackingId &&
-      selectableTargets.some(target => target.trackingId === stableTrackingId)
-    ) {
-      return {
-        element:
-          selectableTargets.find(target => target.trackingId === stableTrackingId)?.element ?? null,
-        trackingId: stableTrackingId,
-        confidence: 0.88,
-      }
+    if (getSelectionBlockReason(mappedElement) !== null) {
+      fallbackReason = 'blocked-element'
+      continue
     }
-
-    const nearestTrackingId =
-      getNearestTrackingId(selectableTargets, gazePoint) ?? selectableTargets[0]?.trackingId ?? null
 
     return {
-      element:
-        selectableTargets.find(target => target.trackingId === nearestTrackingId)?.element ?? null,
-      trackingId: nearestTrackingId,
-      confidence: 0.74,
+      target: createSelectionTarget(mappedElement, 'cell-mapping', cell, normalizedTarget.groupId),
+      fallbackReason: null,
+      mappingSource,
+      mappedTargets: normalizedTarget.allTargets,
+      groupId: normalizedTarget.groupId,
     }
   }
 
-  const resolvedPrimaryTarget = resolveTrackingId(normalizedTarget.targets)
-  const resolvedFallbackTarget = resolveTrackingId(normalizedTarget.fallbackTargets)
-  const resolvedTarget =
-    resolvedPrimaryTarget.trackingId !== null
-      ? resolvedPrimaryTarget
-      : resolvedFallbackTarget
-  const trackingId = resolvedTarget.trackingId
-
-  if (!trackingId) {
-    if (normalizedTarget.allTargets.length > 0) {
-      debugMappedTarget('filtered-out', {
-        cell,
-        groupId: normalizedTarget.groupId,
-        targets: normalizedTarget.allTargets,
-        reason: activeContainer ? 'unavailable-in-active-container' : 'unavailable',
-      })
-    }
-
-    return null
+  return {
+    target: null,
+    fallbackReason,
+    mappingSource,
+    mappedTargets: normalizedTarget.allTargets,
+    groupId: normalizedTarget.groupId,
   }
-
-  const mappedElement = resolvedTarget.element
-
-  if (!mappedElement || getSelectionBlockReason(mappedElement) !== null) {
-    return null
-  }
-
-  return createSelectionTarget(
-    mappedElement,
-    'cell-mapping',
-    cell,
-    normalizedTarget.groupId,
-    resolvedTarget === resolvedFallbackTarget ? 0.58 : resolvedTarget.confidence,
-  )
 }
 
-function getAreaHitTarget(input: {
+function resolveFallbackPointTarget(input: {
   gazePoint: GazePoint
   gazeCell: number | null
-  radiusPx: number
-  container?: HTMLElement | null
-  candidateSelector?: string
+  activeContainer?: HTMLElement | null
 }): SelectionTarget | null {
-  const { gazePoint, gazeCell, radiusPx, container, candidateSelector } = input
+  const { gazePoint, gazeCell, activeContainer } = input
 
   if (!gazePoint) {
     return null
   }
 
-  const areaTarget = getWeightedInteractiveTargetFromArea(gazePoint.clientX, gazePoint.clientY, {
-    container,
-    radiusPx,
-    candidateSelector,
-  })
-
-  if (!areaTarget) {
-    return null
-  }
-
-  return createSelectionTarget(
-    areaTarget.element,
-    'area-hit-test',
-    gazeCell,
-    null,
-    0.55 + areaTarget.score * 0.45,
+  const pointElement = getInteractiveElementFromPoint(
+    gazePoint.clientX,
+    gazePoint.clientY,
+    activeContainer,
   )
-}
 
-function dedupeSelectionTargets(
-  targets: Array<SelectionTarget | null>,
-) {
-  const targetByKey = new Map<string, SelectionTarget>()
-
-  for (const target of targets) {
-    if (!target) {
-      continue
-    }
-
-    const existingTarget = targetByKey.get(target.key)
-
-    if (!existingTarget || existingTarget.confidence < target.confidence) {
-      targetByKey.set(target.key, target)
-    }
-  }
-
-  return Array.from(targetByKey.values())
-}
-
-function getPreferredSelectionTarget(input: {
-  stableTarget: SelectionTarget | null
-  pointTarget: SelectionTarget | null
-  mappedTarget: SelectionTarget | null
-  nearestTarget: SelectionTarget | null
-}) {
-  const { stableTarget, pointTarget, mappedTarget, nearestTarget } = input
-  const hasObservedCandidate = Boolean(pointTarget || mappedTarget || nearestTarget)
-  const candidateTargets = dedupeSelectionTargets([
-    pointTarget,
-    mappedTarget,
-    nearestTarget,
-    hasObservedCandidate && isSelectionTargetVisible(stableTarget) ? stableTarget : null,
-  ])
-
-  if (candidateTargets.length === 0) {
-    return null
-  }
-
-  return candidateTargets.reduce<SelectionTarget | null>((bestTarget, currentTarget) => {
-    if (!bestTarget) {
-      return currentTarget
-    }
-
-    const currentScore = getSelectionTargetPreferenceScore(currentTarget, stableTarget)
-    const bestScore = getSelectionTargetPreferenceScore(bestTarget, stableTarget)
-
-    if (currentScore > bestScore) {
-      return currentTarget
-    }
-
-    if (currentScore === bestScore && currentTarget.confidence > bestTarget.confidence) {
-      return currentTarget
-    }
-
-    return bestTarget
-  }, null)
+  return pointElement
+    ? createSelectionTarget(pointElement, 'fallback-point-hit-test', gazeCell)
+    : null
 }
 
 function resolveRawGazeTarget(input: {
   enabled: boolean
   selectionSurface: PatientSelectionSurface
-  selectionProfile: PatientSelectionProfile
   gazePoint: GazePoint
   gazeCell: number | null
   cellMapping: PatientCellMapping | null
-  stableTarget: SelectionTarget | null
+  activeCellMappingOwner: string | null
 }): SelectionTarget | null {
-  const { enabled, gazePoint, gazeCell, cellMapping, stableTarget } = input
+  const { enabled, gazePoint, gazeCell, cellMapping, activeCellMappingOwner } = input
 
   if (!enabled) {
     return null
   }
 
-  const activeCellMapping = cellMapping ?? getFallbackPatientMainCellMapping()
+  const fallbackPatientMainCellMapping = getFallbackPatientMainCellMapping()
+  const activeCellMapping = cellMapping ?? fallbackPatientMainCellMapping
+  const cellMappingSource: CellMappingSource | null = cellMapping
+    ? 'active-store'
+    : fallbackPatientMainCellMapping
+      ? 'patient-main-fallback'
+      : null
   const candidateContainer = resolveActiveSelectionContainer(input.selectionSurface)
-  const candidateSelector = isCustomTalkSurface(input.selectionSurface)
-    ? CUSTOM_TALK_CARD_SELECTOR
-    : undefined
-
   const disablePointHitTest =
     import.meta.env.DEV &&
     typeof window !== 'undefined' &&
     (window as PatientDebugWindow).__DEV_GAZE_DISABLE_POINT_HIT_TEST === true
 
-  if (gazePoint && !disablePointHitTest) {
-    const patientMainPointTarget = getPatientMainPointTarget(gazePoint)
-    if (patientMainPointTarget) {
-      return patientMainPointTarget
-    }
-  }
-
-  let pointTarget: SelectionTarget | null = null
-
-  if (gazePoint && !disablePointHitTest) {
-    pointTarget = getAreaHitTarget({
-      gazePoint,
-      gazeCell,
-      radiusPx: input.selectionProfile.areaHitRadiusPx,
-      container: candidateContainer,
-      candidateSelector,
-    })
-
-    if (!pointTarget) {
-      const pointElement = getInteractiveElementFromPoint(
-        gazePoint.clientX,
-        gazePoint.clientY,
-        candidateContainer,
-      )
-      if (pointElement) {
-        pointTarget = createSelectionTarget(pointElement, 'point-hit-test', gazeCell, null, 0.88)
-      }
-    }
-  }
-
-  const mappedTarget = resolveMappedGazeTarget({
+  const mappedResolution = resolveCanonicalCellMappedTarget({
     cell: gazeCell,
     mapping: activeCellMapping,
+    activeContainer: candidateContainer,
+    mappingSource: cellMappingSource,
+  })
+
+  if (mappedResolution.target) {
+    if (mappedResolution.mappingSource === 'patient-main-fallback') {
+      debugSelectionResolution('cell-mapping-fallback-source', {
+        cell: gazeCell,
+        mappingOwner: 'patient-main-default',
+        targetId: mappedResolution.target.trackingId,
+      })
+    }
+
+    return mappedResolution.target
+  }
+
+  if (disablePointHitTest || mappedResolution.fallbackReason === null) {
+    return null
+  }
+
+  const fallbackPointTarget = resolveFallbackPointTarget({
     gazePoint,
-    stableTarget,
-    pointTarget,
+    gazeCell,
     activeContainer: candidateContainer,
   })
 
-  const nearestTarget = getNearestInteractiveTargetFromPoint(
-    gazePoint,
-    {
-      container: candidateContainer,
-      candidateSelector,
-    },
-  )
+  if (fallbackPointTarget) {
+    debugSelectionResolution('fallback-point-hit-test', {
+      reason: mappedResolution.fallbackReason,
+      cell: gazeCell,
+      mappingOwner:
+        activeCellMappingOwner ??
+        (cellMappingSource === 'patient-main-fallback' ? 'patient-main-default' : null),
+      mappingSource: mappedResolution.mappingSource,
+      mappedTargets: mappedResolution.mappedTargets,
+      groupId: mappedResolution.groupId,
+      targetId: fallbackPointTarget.trackingId,
+      targetKey: fallbackPointTarget.key,
+      selectionSurface: input.selectionSurface,
+    })
 
-  return getPreferredSelectionTarget({
-    stableTarget,
-    pointTarget,
-    mappedTarget,
-    nearestTarget,
+    return fallbackPointTarget
+  }
+
+  debugSelectionResolution('fallback-point-hit-test-miss', {
+    reason: mappedResolution.fallbackReason,
+    cell: gazeCell,
+    mappingOwner:
+      activeCellMappingOwner ??
+      (cellMappingSource === 'patient-main-fallback' ? 'patient-main-default' : null),
+    mappingSource: mappedResolution.mappingSource,
+    mappedTargets: mappedResolution.mappedTargets,
+    groupId: mappedResolution.groupId,
+    selectionSurface: input.selectionSurface,
   })
+
+  return null
 }
 
 export function usePatientGazeClick({
@@ -992,6 +528,9 @@ export function usePatientGazeClick({
   const selectionProfile = useMemo(
     () => getPatientSelectionProfile(selectionSurface),
     [selectionSurface],
+  )
+  const selectionDwellDurationMs = usePatientModeStore(
+    state => state.selectionDwellDurationMs,
   )
   const [activationDelayMs, setActivationDelayMs] =
     useState(ACTIVATION_DELAY_OPTIONS.short.value)
@@ -1026,23 +565,21 @@ export function usePatientGazeClick({
       resolveRawGazeTarget({
         enabled,
         selectionSurface,
-        selectionProfile,
         gazePoint,
         gazeCell,
         cellMapping,
-        stableTarget: stableGazeTarget,
+        activeCellMappingOwner,
       }),
     [
+      activeCellMappingOwner,
       cellMapping,
       enabled,
       gazeCell,
       gazePoint,
-      selectionProfile,
       selectionSurface,
-      stableGazeTarget,
     ],
   )
-  const effectiveDwellDurationMs = PATIENT_DWELL_CONFIRM_MS
+  const effectiveDwellDurationMs = selectionDwellDurationMs
 
   const currentVisualTarget = stableGazeTarget ?? null
   const currentVisualInputSource: 'pointer' | 'gaze' | null = stableGazeTarget
@@ -1431,7 +968,7 @@ export function usePatientGazeClick({
         return
       }
 
-      const nextTarget = createSelectionTarget(element, 'point-hit-test', null)
+      const nextTarget = createSelectionTarget(element, 'pointer-hit-test', null)
 
       setMouseTarget(current =>
         current?.key === nextTarget.key && current?.element === nextTarget.element
@@ -1512,31 +1049,6 @@ export function usePatientGazeClick({
       resetSwitchGrace()
       setStableGazeTarget(rawGazeTarget)
       return
-    }
-
-    if (
-      stableGazeTarget &&
-      rawGazeTarget &&
-      areTargetsInSameCell(stableGazeTarget, rawGazeTarget)
-    ) {
-      clearTargetSwitchTimer()
-      resetSwitchGrace()
-      return
-    }
-
-    if (
-      stableGazeTarget &&
-      rawGazeTarget
-    ) {
-      const requiredMargin = areTargetsInSameSemanticGroup(stableGazeTarget, rawGazeTarget)
-        ? selectionProfile.switchMargin + 0.03
-        : selectionProfile.switchMargin
-
-      if (rawGazeTarget.confidence < stableGazeTarget.confidence + requiredMargin) {
-        clearTargetSwitchTimer()
-        resetSwitchGrace()
-        return
-      }
     }
 
     clearTargetSwitchTimer()

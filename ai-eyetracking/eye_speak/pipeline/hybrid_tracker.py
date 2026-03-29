@@ -33,6 +33,8 @@ _FAIL: Dict[str, Any] = {
     "ry": None,
     "raw_rx": None,
     "raw_ry": None,
+    "raw_iris_rx": None,
+    "raw_iris_ry": None,
     "ear": 0.0,
     "face": False,
     "blink": False,
@@ -560,17 +562,17 @@ class HybridTracker:
         )
 
         if not self._mark_valid_ready_frame():
+            _iris_rx_val = round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
+            _iris_ry_val = round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
             out.update(
                 {
                     "cell": None,
                     "raw_rx": round(float(raw_rx), 4),
                     "raw_ry": round(float(raw_ry), 4),
-                    "diag_iris_rx": (
-                        round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
-                    ),
-                    "diag_iris_ry": (
-                        round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
-                    ),
+                    "raw_iris_rx": _iris_rx_val,
+                    "raw_iris_ry": _iris_ry_val,
+                    "diag_iris_rx": _iris_rx_val,
+                    "diag_iris_ry": _iris_ry_val,
                     "diag_gain_y": (
                         round(float(self.iris_normalizer.y_gain), 2)
                         if self.iris_normalizer.y_gain is not None
@@ -586,18 +588,18 @@ class HybridTracker:
             )
             return out
 
+        _iris_rx_val = round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
+        _iris_ry_val = round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
         result = {
             "cell": cell,
             "rx": round(float(rx_s), 4),
             "ry": round(float(ry_s), 4),
             "raw_rx": round(float(raw_rx), 4),
             "raw_ry": round(float(raw_ry), 4),
-            "diag_iris_rx": (
-                round(float(raw_iris_rx), 4) if raw_iris_rx is not None else None
-            ),
-            "diag_iris_ry": (
-                round(float(raw_iris_ry), 4) if raw_iris_ry is not None else None
-            ),
+            "raw_iris_rx": _iris_rx_val,
+            "raw_iris_ry": _iris_ry_val,
+            "diag_iris_rx": _iris_rx_val,
+            "diag_iris_ry": _iris_ry_val,
             "diag_gain_y": (
                 round(float(self.iris_normalizer.y_gain), 2)
                 if self.iris_normalizer.y_gain is not None

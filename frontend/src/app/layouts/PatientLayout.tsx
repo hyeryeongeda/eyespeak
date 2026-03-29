@@ -6,6 +6,7 @@ import GazeDebugOverlay from '../../features/patient/input/components/GazeDebugO
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
 import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGazeClick'
+import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
 import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
 import type { PatientSelectionSurface } from '../../features/patient/input/services/patientSelectionPolicy'
@@ -126,6 +127,9 @@ function PatientLayoutShell() {
     chat.state.status === 'reply_completion_pending' &&
     isLeisureRouteKind(currentRouteKind)
   usePatientTrackingBridge({
+    enabled: !isCalibrationRoute,
+  })
+  usePatientModeDwellSync({
     enabled: !isCalibrationRoute,
   })
   usePatientGlobalMenuActionListener({

@@ -18,8 +18,8 @@ function isDwellTimePreset(value: unknown): value is DwellTimePreset {
 export function usePatientModeDwellSync({
   enabled = true,
 }: UsePatientModeDwellSyncOptions = {}) {
-  const setGlobalMenuDwellDurationMs = usePatientModeStore(
-    state => state.setGlobalMenuDwellDurationMs,
+  const setSelectionDwellDurationMs = usePatientModeStore(
+    state => state.setSelectionDwellDurationMs,
   )
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function usePatientModeDwellSync({
           return
         }
 
-        setGlobalMenuDwellDurationMs(DWELL_TIME_OPTIONS[result.data].value)
+        setSelectionDwellDurationMs(DWELL_TIME_OPTIONS[result.data].value)
       })
       .catch((error) => {
         console.warn('[patient-input] dwell-preset-sync-failed', { error })
@@ -44,7 +44,7 @@ export function usePatientModeDwellSync({
     return () => {
       isMounted = false
     }
-  }, [enabled, setGlobalMenuDwellDurationMs])
+  }, [enabled, setSelectionDwellDurationMs])
 
   useEffect(() => {
     if (!enabled || typeof window === 'undefined') {
@@ -58,7 +58,7 @@ export function usePatientModeDwellSync({
         return
       }
 
-      setGlobalMenuDwellDurationMs(DWELL_TIME_OPTIONS[preset].value)
+      setSelectionDwellDurationMs(DWELL_TIME_OPTIONS[preset].value)
     }
 
     window.addEventListener(
@@ -72,7 +72,7 @@ export function usePatientModeDwellSync({
         handleDwellPresetUpdated as EventListener,
       )
     }
-  }, [enabled, setGlobalMenuDwellDurationMs])
+  }, [enabled, setSelectionDwellDurationMs])
 }
 
 export default usePatientModeDwellSync

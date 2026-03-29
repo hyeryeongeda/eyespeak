@@ -34,8 +34,8 @@ export default function DeviceSettingPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const setGlobalMenuDwellDurationMs = usePatientModeStore(
-    state => state.setGlobalMenuDwellDurationMs,
+  const setSelectionDwellDurationMs = usePatientModeStore(
+    state => state.setSelectionDwellDurationMs,
   )
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function DeviceSettingPage() {
 
       setSavedDwell(dwellPreset)
       setSavedDelay(delayPreset)
-      setGlobalMenuDwellDurationMs(DWELL_TIME_OPTIONS[dwellPreset].value)
+      setSelectionDwellDurationMs(DWELL_TIME_OPTIONS[dwellPreset].value)
       setSuccessMsg('저장되었습니다.')
       setTimeout(() => setSuccessMsg(null), 2000)
     } catch {
