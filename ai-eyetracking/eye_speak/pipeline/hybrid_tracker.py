@@ -177,7 +177,7 @@ class HybridTracker:
     def set_calibration(self, points: List[Dict[str, Any]]) -> None:
         if self._ear_samples:
             mean_ear = sum(self._ear_samples) / len(self._ear_samples)
-            th = max(0.15, mean_ear * 0.75)
+            th = max(0.04, mean_ear * 0.55)
             self.iris_normalizer.blink_threshold = th
             self.trigger.set_threshold(th)
             self._ear_samples.clear()

@@ -33,7 +33,7 @@ const EDGE_MARGIN = 3
 const AUTO_BASELINE_FRAMES = 60
 
 // 블링크
-const BLINK_EAR_THRESHOLD = 0.20
+const BLINK_EAR_THRESHOLD = 0.13
 const BLINK_MIN_MS = 50
 const BLINK_MAX_MS = 600
 const BLINK_COOLDOWN_MS = 350
@@ -383,7 +383,7 @@ export default function EyeTrackingRuntimeHost({
                   // 적응형 블링크 임계값: 사용자의 평상시 EAR의 70%
                   if (baselineEARs.length > 0) {
                     const medEAR = med(baselineEARs)
-                    blinkThreshold = Math.max(0.06, medEAR * 0.70)
+                    blinkThreshold = Math.max(0.04, medEAR * 0.55)
                     console.info(`[Eye] Adaptive blink threshold: ${blinkThreshold.toFixed(4)} (median EAR: ${medEAR.toFixed(4)})`)
                   }
                   baselineReady = true
