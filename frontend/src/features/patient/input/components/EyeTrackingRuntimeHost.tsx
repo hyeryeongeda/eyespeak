@@ -302,10 +302,12 @@ export default function EyeTrackingRuntimeHost({
         const baselineRx: number[] = []
         const baselineRy: number[] = []
         const baselinePitch: number[] = []
+        const baselineEARs: number[] = []
         let baselineXCenter = 0.5
         let baselineYCenter = 0.33
         let baselinePitchCenter = 0
         let baselineReady = false
+        let blinkThreshold = BLINK_EAR_THRESHOLD
 
         emitPatientTrackingStatus('ready')
         console.info('[Eye] Tracking started — double-blink=click, triple-blink=menu')
@@ -330,17 +332,22 @@ export default function EyeTrackingRuntimeHost({
               const rightEAR = detailedEAR(lm, R_EYE_UPPER, R_EYE_LOWER, R_INNER, R_OUTER)
               const avgEAR = (leftEAR + rightEAR) / 2
 
-              if (avgEAR < BLINK_EAR_THRESHOLD) {
-                if (!eyesClosed) { eyesClosed = true; eyeClosedAt = now }
-              } else if (eyesClosed) {
-                const dur = now - eyeClosedAt
-                eyesClosed = false
-                if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS) {
-                  handleMultiBlink(now)
+              // 베이스라인 전: 블링크 감지 대신 EAR 샘플 수집
+              if (!baselineReady) {
+                if (avgEAR > 0.06) baselineEARs.push(avgEAR)
+              } else {
+                if (avgEAR < blinkThreshold) {
+                  if (!eyesClosed) { eyesClosed = true; eyeClosedAt = now }
+                } else if (eyesClosed) {
+                  const dur = now - eyeClosedAt
+                  eyesClosed = false
+                  if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS) {
+                    handleMultiBlink(now)
+                  }
+                  animFrameId = requestAnimationFrame(detect); return
                 }
-                animFrameId = requestAnimationFrame(detect); return
+                if (eyesClosed) { animFrameId = requestAnimationFrame(detect); return }
               }
-              if (eyesClosed) { animFrameId = requestAnimationFrame(detect); return }
 
               const leftIris = avgPoint(lm, L_IRIS)
               const rightIris = avgPoint(lm, R_IRIS)
@@ -373,6 +380,12 @@ export default function EyeTrackingRuntimeHost({
                   baselineXCenter = med(baselineRx)
                   baselineYCenter = med(baselineRy)
                   baselinePitchCenter = med(baselinePitch)
+                  // 적응형 블링크 임계값: 사용자의 평상시 EAR의 70%
+                  if (baselineEARs.length > 0) {
+                    const medEAR = med(baselineEARs)
+                    blinkThreshold = Math.max(0.06, medEAR * 0.70)
+                    console.info(`[Eye] Adaptive blink threshold: ${blinkThreshold.toFixed(4)} (median EAR: ${medEAR.toFixed(4)})`)
+                  }
                   baselineReady = true
                   console.info(`[Eye] Baseline: xC=${baselineXCenter.toFixed(4)} yC=${baselineYCenter.toFixed(4)} pitchC=${baselinePitchCenter.toFixed(4)}`)
                 }
