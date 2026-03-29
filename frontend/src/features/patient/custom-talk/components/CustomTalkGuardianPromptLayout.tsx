@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
+import usePatientPageCellMapping from '../../input/hooks/usePatientPageCellMapping'
 import {
   isDwellFeedbackTargetActive,
   type UseDwellFeedbackResult,
@@ -162,12 +163,12 @@ const loadingLabelStyle: CSSProperties = {
 }
 
 const layoutCss = `
-  .custom-talk-guardian-prompt-card:hover:not(:disabled) {
+  html:not([data-patient-mode='true']) .custom-talk-guardian-prompt-card:hover:not(:disabled) {
     transform: scale(1.02);
     box-shadow: 0 24px 56px rgba(40, 66, 90, 0.16);
   }
 
-  .custom-talk-guardian-prompt-card:focus-visible {
+  html:not([data-patient-mode='true']) .custom-talk-guardian-prompt-card:focus-visible {
     outline: 2px solid #5d8ec7;
     outline-offset: 2px;
   }
@@ -233,6 +234,7 @@ function ActionCard({
   dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
   const isLoading = card.loading ?? false
+  const isDisabled = Boolean(card.disabled || isLoading)
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(
     dwellFeedback ?? {
       activeTargetId: null,
@@ -247,10 +249,10 @@ function ActionCard({
     <button
       type="button"
       className="custom-talk-guardian-prompt-card"
-      style={getCardStyle(gridArea, card.tone, card.disabled ?? false, isLoading)}
-      disabled={card.disabled}
+      style={getCardStyle(gridArea, card.tone, isDisabled, isLoading)}
+      disabled={isDisabled}
       onClick={card.onSelect}
-      data-tracking-id={card.disabled ? undefined : card.trackingId}
+      data-tracking-id={isDisabled ? undefined : card.trackingId}
       aria-busy={isLoading || undefined}
     >
       {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}
@@ -277,6 +279,15 @@ export default function CustomTalkGuardianPromptLayout({
   bottomRight,
   dwellFeedback,
 }: CustomTalkGuardianPromptLayoutProps) {
+  usePatientPageCellMapping([
+    topLeft.disabled ? null : topLeft.trackingId,
+    null,
+    topRight.disabled ? null : topRight.trackingId,
+    bottomLeft.disabled ? null : bottomLeft.trackingId,
+    null,
+    bottomRight.disabled ? null : bottomRight.trackingId,
+  ])
+
   return (
     <main
       className="custom-talk-guardian-prompt-page"

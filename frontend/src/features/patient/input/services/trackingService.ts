@@ -11,7 +11,6 @@ export const PATIENT_INTERACTION_MARKER_ATTRIBUTE = 'data-patient-interactive'
 export const PATIENT_INTERACTION_STATE_ATTRIBUTE = 'data-interaction-state'
 export const PATIENT_INTERACTION_SOURCE_ATTRIBUTE = 'data-interaction-source'
 export const PATIENT_INTERACTION_PROGRESS_CSS_VARIABLE = '--dwell-progress'
-export const PATIENT_DWELL_CONFIRM_MS = 1200
 
 export type PatientInteractionState =
   | 'idle'

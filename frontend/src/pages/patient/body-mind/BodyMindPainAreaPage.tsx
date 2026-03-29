@@ -7,6 +7,7 @@ import type {
   PainAreaGroupKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
 import { getPainAreaGroupByAreaKey, getPainAreaGroupByKey } from './bodyMindMock'
@@ -37,6 +38,15 @@ export default function BodyMindPainAreaPage() {
   const highlightGroupModel = getPainAreaGroupModelByKey(hoveredGroupKey)
   const highlightModelUrl = highlightGroupModel?.modelUrl ?? null
   const gazePoint = useGazeInputStore(state => state.point)
+
+  usePatientPageCellMapping([
+    'upper_body',
+    null,
+    'lower_body',
+    'middle_body',
+    null,
+    'body-mind-pain-area-back',
+  ])
 
   useEffect(() => {
     if (!gazePoint) {

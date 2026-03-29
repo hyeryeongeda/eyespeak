@@ -4,7 +4,9 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../input/hooks/useDwellFeedback'
-import { useCellMapping } from '../../input/hooks/useCellMapping'
+import usePatientPageCellMapping, {
+  type PatientSixCellTrackingIds,
+} from '../../input/hooks/usePatientPageCellMapping'
 import type {
   DailyMoodCreateRequestDto,
   DailyMoodType,
@@ -70,29 +72,21 @@ const overlayStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
   zIndex: 1400,
-  background: 'rgba(241, 243, 247, 0.92)',
-  backdropFilter: 'blur(8px)',
+  background: 'rgba(238, 240, 246, 0.98)',
+  backdropFilter: 'blur(6px)',
   display: 'flex',
   alignItems: 'stretch',
   justifyContent: 'center',
-  padding: '24px',
   boxSizing: 'border-box',
 }
 
 const pageStyle: CSSProperties = {
-  width: 'min(1320px, 100%)',
-  minHeight: '100%',
+  width: '100%',
+  height: '100%',
   display: 'flex',
   flexDirection: 'column',
-  gap: '18px',
-}
-
-const pageTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#b2b3b8',
-  fontSize: 'clamp(1.35rem, 2vw, 2.1rem)',
-  fontWeight: 700,
-  letterSpacing: '-0.03em',
+  padding: '4px',
+  boxSizing: 'border-box',
 }
 
 const gridStyle: CSSProperties = {
@@ -100,55 +94,51 @@ const gridStyle: CSSProperties = {
   minHeight: 0,
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-  gridTemplateRows: 'minmax(220px, 1fr) minmax(150px, 0.56fr) minmax(220px, 1fr)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(92px, 0.36fr) minmax(0, 1fr)',
   gridTemplateAreas: `
     "top-left top-center top-right"
     "center center center"
     "bottom-left bottom-center bottom-right"
   `,
-  gap: '16px',
+  gap: '8px',
 }
 
 const centerPanelStyle: CSSProperties = {
   gridArea: 'center',
-  borderRadius: '20px',
-  border: '1px solid #d4dbe6',
-  backgroundColor: '#ffffff',
-  boxShadow: '0 18px 42px rgba(101, 112, 132, 0.08)',
+  borderRadius: '18px',
+  border: '1px solid #dde2ec',
+  background:
+    'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 250, 253, 0.98) 100%)',
+  boxShadow: '0 12px 30px rgba(110, 122, 145, 0.08)',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   textAlign: 'center',
-  padding: '16px 28px',
+  padding: '12px 24px',
 }
 
 const centerInnerStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '8px',
+  gap: '6px',
   alignItems: 'center',
 }
 
 const centerTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#111111',
-  fontSize: 'clamp(2rem, 3.2vw, 3rem)',
-  fontWeight: 900,
-  letterSpacing: '-0.04em',
+  display: 'none',
 }
 
 const centerValueStyle: CSSProperties = {
   margin: 0,
-  color: '#2d3a4d',
-  fontSize: 'clamp(1.05rem, 1.7vw, 1.5rem)',
-  fontWeight: 800,
+  color: '#111111',
+  fontSize: 'clamp(2rem, 3vw, 3rem)',
+  fontWeight: 900,
+  letterSpacing: '-0.05em',
+  lineHeight: 1.05,
 }
 
 const centerHelperStyle: CSSProperties = {
-  margin: 0,
-  color: '#78869a',
-  fontSize: 'clamp(0.95rem, 1.4vw, 1.1rem)',
-  fontWeight: 700,
+  display: 'none',
 }
 
 const centerErrorStyle: CSSProperties = {
@@ -159,8 +149,8 @@ const centerErrorStyle: CSSProperties = {
 }
 
 const overlayCss = `
-  .patient-daily-mood-card:hover:not(:disabled),
-  .patient-daily-mood-card:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .patient-daily-mood-card:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .patient-daily-mood-card:focus-visible:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 24px 52px rgba(86, 97, 118, 0.14);
     outline: none;
@@ -169,7 +159,7 @@ const overlayCss = `
   @media (max-width: 920px) {
     .patient-daily-mood-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-      grid-template-rows: repeat(4, minmax(150px, auto)) !important;
+      grid-template-rows: repeat(4, minmax(0, 1fr)) !important;
       grid-template-areas:
         "top-left top-center"
         "top-right bottom-left"
@@ -180,7 +170,7 @@ const overlayCss = `
 
   @media (max-width: 640px) {
     .patient-daily-mood-overlay {
-      padding: 12px !important;
+      backdrop-filter: none !important;
     }
 
     .patient-daily-mood-grid {
@@ -232,7 +222,7 @@ function getCardStyle(
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
-    padding: '26px 18px',
+    padding: '32px 18px',
     color: disabled ? '#9ea7b3' : '#111111',
     cursor: disabled ? 'default' : 'pointer',
     transition: 'transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease',
@@ -279,7 +269,7 @@ function ActionCard({
       ) : null}
       <strong
         style={{
-          fontSize: 'clamp(2rem, 3.1vw, 3rem)',
+          fontSize: 'clamp(2.2rem, 3.5vw, 3.4rem)',
           fontWeight: 900,
           letterSpacing: '-0.05em',
           lineHeight: 1.06,
@@ -293,7 +283,7 @@ function ActionCard({
             marginTop: '12px',
             maxWidth: '12ch',
             color: isDisabled ? '#aeb5bf' : '#647182',
-            fontSize: 'clamp(0.92rem, 1.2vw, 1.05rem)',
+            fontSize: 'clamp(1rem, 1.3vw, 1.14rem)',
             fontWeight: 700,
             lineHeight: 1.4,
           }}
@@ -326,7 +316,10 @@ export default function PatientDailyMoodOverlay({
     }
   }, [visible])
 
-  const currentMoodLabel = getMoodLabel(selectedMoodType)
+  const currentMoodLabel =
+    step === 'intensity'
+      ? getLevelLabel(selectedMoodLevel) ?? getMoodLabel(selectedMoodType) ?? ''
+      : getMoodLabel(selectedMoodType) ?? ''
   const currentLevelLabel = getLevelLabel(selectedMoodLevel)
   const pageTitle =
     step === 'intensity'
@@ -334,7 +327,6 @@ export default function PatientDailyMoodOverlay({
       : step === 'mood-page-2'
         ? '오늘의 기분 - 2'
         : '오늘의 기분'
-
   const actionCards = useMemo<ActionCardConfig[]>(() => {
     if (step === 'intensity') {
       return [
@@ -507,34 +499,31 @@ export default function PatientDailyMoodOverlay({
     ]
   }, [onSubmit, selectedMoodLevel, selectedMoodType, step, submitting])
 
-  const cellMapping = useMemo(() => {
-    const mapping: Record<number, string | null> = {
-      0: null,
-      1: null,
-      2: null,
-      3: null,
-      4: null,
-      5: null,
-    }
-
-    const cellIndexBySlot: Record<GridSlot, number> = {
-      'top-left': 0,
-      'top-center': 1,
-      'top-right': 2,
-      'bottom-left': 3,
-      'bottom-center': 4,
-      'bottom-right': 5,
+  const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
+    const slots: Record<GridSlot, string | null> = {
+      'top-left': null,
+      'top-center': null,
+      'top-right': null,
+      'bottom-left': null,
+      'bottom-center': null,
+      'bottom-right': null,
     }
 
     actionCards.forEach(card => {
-      mapping[cellIndexBySlot[card.slot]] =
-        card.disabled || !card.trackingId ? null : card.trackingId
+      slots[card.slot] = card.disabled || !card.trackingId ? null : card.trackingId
     })
 
-    return mapping
+    return [
+      slots['top-left'],
+      slots['top-center'],
+      slots['top-right'],
+      slots['bottom-left'],
+      slots['bottom-center'],
+      slots['bottom-right'],
+    ]
   }, [actionCards])
 
-  useCellMapping(cellMapping)
+  usePatientPageCellMapping(cellTargets)
 
   if (!visible) {
     return null
@@ -546,20 +535,14 @@ export default function PatientDailyMoodOverlay({
       style={overlayStyle}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="patient-daily-mood-title"
+      aria-label={pageTitle}
     >
       <style>{overlayCss}</style>
       <div style={pageStyle}>
-        <h1 id="patient-daily-mood-title" style={pageTitleStyle}>
-          {pageTitle}
-        </h1>
-
         <div
           className="patient-daily-mood-grid"
           style={gridStyle}
-          ref={element => {
-            dwellFeedback.containerRef.current = element
-          }}
+          ref={dwellFeedback.setContainerElement}
         >
           {actionCards.map(card => (
             <ActionCard

@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
+import usePatientPageCellMapping from '../../input/hooks/usePatientPageCellMapping'
 import {
   isDwellFeedbackTargetActive,
   type UseDwellFeedbackResult,
@@ -202,12 +203,12 @@ const layoutCss = `
     overflow-x: hidden;
   }
 
-  .custom-talk-entry-card:hover:not(:disabled) {
+  html:not([data-patient-mode='true']) .custom-talk-entry-card:hover:not(:disabled) {
     transform: translateY(-4px);
     box-shadow: 0 26px 56px rgba(53, 77, 103, 0.14);
   }
 
-  .custom-talk-entry-card:focus-visible {
+  html:not([data-patient-mode='true']) .custom-talk-entry-card:focus-visible {
     outline: 3px solid #6b91c7;
     outline-offset: 3px;
   }
@@ -283,6 +284,7 @@ function ActionCard({
   dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
   const isLoading = card.loading ?? false
+  const isDisabled = Boolean(card.disabled || isLoading)
   const shouldShowDwellFeedback = isDwellFeedbackTargetActive(dwellFeedback ?? {
     activeTargetId: null,
     phase: 'idle',
@@ -294,10 +296,10 @@ function ActionCard({
     <button
       type="button"
       className="custom-talk-entry-card"
-      style={getCardStyle(gridArea, card.tone, card.disabled ?? false, isLoading)}
-      disabled={card.disabled}
+      style={getCardStyle(gridArea, card.tone, isDisabled, isLoading)}
+      disabled={isDisabled}
       onClick={card.onSelect}
-      data-tracking-id={card.disabled ? undefined : card.trackingId}
+      data-tracking-id={isDisabled ? undefined : card.trackingId}
       aria-busy={isLoading || undefined}
     >
       {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}
@@ -355,6 +357,15 @@ export default function CustomTalkEntryLayout({
   dwellFeedback,
   gridTemplateRows,
 }: CustomTalkEntryLayoutProps) {
+  usePatientPageCellMapping([
+    topLeft.disabled ? null : topLeft.trackingId,
+    topCenter.disabled ? null : topCenter.trackingId,
+    topRight.disabled ? null : topRight.trackingId,
+    bottomLeft.disabled ? null : bottomLeft.trackingId,
+    bottomCenter.disabled ? null : bottomCenter.trackingId,
+    bottomRight.disabled ? null : bottomRight.trackingId,
+  ])
+
   return (
     <main
       className="custom-talk-entry-page"

@@ -52,13 +52,13 @@ const descriptionStyle: CSSProperties = {
 }
 
 const interactiveCss = `
-  .favorite-card-btn:hover:not(:disabled),
-  .favorite-card-btn:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .favorite-card-btn:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .favorite-card-btn:focus-visible:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 28px 54px rgba(40, 66, 90, 0.16);
     outline: none;
   }
-  .favorite-card-btn:active:not(:disabled) {
+  html:not([data-patient-mode='true']) .favorite-card-btn:active:not(:disabled) {
     transform: translateY(0);
   }
 `

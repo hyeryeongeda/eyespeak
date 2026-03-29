@@ -65,42 +65,9 @@ function toggleSelectedTag(
   slotId: number,
   tagId: number,
 ) {
-  if (currentSelections[slotId] === tagId) {
-    return {
-      ...currentSelections,
-      [slotId]: null,
-    }
-  }
-
   return {
     ...currentSelections,
     [slotId]: tagId,
-  }
-}
-
-function cycleSelectedTag(
-  currentSelections: PatientRoutinesFormValues,
-  slotId: number,
-  direction: 1 | -1,
-) {
-  const slot = GUARDIAN_SIGNUP_ROUTINE_SLOTS.find(item => item.id === slotId)
-
-  if (!slot || slot.tags.length === 0) {
-    return currentSelections
-  }
-
-  const currentTagId = currentSelections[slotId]
-  const currentIndex = slot.tags.findIndex(tag => tag.id === currentTagId)
-  const nextIndex =
-    currentIndex === -1
-      ? direction > 0
-        ? 0
-        : slot.tags.length - 1
-      : (currentIndex + direction + slot.tags.length) % slot.tags.length
-
-  return {
-    ...currentSelections,
-    [slotId]: slot.tags[nextIndex]?.id ?? null,
   }
 }
 
@@ -694,10 +661,6 @@ export function useGuardianSignupFlow() {
     toggleRoutineTag: (slotId: number, tagId: number) => {
       clearFormErrorState()
       setPatientRoutines(prev => toggleSelectedTag(prev, slotId, tagId))
-    },
-    cycleRoutineTag: (slotId: number, direction: 1 | -1) => {
-      clearFormErrorState()
-      setPatientRoutines(prev => cycleSelectedTag(prev, slotId, direction))
     },
     submitGuardianSignup,
     copyTeamCode,

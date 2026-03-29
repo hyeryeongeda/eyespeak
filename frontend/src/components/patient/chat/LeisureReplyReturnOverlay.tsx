@@ -97,15 +97,15 @@ const choiceLabelStyle: CSSProperties = {
 }
 
 const overlayCss = `
-  .leisure-reply-return-choice:hover,
-  .leisure-reply-return-choice:focus-visible {
+  html:not([data-patient-mode='true']) .leisure-reply-return-choice:hover,
+  html:not([data-patient-mode='true']) .leisure-reply-return-choice:focus-visible {
     transform: scale(1.012);
     filter: brightness(0.985);
     box-shadow: inset 0 0 0 2px rgba(98, 121, 150, 0.22);
     outline: none;
   }
 
-  .leisure-reply-return-choice:active {
+  html:not([data-patient-mode='true']) .leisure-reply-return-choice:active {
     transform: scale(1);
   }
 

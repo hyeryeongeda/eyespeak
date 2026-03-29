@@ -8,7 +8,6 @@ import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
-import { PATIENT_DWELL_CONFIRM_MS } from '../services/trackingService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import { requestPatientCall as requestPatientSosCall } from '../../../../services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
@@ -17,10 +16,6 @@ import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patie
 type GlobalMenuTargetId = PatientGlobalMenuActionId
 
 const ACTION_FEEDBACK_DELAY_MS = 180
-const ENABLE_MOUSE_DWELL_CONFIRM =
-  import.meta.env.DEV &&
-  String(import.meta.env.VITE_PATIENT_ENABLE_MOUSE_DWELL_CONFIRM ?? '').toLowerCase() === 'true'
-
 const responsiveStyle = `
   @media (max-width: 768px) {
     .patient-global-menu-shell {
@@ -206,39 +201,24 @@ export default function GlobalMenuOverlay() {
   const isOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const isTrackingBypassed = usePatientModeStore(state => state.isGlobalMenuTrackingBypassed)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
+  const selectionDwellDurationMs = usePatientModeStore(state => state.selectionDwellDurationMs)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
 
   const isTrackingReady = isPatientTrackingAvailable(trackingStatus)
   const isMenuInteractionEnabled = isTrackingReady || isTrackingBypassed
-  const { gazeHoveredTargetId, pointerHoveredTargetId } = useTracking<GlobalMenuTargetId>({
+  const { gazeHoveredTargetId } = useTracking<GlobalMenuTargetId>({
     containerRef: gridRef,
     enabled: isOpen && pendingTargetId === null,
     selectionSurface: 'global-menu',
   })
-  const highlightedTargetId =
-    pendingTargetId === null
-      ? (pointerHoveredTargetId ?? gazeHoveredTargetId)
-      : null
-  const dwellTargetId =
-    pendingTargetId === null
-      ? (ENABLE_MOUSE_DWELL_CONFIRM && pointerHoveredTargetId
-          ? pointerHoveredTargetId
-          : gazeHoveredTargetId)
-      : null
-  const dwellInputSource = pointerHoveredTargetId
-    ? ENABLE_MOUSE_DWELL_CONFIRM
-      ? 'pointer'
-      : gazeHoveredTargetId
-        ? 'gaze'
-        : null
-    : gazeHoveredTargetId
-      ? 'gaze'
-      : null
+  const highlightedTargetId = pendingTargetId === null ? gazeHoveredTargetId : null
+  const dwellTargetId = pendingTargetId === null ? gazeHoveredTargetId : null
+  const dwellInputSource = gazeHoveredTargetId ? 'gaze' : null
 
   const dwellState = useDwell<GlobalMenuTargetId>({
     hoveredTargetId: dwellTargetId,
-    dwellDurationMs: PATIENT_DWELL_CONFIRM_MS,
+    dwellDurationMs: selectionDwellDurationMs,
     disabled:
       !isOpen ||
       pendingTargetId !== null ||

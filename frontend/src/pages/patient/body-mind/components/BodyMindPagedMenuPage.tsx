@@ -3,6 +3,7 @@ import type {
   BodyMindCardOption,
   BodyMindUiStatus,
 } from '../../../../features/patient/body-mind/types/bodyMind'
+import usePatientPageCellMapping from '../../../../features/patient/input/hooks/usePatientPageCellMapping'
 import type { BodyMindMenuPageDefinition } from '../bodyMindMock'
 import BodyMindFixedGrid from './BodyMindFixedGrid'
 import BodyMindLayout from './BodyMindLayout'
@@ -65,6 +66,20 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
   const hasNextPage = pageIndex < pages.length - 1
   const primaryOptions = currentPage?.options.slice(0, 4) ?? []
   const topRightOption = hasNextPage ? null : (currentPage?.options[4] ?? null)
+  const topRightTrackingId = hasNextPage
+    ? 'body-mind-next'
+    : topRightOption
+      ? getBodyMindTrackingId(topRightOption.key)
+      : null
+
+  usePatientPageCellMapping([
+    primaryOptions[0] ? getBodyMindTrackingId(primaryOptions[0].key) : null,
+    primaryOptions[1] ? getBodyMindTrackingId(primaryOptions[1].key) : null,
+    topRightTrackingId,
+    primaryOptions[2] ? getBodyMindTrackingId(primaryOptions[2].key) : null,
+    primaryOptions[3] ? getBodyMindTrackingId(primaryOptions[3].key) : null,
+    'body-mind-back',
+  ])
 
   const handleBack = () => {
     if (pageIndex > 0) {

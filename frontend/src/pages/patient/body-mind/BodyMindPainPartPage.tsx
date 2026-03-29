@@ -7,6 +7,7 @@ import type {
   PainAreaKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import {
   getStoredPainAreaSelection,
@@ -100,6 +101,15 @@ export default function BodyMindPainPartPage() {
   if (!group) {
     return <Navigate to={ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA} replace />
   }
+
+  usePatientPageCellMapping([
+    group.options[0]?.key ?? null,
+    null,
+    group.options[1]?.key ?? null,
+    group.options[2]?.key ?? null,
+    group.options[3]?.key ?? null,
+    'body-mind-pain-part-back',
+  ])
 
   const selectedArea =
     getPainAreaOptionByKey(selectedAreaKey) ?? getPainAreaOptionByKey(group.options[0]?.key ?? null)

@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import type { TouchEvent, WheelEvent } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
 import { GUARDIAN_SIGNUP_ROUTINE_SLOTS } from '../../features/auth/guardianRoutineSurvey'
@@ -87,6 +86,7 @@ function getNextSubmissionStage(lastCompletedStage: GuardianSignupStage | null) 
 
 export default function CareSignupPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const {
     currentStep,
     currentSignupStage,
@@ -113,25 +113,17 @@ export default function CareSignupPage() {
     goToNextStep,
     goToPreviousStep,
     toggleRoutineTag,
-    cycleRoutineTag,
     submitGuardianSignup,
     copyTeamCode,
     finishGuardianSignup,
   } = useGuardianSignupFlow()
-  const routineWheelDeltaRef = useRef<Record<number, number>>({})
-  const routineWheelActionAtRef = useRef<Record<number, number>>({})
-  const routineTouchStartYRef = useRef<Record<number, number | null>>({})
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] = useState(false)
 
   const selectedRoutineCount = GUARDIAN_SIGNUP_ROUTINE_SLOTS.filter(
     slot => typeof patientRoutines[slot.id] === 'number',
   ).length
-  const routineSelectionHint =
-    '카드 위에서 스크롤하거나 위아래로 쓸어 선택지를 바꿀 수 있습니다.'
-  const ROUTINE_WHEEL_THRESHOLD = 40
-  const ROUTINE_WHEEL_COOLDOWN_MS = 140
-  const ROUTINE_TOUCH_THRESHOLD = 28
+  const copyMessageStyle = { ...successMessage, marginBottom: '16px' }
   const guardianStepSummaryStyle = { ...summaryBox, marginBottom: '26px' }
   const guardianFormStyle = { ...formStack, gap: '14px' }
   const inlineFieldStyle = { display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px', alignItems: 'center' }
@@ -157,51 +149,6 @@ export default function CareSignupPage() {
     setStoredEntryMode('signup')
   }, [])
 
-  const handleRoutineWheel = (slotId: number) => (event: WheelEvent<HTMLDivElement>) => {
-    const accumulatedDelta = (routineWheelDeltaRef.current[slotId] ?? 0) + event.deltaY
-
-    if (Math.abs(accumulatedDelta) < ROUTINE_WHEEL_THRESHOLD) {
-      routineWheelDeltaRef.current[slotId] = accumulatedDelta
-      return
-    }
-
-    const lastActionAt = routineWheelActionAtRef.current[slotId] ?? 0
-    const now = Date.now()
-
-    routineWheelDeltaRef.current[slotId] = 0
-
-    if (now - lastActionAt < ROUTINE_WHEEL_COOLDOWN_MS) {
-      return
-    }
-
-    routineWheelActionAtRef.current[slotId] = now
-    cycleRoutineTag(slotId, accumulatedDelta > 0 ? 1 : -1)
-    event.preventDefault()
-  }
-
-  const handleRoutineTouchStart = (slotId: number) => (event: TouchEvent<HTMLDivElement>) => {
-    routineTouchStartYRef.current[slotId] = event.touches[0]?.clientY ?? null
-  }
-
-  const handleRoutineTouchEnd = (slotId: number) => (event: TouchEvent<HTMLDivElement>) => {
-    const startY = routineTouchStartYRef.current[slotId]
-    const endY = event.changedTouches[0]?.clientY
-
-    routineTouchStartYRef.current[slotId] = null
-
-    if (startY == null || endY == null) {
-      return
-    }
-
-    const deltaY = startY - endY
-
-    if (Math.abs(deltaY) < ROUTINE_TOUCH_THRESHOLD) {
-      return
-    }
-
-    cycleRoutineTag(slotId, deltaY > 0 ? 1 : -1)
-  }
-
   const progressIndex =
     currentStep === 'completed'
       ? 3
@@ -213,6 +160,10 @@ export default function CareSignupPage() {
           ? 1
           : 0
   const loginEntryRoute = resolveAuthEntryRoute('login', 'guardian', location.state)
+  const inheritedLocationState =
+    location.state && typeof location.state === 'object'
+      ? (location.state as Record<string, unknown>)
+      : {}
   const completedLoginState =
     currentStep === 'completed' && signupResult
       ? {
@@ -225,6 +176,24 @@ export default function CareSignupPage() {
           teamCode: signupResult.teamCode,
         }
       : loginEntryRoute.state
+  const completedPatientSignupState =
+    currentStep === 'completed' && signupResult
+      ? {
+          ...inheritedLocationState,
+          prefilledTeamCode: signupResult.teamCode,
+          prefilledTeamCodeSource: 'guardian-signup-complete' as const,
+        }
+      : inheritedLocationState
+
+  const goToPatientSignup = () => {
+    if (!signupResult) {
+      return
+    }
+
+    navigate(ROUTE_PATHS.AUTH_SIGNUP_PATIENT, {
+      state: completedPatientSignupState,
+    })
+  }
 
   return (
     <AuthPageFrame>
@@ -583,24 +552,11 @@ export default function CareSignupPage() {
         {currentStep === 'patient-routines' ? (
           <>
             <h2 style={sectionTitle}>3단계. 환자 시간대별 루틴 입력</h2>
-            <p style={sectionDesc}>
-              7개 시간대별 대표 활동 태그를 1개씩 선택해주세요. 백엔드 루틴 API 기준으로 모든
-              시간대 입력이 필요합니다.
-            </p>
-
-            <p style={{ ...sectionDesc, marginTop: '-4px', marginBottom: '14px', color: '#4f708d' }}>
-              {routineSelectionHint}
-            </p>
+            <p style={sectionDesc}>백엔드 루틴 API 기준으로 모든 시간대 입력이 필요합니다.</p>
 
             <div style={formStack}>
               {GUARDIAN_SIGNUP_ROUTINE_SLOTS.map(slot => (
-                <div
-                  key={slot.id}
-                  style={routineSection}
-                  onWheel={handleRoutineWheel(slot.id)}
-                  onTouchStart={handleRoutineTouchStart(slot.id)}
-                  onTouchEnd={handleRoutineTouchEnd(slot.id)}
-                >
+                <div key={slot.id} style={routineSection}>
                   <p style={{ margin: '0 0 4px', color: '#203042', fontSize: '15px', fontWeight: 700 }}>
                     {slot.label}
                   </p>
@@ -695,35 +651,11 @@ export default function CareSignupPage() {
               </button>
             </div>
 
-            <div style={infoBox}>
-              <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
-                준비된 정보
-              </p>
-              <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                환자 이름: {signupResult.patientName}
-              </p>
-              <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                팀코드: {signupResult.teamCode}
-              </p>
-              <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                환자 측은 이 팀코드를 입력한 뒤 보호자와 연결됩니다.
-              </p>
-            </div>
-
-            <div style={infoBox}>
-              <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
-                가입 상태
-              </p>
-              <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-                보호자 회원가입은 완료되었지만 자동 로그인은 하지 않습니다. 아래 버튼으로 로그인 화면으로 이동하면 이메일은 미리 채워집니다.
-              </p>
-            </div>
-
-            {copyMessage ? <p style={successMessage}>{copyMessage}</p> : null}
+            {copyMessage ? <p style={copyMessageStyle}>{copyMessage}</p> : null}
 
             <div style={buttonRow}>
-              <button type="button" style={secondaryButton} onClick={() => void copyTeamCode()}>
-                코드 다시 복사
+              <button type="button" style={secondaryButton} onClick={goToPatientSignup}>
+                환자 회원가입으로 이동
               </button>
               <button type="button" style={primaryButton} onClick={finishGuardianSignup}>
                 로그인 하기

@@ -151,12 +151,12 @@ const centerBody: CSSProperties = {
 }
 
 const layoutCss = `
-  .custom-talk-stage-card:hover:not(:disabled) {
+  html:not([data-patient-mode='true']) .custom-talk-stage-card:hover:not(:disabled) {
     transform: scale(1.02);
     box-shadow: 0 24px 56px rgba(40, 66, 90, 0.16);
   }
 
-  .custom-talk-stage-card:focus-visible {
+  html:not([data-patient-mode='true']) .custom-talk-stage-card:focus-visible {
     outline: 2px solid #5d8ec7;
     outline-offset: 2px;
   }
