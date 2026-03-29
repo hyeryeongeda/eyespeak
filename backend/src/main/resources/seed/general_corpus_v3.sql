@@ -1,0 +1,2 @@
+-- general_corpus_v3.sql 참조: general_corpus_v2.sql에 통합됨
+-- 이 파일은 사용하지 않음

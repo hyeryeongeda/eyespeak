@@ -1,0 +1,26 @@
+# 가상환경
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 체크포인트·데이터 (선택)
+checkpoints/*.pt
+*.pth
+.env
+.env.local
+
+# 테스트 캐시
+.pytest_cache/
+
+# 런타임 로그·캘리브레이션 데이터
+*.jsonl
+calibration_data/*.json
+!calibration_data/patient-demo.json

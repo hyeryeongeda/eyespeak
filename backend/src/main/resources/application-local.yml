@@ -1,0 +1,46 @@
+# 로컬 DB 계정은 환경변수로 설정 (공개 레포에 비밀번호 올리지 않기)
+# IDE 실행 설정 또는 터미널에서 DB_USERNAME, DB_PASSWORD 지정
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/eyespeak?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  sql:
+    init:
+      mode: always
+
+  jpa:
+    hibernate:
+      ddl-auto: create
+    defer-datasource-initialization: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        default_batch_fetch_size: 100
+    open-in-view: false
+
+server:
+  port: 8080
+
+# AI 서버 (로컬 Docker: eyespeak-ai-caregiver:5003, eyespeak-ai-tts:8000)
+ai:
+  server:
+    url: ${AI_SERVER_URL:http://eyespeak-ai-caregiver:5003}
+  tts:
+    url: ${AI_TTS_URL:https://5c2phf6m1owinh-8000.proxy.runpod.net}
+  internal:
+    api-key: ${AI_INTERNAL_API_KEY:eyespeak-ai-internal-2026-s14e205}
+
+logging:
+  level:
+    e205.eyespeak: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# JWT 설정 (비밀키는 환경변수로 관리)
+jwt:
+  secret: ${JWT_SECRET:my-local-dev-secret-key-must-be-at-least-32-characters-long}
+  access-token-expiry: 1800000    # 30분 (밀리초)
+  refresh-token-expiry: 604800000 # 7일 (밀리초)

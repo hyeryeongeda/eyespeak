@@ -1,0 +1,132 @@
+# =============================================================================
+# Development Data Services - Stateful (거의 재시작 안함)
+# =============================================================================
+# 사용법:
+#   docker compose -f docker-compose.data.dev.yml up -d
+#
+# 이 파일이 dev-net 네트워크를 생성합니다.
+# backend, frontend, nginx 등은 dev-net을 external로 참조합니다.
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # MySQL Database (Dev)
+  # ===========================================================================
+  dev-mysql:
+    image: mysql:8.0
+    container_name: eyespeak-db-dev
+    restart: always
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "127.0.0.1:3306:3306"
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - dev-mysql-data:/var/lib/mysql
+    networks:
+      - dev-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ===========================================================================
+  # Redis Cache (Dev)
+  # ===========================================================================
+#  dev-redis:
+#    image: redis:7-alpine
+#    container_name: eyespeak-redis-dev
+#    restart: always
+#    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+#    expose:
+#      - "6379"
+#    environment:
+#      TZ: Asia/Seoul
+#    networks:
+#      - dev-net
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#          memory: 256M
+#        reservations:
+#          cpus: '0.25'
+#          memory: 128M
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "50m"
+#        max-file: "3"
+
+  # ===========================================================================
+  # RabbitMQ Message Broker (Dev)
+  # ===========================================================================
+#  dev-rabbitmq:
+#    image: rabbitmq:management
+#    container_name: eyespeak-rabbitmq-dev
+#    restart: always
+#    environment:
+#      TZ: Asia/Seoul
+#      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+#      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+#    expose:
+#      - "5672"
+#      - "15672"
+#    networks:
+#      - dev-net
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#          memory: 512M
+#        reservations:
+#          cpus: '0.25'
+#          memory: 256M
+#    healthcheck:
+#      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#      start_period: 30s
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "50m"
+#        max-file: "3"
+
+# =============================================================================
+# Networks - dev-net 생성 담당
+# =============================================================================
+networks:
+  dev-net:
+    name: dev-net
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  dev-mysql-data:
+    name: dev-mysql-data

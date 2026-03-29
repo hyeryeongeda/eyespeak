@@ -1,0 +1,68 @@
+# =============================================================================
+# AI Servers - Local 환경 (local-net 연결)
+# =============================================================================
+# 사용: make ai-local-up / make ai-local-down
+# local-up 과 별도로 관리 (AI 서버는 계속 띄워둠)
+# =============================================================================
+
+services:
+  ai-tts:
+    build: ../ai-tts
+    container_name: eyespeak-ai-tts
+    restart: unless-stopped
+    expose:
+      - "8000"
+    networks:
+      - local-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  ai-caregiver:
+    build: ../caregiver_partner_package
+    container_name: eyespeak-ai-caregiver
+    restart: unless-stopped
+    expose:
+      - "5003"
+    env_file: ../infra/.env.ai
+    networks:
+      - local-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5003/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+networks:
+  local-net:
+    external: true

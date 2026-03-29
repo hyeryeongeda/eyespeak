@@ -1,0 +1,40 @@
+# =============================================================================
+# 로컬 개발용 - 독립 실행 (base 파일 필요 없음)
+# =============================================================================
+# 사용: docker compose -f docker-compose.local.yml up -d --build
+#
+# http://localhost:3000 으로 접근
+# 백엔드 API: http://localhost:8080/api/v1
+# =============================================================================
+
+services:
+  local-front:
+    build: .
+    container_name: eyespeak-front-local
+    restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "3000:5173"
+    environment:
+      - VITE_APP_ENV=local
+      - VITE_API_BASE_URL=http://localhost:8080/api/v1
+      - VITE_API_MODE=real
+      - VITE_AI_API_MODE=real
+      - VITE_EYE_TRACKING_API_MODE=real
+      - VITE_EYE_TRACKING_API_BASE_URL=/eye-tracking-api
+      - VITE_EYE_TRACKING_UI_URL=/eye-tracking-api
+      - VITE_EYE_TRACKING_PROXY_TARGET=http://host.docker.internal:5000
+      - VITE_WS_BASE_URL=ws://localhost:8080/api/v1
+    networks:
+      - local-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:5173/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+networks:
+  local-net:
+    driver: bridge

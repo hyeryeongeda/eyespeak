@@ -1,0 +1,27 @@
+# 모든 환경에서 공통으로 적용되는 설정
+server:
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: eyespeak
+  servlet:
+    multipart:
+      max-file-size: 500MB
+      max-request-size: 500MB
+
+  # 활성 프로필 설정 — 실행할 때 어떤 환경 설정을 쓸지 결정
+  # VM 옵션이나 환경변수로 덮어쓸 수 있음
+  profiles:
+    active: local
+
+# AWS S3 (TTS 음성 파일 저장)
+cloud:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
+    region: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${AWS_S3_BUCKET}

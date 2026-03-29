@@ -1,0 +1,112 @@
+# =============================================================================
+# 로컬 개발용 - 독립 실행 (base 파일 필요 없음, 올인원)
+# =============================================================================
+# 사용: docker compose --env-file .env.local -f docker-compose.local.yml up -d --build
+#
+# DB/Redis/RabbitMQ + WAS 모두 포함 (로컬은 infra 분리 불필요)
+# 호스트에서 localhost로 모든 서비스 접근 가능
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # WAS (로컬용 - 단일 인스턴스)
+  # ===========================================================================
+  local-was:
+    build: .
+    container_name: eyespeak-was-local
+    restart: always
+    ports:
+      - "8080:8080"
+    env_file: .env.local
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      SPRING_DATASOURCE_URL: jdbc:mysql://eyespeak-db-local:3306/${MYSQL_DATABASE}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      JAVA_OPTS: -Duser.timezone=Asia/Seoul -Xms256m -Xmx512m
+    networks:
+      - local-net
+    depends_on:
+      db-local:
+        condition: service_healthy
+      rabbitmq-local:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ===========================================================================
+  # MySQL (로컬용)
+  # ===========================================================================
+  db-local:
+    image: mysql:8.0
+    container_name: eyespeak-db-local
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    volumes:
+      - mysql-local-data:/var/lib/mysql
+    networks:
+      - local-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===========================================================================
+  # Redis (로컬용)
+  # ===========================================================================
+#  redis-local:
+#    image: redis:7-alpine
+#    container_name: eyespeak-redis-local
+#    ports:
+#      - "6379:6379"
+#    networks:
+#      - local-net
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+
+  # ===========================================================================
+  # RabbitMQ (로컬용)
+  # ===========================================================================
+  rabbitmq-local:
+    image: rabbitmq:management
+    container_name: eyespeak-rabbitmq-local
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - local-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# =============================================================================
+# Networks - 로컬은 자체 네트워크 생성 (infra 불필요)
+# =============================================================================
+networks:
+  local-net:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  mysql-local-data:

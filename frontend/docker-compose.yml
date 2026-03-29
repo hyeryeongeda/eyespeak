@@ -1,0 +1,49 @@
+# =============================================================================
+# Frontend Production Base - Blue/Green
+# =============================================================================
+# 사용: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# [전제조건] infra/docker-compose.data.prod.yml 로 prod-net 먼저 생성
+# [포트] 외부 포트 없음 (Nginx 경유)
+#
+# Dev, Local은 이 파일을 사용하지 않습니다.
+# =============================================================================
+
+services:
+  prod-front-blue:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: eyespeak-front-blue
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  prod-front-green:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: eyespeak-front-green
+    restart: always
+    expose:
+      - "80"
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  prod-net:
+    external: true
