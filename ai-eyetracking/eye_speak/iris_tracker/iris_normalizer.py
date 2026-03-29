@@ -7,9 +7,12 @@ MediaPipe 478점 픽셀 랜드마크를 입력으로 하며,
 from __future__ import annotations
 
 import functools
+import json
 import logging
 import math
 import statistics
+import time
+from pathlib import Path
 from typing import Final, List, Optional, Sequence, Tuple
 
 from eye_speak.iris_tracker.landmarks import (
@@ -27,9 +30,63 @@ from eye_speak.iris_tracker.landmarks import (
     R_EYE_UPPER,
     R_EYEBROW,
     R_IRIS,
+    LEFT_EYE_INNER as _MP_LEFT_EYE_INNER,
+    LEFT_EYE_OUTER as _MP_LEFT_EYE_OUTER,
+    LEFT_IRIS_CENTER,
+    RIGHT_EYE_OUTER,
 )
 
 logger = logging.getLogger(__name__)
+
+# #region agent log
+_AGENT_IRIS_D_SEQ: int = 0
+
+
+def _agent_debug_log_iris_d_landmarks(landmarks_px: LandmarksPx) -> None:
+    """H1–H5: D=(468.x−min(33,133)) / |133.x−33.x| vs 링 평균, 얼굴 기하 프록시."""
+    global _AGENT_IRIS_D_SEQ
+    _AGENT_IRIS_D_SEQ += 1
+    if _AGENT_IRIS_D_SEQ % 4 != 0:
+        return
+    lx, _ = landmarks_px[_MP_LEFT_EYE_OUTER]
+    rx, _ = landmarks_px[_MP_LEFT_EYE_INNER]
+    if lx > rx:
+        lx, rx = rx, lx
+    eye_w = float(rx - lx)
+    if eye_w < _EPS:
+        return
+    ix468 = float(landmarks_px[LEFT_IRIS_CENTER][0])
+    d468 = (ix468 - lx) / eye_w
+    ring_x = sum(landmarks_px[i][0] for i in R_IRIS) / float(max(len(R_IRIS), 1))
+    d_ring = (float(ring_x) - lx) / eye_w
+    inter_ocular = abs(
+        float(landmarks_px[_MP_LEFT_EYE_OUTER][0])
+        - float(landmarks_px[RIGHT_EYE_OUTER][0])
+    )
+    payload = {
+        "sessionId": "8fafce",
+        "hypothesisId": "H1_H4",
+        "location": "iris_normalizer.py:_agent_debug_log_iris_d_landmarks",
+        "message": "D_468 vs D_ring inter_ocular",
+        "data": {
+            "D_468": round(d468, 5),
+            "D_ring": round(d_ring, 5),
+            "delta_D": round(abs(d468 - d_ring), 5),
+            "eye_w_px": round(eye_w, 3),
+            "inter_ocular_px": round(inter_ocular, 3),
+            "seq": _AGENT_IRIS_D_SEQ,
+        },
+        "timestamp": int(time.time() * 1000),
+    }
+    try:
+        log_path = Path(__file__).resolve().parents[3] / "debug-8fafce.log"
+        with log_path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+# #endregion
 
 _EPS: Final[float] = 1e-6
 _MIN_LANDMARKS: Final[int] = 478
@@ -37,6 +94,17 @@ _last_raw_ratio_y: Optional[float] = None
 
 Point = Tuple[float, float]
 LandmarksPx = Sequence[Point]
+
+
+def _trimmed_mean_10pct(values: List[float]) -> float:
+    """상·하각 10%를 제거한 산술 평균."""
+    s = sorted(values)
+    n = len(s)
+    lo = int(0.1 * n)
+    hi = n - lo
+    if hi <= lo:
+        return statistics.mean(s)
+    return statistics.mean(s[lo:hi])
 
 
 def _dist(a: Point, b: Point) -> float:
@@ -144,6 +212,10 @@ def compute_iris_position(
     if is_blinking:
         return (None, None, ear_avg, True)
 
+    # #region agent log
+    _agent_debug_log_iris_d_landmarks(landmarks_px)
+    # #endregion
+
     ratios_x: List[float] = []
     ratios_y: List[float] = []
     conf_list: List[float] = []
@@ -250,11 +322,11 @@ class IrisNormalizer:
         self.blink_threshold: Optional[float] = blink_threshold
         self._y_gain: Optional[float] = None
         self._feature_weights: Tuple[float, float, float, float] = (0.35, 0.15, 0.30, 0.20)
-        # PRE-gain 자동 센터: 첫 60프레임 raw 복합 Y 중앙값 기준 오프셋
+        # PRE-gain 자동 센터: 첫 120프레임 raw 복합 Y trimmed mean 기준 오프셋
         self._y_center_offset: float = 0.0
         self._center_samples: List[float] = []
         self._center_locked: bool = False
-        self._AUTO_CENTER_FRAMES: int = 60
+        self._AUTO_CENTER_FRAMES: int = 120
 
     def set_y_gain(self, gain: float) -> None:
         """캘리브레이션에서 계산된 Y축 전용 gain을 설정한다."""
@@ -303,7 +375,7 @@ class IrisNormalizer:
     ) -> Tuple[Optional[float], Optional[float], float, bool]:
         """랜드마크에서 비율 좌표와 EAR을 반환한다.
 
-        첫 60프레임 동안 PRE-gain Y축 중앙값을 수집하여 자동 센터를 계산한다.
+        첫 120프레임 동안 PRE-gain Y축 trimmed mean을 수집하여 자동 센터를 계산한다.
         """
         rx, ry, ear, blink = compute_iris_position(
             landmarks_px, self.blink_threshold, self._y_gain, self._feature_weights
@@ -315,14 +387,14 @@ class IrisNormalizer:
             if not self._center_locked and raw_y is not None:
                 self._center_samples.append(raw_y)
                 if len(self._center_samples) >= self._AUTO_CENTER_FRAMES:
-                    median_y = statistics.median(self._center_samples)
+                    center_y = _trimmed_mean_10pct(self._center_samples)
                     # PRE-gain 센터를 0.5로 맞추기 위한 오프셋
-                    self._y_center_offset = 0.5 - median_y
+                    self._y_center_offset = 0.5 - center_y
                     self._center_locked = True
                     logger.info(
-                        "Auto-center Y (PRE-gain): offset=%.4f (median=%.4f, samples=%d)",
+                        "Auto-center Y (PRE-gain): offset=%.4f (trimmed_mean=%.4f, samples=%d)",
                         self._y_center_offset,
-                        median_y,
+                        center_y,
                         len(self._center_samples),
                     )
 

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { CalibrationTrackingStatus } from '../../../../types/calibration'
 import type { PatientDoubleBlinkSource } from '../services/patientModeBridge'
 
-export const DEFAULT_PATIENT_SELECTION_DWELL_MS = 2000
+export const DEFAULT_PATIENT_SELECTION_DWELL_MS = 1200
 
 export function isPatientTrackingAvailable(status: CalibrationTrackingStatus) {
   return status === 'ready'
