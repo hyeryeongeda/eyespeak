@@ -52,6 +52,7 @@ interface UsePatientGazeClickOptions {
 const SELECTION_CONFIRM_FEEDBACK_MS = 420
 const SELECTION_COMMIT_DELAY_MS = 0
 const ROUTE_TRANSITION_COMMIT_GUARD_MS = 450
+const MAPPED_TARGET_AMBIGUITY_PX = 28
 const DIALOG_SELECTION_CONTAINER_SELECTOR = '[role="dialog"][aria-modal="true"]'
 const ENABLE_MOUSE_DWELL_CONFIRM =
   import.meta.env.DEV &&
@@ -99,6 +100,13 @@ type PatientDebugWindow = Window & {
   __DEV_GAZE_DISABLE_POINT_HIT_TEST?: boolean
   __PATIENT_GAZE_DEBUG_STATE?: unknown
 }
+
+type SelectableTrackingTarget = {
+  element: HTMLElement
+  trackingId: string
+}
+
+let lastMappedTargetDebugKey: string | null = null
 
 function getNumericZIndex(element: HTMLElement) {
   const zIndex = window.getComputedStyle(element).zIndex
@@ -462,6 +470,73 @@ function getFallbackPatientMainCellMapping(): PatientCellMapping | null {
   }
 }
 
+function getSelectionBlockReason(element: HTMLElement | null) {
+  if (!element) {
+    return 'missing-target'
+  }
+
+  if (!element.isConnected) {
+    return 'disconnected'
+  }
+
+  if (element.dataset.gazeCommitDisabled === 'true') {
+    return element.dataset.gazeDisabledReason ?? 'commit-disabled'
+  }
+
+  if (element.matches(':disabled')) {
+    return 'disabled'
+  }
+
+  if (element.getAttribute('aria-disabled') === 'true') {
+    return 'aria-disabled'
+  }
+
+  const computedStyle = window.getComputedStyle(element)
+
+  if (computedStyle.display === 'none') {
+    return 'display-none'
+  }
+
+  if (computedStyle.visibility === 'hidden') {
+    return 'visibility-hidden'
+  }
+
+  if (computedStyle.pointerEvents === 'none') {
+    return 'pointer-events-none'
+  }
+
+  if (
+    element.hidden ||
+    element.closest('[hidden], [inert], [aria-hidden="true"]') ||
+    ('inert' in element && Boolean((element as HTMLElement & { inert?: boolean }).inert))
+  ) {
+    return 'inert'
+  }
+
+  if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
+    return 'mouse-only'
+  }
+
+  return null
+}
+
+function debugMappedTarget(event: string, payload: Record<string, unknown>) {
+  if (!import.meta.env.DEV) {
+    return
+  }
+
+  const nextDebugKey = `${event}:${JSON.stringify(payload)}`
+  if (lastMappedTargetDebugKey === nextDebugKey) {
+    return
+  }
+
+  lastMappedTargetDebugKey = nextDebugKey
+  console.info('[patient-input] mapped-target', {
+    event,
+    ...payload,
+  })
+}
+
 function isElementVisibleForSelection(element: HTMLElement) {
   if (!element.isConnected) {
     return false
@@ -489,18 +564,7 @@ function isElementVisibleForSelection(element: HTMLElement) {
 }
 
 function isElementVisuallyInteractive(element: HTMLElement) {
-  if (!isElementVisibleForSelection(element)) {
-    return false
-  }
-
-  if (element.matches(':disabled')) {
-    return false
-  }
-
-  return (
-    element.getAttribute('aria-disabled') !== 'true' ||
-    element.dataset.gazeCommitDisabled === 'true'
-  )
+  return isElementVisibleForSelection(element) && getSelectionBlockReason(element) === null
 }
 
 function getNearestInteractiveTargetFromPoint(
@@ -571,15 +635,13 @@ function getNearestInteractiveTargetFromPoint(
     : null
 }
 
-function getNearestTrackingId(
+function getSelectableTrackingTargets(
   trackingIds: string[],
-  gazePoint: GazePoint,
+  options?: {
+    container?: HTMLElement | null
+  },
 ) {
-  if (!gazePoint || trackingIds.length === 0) {
-    return null
-  }
-
-  const nearestElement = trackingIds
+  return trackingIds
     .map(trackingId => ({
       trackingId,
       element: getElementByTrackingId(trackingId),
@@ -587,27 +649,50 @@ function getNearestTrackingId(
     .filter(
       (
         entry,
-      ): entry is {
-        trackingId: string
-        element: HTMLElement
-      } => Boolean(entry.element && isElementVisibleForSelection(entry.element)),
+      ): entry is SelectableTrackingTarget => {
+        if (!entry.element) {
+          return false
+        }
+
+        if (options?.container && !options.container.contains(entry.element)) {
+          return false
+        }
+
+        return getSelectionBlockReason(entry.element) === null
+      },
     )
-    .reduce<{
-      trackingId: string
-      element: HTMLElement
-      distance: number
-    } | null>((best, current) => {
+}
+
+function getNearestTrackingId(
+  targets: SelectableTrackingTarget[],
+  gazePoint: GazePoint,
+) {
+  if (!gazePoint || targets.length === 0) {
+    return null
+  }
+
+  const distances = targets
+    .map(current => {
       const rect = current.element.getBoundingClientRect()
       const centerX = rect.left + rect.width / 2
       const centerY = rect.top + rect.height / 2
-      const distance = Math.hypot(gazePoint.clientX - centerX, gazePoint.clientY - centerY)
-
-      if (!best || distance < best.distance) {
-        return { ...current, distance }
+      return {
+        ...current,
+        distance: Math.hypot(gazePoint.clientX - centerX, gazePoint.clientY - centerY),
       }
+    })
+    .sort((left, right) => left.distance - right.distance)
 
-      return best
-    }, null)
+  const nearestElement = distances[0] ?? null
+  const secondNearestElement = distances[1] ?? null
+
+  if (
+    nearestElement &&
+    secondNearestElement &&
+    Math.abs(secondNearestElement.distance - nearestElement.distance) <= MAPPED_TARGET_AMBIGUITY_PX
+  ) {
+    return targets[0]?.trackingId ?? nearestElement.trackingId
+  }
 
   return nearestElement?.trackingId ?? null
 }
@@ -618,8 +703,16 @@ function resolveMappedGazeTarget(input: {
   gazePoint: GazePoint
   stableTarget: SelectionTarget | null
   pointTarget: SelectionTarget | null
+  activeContainer?: HTMLElement | null
 }): SelectionTarget | null {
-  const { cell, mapping, gazePoint, stableTarget, pointTarget } = input
+  const {
+    cell,
+    mapping,
+    gazePoint,
+    stableTarget,
+    pointTarget,
+    activeContainer,
+  } = input
 
   if (cell === null || !mapping) {
     return null
@@ -634,8 +727,13 @@ function resolveMappedGazeTarget(input: {
   const stableTrackingId = stableTarget?.trackingId ?? null
 
   const resolveTrackingId = (trackingIds: string[]) => {
-    if (trackingIds.length === 0) {
+    const selectableTargets = getSelectableTrackingTargets(trackingIds, {
+      container: activeContainer,
+    })
+
+    if (selectableTargets.length === 0) {
       return {
+        element: null,
         trackingId: null,
         confidence: 0,
       }
@@ -643,22 +741,34 @@ function resolveMappedGazeTarget(input: {
 
     const pointTrackingId = pointTarget?.trackingId ?? null
 
-    if (pointTrackingId && trackingIds.includes(pointTrackingId)) {
+    if (pointTrackingId && selectableTargets.some(target => target.trackingId === pointTrackingId)) {
       return {
+        element:
+          selectableTargets.find(target => target.trackingId === pointTrackingId)?.element ?? null,
         trackingId: pointTrackingId,
         confidence: 0.94,
       }
     }
 
-    if (stableTrackingId && trackingIds.includes(stableTrackingId)) {
+    if (
+      stableTrackingId &&
+      selectableTargets.some(target => target.trackingId === stableTrackingId)
+    ) {
       return {
+        element:
+          selectableTargets.find(target => target.trackingId === stableTrackingId)?.element ?? null,
         trackingId: stableTrackingId,
         confidence: 0.88,
       }
     }
 
+    const nearestTrackingId =
+      getNearestTrackingId(selectableTargets, gazePoint) ?? selectableTargets[0]?.trackingId ?? null
+
     return {
-      trackingId: getNearestTrackingId(trackingIds, gazePoint) ?? trackingIds[0] ?? null,
+      element:
+        selectableTargets.find(target => target.trackingId === nearestTrackingId)?.element ?? null,
+      trackingId: nearestTrackingId,
       confidence: 0.74,
     }
   }
@@ -669,16 +779,24 @@ function resolveMappedGazeTarget(input: {
     resolvedPrimaryTarget.trackingId !== null
       ? resolvedPrimaryTarget
       : resolvedFallbackTarget
-  const trackingId =
-    resolvedTarget.trackingId
+  const trackingId = resolvedTarget.trackingId
 
   if (!trackingId) {
+    if (normalizedTarget.allTargets.length > 0) {
+      debugMappedTarget('filtered-out', {
+        cell,
+        groupId: normalizedTarget.groupId,
+        targets: normalizedTarget.allTargets,
+        reason: activeContainer ? 'unavailable-in-active-container' : 'unavailable',
+      })
+    }
+
     return null
   }
 
-  const mappedElement = getElementByTrackingId(trackingId)
+  const mappedElement = resolvedTarget.element
 
-  if (!mappedElement || !isElementVisibleForSelection(mappedElement)) {
+  if (!mappedElement || getSelectionBlockReason(mappedElement) !== null) {
     return null
   }
 
@@ -844,6 +962,7 @@ function resolveRawGazeTarget(input: {
     gazePoint,
     stableTarget,
     pointTarget,
+    activeContainer: candidateContainer,
   })
 
   const nearestTarget = getNearestInteractiveTargetFromPoint(
@@ -862,56 +981,6 @@ function resolveRawGazeTarget(input: {
   })
 }
 
-function getSelectionBlockReason(element: HTMLElement | null) {
-  if (!element) {
-    return 'missing-target'
-  }
-
-  if (!element.isConnected) {
-    return 'disconnected'
-  }
-
-  if (element.dataset.gazeCommitDisabled === 'true') {
-    return element.dataset.gazeDisabledReason ?? 'commit-disabled'
-  }
-
-  if (element.matches(':disabled')) {
-    return 'disabled'
-  }
-
-  if (element.getAttribute('aria-disabled') === 'true') {
-    return 'aria-disabled'
-  }
-
-  const computedStyle = window.getComputedStyle(element)
-
-  if (computedStyle.display === 'none') {
-    return 'display-none'
-  }
-
-  if (computedStyle.visibility === 'hidden') {
-    return 'visibility-hidden'
-  }
-
-  if (computedStyle.pointerEvents === 'none') {
-    return 'pointer-events-none'
-  }
-
-  if (
-    element.hidden ||
-    element.closest('[hidden], [inert], [aria-hidden="true"]') ||
-    ('inert' in element && Boolean((element as HTMLElement & { inert?: boolean }).inert))
-  ) {
-    return 'inert'
-  }
-
-  if (!isInteractiveElementEligibleForGlobalGazeSelection(element)) {
-    return 'mouse-only'
-  }
-
-  return null
-}
-
 export function usePatientGazeClick({
   enabled = true,
   selectionSurface = 'common',
@@ -919,6 +988,7 @@ export function usePatientGazeClick({
   const gazePoint = useGazeInputStore(state => state.point)
   const gazeCell = useGazeInputStore(state => state.cell)
   const cellMapping = useCellMappingStore(state => state.cellMapping)
+  const activeCellMappingOwner = useCellMappingStore(state => state.activeOwnerDebugLabel)
   const selectionProfile = useMemo(
     () => getPatientSelectionProfile(selectionSurface),
     [selectionSurface],
@@ -1660,6 +1730,7 @@ export function usePatientGazeClick({
       clientX: gazePoint?.clientX ?? null,
       clientY: gazePoint?.clientY ?? null,
       gazeCell,
+      activeCellMappingOwner,
       rawTargetKey: rawGazeTarget?.key ?? null,
       rawTargetId: rawGazeTarget?.trackingId ?? null,
       rawTargetSource: rawGazeTarget?.source ?? null,
@@ -1718,6 +1789,7 @@ export function usePatientGazeClick({
     ;(window as PatientDebugWindow).__PATIENT_GAZE_DEBUG_STATE = nextDebugPayload
     console.info('[patient-input] gaze-selection-state', nextDebugPayload)
   }, [
+    activeCellMappingOwner,
     currentDwellInputSource,
     currentSelectionBlockReason,
     currentDwellTarget,

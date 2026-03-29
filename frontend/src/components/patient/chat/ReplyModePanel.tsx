@@ -576,6 +576,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
     firstTopCard,
     firstVisibleCategory,
     isSending,
+    categoryState,
     recommendationMode,
     secondTopCard,
     secondVisibleCategory,
