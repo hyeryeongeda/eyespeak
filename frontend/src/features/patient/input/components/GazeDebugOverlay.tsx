@@ -3,10 +3,10 @@ import { useGazeInputStore } from '../stores/gazeInputStore'
 
 const dotStyle: CSSProperties = {
   position: 'fixed',
-  width: '10px',
-  height: '10px',
+  width: '60px',
+  height: '60px',
   borderRadius: '50%',
-  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  backgroundColor: 'rgba(0, 0, 0, 0.035)',
   pointerEvents: 'none',
   zIndex: 99999,
   transform: 'translate(-50%, -50%)',
