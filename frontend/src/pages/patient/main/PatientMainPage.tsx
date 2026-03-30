@@ -279,7 +279,7 @@ export default function PatientMainPage() {
       return '호출 상태 안내가 열려 있습니다.'
     }
 
-    return '시선을 카드 위에 머무르면 선택되고, 더블 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
+    return '시선을 카드 위에 머무르고 더블블링크 하면 선택되고, 트리플 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
   }, [isOverlayVisible])
 
   const handleLogout = async () => {
