@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import PatientTrackingGuardOverlay from '../../features/patient/input/components/PatientTrackingGuardOverlay'
 import EyeTrackingRuntimeHost from '../../features/patient/input/components/EyeTrackingRuntimeHost'
 import GazeDebugOverlay from '../../features/patient/input/components/GazeDebugOverlay'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import usePatientGlobalMenuActionListener from '../../features/patient/input/hooks/usePatientGlobalMenuActionListener'
 import usePatientGazeClick from '../../features/patient/input/hooks/usePatientGazeClick'
+import usePatientNavigateWithFeedback from '../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientModeDwellSync from '../../features/patient/input/hooks/usePatientModeDwellSync'
 import usePatientTrackingBridge from '../../features/patient/input/hooks/usePatientTrackingBridge'
 import { getPatientEyeTrackingProfileId } from '../../features/patient/input/services/calibration/patientCalibrationService'
@@ -98,7 +99,7 @@ type PatientChatDebugWindow = Window & {
 }
 
 function PatientLayoutShell() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const chat = usePatientIncomingChat()
   const { user } = useAuth()
   const location = useLocation()
@@ -318,7 +319,7 @@ function PatientLayoutShell() {
     }
 
     pendingReplyAfterTalkNavigationRef.current = true
-    navigate(
+    navigateWithFeedback(
       {
         pathname: ROUTE_PATHS.PATIENT_TALK_MAIN,
         search: location.search,
@@ -330,17 +331,22 @@ function PatientLayoutShell() {
   }
 
   const handleReturnToLeisure = () => {
-    chat.completeReplyCompletion()
-
     if (
       resumeContext?.fromLeisure &&
       resumeContext.routeKind === 'player' &&
       resumeContext.resumePath &&
       resumeContext.resumePath !== currentRoutePath
     ) {
-      navigate(resumeContext.resumePath, { replace: true })
+      navigateWithFeedback(resumeContext.resumePath, {
+        replace: true,
+        beforeNavigate: () => {
+          chat.completeReplyCompletion()
+        },
+      })
       return
     }
+
+    chat.completeReplyCompletion()
 
     if (currentRouteKind !== 'leisure_player') {
       clearResumeContext()
@@ -348,11 +354,14 @@ function PatientLayoutShell() {
   }
 
   const handleReturnToMain = () => {
-    clearResumeContext()
-    chat.completeReplyCompletion()
-    navigate({
+    navigateWithFeedback({
       pathname: ROUTE_PATHS.PATIENT_MAIN,
       search: location.search,
+    }, {
+      beforeNavigate: () => {
+        clearResumeContext()
+        chat.completeReplyCompletion()
+      },
     })
   }
 

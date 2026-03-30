@@ -1,6 +1,7 @@
 import { type CSSProperties, useEffect, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { ROUTE_PATHS, getPatientLeisurePlayerPath } from '../../../app/router/routePaths'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import {
   fetchLeisureCategoryRecommendations,
   getLeisureCategoryErrorMessage,
@@ -85,7 +86,7 @@ const noticeStyle: CSSProperties = {
 }
 
 export default function LeisureCategoryPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const params = useParams()
   const category = getLeisureCategoryById(params.categoryId)
@@ -177,7 +178,12 @@ export default function LeisureCategoryPage() {
               description="여가 메인 화면으로 돌아갑니다."
               tone="slate"
               slotId="invalid-category-back"
-              onSelect={() => navigate({ pathname: ROUTE_PATHS.PATIENT_LEISURE, search: location.search })}
+              onSelect={() =>
+                navigateWithFeedback({
+                  pathname: ROUTE_PATHS.PATIENT_LEISURE,
+                  search: location.search,
+                })
+              }
             />
           </div>
         </section>
@@ -187,7 +193,7 @@ export default function LeisureCategoryPage() {
 
   const handleSelectContent = (content: LeisureContent) => {
     setStatus('selecting')
-    navigate(
+    navigateWithFeedback(
       {
         pathname: getPatientLeisurePlayerPath(content.id),
         search: location.search,
@@ -321,7 +327,10 @@ export default function LeisureCategoryPage() {
               slotId="category-back"
               onSelect={() => {
                 setStatus('transitioning')
-                navigate({ pathname: ROUTE_PATHS.PATIENT_LEISURE, search: location.search })
+                navigateWithFeedback({
+                  pathname: ROUTE_PATHS.PATIENT_LEISURE,
+                  search: location.search,
+                })
               }}
             />
           </div>

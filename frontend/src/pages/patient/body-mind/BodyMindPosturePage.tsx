@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
 import { postureOptionPages } from './bodyMindMock'
@@ -9,7 +9,7 @@ import { submitBodyMindSelection } from './bodyMindSubmission'
 import BodyMindPagedMenuPage from './components/BodyMindPagedMenuPage'
 
 export default function BodyMindPosturePage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
@@ -52,7 +52,7 @@ export default function BodyMindPosturePage() {
 
   const handleBack = () => {
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_BODY_MIND)
   }
 
   return (

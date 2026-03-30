@@ -7,6 +7,7 @@ import type {
   PainAreaGroupKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
@@ -21,6 +22,7 @@ const PREVIEW_DELAY_MS = 220
 
 export default function BodyMindPainAreaPage() {
   const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
@@ -103,7 +105,7 @@ export default function BodyMindPainAreaPage() {
   const handleBack = () => {
     clearPendingNavigation()
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_BODY_MIND)
   }
 
   return (

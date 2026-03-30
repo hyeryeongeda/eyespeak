@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
@@ -24,12 +24,12 @@ export default function BodyMindPlaceholderPage({
   backDescription = '이전 화면으로 이동',
   contextLabel,
 }: BodyMindPlaceholderPageProps) {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
 
   const handleBack = () => {
     setStatus('transitioning')
-    navigate(backPath)
+    navigateWithFeedback(backPath)
   }
 
   return (

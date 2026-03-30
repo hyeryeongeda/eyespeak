@@ -1,8 +1,8 @@
 import { type CSSProperties, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import type { CustomTalkCategoryOption } from '../types'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
@@ -137,7 +137,7 @@ function buildCategoryCards(visibleCategories: CustomTalkCategoryOption[]): Cate
 }
 
 export default function CustomTalkDirectionPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const chat = usePatientIncomingChat()
   const dwellFeedback = useDwellFeedback<CustomTalkDirectionTrackingId>({
     enabled: true,
@@ -211,7 +211,7 @@ export default function CustomTalkDirectionPage() {
     }
 
     selectCategory(category.key)
-    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_RECOMMEND)
   }
 
   return (
@@ -255,7 +255,7 @@ export default function CustomTalkDirectionPage() {
         tone: 'mint',
         onSelect: () => {
           openKeyboard('custom_entry')
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
+          navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
         disabled: status === 'submitting',
         trackingId: 'custom-talk-direction-keyboard',
@@ -264,7 +264,7 @@ export default function CustomTalkDirectionPage() {
         title: '뒤로가기',
         description: '대화 메인 화면으로 돌아갑니다.',
         tone: 'slate',
-        onSelect: () => navigate(ROUTE_PATHS.PATIENT_TALK_MAIN),
+        onSelect: () => navigateWithFeedback(ROUTE_PATHS.PATIENT_TALK_MAIN),
         trackingId: 'custom-talk-direction-back',
       }}
       dwellFeedback={dwellFeedback}

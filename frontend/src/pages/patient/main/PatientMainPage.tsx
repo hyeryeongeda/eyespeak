@@ -1,6 +1,5 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
 import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
@@ -9,6 +8,7 @@ import {
   useDwellFeedback,
   type DwellFeedbackViewModel,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import {
   requestMockPatientCall,
@@ -254,7 +254,7 @@ const responsiveStyle = `
 `
 
 export default function PatientMainPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const { logout, user } = useAuth()
   const isMouseLogoutIntentRef = useRef(false)
   const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
@@ -284,7 +284,7 @@ export default function PatientMainPage() {
 
   const handleLogout = async () => {
     await logout()
-    navigate(ROUTE_PATHS.HOME, { replace: true })
+    navigateWithFeedback(ROUTE_PATHS.HOME, { replace: true })
   }
 
   const handleLogoutPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -320,7 +320,7 @@ export default function PatientMainPage() {
 
   function handleSelectTarget(targetId: PatientMainTargetId) {
     if (targetId === 'talk') {
-      navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+      navigateWithFeedback(ROUTE_PATHS.PATIENT_TALK_MAIN)
       return
     }
 
@@ -329,7 +329,7 @@ export default function PatientMainPage() {
       return
     }
 
-    navigate(ROUTE_PATHS.PATIENT_LEISURE)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_LEISURE)
   }
 
   useEffect(() => {

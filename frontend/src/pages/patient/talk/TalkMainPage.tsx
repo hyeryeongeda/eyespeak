@@ -1,5 +1,4 @@
-import type { CSSProperties } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { type CSSProperties } from 'react'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
 import ReplyModePanel from '../../../components/patient/chat/ReplyModePanel'
@@ -8,6 +7,7 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 
@@ -53,7 +53,8 @@ const cardBase: CSSProperties = {
   justifyContent: 'center',
   cursor: 'pointer',
   backgroundColor: '#ffffff',
-  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+  transition:
+    'transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease, border-color 0.15s ease',
   position: 'relative',
 }
 
@@ -120,6 +121,18 @@ const cardHoverStyle = `
     outline: 2px solid #5d8ec7;
     outline-offset: 2px;
   }
+
+  html[data-patient-mode='true'] .talk-main-card:not([data-patient-interactive='true']):hover,
+  html[data-patient-mode='true'] .talk-main-card:not([data-patient-interactive='true']):focus-visible {
+    outline: 2px solid rgba(125, 155, 246, 0.5);
+    outline-offset: 3px;
+    border-color: rgba(125, 155, 246, 0.52);
+    box-shadow:
+      0 0 0 6px rgba(125, 155, 246, 0.08),
+      0 14px 28px rgba(49, 87, 142, 0.1);
+    transform: translateY(-2px);
+    filter: saturate(1.03);
+  }
 `
 
 function DwellOnCard({
@@ -147,7 +160,7 @@ function DwellOnCard({
 }
 
 export default function TalkMainPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const chat = usePatientIncomingChat()
   const dwellFeedback = useDwellFeedback<TalkMainTrackingId>({
     enabled: true,
@@ -169,9 +182,18 @@ export default function TalkMainPage() {
         ],
   )
 
-  const moveToReplyRoute = (routePath: string) => {
-    chat.focusLatestPendingMessage()
-    navigate(routePath)
+  const handleNavigateWithFeedback = (
+    routePath: string,
+    options: {
+      focusLatestPendingMessage?: boolean
+    } = {},
+  ) => {
+    const { focusLatestPendingMessage = false } = options
+
+    if (focusLatestPendingMessage) {
+      chat.focusLatestPendingMessage()
+    }
+    navigateWithFeedback(routePath)
   }
 
   if (shouldShowInlineReply) {
@@ -226,7 +248,11 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardLeftTop}
           data-tracking-id="talk-main-body-mind"
-          onClick={() => moveToReplyRoute(ROUTE_PATHS.PATIENT_BODY_MIND)}
+          onClick={() =>
+            handleNavigateWithFeedback(ROUTE_PATHS.PATIENT_BODY_MIND, {
+              focusLatestPendingMessage: true,
+            })
+          }
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-body-mind')}
@@ -243,7 +269,11 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardLeftBottom}
           data-tracking-id="talk-main-favorites"
-          onClick={() => moveToReplyRoute(ROUTE_PATHS.PATIENT_FAVORITES)}
+          onClick={() =>
+            handleNavigateWithFeedback(ROUTE_PATHS.PATIENT_FAVORITES, {
+              focusLatestPendingMessage: true,
+            })
+          }
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-favorites')}
@@ -267,7 +297,11 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardRightTop}
           data-tracking-id="talk-main-custom-talk"
-          onClick={() => moveToReplyRoute(ROUTE_PATHS.PATIENT_CUSTOM_TALK)}
+          onClick={() =>
+            handleNavigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK, {
+              focusLatestPendingMessage: true,
+            })
+          }
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-custom-talk')}
@@ -284,7 +318,7 @@ export default function TalkMainPage() {
           className="talk-main-card"
           style={cardRightBottom}
           data-tracking-id="talk-main-back-main"
-          onClick={() => navigate(ROUTE_PATHS.PATIENT_MAIN)}
+          onClick={() => handleNavigateWithFeedback(ROUTE_PATHS.PATIENT_MAIN)}
         >
           <DwellOnCard
             active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-back-main')}

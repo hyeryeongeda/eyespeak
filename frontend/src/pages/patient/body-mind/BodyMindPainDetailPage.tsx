@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import type {
   BodyMindUiStatus,
@@ -15,7 +16,7 @@ import { submitBodyMindSelection } from './bodyMindSubmission'
 import BodyMindPagedMenuPage from './components/BodyMindPagedMenuPage'
 
 export default function BodyMindPainDetailPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
@@ -72,7 +73,7 @@ export default function BodyMindPainDetailPage() {
 
   const handleBack = () => {
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_PART, {
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_PART, {
       state: { selectedGroupKey, selectedAreaKey },
     })
   }

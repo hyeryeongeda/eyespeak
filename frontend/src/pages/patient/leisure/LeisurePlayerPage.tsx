@@ -5,6 +5,7 @@ import {
   getPatientLeisureCategoryPath,
   getPatientLeisurePlayerPath,
 } from '../../../app/router/routePaths'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import {
   fetchLeisureContentDetail,
   fetchRelatedLeisureContents,
@@ -225,6 +226,7 @@ function buildYouTubePlayerUrl(embedUrl: string) {
 
 export default function LeisurePlayerPage() {
   const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const chat = usePatientIncomingChat()
   const params = useParams()
@@ -580,7 +582,7 @@ export default function LeisurePlayerPage() {
     setIsRelatedOverlayOpen(false)
     clearResumeContext()
     setStatus('transitioning')
-    navigate({
+    navigateWithFeedback({
       pathname: routeState?.fromPath ?? fallbackBackPath,
       search: location.search,
     })
@@ -628,10 +630,9 @@ export default function LeisurePlayerPage() {
 
   const handleSelectRelatedContent = (nextContent: LeisureContent) => {
     setRelatedStatus('selecting')
-    setIsRelatedOverlayOpen(false)
     clearResumeContext()
     setStatus('transitioning')
-    navigate(
+    navigateWithFeedback(
       {
         pathname: getPatientLeisurePlayerPath(nextContent.id),
         search: location.search,
