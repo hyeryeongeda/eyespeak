@@ -68,6 +68,18 @@ const LEVEL_OPTIONS: LevelOption[] = [
   { value: 5, label: '매우 많이' },
 ]
 
+const FIRST_PAGE_MOOD_TYPES = new Set<DailyMoodType>([
+  'HAPPY',
+  'SAD',
+  'JOYFUL',
+  'ANXIOUS',
+])
+const SECOND_PAGE_MOOD_TYPES = new Set<DailyMoodType>([
+  'ANGRY',
+  'TIRED',
+  'CALM',
+])
+
 const overlayStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
@@ -125,7 +137,10 @@ const centerInnerStyle: CSSProperties = {
 }
 
 const centerTitleStyle: CSSProperties = {
-  display: 'none',
+  margin: 0,
+  color: '#6e7d92',
+  fontSize: '0.92rem',
+  fontWeight: 800,
 }
 
 const centerValueStyle: CSSProperties = {
@@ -138,7 +153,11 @@ const centerValueStyle: CSSProperties = {
 }
 
 const centerHelperStyle: CSSProperties = {
-  display: 'none',
+  margin: 0,
+  color: '#718195',
+  fontSize: '0.95rem',
+  fontWeight: 700,
+  lineHeight: 1.4,
 }
 
 const centerErrorStyle: CSSProperties = {
@@ -149,6 +168,25 @@ const centerErrorStyle: CSSProperties = {
 }
 
 const overlayCss = `
+  .patient-daily-mood-card[data-interaction-state='confirmed'],
+  .patient-daily-mood-card[data-interaction-state='cooldown'] {
+    outline: none !important;
+    outline-offset: 0 !important;
+    border-color: var(--patient-daily-mood-card-border-color, #d4dbe6) !important;
+    background: var(--patient-daily-mood-card-background, #ffffff) !important;
+    box-shadow: var(--patient-daily-mood-card-shadow, 0 18px 42px rgba(101, 112, 132, 0.08)) !important;
+    color: var(--patient-daily-mood-card-color, #111111) !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .patient-daily-mood-card[data-interaction-state='confirmed']::before,
+  .patient-daily-mood-card[data-interaction-state='confirmed']::after,
+  .patient-daily-mood-card[data-interaction-state='cooldown']::before,
+  .patient-daily-mood-card[data-interaction-state='cooldown']::after {
+    opacity: 0 !important;
+  }
+
   html:not([data-patient-mode='true']) .patient-daily-mood-card:hover:not(:disabled),
   html:not([data-patient-mode='true']) .patient-daily-mood-card:focus-visible:not(:disabled) {
     transform: translateY(-3px);
@@ -200,7 +238,6 @@ function getLevelLabel(moodLevel: number | null) {
 function getCardStyle(
   slot: GridSlot,
   variant: ActionCardConfig['variant'],
-  selected: boolean,
   disabled: boolean,
 ): CSSProperties {
   const backgrounds: Record<NonNullable<ActionCardConfig['variant']>, string> = {
@@ -209,21 +246,28 @@ function getCardStyle(
     muted: 'linear-gradient(180deg, #f1f3f6 0%, #eceff3 100%)',
   }
 
+  const background = disabled ? backgrounds.muted : backgrounds[variant ?? 'default']
+  const borderColor = '#d4dbe6'
+  const boxShadow = '0 18px 42px rgba(101, 112, 132, 0.08)'
+  const color = disabled ? '#9ea7b3' : '#111111'
+
   return {
+    ['--patient-daily-mood-card-background' as string]: background,
+    ['--patient-daily-mood-card-border-color' as string]: borderColor,
+    ['--patient-daily-mood-card-shadow' as string]: boxShadow,
+    ['--patient-daily-mood-card-color' as string]: color,
     gridArea: slot,
     borderRadius: '20px',
-    border: selected ? '2px solid #7f9bc7' : '1px solid #d4dbe6',
-    background: disabled ? backgrounds.muted : backgrounds[variant ?? 'default'],
-    boxShadow: selected
-      ? '0 24px 52px rgba(109, 132, 177, 0.16)'
-      : '0 18px 42px rgba(101, 112, 132, 0.08)',
+    border: `1px solid ${borderColor}`,
+    background,
+    boxShadow,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
     padding: '32px 18px',
-    color: disabled ? '#9ea7b3' : '#111111',
+    color,
     cursor: disabled ? 'default' : 'pointer',
     transition: 'transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease',
     position: 'relative',
@@ -253,12 +297,12 @@ function ActionCard({
       style={getCardStyle(
         card.slot,
         card.variant ?? 'default',
-        Boolean(card.selected),
         isDisabled,
       )}
       onClick={card.onSelect}
       disabled={isDisabled}
       data-tracking-id={isDisabled ? undefined : card.trackingId}
+      aria-pressed={card.selected}
     >
       {shouldShowDwellFeedback ? (
         <DwellFeedbackBadge
@@ -316,10 +360,20 @@ export default function PatientDailyMoodOverlay({
     }
   }, [visible])
 
+  const handleMoodTypeSelect = (moodType: DailyMoodType) => {
+    setSelectedMoodLevel(null)
+    setSelectedMoodType(current => (current === moodType ? null : moodType))
+  }
+
+  const isFirstPageMoodSelected =
+    selectedMoodType !== null && FIRST_PAGE_MOOD_TYPES.has(selectedMoodType)
+  const isSecondPageMoodSelected =
+    selectedMoodType !== null && SECOND_PAGE_MOOD_TYPES.has(selectedMoodType)
+
   const currentMoodLabel =
     step === 'intensity'
-      ? getLevelLabel(selectedMoodLevel) ?? getMoodLabel(selectedMoodType) ?? ''
-      : getMoodLabel(selectedMoodType) ?? ''
+      ? getLevelLabel(selectedMoodLevel) ?? getMoodLabel(selectedMoodType)
+      : getMoodLabel(selectedMoodType)
   const currentLevelLabel = getLevelLabel(selectedMoodLevel)
   const pageTitle =
     step === 'intensity'
@@ -372,8 +426,8 @@ export default function PatientDailyMoodOverlay({
         },
         {
           slot: 'bottom-right',
-          title: submitting ? '저장 중' : '확인',
-          description: '오늘 기분 저장',
+          title: submitting ? '제출 중' : '확인',
+          description: '오늘 기분을 저장해요',
           trackingId: 'daily-mood-confirm',
           disabled: !selectedMoodType || !selectedMoodLevel,
           variant: 'action',
@@ -399,10 +453,7 @@ export default function PatientDailyMoodOverlay({
           description: MOOD_OPTIONS[5].description,
           trackingId: 'daily-mood-angry',
           selected: selectedMoodType === MOOD_OPTIONS[5].type,
-          onSelect: () => {
-            setSelectedMoodType(MOOD_OPTIONS[5].type)
-            setStep('intensity')
-          },
+          onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[5].type),
         },
         {
           slot: 'top-center',
@@ -410,24 +461,30 @@ export default function PatientDailyMoodOverlay({
           description: MOOD_OPTIONS[6].description,
           trackingId: 'daily-mood-tired',
           selected: selectedMoodType === MOOD_OPTIONS[6].type,
+          onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[6].type),
+        },
+        {
+          slot: 'top-right',
+          title: '확인',
+          description: '강도 선택으로 이동',
+          trackingId: 'daily-mood-page-2-confirm',
+          disabled: !isSecondPageMoodSelected,
+          variant: 'action',
           onSelect: () => {
-            setSelectedMoodType(MOOD_OPTIONS[6].type)
+            if (!isSecondPageMoodSelected) {
+              return
+            }
+
             setStep('intensity')
           },
         },
         {
-          slot: 'top-right',
-          title: '대기',
-          description: '선택 없음',
-          disabled: true,
-          variant: 'muted',
-        },
-        {
           slot: 'bottom-left',
-          title: '대기',
-          description: '선택 없음',
-          disabled: true,
-          variant: 'muted',
+          title: MOOD_OPTIONS[2].label,
+          description: MOOD_OPTIONS[2].description,
+          trackingId: 'daily-mood-calm',
+          selected: selectedMoodType === MOOD_OPTIONS[2].type,
+          onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[2].type),
         },
         {
           slot: 'bottom-center',
@@ -454,7 +511,7 @@ export default function PatientDailyMoodOverlay({
         description: MOOD_OPTIONS[0].description,
         trackingId: 'daily-mood-happy',
         selected: selectedMoodType === MOOD_OPTIONS[0].type,
-        onSelect: () => setSelectedMoodType(MOOD_OPTIONS[0].type),
+        onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[0].type),
       },
       {
         slot: 'top-center',
@@ -462,15 +519,22 @@ export default function PatientDailyMoodOverlay({
         description: MOOD_OPTIONS[1].description,
         trackingId: 'daily-mood-sad',
         selected: selectedMoodType === MOOD_OPTIONS[1].type,
-        onSelect: () => setSelectedMoodType(MOOD_OPTIONS[1].type),
+        onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[1].type),
       },
       {
         slot: 'top-right',
-        title: MOOD_OPTIONS[2].label,
-        description: MOOD_OPTIONS[2].description,
-        trackingId: 'daily-mood-calm',
-        selected: selectedMoodType === MOOD_OPTIONS[2].type,
-        onSelect: () => setSelectedMoodType(MOOD_OPTIONS[2].type),
+        title: '확인',
+        description: '강도 선택으로 이동',
+        trackingId: 'daily-mood-page-1-confirm',
+        disabled: !isFirstPageMoodSelected,
+        variant: 'action',
+        onSelect: () => {
+          if (!isFirstPageMoodSelected) {
+            return
+          }
+
+          setStep('intensity')
+        },
       },
       {
         slot: 'bottom-left',
@@ -478,7 +542,7 @@ export default function PatientDailyMoodOverlay({
         description: MOOD_OPTIONS[3].description,
         trackingId: 'daily-mood-joyful',
         selected: selectedMoodType === MOOD_OPTIONS[3].type,
-        onSelect: () => setSelectedMoodType(MOOD_OPTIONS[3].type),
+        onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[3].type),
       },
       {
         slot: 'bottom-center',
@@ -486,7 +550,7 @@ export default function PatientDailyMoodOverlay({
         description: MOOD_OPTIONS[4].description,
         trackingId: 'daily-mood-anxious',
         selected: selectedMoodType === MOOD_OPTIONS[4].type,
-        onSelect: () => setSelectedMoodType(MOOD_OPTIONS[4].type),
+        onSelect: () => handleMoodTypeSelect(MOOD_OPTIONS[4].type),
       },
       {
         slot: 'bottom-right',
@@ -497,7 +561,16 @@ export default function PatientDailyMoodOverlay({
         onSelect: () => setStep('mood-page-2'),
       },
     ]
-  }, [onSubmit, selectedMoodLevel, selectedMoodType, step, submitting])
+  }, [
+    handleMoodTypeSelect,
+    isFirstPageMoodSelected,
+    isSecondPageMoodSelected,
+    onSubmit,
+    selectedMoodLevel,
+    selectedMoodType,
+    step,
+    submitting,
+  ])
 
   const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
     const slots: Record<GridSlot, string | null> = {
@@ -566,8 +639,8 @@ export default function PatientDailyMoodOverlay({
               ) : (
                 <p style={centerHelperStyle}>
                   {step === 'mood-page-2'
-                    ? '기분 6, 7은 선택 즉시 강도 단계로 이동합니다.'
-                    : '원하는 기분을 고른 뒤 다음으로 이동하세요.'}
+                    ? '기분을 고른 뒤 우측 상단 확인으로 강도를 선택하세요.'
+                    : '기분을 고른 뒤 우측 상단 확인으로 강도를 선택하거나 다음으로 넘길 수 있어요.'}
                 </p>
               )}
               {errorMessage ? <p style={centerErrorStyle}>{errorMessage}</p> : null}
@@ -578,3 +651,4 @@ export default function PatientDailyMoodOverlay({
     </div>
   )
 }
+
