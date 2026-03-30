@@ -29,7 +29,7 @@ smoothing:
   screen_outlier_distance: 0.5
   screen_fallback_jump_margin: 0.10
   readiness_valid_streak: 2
-  blink_ear_threshold: 0.19
+  blink_ear_threshold: 0.15
 
 weights:
   head_pose_weight: 0.0
@@ -80,12 +80,12 @@ calibration:
 
 trigger:
   dwell_time_sec: 1.5
-  blink_select_min_sec: 0.15
-  blink_select_max_sec: 1.0
-  double_blink_window_sec: 3.0
+  blink_select_min_sec: 0.08
+  blink_select_max_sec: 0.6
+  double_blink_window_sec: 1.5
   long_close_sec: 3.0
-  triple_blink_window_sec: 3.0
-  blink_history_ttl_sec: 5.0
+  triple_blink_window_sec: 2.5
+  blink_history_ttl_sec: 4.0
 
 paths:
   calib_save_dir: calibration_data

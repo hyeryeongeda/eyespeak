@@ -2,13 +2,11 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import { useAuth } from '../../../auth/hooks/useAuth'
-import { useDwell } from '../hooks/useDwell'
 import { useTracking } from '../hooks/useTracking'
 import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
-import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import { requestPatientCall as requestPatientSosCall } from '../../../../services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
 import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
@@ -92,14 +90,6 @@ const labelStyle: CSSProperties = {
   fontWeight: 900,
   letterSpacing: '-0.05em',
   lineHeight: 1,
-}
-
-const helperTextStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 'clamp(1.2rem, 1.6vw, 1.6rem)',
-  fontWeight: 700,
-  lineHeight: 1.45,
-  opacity: 0.86,
 }
 
 function getMenuButtonStyle(args: {
@@ -201,7 +191,6 @@ export default function GlobalMenuOverlay() {
   const isOpen = usePatientModeStore(state => state.isGlobalMenuOpen)
   const isTrackingBypassed = usePatientModeStore(state => state.isGlobalMenuTrackingBypassed)
   const closeGlobalMenu = usePatientModeStore(state => state.closeGlobalMenu)
-  const selectionDwellDurationMs = usePatientModeStore(state => state.selectionDwellDurationMs)
   const trackingStatus = usePatientModeStore(state => state.trackingStatus)
   const [pendingTargetId, setPendingTargetId] = useState<GlobalMenuTargetId | null>(null)
 
@@ -213,24 +202,6 @@ export default function GlobalMenuOverlay() {
     selectionSurface: 'global-menu',
   })
   const highlightedTargetId = pendingTargetId === null ? gazeHoveredTargetId : null
-  const dwellTargetId = pendingTargetId === null ? gazeHoveredTargetId : null
-  const dwellInputSource = gazeHoveredTargetId ? 'gaze' : null
-
-  const dwellState = useDwell<GlobalMenuTargetId>({
-    hoveredTargetId: dwellTargetId,
-    dwellDurationMs: selectionDwellDurationMs,
-    disabled:
-      !isOpen ||
-      pendingTargetId !== null ||
-      !dwellTargetId ||
-      !isMenuInteractionEnabled ||
-      (dwellInputSource === 'gaze' && !isTrackingReady),
-    onCommit: targetId => {
-      queueAction(targetId, dwellInputSource ?? 'pointer')
-    },
-  })
-
-  const isDwellVisualActive = dwellState.phase === 'locking' || dwellState.phase === 'dwelling'
 
   const getInteractionState = (targetId: GlobalMenuTargetId) => {
     if (pendingTargetId === targetId) {
@@ -241,17 +212,8 @@ export default function GlobalMenuOverlay() {
       return undefined
     }
 
-    if (dwellTargetId === targetId && isDwellVisualActive) {
-      return 'dwell'
-    }
-
     return 'hover'
   }
-
-  const getProgressStyle = (targetId: GlobalMenuTargetId): CSSProperties => ({
-    ['--dwell-progress' as string]:
-      dwellTargetId === targetId && isDwellVisualActive ? `${dwellState.progress}` : '0',
-  })
 
   useEffect(() => {
     return () => {
@@ -274,20 +236,9 @@ export default function GlobalMenuOverlay() {
     setPendingTargetId(null)
   }, [isOpen])
 
-  function queueAction(
-    targetId: GlobalMenuTargetId,
-    source: 'pointer' | 'gaze' = 'pointer',
-  ) {
-    if (!isOpen || pendingTargetId !== null) {
+  function queueAction(targetId: GlobalMenuTargetId) {
+    if (!isOpen || pendingTargetId !== null || !isMenuInteractionEnabled) {
       return
-    }
-
-    if (source === 'gaze' && !isTrackingReady) {
-      return
-    }
-
-    if (source === 'gaze') {
-      submitActiveEyeTrackingSelectionFeedback()
     }
 
     setPendingTargetId(targetId)
@@ -370,16 +321,12 @@ export default function GlobalMenuOverlay() {
               data-interaction-state={getInteractionState('yes')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('yes')}
-              style={{
-                ...getMenuButtonStyle({
-                  targetId: 'yes',
-                  disabled: pendingTargetId !== null,
-                }),
-                ...getProgressStyle('yes'),
-              }}
+              style={getMenuButtonStyle({
+                targetId: 'yes',
+                disabled: pendingTargetId !== null,
+              })}
             >
               <p style={labelStyle}>네</p>
-              <p style={helperTextStyle}>공통 positive action 진입점</p>
             </button>
 
             <button
@@ -390,16 +337,12 @@ export default function GlobalMenuOverlay() {
               data-interaction-state={getInteractionState('no')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('no')}
-              style={{
-                ...getMenuButtonStyle({
-                  targetId: 'no',
-                  disabled: pendingTargetId !== null,
-                }),
-                ...getProgressStyle('no'),
-              }}
+              style={getMenuButtonStyle({
+                targetId: 'no',
+                disabled: pendingTargetId !== null,
+              })}
             >
               <p style={labelStyle}>아니요</p>
-              <p style={helperTextStyle}>공통 negative action 진입점</p>
             </button>
 
             <button
@@ -410,16 +353,12 @@ export default function GlobalMenuOverlay() {
               data-interaction-state={getInteractionState('sos')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('sos')}
-              style={{
-                ...getMenuButtonStyle({
-                  targetId: 'sos',
-                  disabled: pendingTargetId !== null,
-                }),
-                ...getProgressStyle('sos'),
-              }}
+              style={getMenuButtonStyle({
+                targetId: 'sos',
+                disabled: pendingTargetId !== null,
+              })}
             >
               <p style={labelStyle}>SOS</p>
-              <p style={helperTextStyle}>긴급 호출을 바로 전송합니다</p>
             </button>
 
             <button
@@ -430,16 +369,12 @@ export default function GlobalMenuOverlay() {
               data-interaction-state={getInteractionState('home')}
               disabled={pendingTargetId !== null}
               onClick={() => queueAction('home')}
-              style={{
-                ...getMenuButtonStyle({
-                  targetId: 'home',
-                  disabled: pendingTargetId !== null,
-                }),
-                ...getProgressStyle('home'),
-              }}
+              style={getMenuButtonStyle({
+                targetId: 'home',
+                disabled: pendingTargetId !== null,
+              })}
             >
               <p style={labelStyle}>홈</p>
-              <p style={helperTextStyle}>환자 메인 화면으로 이동</p>
             </button>
           </div>
         </section>
