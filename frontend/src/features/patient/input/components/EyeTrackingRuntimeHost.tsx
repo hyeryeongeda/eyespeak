@@ -402,7 +402,7 @@ export default function EyeTrackingRuntimeHost({
               const rightEAR = detailedEAR(lm, R_EYE_UPPER, R_EYE_LOWER, R_INNER, R_OUTER)
               const avgEAR = (leftEAR + rightEAR) / 2
 
-              if (avgEAR < BLINK_EAR_THRESHOLD) {
+              if (avgEAR < blinkThreshold) {
                 if (!eyesClosed) {
                   eyesClosed = true
                   eyeClosedAt = now
@@ -410,15 +410,8 @@ export default function EyeTrackingRuntimeHost({
               } else if (eyesClosed) {
                 const dur = now - eyeClosedAt
                 eyesClosed = false
-                const gaze = useGazeInputStore.getState().point
-                if (
-                  dur >= BLINK_MIN_MS &&
-                  dur <= BLINK_MAX_MS &&
-                  now - lastClickAt > BLINK_COOLDOWN_MS &&
-                  gaze
-                ) {
-                  lastClickAt = now
-                  clickElementAtPoint(gaze.clientX, gaze.clientY)
+                if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS) {
+                  handleMultiBlink(now)
                 }
                 animFrameId = requestAnimationFrame(detect)
                 return
@@ -453,6 +446,7 @@ export default function EyeTrackingRuntimeHost({
                 baselineRx.push(irisRx)
                 baselineRy.push(irisRy)
                 baselinePitch.push(head.pitch)
+                baselineEARs.push(avgEAR)
                 if (baselineRx.length >= AUTO_BASELINE_FRAMES) {
                   const sorted = (arr: number[]) => [...arr].sort((a, b) => a - b)
                   const med = (arr: number[]) => {
