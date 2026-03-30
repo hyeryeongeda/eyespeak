@@ -335,7 +335,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>네</p>
-              <p style={helperTextStyle}>공통 positive action 진입점</p>
             </button>
 
             <button
@@ -352,7 +351,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>아니요</p>
-              <p style={helperTextStyle}>공통 negative action 진입점</p>
             </button>
 
             <button
@@ -369,7 +367,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>SOS</p>
-              <p style={helperTextStyle}>긴급 호출을 바로 전송합니다</p>
             </button>
 
             <button
@@ -386,7 +383,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>홈</p>
-              <p style={helperTextStyle}>환자 메인 화면으로 이동</p>
             </button>
           </div>
         </section>
