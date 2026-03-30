@@ -92,14 +92,6 @@ const labelStyle: CSSProperties = {
   lineHeight: 1,
 }
 
-const helperTextStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 'clamp(1.2rem, 1.6vw, 1.6rem)',
-  fontWeight: 700,
-  lineHeight: 1.45,
-  opacity: 0.86,
-}
-
 function getMenuButtonStyle(args: {
   targetId: GlobalMenuTargetId
   disabled: boolean
@@ -335,7 +327,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>네</p>
-              <p style={helperTextStyle}>공통 positive action 진입점</p>
             </button>
 
             <button
@@ -352,7 +343,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>아니요</p>
-              <p style={helperTextStyle}>공통 negative action 진입점</p>
             </button>
 
             <button
@@ -369,7 +359,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>SOS</p>
-              <p style={helperTextStyle}>긴급 호출을 바로 전송합니다</p>
             </button>
 
             <button
@@ -386,7 +375,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>홈</p>
-              <p style={helperTextStyle}>환자 메인 화면으로 이동</p>
             </button>
           </div>
         </section>

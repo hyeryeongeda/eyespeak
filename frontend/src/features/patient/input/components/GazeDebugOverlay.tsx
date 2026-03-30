@@ -6,7 +6,7 @@ const dotStyle: CSSProperties = {
   width: '100px',
   height: '100px',
   borderRadius: '50%',
-  backgroundColor: 'rgba(0, 0, 0, 0.025)',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
   pointerEvents: 'none',
   zIndex: 99999,
   transform: 'translate(-50%, -50%)',
