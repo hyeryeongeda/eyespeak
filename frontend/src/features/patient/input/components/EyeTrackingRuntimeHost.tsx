@@ -51,6 +51,8 @@ const CLICK_SELECTOR =
   'button, a[href], [role="button"], input[type="button"], input[type="submit"], [tabindex]:not([tabindex="-1"]), [data-tracking-id]'
 const PAD_X = 60
 const PAD_Y = 100
+const GLOBAL_MENU_OUTER_PAD_X = 120
+const GLOBAL_MENU_OUTER_PAD_Y = 120
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(Math.max(v, min), max)
@@ -107,6 +109,14 @@ function clickElementAtPoint(clientX: number, clientY: number) {
       return
     }
   }
+
+  const globalMenuTarget = getGlobalMenuTargetFromOuterEdge(clientX, clientY)
+  if (globalMenuTarget) {
+    const rect = globalMenuTarget.getBoundingClientRect()
+    fireClick(globalMenuTarget, rect.left + rect.width / 2, rect.top + rect.height / 2)
+    return
+  }
+
   const allClickable = document.querySelectorAll<HTMLElement>(CLICK_SELECTOR)
   let best: HTMLElement | null = null
   let bestScore = -1
@@ -134,6 +144,72 @@ function clickElementAtPoint(clientX: number, clientY: number) {
     const rect = best.getBoundingClientRect()
     fireClick(best, rect.left + rect.width / 2, rect.top + rect.height / 2)
   }
+}
+
+function getGlobalMenuTargetFromOuterEdge(clientX: number, clientY: number) {
+  const grid = document.querySelector<HTMLElement>('.patient-global-menu-grid')
+  if (!grid) {
+    return null
+  }
+
+  const gridRect = grid.getBoundingClientRect()
+  const gridCenterX = gridRect.left + gridRect.width / 2
+  const gridCenterY = gridRect.top + gridRect.height / 2
+  const targets = grid.querySelectorAll<HTMLElement>('button[data-tracking-id]')
+  let best: HTMLElement | null = null
+  let bestScore = -1
+
+  for (const target of targets) {
+    if (target.offsetParent === null) {
+      continue
+    }
+
+    if (target instanceof HTMLButtonElement && target.disabled) {
+      continue
+    }
+
+    const rect = target.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) {
+      continue
+    }
+
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    const isLeftColumn = centerX <= gridCenterX
+    const isTopRow = centerY <= gridCenterY
+    const leftPad = isLeftColumn ? GLOBAL_MENU_OUTER_PAD_X : 0
+    const rightPad = isLeftColumn ? 0 : GLOBAL_MENU_OUTER_PAD_X
+    const topPad = isTopRow ? GLOBAL_MENU_OUTER_PAD_Y : 0
+    const bottomPad = isTopRow ? 0 : GLOBAL_MENU_OUTER_PAD_Y
+    const expandedLeft = rect.left - leftPad
+    const expandedRight = rect.right + rightPad
+    const expandedTop = rect.top - topPad
+    const expandedBottom = rect.bottom + bottomPad
+
+    if (
+      clientX < expandedLeft ||
+      clientX > expandedRight ||
+      clientY < expandedTop ||
+      clientY > expandedBottom
+    ) {
+      continue
+    }
+
+    const horizontalRadius =
+      rect.width / 2 + (clientX <= centerX ? leftPad : rightPad)
+    const verticalRadius =
+      rect.height / 2 + (clientY <= centerY ? topPad : bottomPad)
+    const dx = horizontalRadius > 0 ? Math.abs(clientX - centerX) / horizontalRadius : 0
+    const dy = verticalRadius > 0 ? Math.abs(clientY - centerY) / verticalRadius : 0
+    const score = 1 - Math.hypot(dx, dy)
+
+    if (score > bestScore) {
+      bestScore = score
+      best = target
+    }
+  }
+
+  return best
 }
 
 function fireClick(target: HTMLElement, clientX: number, clientY: number) {
