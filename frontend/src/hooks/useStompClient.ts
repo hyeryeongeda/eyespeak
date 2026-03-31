@@ -37,7 +37,7 @@ function buildWsUrl(): string {
 
   // Capacitor 네이티브 앱: window.location 기반 감지가 불가하므로 직접 지정
   if (Capacitor.isNativePlatform()) {
-    return `wss://j14e205.p.ssafy.io/dev${WS_ENDPOINT}`
+    return `wss://j14e205.p.ssafy.io${BASE_PATH}${WS_ENDPOINT}`
   }
 
   // 웹 브라우저: 현재 호스트 기준으로 자동 생성

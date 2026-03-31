@@ -43,6 +43,7 @@ import {
 interface UsePatientGazeClickOptions {
   enabled?: boolean
   selectionSurface?: PatientSelectionSurface
+  enableDwellCommit?: boolean
 }
 
 const SELECTION_CONFIRM_FEEDBACK_MS = 420
@@ -457,6 +458,7 @@ function resolveRawGazeTarget(input: {
 export function usePatientGazeClick({
   enabled = true,
   selectionSurface = 'common',
+  enableDwellCommit = true,
 }: UsePatientGazeClickOptions = {}) {
   const gazePoint = useGazeInputStore(state => state.point)
   const gazeCell = useGazeInputStore(state => state.cell)
@@ -1071,6 +1073,10 @@ export function usePatientGazeClick({
       currentSelectionBlockReason !== null ||
       isCurrentSelectionCommitSuppressed,
     onCommit: committedTargetKey => {
+      if (!enableDwellCommit) {
+        return
+      }
+
       const commitSource =
         currentDwellInputSourceRef.current === 'pointer' ? 'pointer-dwell' : 'gaze-dwell'
 
@@ -1093,6 +1099,44 @@ export function usePatientGazeClick({
   })
 
   dwellPhaseRef.current = dwellState.phase
+
+  useEffect(() => {
+    if (!enabled || typeof document === 'undefined') {
+      return
+    }
+
+    const handleClick = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) {
+        return
+      }
+
+      const clickedElement = event.target.closest<HTMLElement>(PATIENT_INTERACTIVE_ELEMENT_SELECTOR)
+
+      if (!clickedElement || !clickedElement.isConnected) {
+        return
+      }
+
+      if (
+        clickedElement.matches(':disabled') ||
+        clickedElement.getAttribute('aria-disabled') === 'true'
+      ) {
+        return
+      }
+
+      markSelectionConfirmed(clickedElement)
+      startSelectionCooldown(
+        getInteractiveElementSelectionKey(clickedElement),
+        clickedElement,
+        selectionProfile.cooldownMs,
+      )
+    }
+
+    document.addEventListener('click', handleClick, true)
+
+    return () => {
+      document.removeEventListener('click', handleClick, true)
+    }
+  }, [enabled, selectionProfile.cooldownMs])
 
   useEffect(() => {
     if (!enabled) {
@@ -1128,14 +1172,16 @@ export function usePatientGazeClick({
     }
   }, [currentDwellTarget, currentSelectionBlockReason, enabled])
 
+  const isDwellVisualStateActive =
+    currentVisualTarget !== null &&
+    currentDwellTarget?.key === currentVisualTarget.key &&
+    (dwellState.phase === 'locking' || dwellState.phase === 'dwelling')
   const currentVisualInteractionState: Exclude<PatientInteractionState, 'idle'> | null =
-    currentVisualTarget
-      ? currentDwellTarget?.key === currentVisualTarget.key && dwellState.phase !== 'idle'
-        ? 'dwell'
-        : 'hover'
-      : null
+    currentVisualTarget ? (isDwellVisualStateActive ? 'dwell' : 'hover') : null
   const currentVisualInteractionProgress =
     currentVisualInteractionState === 'dwell' ? dwellState.progress : 0
+  const selectionSnapshotPhase =
+    !enableDwellCommit && dwellState.phase === 'triggered' ? 'idle' : dwellState.phase
 
   useEffect(() => {
     const nextHighlightedElement = currentVisualTarget?.element ?? null
@@ -1208,16 +1254,16 @@ export function usePatientGazeClick({
       inputSource: currentVisualInputSource,
       hoveredTargetId: currentVisualTarget?.trackingId ?? null,
       activeTargetId:
-        currentDwellTarget?.trackingId && dwellState.phase !== 'idle'
+        currentDwellTarget?.trackingId && selectionSnapshotPhase !== 'idle'
           ? currentDwellTarget.trackingId
           : null,
       rawTargetId: rawGazeTarget?.trackingId ?? null,
       stableTargetId: stableGazeTarget?.trackingId ?? null,
       commitTargetKey: commitSnapshotTarget?.key ?? null,
       commitTargetId: commitSnapshotTarget?.trackingId ?? null,
-      phase: dwellState.phase,
-      progress: dwellState.progress,
-      remainingMs: dwellState.remainingMs,
+      phase: selectionSnapshotPhase,
+      progress: selectionSnapshotPhase === 'idle' ? 0 : dwellState.progress,
+      remainingMs: selectionSnapshotPhase === 'idle' ? 0 : dwellState.remainingMs,
       debug: nextDebugPayload,
     })
 
@@ -1245,10 +1291,12 @@ export function usePatientGazeClick({
     dwellState.progress,
     dwellState.remainingMs,
     enabled,
+    enableDwellCommit,
     gazeCell,
     gazePoint,
     isCurrentSelectionCommitSuppressed,
     rawGazeTarget,
+    selectionSnapshotPhase,
     stableGazeTarget,
   ])
 

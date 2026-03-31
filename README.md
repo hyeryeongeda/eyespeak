@@ -127,4 +127,3 @@ SSAFY 14기 부울경 2반 E205팀
 | 박준수 | Backend         |
 | 오언서 | Backend, DevOps |
 | 진채영 | Frontend        |
-

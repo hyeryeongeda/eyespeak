@@ -76,10 +76,10 @@ const buttonBaseStyle: CSSProperties = {
   padding: 'clamp(24px, 2.4vw, 30px)',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
+  alignItems: 'center',
+  justifyContent: 'center',
   boxSizing: 'border-box',
-  textAlign: 'left',
+  textAlign: 'center',
   transition:
     'transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, background 0.16s ease, border-color 0.16s ease',
 }
@@ -90,14 +90,6 @@ const labelStyle: CSSProperties = {
   fontWeight: 900,
   letterSpacing: '-0.05em',
   lineHeight: 1,
-}
-
-const helperTextStyle: CSSProperties = {
-  margin: 0,
-  fontSize: 'clamp(1.2rem, 1.6vw, 1.6rem)',
-  fontWeight: 700,
-  lineHeight: 1.45,
-  opacity: 0.86,
 }
 
 function getMenuButtonStyle(args: {
@@ -323,40 +315,6 @@ export default function GlobalMenuOverlay() {
           <div ref={gridRef} className="patient-global-menu-grid" style={gridStyle}>
             <button
               type="button"
-              data-tracking-id={pendingTargetId === null ? 'yes' : undefined}
-              data-gaze-selection="local"
-              data-patient-interactive="true"
-              data-interaction-state={getInteractionState('yes')}
-              disabled={pendingTargetId !== null}
-              onClick={() => queueAction('yes')}
-              style={getMenuButtonStyle({
-                targetId: 'yes',
-                disabled: pendingTargetId !== null,
-              })}
-            >
-              <p style={labelStyle}>네</p>
-              <p style={helperTextStyle}>공통 positive action 진입점</p>
-            </button>
-
-            <button
-              type="button"
-              data-tracking-id={pendingTargetId === null ? 'no' : undefined}
-              data-gaze-selection="local"
-              data-patient-interactive="true"
-              data-interaction-state={getInteractionState('no')}
-              disabled={pendingTargetId !== null}
-              onClick={() => queueAction('no')}
-              style={getMenuButtonStyle({
-                targetId: 'no',
-                disabled: pendingTargetId !== null,
-              })}
-            >
-              <p style={labelStyle}>아니요</p>
-              <p style={helperTextStyle}>공통 negative action 진입점</p>
-            </button>
-
-            <button
-              type="button"
               data-tracking-id={pendingTargetId === null ? 'sos' : undefined}
               data-gaze-selection="local"
               data-patient-interactive="true"
@@ -369,7 +327,6 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>SOS</p>
-              <p style={helperTextStyle}>긴급 호출을 바로 전송합니다</p>
             </button>
 
             <button
@@ -386,8 +343,41 @@ export default function GlobalMenuOverlay() {
               })}
             >
               <p style={labelStyle}>홈</p>
-              <p style={helperTextStyle}>환자 메인 화면으로 이동</p>
             </button>
+            
+            <button
+              type="button"
+              data-tracking-id={pendingTargetId === null ? 'yes' : undefined}
+              data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('yes')}
+              disabled={pendingTargetId !== null}
+              onClick={() => queueAction('yes')}
+              style={getMenuButtonStyle({
+                targetId: 'yes',
+                disabled: pendingTargetId !== null,
+              })}
+            >
+              <p style={labelStyle}>네</p>
+            </button>
+
+            <button
+              type="button"
+              data-tracking-id={pendingTargetId === null ? 'no' : undefined}
+              data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('no')}
+              disabled={pendingTargetId !== null}
+              onClick={() => queueAction('no')}
+              style={getMenuButtonStyle({
+                targetId: 'no',
+                disabled: pendingTargetId !== null,
+              })}
+            >
+              <p style={labelStyle}>아니요</p>
+            </button>
+
+            
           </div>
         </section>
       </div>

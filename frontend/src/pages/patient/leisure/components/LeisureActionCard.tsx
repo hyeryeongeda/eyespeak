@@ -21,7 +21,7 @@ const descriptionStyle: CSSProperties = {
 
 interface LeisureActionCardProps {
   title: string
-  description: string
+  description?: string
   tone?: LeisureCardTone
   disabled?: boolean
   busy?: boolean
@@ -81,7 +81,7 @@ export default function LeisureActionCard({
         >
           {titleText}
         </h3>
-        <p style={descriptionStyle}>{description}</p>
+        {description ? <p style={descriptionStyle}>{description}</p> : null}
       </div>
     </button>
   )

@@ -34,36 +34,47 @@ const AUTO_BASELINE_FRAMES = 60
 
 // 블링크
 const BLINK_EAR_THRESHOLD = 0.13
-const BLINK_MIN_MS = 50
+const BLINK_MIN_MS = 30
 const BLINK_MAX_MS = 600
 const BLINK_COOLDOWN_MS = 350
 
 // 더블/트리플 블링크
 const MULTI_BLINK_WINDOW_MS = 1000  // 이 시간 안에 연속 블링크 카운트
 
-const WASM_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/wasm'
-const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+const WASM_CDN =
+  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.17/wasm'
+const MODEL_URL =
+  'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
 
 // 클릭 히트 영역
-const CLICK_SELECTOR = 'button, a[href], [role="button"], input[type="button"], input[type="submit"], [tabindex]:not([tabindex="-1"]), [data-tracking-id]'
+const CLICK_SELECTOR =
+  'button, a[href], [role="button"], input[type="button"], input[type="submit"], [tabindex]:not([tabindex="-1"]), [data-tracking-id]'
 const PAD_X = 60
 const PAD_Y = 100
+const GLOBAL_MENU_OUTER_PAD_X = 120
+const GLOBAL_MENU_OUTER_PAD_Y = 120
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(Math.max(v, min), max)
 }
 
 function avgPoint(lm: { x: number; y: number }[], indices: number[]) {
-  let sx = 0, sy = 0
-  for (const i of indices) { sx += lm[i].x; sy += lm[i].y }
+  let sx = 0,
+    sy = 0
+  for (const i of indices) {
+    sx += lm[i].x
+    sy += lm[i].y
+  }
   const n = indices.length
   return { x: sx / n, y: sy / n }
 }
 
 function detailedEAR(
   lm: { x: number; y: number }[],
-  upperIdx: number[], lowerIdx: number[],
-  innerIdx: number, outerIdx: number,
+  upperIdx: number[],
+  lowerIdx: number[],
+  innerIdx: number,
+  outerIdx: number,
 ) {
   const upper = avgPoint(lm, upperIdx)
   const lower = avgPoint(lm, lowerIdx)
@@ -93,8 +104,19 @@ function clickElementAtPoint(clientX: number, clientY: number) {
   const direct = document.elementFromPoint(clientX, clientY)
   if (direct instanceof Element) {
     const clickable = direct.closest<HTMLElement>(CLICK_SELECTOR)
-    if (clickable) { fireClick(clickable, clientX, clientY); return }
+    if (clickable) {
+      fireClick(clickable, clientX, clientY)
+      return
+    }
   }
+
+  const globalMenuTarget = getGlobalMenuTargetFromOuterEdge(clientX, clientY)
+  if (globalMenuTarget) {
+    const rect = globalMenuTarget.getBoundingClientRect()
+    fireClick(globalMenuTarget, rect.left + rect.width / 2, rect.top + rect.height / 2)
+    return
+  }
+
   const allClickable = document.querySelectorAll<HTMLElement>(CLICK_SELECTOR)
   let best: HTMLElement | null = null
   let bestScore = -1
@@ -102,15 +124,20 @@ function clickElementAtPoint(clientX: number, clientY: number) {
     if (el.offsetParent === null) continue
     const rect = el.getBoundingClientRect()
     if (rect.width === 0 || rect.height === 0) continue
-    const eL = rect.left - PAD_X, eR = rect.right + PAD_X
-    const eT = rect.top - PAD_Y, eB = rect.bottom + PAD_Y
+    const eL = rect.left - PAD_X,
+      eR = rect.right + PAD_X
+    const eT = rect.top - PAD_Y,
+      eB = rect.bottom + PAD_Y
     if (clientX >= eL && clientX <= eR && clientY >= eT && clientY <= eB) {
       const cx = rect.left + rect.width / 2
       const cy = rect.top + rect.height / 2
       const dx = Math.abs(clientX - cx) / (rect.width / 2 + PAD_X)
       const dy = Math.abs(clientY - cy) / (rect.height / 2 + PAD_Y)
       const score = 1 - Math.hypot(dx, dy)
-      if (score > bestScore) { bestScore = score; best = el }
+      if (score > bestScore) {
+        bestScore = score
+        best = el
+      }
     }
   }
   if (best) {
@@ -119,11 +146,87 @@ function clickElementAtPoint(clientX: number, clientY: number) {
   }
 }
 
+function getGlobalMenuTargetFromOuterEdge(clientX: number, clientY: number) {
+  const grid = document.querySelector<HTMLElement>('.patient-global-menu-grid')
+  if (!grid) {
+    return null
+  }
+
+  const gridRect = grid.getBoundingClientRect()
+  const gridCenterX = gridRect.left + gridRect.width / 2
+  const gridCenterY = gridRect.top + gridRect.height / 2
+  const targets = grid.querySelectorAll<HTMLElement>('button[data-tracking-id]')
+  let best: HTMLElement | null = null
+  let bestScore = -1
+
+  for (const target of targets) {
+    if (target.offsetParent === null) {
+      continue
+    }
+
+    if (target instanceof HTMLButtonElement && target.disabled) {
+      continue
+    }
+
+    const rect = target.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) {
+      continue
+    }
+
+    const centerX = rect.left + rect.width / 2
+    const centerY = rect.top + rect.height / 2
+    const isLeftColumn = centerX <= gridCenterX
+    const isTopRow = centerY <= gridCenterY
+    const leftPad = isLeftColumn ? GLOBAL_MENU_OUTER_PAD_X : 0
+    const rightPad = isLeftColumn ? 0 : GLOBAL_MENU_OUTER_PAD_X
+    const topPad = isTopRow ? GLOBAL_MENU_OUTER_PAD_Y : 0
+    const bottomPad = isTopRow ? 0 : GLOBAL_MENU_OUTER_PAD_Y
+    const expandedLeft = rect.left - leftPad
+    const expandedRight = rect.right + rightPad
+    const expandedTop = rect.top - topPad
+    const expandedBottom = rect.bottom + bottomPad
+
+    if (
+      clientX < expandedLeft ||
+      clientX > expandedRight ||
+      clientY < expandedTop ||
+      clientY > expandedBottom
+    ) {
+      continue
+    }
+
+    const horizontalRadius =
+      rect.width / 2 + (clientX <= centerX ? leftPad : rightPad)
+    const verticalRadius =
+      rect.height / 2 + (clientY <= centerY ? topPad : bottomPad)
+    const dx = horizontalRadius > 0 ? Math.abs(clientX - centerX) / horizontalRadius : 0
+    const dy = verticalRadius > 0 ? Math.abs(clientY - centerY) / verticalRadius : 0
+    const score = 1 - Math.hypot(dx, dy)
+
+    if (score > bestScore) {
+      bestScore = score
+      best = target
+    }
+  }
+
+  return best
+}
+
 function fireClick(target: HTMLElement, clientX: number, clientY: number) {
-  console.info('[Eye] BLINK →', target.tagName, target.dataset.trackingId ?? target.textContent?.slice(0, 20))
-  target.dispatchEvent(new MouseEvent('pointerdown', { clientX, clientY, bubbles: true, cancelable: true }))
-  target.dispatchEvent(new MouseEvent('pointerup', { clientX, clientY, bubbles: true, cancelable: true }))
-  target.dispatchEvent(new MouseEvent('click', { clientX, clientY, bubbles: true, cancelable: true }))
+  console.info(
+    '[Eye] BLINK →',
+    target.tagName,
+    target.dataset.trackingId ?? target.textContent?.slice(0, 20),
+  )
+  target.dispatchEvent(
+    new MouseEvent('pointerdown', { clientX, clientY, bubbles: true, cancelable: true }),
+  )
+  target.dispatchEvent(
+    new MouseEvent('pointerup', { clientX, clientY, bubbles: true, cancelable: true }),
+  )
+  target.dispatchEvent(
+    new MouseEvent('click', { clientX, clientY, bubbles: true, cancelable: true }),
+  )
 }
 
 // ── HUD 오버레이 (블링크 표시 + 인식 메뉴) ──
@@ -187,16 +290,27 @@ class OneEuroFilter {
   private xPrev: number | null = null
   private dxPrev = 0
   private tPrev = 0
+
   constructor(freq = 30, minCutoff = 1.5, beta = 0.5, dCutoff = 1.0) {
-    this.freq = freq; this.minCutoff = minCutoff; this.beta = beta; this.dCutoff = dCutoff
+    this.freq = freq
+    this.minCutoff = minCutoff
+    this.beta = beta
+    this.dCutoff = dCutoff
   }
+
   private alpha(cutoff: number) {
     const tau = 1.0 / (2 * Math.PI * cutoff)
     const te = 1.0 / this.freq
     return 1.0 / (1.0 + tau / te)
   }
+
   filter(x: number, timestamp?: number): number {
-    if (this.xPrev === null) { this.xPrev = x; this.tPrev = timestamp ?? performance.now(); return x }
+    if (this.xPrev === null) {
+      this.xPrev = x
+      this.tPrev = timestamp ?? performance.now()
+      return x
+    }
+
     const now = timestamp ?? performance.now()
     const dt = (now - this.tPrev) / 1000
     this.tPrev = now
@@ -211,7 +325,11 @@ class OneEuroFilter {
     this.xPrev = xHat
     return xHat
   }
-  reset() { this.xPrev = null; this.dxPrev = 0 }
+
+  reset() {
+    this.xPrev = null
+    this.dxPrev = 0
+  }
 }
 
 // ── 메인 ──
@@ -283,24 +401,42 @@ export default function EyeTrackingRuntimeHost({
         const vision = await FilesetResolver.forVisionTasks(WASM_CDN)
         if (!active) return
         faceLandmarker = await FaceLandmarker.createFromModelPath(vision, MODEL_URL)
-        if (!active) { faceLandmarker.close(); return }
+        if (!active) {
+          faceLandmarker.close()
+          return
+        }
         await faceLandmarker.setOptions({
-          runningMode: 'VIDEO', numFaces: 1,
-          outputFaceBlendshapes: false, outputFacialTransformationMatrixes: false,
-          minFaceDetectionConfidence: 0.5, minFacePresenceConfidence: 0.5, minTrackingConfidence: 0.5,
+          runningMode: 'VIDEO',
+          numFaces: 1,
+          outputFaceBlendshapes: false,
+          outputFacialTransformationMatrixes: false,
+          minFaceDetectionConfidence: 0.5,
+          minFacePresenceConfidence: 0.5,
+          minTrackingConfidence: 0.5,
         })
         console.info('[Eye] Model ready. Starting webcam...')
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } },
+          video: {
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 },
+            frameRate: { ideal: 30 },
+          },
         })
-        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
+        if (!active) {
+          stream.getTracks().forEach(t => t.stop())
+          return
+        }
         videoEl = document.createElement('video')
         videoEl.srcObject = stream
         videoEl.autoplay = true
         videoEl.playsInline = true
         videoEl.muted = true
         await videoEl.play()
-        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
+        if (!active) {
+          stream.getTracks().forEach(t => t.stop())
+          return
+        }
 
         filterXRef.current.reset()
         filterYRef.current.reset()
@@ -323,14 +459,18 @@ export default function EyeTrackingRuntimeHost({
         function detect() {
           if (!active) return
           if (!faceLandmarker || !videoEl || videoEl.readyState < 2) {
-            animFrameId = requestAnimationFrame(detect); return
+            animFrameId = requestAnimationFrame(detect)
+            return
           }
           const now = performance.now()
-          if (now <= lastTs) { animFrameId = requestAnimationFrame(detect); return }
+          if (now <= lastTs) {
+            animFrameId = requestAnimationFrame(detect)
+            return
+          }
           lastTs = now
 
           try {
-            const result = faceLandmarker!.detectForVideo(videoEl!, now)
+            const result = faceLandmarker.detectForVideo(videoEl, now)
             if (result.faceLandmarks?.[0] && result.faceLandmarks[0].length > 477) {
               const lm = result.faceLandmarks[0]
 
@@ -338,27 +478,31 @@ export default function EyeTrackingRuntimeHost({
               const rightEAR = detailedEAR(lm, R_EYE_UPPER, R_EYE_LOWER, R_INNER, R_OUTER)
               const avgEAR = (leftEAR + rightEAR) / 2
 
-              // 베이스라인 전: 블링크 감지 대신 EAR 샘플 수집
-              if (!baselineReady) {
-                if (avgEAR > 0.06) baselineEARs.push(avgEAR)
-              } else {
-                if (avgEAR < blinkThreshold) {
-                  if (!eyesClosed) { eyesClosed = true; eyeClosedAt = now }
-                } else if (eyesClosed) {
-                  const dur = now - eyeClosedAt
-                  eyesClosed = false
-                  if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS) {
-                    handleMultiBlink(now)
-                  }
-                  animFrameId = requestAnimationFrame(detect); return
+              if (avgEAR < blinkThreshold) {
+                if (!eyesClosed) {
+                  eyesClosed = true
+                  eyeClosedAt = now
                 }
-                if (eyesClosed) { animFrameId = requestAnimationFrame(detect); return }
+              } else if (eyesClosed) {
+                const dur = now - eyeClosedAt
+                eyesClosed = false
+                if (dur >= BLINK_MIN_MS && dur <= BLINK_MAX_MS) {
+                  handleMultiBlink(now)
+                }
+                animFrameId = requestAnimationFrame(detect)
+                return
+              }
+              if (eyesClosed) {
+                animFrameId = requestAnimationFrame(detect)
+                return
               }
 
               const leftIris = avgPoint(lm, L_IRIS)
               const rightIris = avgPoint(lm, R_IRIS)
-              const lInner = lm[L_INNER], lOuter = lm[L_OUTER]
-              const rInner = lm[R_INNER], rOuter = lm[R_OUTER]
+              const lInner = lm[L_INNER],
+                lOuter = lm[L_OUTER]
+              const rInner = lm[R_INNER],
+                rOuter = lm[R_OUTER]
 
               const lDx = lInner.x - lOuter.x
               const lRx = Math.abs(lDx) > 0.001 ? (leftIris.x - lOuter.x) / lDx : 0.5
@@ -366,7 +510,8 @@ export default function EyeTrackingRuntimeHost({
               const rRx = Math.abs(rDx) > 0.001 ? (rightIris.x - rInner.x) / rDx : 0.5
               const irisRx = (lRx + rRx) / 2
 
-              const forehead = lm[FOREHEAD], chin = lm[CHIN]
+              const forehead = lm[FOREHEAD],
+                chin = lm[CHIN]
               const faceH = chin.y - forehead.y
               const avgIrisY = (leftIris.y + rightIris.y) / 2
               const irisRy = faceH > 0.001 ? (avgIrisY - forehead.y) / faceH : 0.5
@@ -377,10 +522,12 @@ export default function EyeTrackingRuntimeHost({
                 baselineRx.push(irisRx)
                 baselineRy.push(irisRy)
                 baselinePitch.push(head.pitch)
+                baselineEARs.push(avgEAR)
                 if (baselineRx.length >= AUTO_BASELINE_FRAMES) {
                   const sorted = (arr: number[]) => [...arr].sort((a, b) => a - b)
                   const med = (arr: number[]) => {
-                    const s = sorted(arr); const m = Math.floor(s.length / 2)
+                    const s = sorted(arr)
+                    const m = Math.floor(s.length / 2)
                     return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
                   }
                   baselineXCenter = med(baselineRx)
@@ -389,14 +536,21 @@ export default function EyeTrackingRuntimeHost({
                   // 적응형 블링크 임계값: 사용자의 평상시 EAR의 70%
                   if (baselineEARs.length > 0) {
                     const medEAR = med(baselineEARs)
-                    blinkThreshold = Math.max(0.04, medEAR * 0.55)
+                    blinkThreshold = Math.max(0.04, medEAR * 0.70)
                     console.info(`[Eye] Adaptive blink threshold: ${blinkThreshold.toFixed(4)} (median EAR: ${medEAR.toFixed(4)})`)
                   }
                   baselineReady = true
-                  console.info(`[Eye] Baseline: xC=${baselineXCenter.toFixed(4)} yC=${baselineYCenter.toFixed(4)} pitchC=${baselinePitchCenter.toFixed(4)}`)
+                  console.info(
+                    `[Eye] Baseline: xC=${baselineXCenter.toFixed(4)} yC=${baselineYCenter.toFixed(4)} pitchC=${baselinePitchCenter.toFixed(4)}`,
+                  )
                 }
-                useGazeInputStore.getState().setSnapshot({ clientX: window.innerWidth / 2, clientY: window.innerHeight / 2, cell: null })
-                animFrameId = requestAnimationFrame(detect); return
+                useGazeInputStore.getState().setSnapshot({
+                  clientX: window.innerWidth / 2,
+                  clientY: window.innerHeight / 2,
+                  cell: null,
+                })
+                animFrameId = requestAnimationFrame(detect)
+                return
               }
 
               const earConf = clamp((avgEAR - 0.12) / 0.2, 0, 1)
@@ -404,7 +558,9 @@ export default function EyeTrackingRuntimeHost({
               const pitchW = 0.7 - earConf * 0.4
 
               const gazeX = (baselineXCenter - irisRx) + head.yaw * 0.6
-              const gazeY = (irisRy - baselineYCenter) * irisYW + (head.pitch - baselinePitchCenter) * pitchW
+              const gazeY =
+                (irisRy - baselineYCenter) * irisYW +
+                (head.pitch - baselinePitchCenter) * pitchW
 
               const rawX = (0.5 + gazeX * SENSITIVITY_X) * window.innerWidth
               const rawY = (0.5 + gazeY * SENSITIVITY_Y) * window.innerHeight
@@ -421,12 +577,17 @@ export default function EyeTrackingRuntimeHost({
 
               frameCount++
               if (frameCount <= 3 || frameCount % 300 === 0) {
-                console.info(`[Eye] #${frameCount} iris=(${irisRx.toFixed(3)},${irisRy.toFixed(3)}) head=(${head.yaw.toFixed(3)},${head.pitch.toFixed(3)}) → (${clientX.toFixed(0)},${clientY.toFixed(0)})`)
+                console.info(
+                  `[Eye] #${frameCount} iris=(${irisRx.toFixed(3)},${irisRy.toFixed(3)}) head=(${head.yaw.toFixed(3)},${head.pitch.toFixed(3)}) earConf=${earConf.toFixed(2)} → (${clientX.toFixed(0)},${clientY.toFixed(0)})`,
+                )
               }
             }
-          } catch { /* skip */ }
+          } catch {
+            /* skip */
+          }
           animFrameId = requestAnimationFrame(detect)
         }
+
         detect()
       } catch (error) {
         console.error('[Eye] Failed:', error)
