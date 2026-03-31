@@ -231,7 +231,8 @@ export const painDetailOptionPages: BodyMindMenuPageDefinition<
 >[] = [
   {
     options: [
-      { key: 'stiff', label: '뻣뻣해', tone: 'sand' },
+      { key: 'cramp', label: '쥐났어', tone: 'sand' },
+      
       { key: 'numb', label: '감각 없어', tone: 'sky' },
       { key: 'massage', label: '주물러줘', tone: 'mint' },
       { key: 'hot', label: '뜨거워', tone: 'rose' },
@@ -239,7 +240,7 @@ export const painDetailOptionPages: BodyMindMenuPageDefinition<
   },
   {
     options: [
-      { key: 'cramp', label: '쥐났어', tone: 'rose' },
+      { key: 'stiff', label: '뻣뻣해', tone: 'rose' },      
       { key: 'joint_exercise', label: '관절 운동해줘', tone: 'mint' },
       { key: 'swollen', label: '부었어', tone: 'sand' },
     ],
