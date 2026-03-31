@@ -168,25 +168,6 @@ const centerErrorStyle: CSSProperties = {
 }
 
 const overlayCss = `
-  .patient-daily-mood-card[data-interaction-state='confirmed'],
-  .patient-daily-mood-card[data-interaction-state='cooldown'] {
-    outline: none !important;
-    outline-offset: 0 !important;
-    border-color: var(--patient-daily-mood-card-border-color, #d4dbe6) !important;
-    background: var(--patient-daily-mood-card-background, #ffffff) !important;
-    box-shadow: var(--patient-daily-mood-card-shadow, 0 18px 42px rgba(101, 112, 132, 0.08)) !important;
-    color: var(--patient-daily-mood-card-color, #111111) !important;
-    transform: none !important;
-    filter: none !important;
-  }
-
-  .patient-daily-mood-card[data-interaction-state='confirmed']::before,
-  .patient-daily-mood-card[data-interaction-state='confirmed']::after,
-  .patient-daily-mood-card[data-interaction-state='cooldown']::before,
-  .patient-daily-mood-card[data-interaction-state='cooldown']::after {
-    opacity: 0 !important;
-  }
-
   html:not([data-patient-mode='true']) .patient-daily-mood-card:hover:not(:disabled),
   html:not([data-patient-mode='true']) .patient-daily-mood-card:focus-visible:not(:disabled) {
     transform: translateY(-3px);
