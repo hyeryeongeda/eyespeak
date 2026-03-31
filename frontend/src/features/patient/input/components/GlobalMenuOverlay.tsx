@@ -76,10 +76,10 @@ const buttonBaseStyle: CSSProperties = {
   padding: 'clamp(24px, 2.4vw, 30px)',
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
+  alignItems: 'center',
+  justifyContent: 'center',
   boxSizing: 'border-box',
-  textAlign: 'left',
+  textAlign: 'center',
   transition:
     'transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease, background 0.16s ease, border-color 0.16s ease',
 }
@@ -315,6 +315,38 @@ export default function GlobalMenuOverlay() {
           <div ref={gridRef} className="patient-global-menu-grid" style={gridStyle}>
             <button
               type="button"
+              data-tracking-id={pendingTargetId === null ? 'sos' : undefined}
+              data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('sos')}
+              disabled={pendingTargetId !== null}
+              onClick={() => queueAction('sos')}
+              style={getMenuButtonStyle({
+                targetId: 'sos',
+                disabled: pendingTargetId !== null,
+              })}
+            >
+              <p style={labelStyle}>SOS</p>
+            </button>
+
+            <button
+              type="button"
+              data-tracking-id={pendingTargetId === null ? 'home' : undefined}
+              data-gaze-selection="local"
+              data-patient-interactive="true"
+              data-interaction-state={getInteractionState('home')}
+              disabled={pendingTargetId !== null}
+              onClick={() => queueAction('home')}
+              style={getMenuButtonStyle({
+                targetId: 'home',
+                disabled: pendingTargetId !== null,
+              })}
+            >
+              <p style={labelStyle}>홈</p>
+            </button>
+            
+            <button
+              type="button"
               data-tracking-id={pendingTargetId === null ? 'yes' : undefined}
               data-gaze-selection="local"
               data-patient-interactive="true"
@@ -345,37 +377,7 @@ export default function GlobalMenuOverlay() {
               <p style={labelStyle}>아니요</p>
             </button>
 
-            <button
-              type="button"
-              data-tracking-id={pendingTargetId === null ? 'sos' : undefined}
-              data-gaze-selection="local"
-              data-patient-interactive="true"
-              data-interaction-state={getInteractionState('sos')}
-              disabled={pendingTargetId !== null}
-              onClick={() => queueAction('sos')}
-              style={getMenuButtonStyle({
-                targetId: 'sos',
-                disabled: pendingTargetId !== null,
-              })}
-            >
-              <p style={labelStyle}>SOS</p>
-            </button>
-
-            <button
-              type="button"
-              data-tracking-id={pendingTargetId === null ? 'home' : undefined}
-              data-gaze-selection="local"
-              data-patient-interactive="true"
-              data-interaction-state={getInteractionState('home')}
-              disabled={pendingTargetId !== null}
-              onClick={() => queueAction('home')}
-              style={getMenuButtonStyle({
-                targetId: 'home',
-                disabled: pendingTargetId !== null,
-              })}
-            >
-              <p style={labelStyle}>홈</p>
-            </button>
+            
           </div>
         </section>
       </div>

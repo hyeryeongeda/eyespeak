@@ -30,7 +30,7 @@ const emptyStyle: CSSProperties = {
   backgroundColor: '#f6f9fc',
   border: '1px solid #d9e3eb',
   color: '#607086',
-  fontSize: '14px',
+  fontSize: '28px',
   fontWeight: 600,
   textAlign: 'center',
 }
@@ -140,7 +140,7 @@ export default function ChatMessageList({
             <div style={getBubbleStyle(message, isActive)}>
               <div
                 style={{
-                  fontSize: '15px',
+                  fontSize: '30px',
                   fontWeight: 700,
                   lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
