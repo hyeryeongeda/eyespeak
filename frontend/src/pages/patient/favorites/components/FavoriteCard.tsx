@@ -111,6 +111,7 @@ export default function FavoriteCard({
         aria-label={[text, description ?? category].filter(Boolean).join('. ')}
         data-favorite-id={id}
         data-tracking-id={disabled ? undefined : trackingId}
+        data-patient-confirm-until-tts={disabled ? undefined : 'true'}
       >
         {shouldShowDwellFeedback && dwellFeedback ? (
           <DwellFeedbackBadge

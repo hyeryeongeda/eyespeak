@@ -129,6 +129,7 @@ export interface PatientChatSessionState {
   status: PatientChatSessionStatus
   interruptState: PatientChatInterruptState
   fallbackState: PatientChatFallbackState
+  replyCompletionTtsPending: boolean
   recommendationMode: PatientChatRecommendationMode
   categoryState: PatientChatCategoryState
   suggestionState: PatientChatSuggestionState

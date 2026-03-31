@@ -1,6 +1,9 @@
-import type { AudioPlaybackHandle, AudioPlaybackSource, TtsAudioResponseDto } from '../types/tts'
-
-type AudioPlaybackEndReason = 'ended' | 'pause' | 'error' | 'cleanup'
+import type {
+  AudioPlaybackEndReason,
+  AudioPlaybackHandle,
+  AudioPlaybackSource,
+  TtsAudioResponseDto,
+} from '../types/tts'
 
 interface PlayAudioSourceOptions {
   audio?: HTMLAudioElement
@@ -91,6 +94,10 @@ export async function playAudioSource(
   const audio = options.audio ?? new Audio()
   let isSettled = false
   let hasStartedPlayback = false
+  let resolveCompleted!: (reason: AudioPlaybackEndReason) => void
+  const completed = new Promise<AudioPlaybackEndReason>(resolve => {
+    resolveCompleted = resolve
+  })
 
   const removeListeners = () => {
     audio.removeEventListener('playing', handlePlaying)
@@ -114,6 +121,7 @@ export async function playAudioSource(
     isSettled = true
     removeListeners()
     cleanupSource()
+    resolveCompleted(reason)
     options.onPlaybackEnd?.(reason)
   }
 
@@ -164,5 +172,6 @@ export async function playAudioSource(
     cleanup: () => {
       finalizePlayback('cleanup')
     },
+    completed,
   }
 }

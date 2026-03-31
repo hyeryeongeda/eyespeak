@@ -12,6 +12,7 @@ type CustomTalkEntryActionCard = CustomTalkStageActionCard & {
   trackingId?: string
   loading?: boolean
   loadingLabel?: string
+  confirmUntilTts?: boolean
 }
 
 interface CustomTalkEntryLayoutProps {
@@ -300,6 +301,9 @@ function ActionCard({
       disabled={isDisabled}
       onClick={card.onSelect}
       data-tracking-id={isDisabled ? undefined : card.trackingId}
+      data-patient-confirm-until-tts={
+        !isDisabled && card.confirmUntilTts ? 'true' : undefined
+      }
       aria-busy={isLoading || undefined}
     >
       {isLoading ? <div style={loadingSheenStyle} aria-hidden="true" /> : null}

@@ -464,6 +464,7 @@ function SuggestionActionCard({
   trackingId,
   disabled,
   selected,
+  confirmUntilTts,
   onSelect,
   dwellFeedback,
 }: {
@@ -473,6 +474,7 @@ function SuggestionActionCard({
   trackingId: ReplyTrackingId
   disabled: boolean
   selected: boolean
+  confirmUntilTts?: boolean
   onSelect: () => void
   dwellFeedback: ReturnType<typeof useDwellFeedback<ReplyTrackingId>>
 }) {
@@ -484,6 +486,9 @@ function SuggestionActionCard({
       disabled={disabled}
       onClick={onSelect}
       data-tracking-id={disabled ? undefined : trackingId}
+      data-patient-confirm-until-tts={
+        !disabled && confirmUntilTts ? 'true' : undefined
+      }
     >
       <DwellOnTarget trackingId={disabled ? undefined : trackingId} dwellFeedback={dwellFeedback} />
       <h2 style={categoryTitleStyle}>{label}</h2>
@@ -616,6 +621,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
         trackingId="reply-suggestion-1"
         disabled={!firstTopCard || isSending || suggestionState === 'loading'}
         selected={selectedSuggestionId === firstTopCard?.id}
+        confirmUntilTts
         onSelect={() => {
           if (firstTopCard) {
             onSelectSuggestion(firstTopCard.suggestion)
@@ -631,6 +637,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
         trackingId="reply-suggestion-2"
         disabled={!secondTopCard || isSending || suggestionState === 'loading'}
         selected={selectedSuggestionId === secondTopCard?.id}
+        confirmUntilTts
         onSelect={() => {
           if (secondTopCard) {
             onSelectSuggestion(secondTopCard.suggestion)
@@ -654,6 +661,7 @@ export default function ReplyModePanel(props: ReplyModePanelProps) {
         trackingId="reply-suggestion-3"
         disabled={!thirdTopCard || isSending || suggestionState === 'loading'}
         selected={selectedSuggestionId === thirdTopCard?.id}
+        confirmUntilTts
         onSelect={() => {
           if (thirdTopCard) {
             onSelectSuggestion(thirdTopCard.suggestion)

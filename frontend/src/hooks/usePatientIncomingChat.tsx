@@ -75,6 +75,7 @@ type PatientChatAction =
   | { type: 'ARM_TIMEOUT'; messageId: string; timeoutAt: number }
   | { type: 'CLEAR_TIMEOUT' }
   | { type: 'TIMEOUT_EXPIRED'; messageId: string }
+  | { type: 'REPLY_COMPLETION_TTS_FINISHED' }
   | { type: 'COMPLETE_REPLY_COMPLETION' }
   | { type: 'DEFER_ACTIVE_MESSAGE' }
   | { type: 'START_RESTORE' }
@@ -86,6 +87,7 @@ const initialState: PatientChatSessionState = {
   status: 'idle',
   interruptState: 'none',
   fallbackState: 'none',
+  replyCompletionTtsPending: false,
   recommendationMode: 'category',
   categoryState: 'idle',
   suggestionState: 'idle',
@@ -710,6 +712,7 @@ function patientChatReducer(
         status: 'sending',
         sendError: null,
         selectedSuggestionId: action.selectedSuggestionId,
+        replyCompletionTtsPending: false,
         lastEventLabel: '응답을 전송 중입니다.',
       }
 
@@ -724,10 +727,26 @@ function patientChatReducer(
       const shouldKeepLeisureFollowup =
         isLeisureRouteContext(state.currentRoute) && state.isMediaPausedByInterrupt
 
+      if (shouldKeepLeisureFollowup) {
+        return {
+          ...state,
+          status: 'sending',
+          interruptState: 'reply_mode',
+          messages: mergedMessages,
+          activeMessageId: nextActiveMessage?.id ?? state.activeMessageId,
+          activeReplyMessageId: action.replyMessage.replyToId ?? state.activeReplyMessageId,
+          sendError: null,
+          suggestionError: null,
+          replyCompletionTtsPending: true,
+          isMediaPausedByInterrupt: true,
+          lastEventLabel: 'Reply sent. Playing TTS before return overlay.',
+        }
+      }
+
       return {
         ...state,
-        status: shouldKeepLeisureFollowup ? 'reply_completion_pending' : 'sent',
-        interruptState: shouldKeepLeisureFollowup ? 'completion_pending' : 'none',
+        status: 'sent',
+        interruptState: 'none',
         recommendationMode: 'category',
         categoryState: 'idle',
         messages: mergedMessages,
@@ -746,7 +765,8 @@ function patientChatReducer(
         manualDraft: '',
         responseTimeoutAt: null,
         responseTimeoutMessageId: null,
-        isMediaPausedByInterrupt: shouldKeepLeisureFollowup,
+        replyCompletionTtsPending: false,
+        isMediaPausedByInterrupt: false,
         lastEventLabel: '응답을 전송했습니다.',
       }
     }
@@ -755,6 +775,7 @@ function patientChatReducer(
       return {
         ...state,
         status: 'conversation_active',
+        replyCompletionTtsPending: false,
         lastEventLabel: '대화 세션이 유지되고 있습니다.',
       }
 
@@ -764,6 +785,7 @@ function patientChatReducer(
         status: 'send_failed',
         fallbackState: 'send_failed',
         sendError: action.error,
+        replyCompletionTtsPending: false,
         lastEventLabel: '응답 전송에 실패했습니다.',
       }
 
@@ -812,8 +834,39 @@ function patientChatReducer(
         manualDraft: '',
         responseTimeoutAt: null,
         responseTimeoutMessageId: null,
+        replyCompletionTtsPending: false,
         isMediaPausedByInterrupt: false,
         lastEventLabel: '응답 시간이 지나 이전 화면으로 복귀합니다.',
+      }
+
+    case 'REPLY_COMPLETION_TTS_FINISHED':
+      {
+        const nextActiveMessage = getLatestUnresolvedGuardianMessage(state.messages)
+
+      return {
+        ...state,
+        status: 'reply_completion_pending',
+        interruptState: 'completion_pending',
+        recommendationMode: 'category',
+        categoryState: 'idle',
+        activeMessageId: nextActiveMessage?.id ?? null,
+        activeReplyMessageId: null,
+        categories: [],
+        suggestions: [],
+        suggestionState: 'idle',
+        selectedCategoryKey: null,
+        categoryPage: 0,
+        fallbackState: 'none',
+        manualInputMode: null,
+        manualDraft: '',
+        suggestionError: null,
+        sendError: null,
+        selectedSuggestionId: null,
+        responseTimeoutAt: null,
+        responseTimeoutMessageId: null,
+        replyCompletionTtsPending: false,
+        lastEventLabel: 'TTS playback finished. Waiting for return choice.',
+      }
       }
 
     case 'COMPLETE_REPLY_COMPLETION':
@@ -821,6 +874,7 @@ function patientChatReducer(
         ...state,
         status: state.messages.length > 0 ? 'conversation_active' : 'waiting_message',
         interruptState: 'none',
+        replyCompletionTtsPending: false,
         isMediaPausedByInterrupt: false,
         lastEventLabel: 'Reply completion flow cleared.',
       }
@@ -846,6 +900,7 @@ function patientChatReducer(
         selectedSuggestionId: null,
         responseTimeoutAt: null,
         responseTimeoutMessageId: null,
+        replyCompletionTtsPending: false,
         isMediaPausedByInterrupt: false,
         lastEventLabel: '메시지를 나중에 보기로 남겨두었습니다.',
       }
@@ -871,6 +926,7 @@ function patientChatReducer(
         selectedSuggestionId: null,
         responseTimeoutAt: null,
         responseTimeoutMessageId: null,
+        replyCompletionTtsPending: false,
         isMediaPausedByInterrupt: false,
         lastEventLabel: '이전 화면으로 복귀 중입니다.',
       }
@@ -880,6 +936,7 @@ function patientChatReducer(
         ...state,
         status: 'restored',
         interruptState: 'restored',
+        replyCompletionTtsPending: false,
         lastEventLabel: '이전 화면으로 복귀했습니다.',
       }
 
@@ -888,6 +945,7 @@ function patientChatReducer(
         ...state,
         status: state.messages.length > 0 ? 'conversation_active' : 'waiting_message',
         interruptState: 'none',
+        replyCompletionTtsPending: false,
         lastEventLabel:
           state.messages.length > 0 ? '대화 세션이 유지되고 있습니다.' : '메시지를 기다리고 있습니다.',
       }
@@ -1680,9 +1738,35 @@ export function PatientIncomingChatProvider({
     dispatch({ type: 'CLEAR_MANUAL_DRAFT' })
   }
 
+  async function playReplyCompletionTts(options: {
+    text: string
+    holdLeisureReturnOverlay: boolean
+    failureLogLabel: string
+  }) {
+    try {
+      const playback = await playPatientUtteranceTts({
+        text: options.text,
+      })
+
+      if (!options.holdLeisureReturnOverlay || !playback) {
+        return
+      }
+
+      await playback.completed
+    } catch (error) {
+      console.warn(options.failureLogLabel, error)
+    } finally {
+      if (options.holdLeisureReturnOverlay) {
+        dispatch({ type: 'REPLY_COMPLETION_TTS_FINISHED' })
+      }
+    }
+  }
+
   async function sendSuggestedReply(suggestion: PatientSuggestedResponse) {
     const currentState = stateRef.current
     const replyToId = currentState.activeReplyMessageId
+    const holdLeisureReturnOverlay =
+      isLeisureRouteContext(currentState.currentRoute) && currentState.isMediaPausedByInterrupt
 
     if (!replyToId || currentState.status === 'sending') {
       return
@@ -1715,10 +1799,11 @@ export function PatientIncomingChatProvider({
       type: 'SEND_SUCCEEDED',
       replyMessage: result.message,
     })
-    void playPatientUtteranceTts({
+
+    await playReplyCompletionTts({
       text: suggestion.label,
-    }).catch(error => {
-      console.warn('Suggested reply TTS playback failed.', error)
+      holdLeisureReturnOverlay,
+      failureLogLabel: 'Suggested reply TTS playback failed.',
     })
   }
 
@@ -1726,6 +1811,8 @@ export function PatientIncomingChatProvider({
     const currentState = stateRef.current
     const replyToId = currentState.activeReplyMessageId
     const draft = currentState.manualDraft.trim()
+    const holdLeisureReturnOverlay =
+      isLeisureRouteContext(currentState.currentRoute) && currentState.isMediaPausedByInterrupt
 
     if (!replyToId || !draft || currentState.status === 'sending') {
       return
@@ -1761,10 +1848,11 @@ export function PatientIncomingChatProvider({
       type: 'SEND_SUCCEEDED',
       replyMessage: result.message,
     })
-    void playPatientUtteranceTts({
+
+    await playReplyCompletionTts({
       text: draft,
-    }).catch(error => {
-      console.warn('Manual reply TTS playback failed.', error)
+      holdLeisureReturnOverlay,
+      failureLogLabel: 'Manual reply TTS playback failed.',
     })
   }
 

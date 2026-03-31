@@ -125,6 +125,7 @@ function PatientLayoutShell() {
     !isCalibrationRoute &&
     chat.state.status === 'reply_completion_pending' &&
     isLeisureRouteKind(currentRouteKind)
+  const isLeisureReturnOverlayInteractive = !chat.state.replyCompletionTtsPending
   usePatientTrackingBridge({
     enabled: !isCalibrationRoute,
   })
@@ -469,6 +470,7 @@ function PatientLayoutShell() {
         <Suspense fallback={null}>
           <LeisureReplyReturnOverlay
             visible={shouldShowLeisureReturnOverlay}
+            actionsEnabled={isLeisureReturnOverlayInteractive}
             onReturnToLeisure={handleReturnToLeisure}
             onReturnToMain={handleReturnToMain}
           />

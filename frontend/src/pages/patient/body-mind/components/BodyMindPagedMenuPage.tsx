@@ -30,6 +30,7 @@ interface BodyMindPagedMenuPageProps<TOption extends BodyMindCardOption<string>>
   nextTitle?: string
   nextDescription?: string
   backTitle?: string
+  confirmOptionSelectionUntilTts?: boolean
   onSelectOption: (option: TOption) => void
   onPageChange: (pageIndex: number) => void
   onRootBack: () => void
@@ -58,6 +59,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
   nextTitle = '다음 ▶',
   nextDescription = '다음 페이지 보기',
   backTitle = '← 뒤로가기',
+  confirmOptionSelectionUntilTts = false,
   onSelectOption,
   onPageChange,
   onRootBack,
@@ -108,6 +110,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
             tone={option.tone}
             trackingId={getBodyMindTrackingId(option.key)}
             selected={selectedKey === option.key}
+            confirmUntilTts={confirmOptionSelectionUntilTts}
             onSelect={() => onSelectOption(option)}
           />
         ))}
@@ -127,6 +130,7 @@ export default function BodyMindPagedMenuPage<TOption extends BodyMindCardOption
               tone={topRightOption.tone}
               trackingId={getBodyMindTrackingId(topRightOption.key)}
               selected={selectedKey === topRightOption.key}
+              confirmUntilTts={confirmOptionSelectionUntilTts}
               onSelect={() => onSelectOption(topRightOption)}
             />
           ) : (

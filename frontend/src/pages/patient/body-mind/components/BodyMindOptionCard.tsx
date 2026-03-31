@@ -81,6 +81,7 @@ interface BodyMindOptionCardProps {
   className?: string
   style?: CSSProperties
   trackingId?: string
+  confirmUntilTts?: boolean
   onSelect?: () => void
   onGazeEnter?: () => void
   onGazeLeave?: () => void
@@ -96,6 +97,7 @@ export default function BodyMindOptionCard({
   className,
   style,
   trackingId,
+  confirmUntilTts = false,
   onSelect,
   onGazeEnter,
   onGazeLeave,
@@ -143,6 +145,9 @@ export default function BodyMindOptionCard({
       aria-pressed={selected}
       style={resolvedStyle}
       data-tracking-id={disabled ? undefined : trackingId}
+      data-patient-confirm-until-tts={
+        !disabled && confirmUntilTts ? 'true' : undefined
+      }
       onMouseEnter={onGazeEnter}
       onMouseLeave={onGazeLeave}
     >

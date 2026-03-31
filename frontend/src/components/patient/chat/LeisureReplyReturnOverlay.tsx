@@ -3,6 +3,7 @@ import usePatientGlobalMenuActionTarget from '../../../features/patient/input/ho
 
 interface LeisureReplyReturnOverlayProps {
   visible: boolean
+  actionsEnabled: boolean
   onReturnToLeisure: () => void
   onReturnToMain: () => void
 }
@@ -11,6 +12,7 @@ const overlayCopy = {
   title: '\uB2F5\uBCC0\uC744 \uBCF4\uB0C8\uC5B4\uC694.\n\uC5B4\uB514\uB85C \uB3CC\uC544\uAC08\uAE4C\uC694?',
   leisure: '\uC5EC\uAC00\uB85C\n\uB3CC\uC544\uAC00\uAE30',
   main: '\uBA54\uC778\uD654\uBA74\uC73C\uB85C\n\uB3CC\uC544\uAC00\uAE30',
+  pending: '\uC74C\uC131\uC744 \uBA3C\uC800 \uB4E4\uB824\uB4DC\uB9AC\uACE0 \uC788\uC5B4\uC694.',
 }
 
 const backdropStyle: CSSProperties = {
@@ -96,16 +98,30 @@ const choiceLabelStyle: CSSProperties = {
   wordBreak: 'keep-all',
 }
 
+const helperTextStyle: CSSProperties = {
+  margin: '18px 0 0',
+  color: '#546171',
+  fontSize: 'clamp(1rem, 1.6vw, 1.2rem)',
+  fontWeight: 700,
+  lineHeight: 1.5,
+}
+
+const disabledChoiceStyle: CSSProperties = {
+  cursor: 'not-allowed',
+  opacity: 0.62,
+  filter: 'saturate(0.88)',
+}
+
 const overlayCss = `
-  html:not([data-patient-mode='true']) .leisure-reply-return-choice:hover,
-  html:not([data-patient-mode='true']) .leisure-reply-return-choice:focus-visible {
+  html:not([data-patient-mode='true']) .leisure-reply-return-choice:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .leisure-reply-return-choice:focus-visible:not(:disabled) {
     transform: scale(1.012);
     filter: brightness(0.985);
     box-shadow: inset 0 0 0 2px rgba(98, 121, 150, 0.22);
     outline: none;
   }
 
-  html:not([data-patient-mode='true']) .leisure-reply-return-choice:active {
+  html:not([data-patient-mode='true']) .leisure-reply-return-choice:active:not(:disabled) {
     transform: scale(1);
   }
 
@@ -129,11 +145,12 @@ const overlayCss = `
 
 export default function LeisureReplyReturnOverlay({
   visible,
+  actionsEnabled,
   onReturnToLeisure,
   onReturnToMain,
 }: LeisureReplyReturnOverlayProps) {
   usePatientGlobalMenuActionTarget({
-    enabled: visible,
+    enabled: visible && actionsEnabled,
     priority: 340,
     onPositiveAction: onReturnToLeisure,
     onNegativeAction: onReturnToMain,
@@ -150,8 +167,9 @@ export default function LeisureReplyReturnOverlay({
         <button
           type="button"
           className="leisure-reply-return-choice leisure-reply-return-panel-left"
-          style={leisureChoiceStyle}
+          style={actionsEnabled ? leisureChoiceStyle : { ...leisureChoiceStyle, ...disabledChoiceStyle }}
           onClick={onReturnToLeisure}
+          disabled={!actionsEnabled}
           aria-label="\uC5EC\uAC00\uB85C \uB3CC\uC544\uAC00\uAE30"
         >
           <p style={choiceLabelStyle}>{overlayCopy.leisure}</p>
@@ -161,17 +179,20 @@ export default function LeisureReplyReturnOverlay({
           className="leisure-reply-return-panel-center"
           style={centerPanelStyle}
           aria-live="polite"
+          aria-busy={!actionsEnabled}
         >
           <h2 id="reply-return-title" style={titleStyle}>
             {overlayCopy.title}
           </h2>
+          {!actionsEnabled ? <p style={helperTextStyle}>{overlayCopy.pending}</p> : null}
         </div>
 
         <button
           type="button"
           className="leisure-reply-return-choice"
-          style={mainChoiceStyle}
+          style={actionsEnabled ? mainChoiceStyle : { ...mainChoiceStyle, ...disabledChoiceStyle }}
           onClick={onReturnToMain}
+          disabled={!actionsEnabled}
           aria-label="\uBA54\uC778\uD654\uBA74\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30"
         >
           <p style={choiceLabelStyle}>{overlayCopy.main}</p>

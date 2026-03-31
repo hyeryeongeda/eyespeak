@@ -39,6 +39,7 @@ import {
   useGazeSelectionStore,
   type GazeSelectionCommitSource,
 } from '../stores/gazeSelectionStore'
+import { useTtsPlaybackStore } from '../../../../stores/ttsPlaybackStore'
 
 interface UsePatientGazeClickOptions {
   enabled?: boolean
@@ -49,7 +50,9 @@ interface UsePatientGazeClickOptions {
 const SELECTION_CONFIRM_FEEDBACK_MS = 420
 const SELECTION_COMMIT_DELAY_MS = 0
 const ROUTE_TRANSITION_COMMIT_GUARD_MS = 450
+const TTS_CONFIRM_BIND_TIMEOUT_MS = 6000
 const DIALOG_SELECTION_CONTAINER_SELECTOR = '[role="dialog"][aria-modal="true"]'
+const PATIENT_CONFIRM_UNTIL_TTS_ATTRIBUTE = 'data-patient-confirm-until-tts'
 const ENABLE_MOUSE_DWELL_CONFIRM =
   import.meta.env.DEV &&
   String(import.meta.env.VITE_PATIENT_ENABLE_MOUSE_DWELL_CONFIRM ?? '').toLowerCase() === 'true'
@@ -88,6 +91,19 @@ interface SelectionCooldownEntry {
   expiresAt: number
   stateTimerId: number | null
   timerId: number
+}
+
+interface PendingTtsConfirmedSelection {
+  element: HTMLElement
+  targetKey: string
+  baselineRequestId: number | null
+  timerId: number
+}
+
+interface ActiveTtsConfirmedSelection {
+  element: HTMLElement
+  targetKey: string
+  requestId: number
 }
 
 type PatientDebugWindow = Window & {
@@ -471,6 +487,7 @@ export function usePatientGazeClick({
   const selectionDwellDurationMs = usePatientModeStore(
     state => state.selectionDwellDurationMs,
   )
+  const ttsActiveRequestId = useTtsPlaybackStore(state => state.activeRequestId)
   const [activationDelayMs, setActivationDelayMs] = useState(0)
   const [mouseTarget, setMouseTarget] = useState<SelectionTarget | null>(null)
   const [stableGazeTarget, setStableGazeTarget] = useState<SelectionTarget | null>(null)
@@ -498,6 +515,8 @@ export function usePatientGazeClick({
   const currentDwellInputSourceRef = useRef<'pointer' | 'gaze' | null>(null)
   const currentVisualInteractionStateRef = useRef<Exclude<PatientInteractionState, 'idle'> | null>(null)
   const currentVisualInteractionProgressRef = useRef(0)
+  const pendingTtsConfirmedSelectionRef = useRef<PendingTtsConfirmedSelection | null>(null)
+  const activeTtsConfirmedSelectionRef = useRef<ActiveTtsConfirmedSelection | null>(null)
 
   const rawGazeTarget = useMemo(
     () =>
@@ -529,6 +548,13 @@ export function usePatientGazeClick({
     if (confirmedTimerRef.current !== null) {
       window.clearTimeout(confirmedTimerRef.current)
       confirmedTimerRef.current = null
+    }
+  }
+
+  const clearPendingTtsConfirmedSelection = () => {
+    if (pendingTtsConfirmedSelectionRef.current !== null) {
+      window.clearTimeout(pendingTtsConfirmedSelectionRef.current.timerId)
+      pendingTtsConfirmedSelectionRef.current = null
     }
   }
 
@@ -604,23 +630,39 @@ export function usePatientGazeClick({
     return true
   }
 
-  const markSelectionConfirmed = (element: HTMLElement) => {
+  const clearSelectionConfirmed = (element: HTMLElement) => {
+    if (confirmedElementRef.current === element) {
+      confirmedElementRef.current = null
+    }
+
+    clearConfirmedTimer()
+    element.removeAttribute('data-gaze-confirmed')
+    restoreInteractionStateForElement(element)
+  }
+
+  const markSelectionConfirmed = (
+    element: HTMLElement,
+    options: {
+      persistent?: boolean
+    } = {},
+  ) => {
+    const { persistent = false } = options
+
     if (confirmedElementRef.current && confirmedElementRef.current !== element) {
-      confirmedElementRef.current.removeAttribute('data-gaze-confirmed')
-      restoreInteractionStateForElement(confirmedElementRef.current)
+      clearSelectionConfirmed(confirmedElementRef.current)
     }
 
     clearConfirmedTimer()
     element.setAttribute('data-gaze-confirmed', 'true')
     setElementInteractionState(element, 'confirmed', currentDwellInputSourceRef.current, 1)
     confirmedElementRef.current = element
-    confirmedTimerRef.current = window.setTimeout(() => {
-      if (confirmedElementRef.current === element) {
-        confirmedElementRef.current = null
-      }
 
-      element.removeAttribute('data-gaze-confirmed')
-      restoreInteractionStateForElement(element)
+    if (persistent) {
+      return
+    }
+
+    confirmedTimerRef.current = window.setTimeout(() => {
+      clearSelectionConfirmed(element)
       confirmedTimerRef.current = null
     }, SELECTION_CONFIRM_FEEDBACK_MS)
   }
@@ -667,6 +709,64 @@ export function usePatientGazeClick({
       stateTimerId,
       timerId,
     })
+  }
+
+  const releaseTtsBoundConfirmedSelection = (startCooldown: boolean) => {
+    const activeSelection = activeTtsConfirmedSelectionRef.current
+    const pendingSelection = pendingTtsConfirmedSelectionRef.current
+    const selection =
+      activeSelection ??
+      (pendingSelection
+        ? {
+            element: pendingSelection.element,
+            targetKey: pendingSelection.targetKey,
+          }
+        : null)
+
+    activeTtsConfirmedSelectionRef.current = null
+    clearPendingTtsConfirmedSelection()
+
+    if (!selection) {
+      return
+    }
+
+    clearSelectionConfirmed(selection.element)
+
+    if (startCooldown && selection.element.isConnected) {
+      startSelectionCooldown(
+        selection.targetKey,
+        selection.element,
+        selectionProfile.cooldownMs,
+      )
+    }
+  }
+
+  const persistSelectionConfirmationUntilTts = (
+    element: HTMLElement,
+    targetKey: string,
+  ) => {
+    releaseTtsBoundConfirmedSelection(false)
+    markSelectionConfirmed(element, { persistent: true })
+
+    const timerId = window.setTimeout(() => {
+      const pendingSelection = pendingTtsConfirmedSelectionRef.current
+      if (
+        !pendingSelection ||
+        pendingSelection.element !== element ||
+        pendingSelection.targetKey !== targetKey
+      ) {
+        return
+      }
+
+      releaseTtsBoundConfirmedSelection(true)
+    }, TTS_CONFIRM_BIND_TIMEOUT_MS)
+
+    pendingTtsConfirmedSelectionRef.current = {
+      element,
+      targetKey,
+      baselineRequestId: ttsActiveRequestId,
+      timerId,
+    }
   }
 
   const getCommittedSelectionTarget = (
@@ -787,6 +887,7 @@ export function usePatientGazeClick({
       submitActiveEyeTrackingSelectionFeedback()
     }
 
+    releaseTtsBoundConfirmedSelection(false)
     markSelectionConfirmed(resolvedTarget.element)
     startSelectionCooldown(
       resolvedTarget.key,
@@ -1123,9 +1224,19 @@ export function usePatientGazeClick({
         return
       }
 
+      const targetKey = getInteractiveElementSelectionKey(clickedElement)
+      const shouldPersistUntilTts =
+        clickedElement.getAttribute(PATIENT_CONFIRM_UNTIL_TTS_ATTRIBUTE) === 'true'
+
+      if (shouldPersistUntilTts) {
+        persistSelectionConfirmationUntilTts(clickedElement, targetKey)
+        return
+      }
+
+      releaseTtsBoundConfirmedSelection(false)
       markSelectionConfirmed(clickedElement)
       startSelectionCooldown(
-        getInteractiveElementSelectionKey(clickedElement),
+        targetKey,
         clickedElement,
         selectionProfile.cooldownMs,
       )
@@ -1136,7 +1247,52 @@ export function usePatientGazeClick({
     return () => {
       document.removeEventListener('click', handleClick, true)
     }
-  }, [enabled, selectionProfile.cooldownMs])
+  }, [enabled, selectionProfile.cooldownMs, ttsActiveRequestId])
+
+  useEffect(() => {
+    if (!enabled) {
+      releaseTtsBoundConfirmedSelection(false)
+      return
+    }
+
+    const activeSelection = activeTtsConfirmedSelectionRef.current
+
+    if (activeSelection) {
+      if (!activeSelection.element.isConnected) {
+        releaseTtsBoundConfirmedSelection(false)
+        return
+      }
+
+      if (ttsActiveRequestId !== activeSelection.requestId) {
+        releaseTtsBoundConfirmedSelection(true)
+      }
+
+      return
+    }
+
+    const pendingSelection = pendingTtsConfirmedSelectionRef.current
+
+    if (!pendingSelection) {
+      return
+    }
+
+    if (!pendingSelection.element.isConnected) {
+      releaseTtsBoundConfirmedSelection(false)
+      return
+    }
+
+    if (
+      ttsActiveRequestId !== null &&
+      ttsActiveRequestId !== pendingSelection.baselineRequestId
+    ) {
+      clearPendingTtsConfirmedSelection()
+      activeTtsConfirmedSelectionRef.current = {
+        element: pendingSelection.element,
+        targetKey: pendingSelection.targetKey,
+        requestId: ttsActiveRequestId,
+      }
+    }
+  }, [enabled, ttsActiveRequestId, selectionProfile.cooldownMs])
 
   useEffect(() => {
     if (!enabled) {
@@ -1319,6 +1475,9 @@ export function usePatientGazeClick({
         confirmedTimerRef.current = null
       }
 
+      clearPendingTtsConfirmedSelection()
+      activeTtsConfirmedSelectionRef.current = null
+
       if (confirmedElementRef.current) {
         confirmedElementRef.current.removeAttribute('data-gaze-confirmed')
         confirmedElementRef.current = null
@@ -1350,6 +1509,9 @@ export function usePatientGazeClick({
     if (enabled) {
       return
     }
+
+    clearPendingTtsConfirmedSelection()
+    activeTtsConfirmedSelectionRef.current = null
 
     if (highlightedElementRef.current) {
       highlightedElementRef.current.removeAttribute('data-gaze-active')
