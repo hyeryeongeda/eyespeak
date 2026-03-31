@@ -1,6 +1,5 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
 import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
@@ -9,10 +8,9 @@ import {
   useDwellFeedback,
   type DwellFeedbackViewModel,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
-import {
-  requestMockPatientCall,
-} from '../../../services/patientCallService'
+import { requestMockPatientCall } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import PatientCallOverlay from './PatientCallOverlay'
 
@@ -254,7 +252,7 @@ const responsiveStyle = `
 `
 
 export default function PatientMainPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const { logout, user } = useAuth()
   const isMouseLogoutIntentRef = useRef(false)
   const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
@@ -279,12 +277,12 @@ export default function PatientMainPage() {
       return '호출 상태 안내가 열려 있습니다.'
     }
 
-    return '시선을 카드 위에 머무르면 선택되고, 더블 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
+    return '시선을 카드 위에 머무르고 더블블링크하면 선택되고, 트리플 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
   }, [isOverlayVisible])
 
   const handleLogout = async () => {
     await logout()
-    navigate(ROUTE_PATHS.HOME, { replace: true })
+    navigateWithFeedback(ROUTE_PATHS.HOME, { replace: true })
   }
 
   const handleLogoutPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -320,7 +318,7 @@ export default function PatientMainPage() {
 
   function handleSelectTarget(targetId: PatientMainTargetId) {
     if (targetId === 'talk') {
-      navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+      navigateWithFeedback(ROUTE_PATHS.PATIENT_TALK_MAIN)
       return
     }
 
@@ -329,7 +327,7 @@ export default function PatientMainPage() {
       return
     }
 
-    navigate(ROUTE_PATHS.PATIENT_LEISURE)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_LEISURE)
   }
 
   useEffect(() => {
@@ -424,10 +422,7 @@ export default function PatientMainPage() {
       </main>
 
       {overlayStatus ? (
-        <PatientCallOverlay
-          status={overlayStatus}
-          message="보호자에게 호출 신호를 전송했습니다."
-        />
+        <PatientCallOverlay status={overlayStatus} message="보호자에게 호출 신호를 전송했습니다." />
       ) : null}
     </>
   )

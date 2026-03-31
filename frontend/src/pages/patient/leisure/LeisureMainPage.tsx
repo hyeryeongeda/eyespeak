@@ -1,10 +1,11 @@
 import { type CSSProperties, useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import {
   ROUTE_PATHS,
   getPatientLeisureCategoryPath,
   getPatientLeisurePlayerPath,
 } from '../../../app/router/routePaths'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import { fetchLeisureMain } from '../../../services/leisureService'
 import type { LeisureMainStatus, LeisureShortcut } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
@@ -98,7 +99,7 @@ function buildPlaceholderShortcut(index: number): LeisureShortcut {
 }
 
 export default function LeisureMainPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
 
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
@@ -145,7 +146,7 @@ export default function LeisureMainPage() {
 
     if (shortcut.kind === 'content' && shortcut.contentId) {
       setStatus('transitioning')
-      navigate(
+      navigateWithFeedback(
         {
           pathname: getPatientLeisurePlayerPath(shortcut.contentId),
           search: location.search,
@@ -167,7 +168,7 @@ export default function LeisureMainPage() {
     }
 
     setStatus('transitioning')
-    navigate(
+    navigateWithFeedback(
       {
         pathname: getPatientLeisureCategoryPath(shortcut.categoryId),
         search: location.search,
@@ -263,7 +264,12 @@ export default function LeisureMainPage() {
                 variant="hero"
                 tone="slate"
                 slotId="main-back"
-                onSelect={() => navigate({ pathname: ROUTE_PATHS.PATIENT_MAIN, search: location.search })}
+                onSelect={() =>
+                  navigateWithFeedback({
+                    pathname: ROUTE_PATHS.PATIENT_MAIN,
+                    search: location.search,
+                  })
+                }
               />
             </div>
           </div>

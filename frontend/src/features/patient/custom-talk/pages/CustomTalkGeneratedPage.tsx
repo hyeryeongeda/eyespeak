@@ -1,11 +1,12 @@
 import { type CSSProperties, useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
@@ -64,7 +65,7 @@ function getVisibleGeneratedSentences(sentences: string[]) {
 }
 
 export default function CustomTalkGeneratedPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const dwellFeedback = useDwellFeedback<CustomTalkGeneratedTrackingId>({
     enabled: true,
   })
@@ -220,7 +221,7 @@ export default function CustomTalkGeneratedPage() {
         tone: 'mint',
         onSelect: () => {
           openKeyboard('generated', previewText)
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
+          navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
         disabled: isBusy,
         trackingId: 'custom-talk-generated-keyboard',
@@ -239,7 +240,7 @@ export default function CustomTalkGeneratedPage() {
         title: '뒤로가기',
         description: '',
         tone: 'slate',
-        onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE),
+        onSelect: () => navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE),
         disabled: isBusy,
         trackingId: 'custom-talk-generated-back',
       }}

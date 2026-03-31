@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
 import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
@@ -8,6 +7,7 @@ import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
 } from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
 import type { PatientCellMapping } from '../../../features/patient/input/services/patientCellMapping'
 import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
@@ -160,7 +160,7 @@ function paginate<T>(items: T[], pageIndex: number, pageSize: number): T[] {
 }
 
 export default function FavoritesPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const { user } = useAuth()
   const dwellFeedback = useDwellFeedback<string>({
     enabled: true,
@@ -301,8 +301,8 @@ export default function FavoritesPage() {
 
   const handleBack = useCallback(() => {
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
-  }, [navigate])
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_TALK_MAIN)
+  }, [navigateWithFeedback])
 
   const handleAfterSelection = useCallback((_item: FavoriteItem, success: boolean) => {
     if (success) {

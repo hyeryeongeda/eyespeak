@@ -7,6 +7,7 @@ import type {
   PainAreaKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
 import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import {
@@ -37,6 +38,7 @@ const REAR_VIEW_PARTS: PainAreaKey[] = ['waist', 'hip']
 
 export default function BodyMindPainPartPage() {
   const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const { user } = useAuth()
   const patientId = user?.id ?? 'patient-guest'
@@ -143,7 +145,7 @@ export default function BodyMindPainPartPage() {
     }
 
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA, {
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA, {
       state: { selectedGroupKey: group.key, selectedAreaKey },
     })
   }

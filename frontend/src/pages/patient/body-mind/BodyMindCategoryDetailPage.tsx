@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
 import { getBodyMindCategoryDefinitionByKey } from './bodyMindMock'
@@ -13,7 +14,7 @@ interface BodyMindCategoryDetailRouteState {
 }
 
 export default function BodyMindCategoryDetailPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const { categoryKey } = useParams()
   const { user } = useAuth()
@@ -65,7 +66,7 @@ export default function BodyMindCategoryDetailPage() {
 
   const handleBack = () => {
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_BODY_MIND, {
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_BODY_MIND, {
       state: {
         initialPageIndex: routeState?.returnPageIndex ?? category.returnPageIndex,
       },

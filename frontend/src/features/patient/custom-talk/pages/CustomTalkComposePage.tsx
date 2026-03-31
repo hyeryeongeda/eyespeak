@@ -1,11 +1,12 @@
 import { type CSSProperties, useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import type { ComposeStep } from '../types'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import { polishSentence } from '../utils/polishSentence'
 
 const composeStepLabelMap: Record<ComposeStep, string> = {
@@ -83,7 +84,7 @@ function buildComposedText(input: {
 }
 
 export default function CustomTalkComposePage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const dwellFeedback = useDwellFeedback<CustomTalkComposeTrackingId>({
     enabled: true,
   })
@@ -170,7 +171,7 @@ export default function CustomTalkComposePage() {
           const completed = await selectComposeWord(composeStep, visibleOptions[0])
 
           if (completed) {
-            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
+            navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: !visibleOptions[0] || isBusy,
@@ -188,7 +189,7 @@ export default function CustomTalkComposePage() {
           const completed = await selectComposeWord(composeStep, visibleOptions[1])
 
           if (completed) {
-            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
+            navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: !visibleOptions[1] || isBusy,
@@ -206,7 +207,7 @@ export default function CustomTalkComposePage() {
           const completed = await selectComposeWord(composeStep, visibleOptions[2])
 
           if (completed) {
-            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
+            navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: !visibleOptions[2] || isBusy,
@@ -220,7 +221,7 @@ export default function CustomTalkComposePage() {
           const completed = await skipComposeStep(composeStep)
 
           if (completed) {
-            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
+            navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED)
           }
         },
         disabled: isBusy,
@@ -244,7 +245,7 @@ export default function CustomTalkComposePage() {
           const previousStep = goBackComposeStep()
 
           if (!previousStep) {
-            navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK)
+            navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK)
           }
         },
         disabled: status === 'submitting',

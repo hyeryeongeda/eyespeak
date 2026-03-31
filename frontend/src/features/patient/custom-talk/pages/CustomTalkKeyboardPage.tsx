@@ -1,9 +1,10 @@
 import { type CSSProperties, useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import KeyboardSentenceDisplay from '../components/KeyboardSentenceDisplay'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
@@ -128,7 +129,7 @@ function isComplexVowelTailPage(keyboardNavigation: KeyboardNavigationState) {
 }
 
 export default function CustomTalkKeyboardPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const chat = usePatientIncomingChat()
   const dwellFeedback = useDwellFeedback<CustomTalkKeyboardTrackingId>({
     enabled: true,
@@ -243,7 +244,7 @@ export default function CustomTalkKeyboardPage() {
       return
     }
 
-    navigate(
+    navigateWithFeedback(
       result.entrySource === 'generated'
         ? ROUTE_PATHS.PATIENT_CUSTOM_TALK_GENERATED
         : result.entrySource === 'recommend'

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
@@ -7,6 +7,7 @@ import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import { filterSelectableRecommendedSentences } from '../utils/recommendedSentenceGuards'
 
 function getVisibleSentences(sentences: string[]) {
@@ -22,7 +23,7 @@ type CustomTalkRecommendTrackingId =
   | 'custom-talk-recommend-back'
 
 export default function CustomTalkRecommendPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const dwellFeedback = useDwellFeedback<CustomTalkRecommendTrackingId>({
     enabled: true,
   })
@@ -85,12 +86,12 @@ export default function CustomTalkRecommendPage() {
 
   const handleStartCompose = async () => {
     await startCompose()
-    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
   }
 
   const handleOpenKeyboard = () => {
     openKeyboard('recommend')
-    navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
   }
 
   return (
@@ -163,7 +164,7 @@ export default function CustomTalkRecommendPage() {
         title: '뒤로가기',
         description: '카테고리 선택 화면으로 돌아갑니다.',
         tone: 'slate',
-        onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK),
+        onSelect: () => navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK),
         trackingId: 'custom-talk-recommend-back',
       }}
       dwellFeedback={dwellFeedback}

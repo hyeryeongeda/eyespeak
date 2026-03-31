@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import type { BodyMindUiStatus } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import { bodyMindMainPages, type BodyMindRouteOption } from './bodyMindMock'
 import BodyMindPagedMenuPage from './components/BodyMindPagedMenuPage'
 
@@ -30,7 +31,7 @@ function getMainFeedbackText(status: BodyMindUiStatus, pageIndex: number) {
 }
 
 export default function BodyMindPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
   const location = useLocation()
   const routeState = location.state as BodyMindPageRouteState | null
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
@@ -38,7 +39,7 @@ export default function BodyMindPage() {
 
   const handleSelectOption = (option: BodyMindRouteOption) => {
     setStatus('transitioning')
-    navigate(option.route)
+    navigateWithFeedback(option.route)
   }
 
   const handlePageChange = (nextPageIndex: number) => {
@@ -49,7 +50,7 @@ export default function BodyMindPage() {
 
   const handleBack = () => {
     setStatus('transitioning')
-    navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_TALK_MAIN)
   }
 
   return (
