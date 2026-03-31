@@ -259,7 +259,6 @@ export default function LeisureMainPage() {
             <div style={{ minHeight: 0, height: '100%' }}>
               <LeisureActionCard
                 title="뒤로가기"
-                description="환자 메인 화면으로 돌아갑니다."
                 badge="메인 이동"
                 variant="hero"
                 tone="slate"
