@@ -35,8 +35,6 @@ export function usePatientTrackingBridge({
       return
     }
 
-    usePatientModeStore.getState().setTrackingStatus('idle')
-
     const handleDoubleBlink = (event: Event) => {
       const detail = (event as CustomEvent<PatientDoubleBlinkDetail>).detail
       window.queueMicrotask(() => {

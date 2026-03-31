@@ -747,7 +747,7 @@ function mapApiItemToShortcut(
     return {
       id: String(item.id),
       title,
-      description: '보호자가 등록한 YouTube 콘텐츠를 바로 재생합니다.',
+      description: '',
       tone,
       badgeLabel: '바로 재생',
       kind: 'content',
