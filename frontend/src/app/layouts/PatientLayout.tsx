@@ -135,8 +135,9 @@ function PatientLayoutShell() {
     enabled: !isCalibrationRoute,
   })
   usePatientGazeClick({
-    enabled: false, // 블링크 클릭으로 대체 — dwell 비활성화
+    enabled: !isCalibrationRoute && !isGlobalMenuOpen,
     selectionSurface: currentSelectionSurface,
+    enableDwellCommit: false,
   })
 
   useEffect(() => {
