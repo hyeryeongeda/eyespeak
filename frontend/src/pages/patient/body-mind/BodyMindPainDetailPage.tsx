@@ -90,6 +90,7 @@ export default function BodyMindPainDetailPage() {
       selectedKey={selectedKey}
       rootBackDescription="통증 부위 선택으로 이동"
       previousPageDescription="이전 페이지로 이동"
+      confirmOptionSelectionUntilTts
       onSelectOption={handleSelectOption}
       onPageChange={handlePageChange}
       onRootBack={handleBack}

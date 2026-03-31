@@ -67,6 +67,7 @@ export default function BodyMindSecretionPage() {
       selectedKey={selectedKey}
       rootBackDescription="몸과 마음 메인으로 이동"
       previousPageDescription="이전 페이지로 이동"
+      confirmOptionSelectionUntilTts
       onSelectOption={handleSelectOption}
       onPageChange={handlePageChange}
       onRootBack={handleBack}

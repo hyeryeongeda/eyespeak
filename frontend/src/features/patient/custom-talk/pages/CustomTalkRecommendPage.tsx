@@ -109,6 +109,7 @@ export default function CustomTalkRecommendPage() {
         loading: isRecommendationLoading && !visibleSentences[0],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-1',
+        confirmUntilTts: true,
       }}
       topCenter={{
         title: visibleSentences[1] ?? '추천 문장 준비 중',
@@ -123,6 +124,7 @@ export default function CustomTalkRecommendPage() {
         loading: isRecommendationLoading && !visibleSentences[1],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-2',
+        confirmUntilTts: true,
       }}
       topRight={{
         title: visibleSentences[2] ?? '추천 문장 준비 중',
@@ -137,6 +139,7 @@ export default function CustomTalkRecommendPage() {
         loading: isRecommendationLoading && !visibleSentences[2],
         loadingLabel: 'AI 추천 생성 중',
         trackingId: 'custom-talk-recommend-option-3',
+        confirmUntilTts: true,
       }}
       bottomLeft={{
         title: '형태소 말하기',

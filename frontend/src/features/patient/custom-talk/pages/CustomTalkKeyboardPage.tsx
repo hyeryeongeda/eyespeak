@@ -407,6 +407,7 @@ export default function CustomTalkKeyboardPage() {
       bottomLeft={visibleCards[3]}
       bottomCenter={{
         ...actionCard,
+        confirmUntilTts: canSubmit,
         trackingId: 'custom-talk-keyboard-action',
       }}
       bottomRight={{

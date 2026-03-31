@@ -84,6 +84,7 @@ export default function BodyMindCategoryDetailPage() {
       selectedKey={selectedKey}
       rootBackDescription="몸과 마음 카테고리로 이동"
       previousPageDescription="이전 페이지로 이동"
+      confirmOptionSelectionUntilTts
       onSelectOption={handleSelectOption}
       onPageChange={handlePageChange}
       onRootBack={handleBack}

@@ -39,6 +39,13 @@ export const bodyMindMainPages: BodyMindMenuPageDefinition<BodyMindRouteOption>[
   {
     options: [
       {
+        key: 'pain',
+        label: '아파',
+        description: '부위와 통증 상태를 자세히 선택',
+        tone: 'rose',
+        route: ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA,
+      },
+      {
         key: 'secretion',
         label: '가래/침 빼줘',
         description: '가래와 침 관련 요청을 바로 전달',
@@ -51,13 +58,6 @@ export const bodyMindMainPages: BodyMindMenuPageDefinition<BodyMindRouteOption>[
         description: '호흡 불편과 기기 요청 전달',
         tone: 'sand',
         route: ROUTE_PATHS.PATIENT_BODY_MIND_BREATHING,
-      },
-      {
-        key: 'pain',
-        label: '아파',
-        description: '부위와 통증 상태를 자세히 선택',
-        tone: 'rose',
-        route: ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA,
       },
       {
         key: 'posture',
@@ -140,8 +140,9 @@ export const secretionOptionPages: BodyMindMenuPageDefinition[] = [
     options: [
       { key: 'sticky_or_blocked', label: '끈적해', tone: 'rose' },
       { key: 'stop_or_done', label: '그만', tone: 'slate' },
-      { key: 'drooling', label: '침 흘러', tone: 'mint' },
-      { key: 'cough_assist', label: '기침유발기 해줘', tone: 'sand' },
+      { key: 'cough_assist', label: '기침유발기 해줘', tone: 'mint' },
+      { key: 'drooling', label: '침 흘러', tone: 'sand' },
+  
     ],
   },
 ]

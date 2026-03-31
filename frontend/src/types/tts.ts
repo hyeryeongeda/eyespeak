@@ -22,9 +22,12 @@ export interface AudioPlaybackSource {
   revoke?: () => void
 }
 
+export type AudioPlaybackEndReason = 'ended' | 'pause' | 'error' | 'cleanup'
+
 export interface AudioPlaybackHandle {
   audio: HTMLAudioElement
   cleanup: () => void
+  completed: Promise<AudioPlaybackEndReason>
 }
 
 export type TtsPlaybackStatus = 'idle' | 'preparing' | 'playing' | 'error'

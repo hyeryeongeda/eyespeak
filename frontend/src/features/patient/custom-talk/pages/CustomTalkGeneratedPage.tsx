@@ -182,6 +182,7 @@ export default function CustomTalkGeneratedPage() {
         loading: isGeneratedLoading && !visibleGeneratedSentences[0],
         loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-1',
+        confirmUntilTts: true,
       }}
       topCenter={{
         title: visibleGeneratedSentences[1] ?? '생성 문장 준비 중',
@@ -196,6 +197,7 @@ export default function CustomTalkGeneratedPage() {
         loading: isGeneratedLoading && !visibleGeneratedSentences[1],
         loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-2',
+        confirmUntilTts: true,
       }}
       topRight={{
         title: visibleGeneratedSentences[2] ?? '생성 문장 준비 중',
@@ -210,6 +212,7 @@ export default function CustomTalkGeneratedPage() {
         loading: isGeneratedLoading && !visibleGeneratedSentences[2],
         loadingLabel: 'AI 문장 생성 중',
         trackingId: 'custom-talk-generated-option-3',
+        confirmUntilTts: true,
       }}
       bottomLeft={{
         title: '키보드',
