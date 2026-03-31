@@ -1516,5 +1516,6 @@ def _precache_demo_questions():
 if __name__ == "__main__":
     precompute_embeddings()
     _precache_demo_questions()
-    print("\n[DB 버전] 서버 시작: http://localhost:5003\n")
-    app.run(host="0.0.0.0", debug=False, port=5003)
+    port = int(os.getenv("PORT", 5003))
+    print(f"\n[DB 버전] 서버 시작: http://localhost:{port}\n")
+    app.run(host="0.0.0.0", debug=False, port=port)
