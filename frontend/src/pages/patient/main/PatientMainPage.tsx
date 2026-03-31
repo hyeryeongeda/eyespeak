@@ -10,9 +10,7 @@ import {
 } from '../../../features/patient/input/hooks/useDwellFeedback'
 import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
-import {
-  requestMockPatientCall,
-} from '../../../services/patientCallService'
+import { requestMockPatientCall } from '../../../services/patientCallService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
 import PatientCallOverlay from './PatientCallOverlay'
 
@@ -279,7 +277,7 @@ export default function PatientMainPage() {
       return '호출 상태 안내가 열려 있습니다.'
     }
 
-    return '시선을 카드 위에 머무르고 더블블링크 하면 선택되고, 트리플 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
+    return '시선을 카드 위에 머무르고 더블블링크하면 선택되고, 트리플 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
   }, [isOverlayVisible])
 
   const handleLogout = async () => {
@@ -424,10 +422,7 @@ export default function PatientMainPage() {
       </main>
 
       {overlayStatus ? (
-        <PatientCallOverlay
-          status={overlayStatus}
-          message="보호자에게 호출 신호를 전송했습니다."
-        />
+        <PatientCallOverlay status={overlayStatus} message="보호자에게 호출 신호를 전송했습니다." />
       ) : null}
     </>
   )
