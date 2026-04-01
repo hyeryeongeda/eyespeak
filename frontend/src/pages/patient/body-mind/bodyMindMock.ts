@@ -39,6 +39,13 @@ export const bodyMindMainPages: BodyMindMenuPageDefinition<BodyMindRouteOption>[
   {
     options: [
       {
+        key: 'breathing',
+        label: '숨 답답해',
+        description: '호흡 불편과 기기 요청 전달',
+        tone: 'sand',
+        route: ROUTE_PATHS.PATIENT_BODY_MIND_BREATHING,
+      },
+      {
         key: 'pain',
         label: '아파',
         description: '부위와 통증 상태를 자세히 선택',
@@ -52,13 +59,7 @@ export const bodyMindMainPages: BodyMindMenuPageDefinition<BodyMindRouteOption>[
         tone: 'sky',
         route: ROUTE_PATHS.PATIENT_BODY_MIND_SECRETION,
       },
-      {
-        key: 'breathing',
-        label: '숨 답답해',
-        description: '호흡 불편과 기기 요청 전달',
-        tone: 'sand',
-        route: ROUTE_PATHS.PATIENT_BODY_MIND_BREATHING,
-      },
+      
       {
         key: 'posture',
         label: '자세 바꿔줘',
