@@ -1,129 +1,544 @@
+<div align="center">
+
 # EyeSpeak(아이스피크)
 
-> 시선 추적 기반 환자-보호자 의사소통 보조 서비스
+</div>
 
-루게릭병(ALS) 환자를 위한 시선 기반 AI 의사소통 플랫폼
 
----
+**시선 추적 기반 환자-보호자 의사소통 보조 서비스<br>
+**루게릭병(ALS) 환자를 위한 시선 기반 AI 의사소통 플랫폼
 
-## 목차
+> 눈으로 마음을 전하다 , **EyeSpeak**
 
-1. [기술 스택](#기술-스택)
-2. [아키텍처](#아키텍처)
-3. [서비스 URL](#서비스-url)
-4. [프로젝트 구조](#프로젝트-구조)
-5. [문서](#문서)
-6. [팀원](#팀원)
+- **개발 기간** : 2026.02.16 ~ 2025.04.03 **(7주)**
+- **플랫폼** : 인공지능(영상)
+- **개발 인원** : 7명 <br><br>
 
----
+<img src="./readme-assets/eyespeak.svg" />
 
-## 기술 스택
+</div> <br>
 
-| 분류 | 기술 |
-|------|------|
-| 백엔드 | Spring Boot 3.5, Java 21, JPA, Spring Security (JWT) |
-| 프론트엔드 | React 19, TypeScript, Vite 7, Tailwind CSS, Zustand |
-| 모바일 | Capacitor 8 (Android) |
-| DB | MySQL 8.0, Redis 7 |
-| AI - TTS | XTTS v2, FastAPI, PyTorch (GPU) |
-| AI - 추천 | Flask, OpenAI API, ONNX Runtime |
-| AI - 시선추적 | Flask, MediaPipe, OpenCV |
-| 인프라 | Docker, Jenkins, Nginx, RunPod GPU |
-| 배포 | Blue/Green 무중단 배포 |
+## 🔎 목차
 
----
+<div align="center">
 
-## 아키텍처
+### <a href="#developers">🌟 팀원 구성</a>
+
+### <a href="#techStack">🛠️ 기술 스택</a>
+
+### <a href="#systemArchitecture">🌐 시스템 아키텍처</a>
+
+### <a href="#skills">📲 기능 구성</a>
+
+### <a href="#feature"> 🏛️ 기능 시연</a>
+
+### <a href="#directories">📂 디렉터리 구조</a>
+
+### <a href="#projectDeliverables">📦 프로젝트 산출물</a>
+
+</div>
+<br>
+
+## 🌟 팀원 구성
+
+<a name="developers"></a>
+
+<div align="center">
+
+<table width="100%">
+    <tr>
+        <td width="33%" align="center"> 
+            <a href="https://github.com/chaezerojj">
+                <img src="./readme-assets/chaeyoung.jpg" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/chaezerojj">
+                <b>진채영</b><br>(Leader & Frontend) 
+            </a> 
+        </td>
+        <td width="33%" align="center"> 
+            <a href="https://github.com/brightonlog1">
+                <img src="./readme-assets/yerin.jpg" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/brightonlog1">
+                <b>김예린</b><br>(Backend & AI) 
+            </a> 
+        </td>
+        <td width="33%" align="center"> 
+            <a href="https://github.com/naneunhaeun">
+                <img src="./readme-assets/haeun.png" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/naneunhaeun">
+                <b>김하은</b><br>(AI) 
+            </a> 
+        </td>
+    </tr>
+    <tr>
+        <td width="33%" valign="top">
+            <sub>
+                - 프로젝트 총괄 <br>
+            </sub>
+        </td>
+        <td width="33%" valign="top">
+            <sub>
+                -
+            </sub>
+        </td>
+        <td width="33%" valign="top">
+            <sub>
+                - 
+            </sub>
+        </td>
+    </tr>
+</table>
+
+<br>
+
+<table width="100%">
+    <tr>
+        <td width="25%" align="center"> 
+            <a href="https://github.com/hyeryeongeda">
+                <img src="./readme-assets/hyeryeong.jpg" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/hyeryeongeda">
+                <b>김혜령</b><br>(Frontend) 
+            </a> 
+        </td>
+        <td width="25%" align="center"> 
+            <a href="https://github.com/JPW-star">
+                <img src="./readme-assets/junsu.jpg" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/JPW-star">
+                <b>박준수</b><br>(Backend) 
+            </a> 
+        </td>
+        <td width="25%" align="center"> 
+            <a href="https://github.com/YHPARK-KR">
+                <img src="./readme-assets/yunhwan.jpg" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/YHPARK-KR">
+                <b>박윤환</b><br>(AI) 
+            </a> 
+        </td>
+        <td width="25%" align="center"> 
+            <a href="https://github.com/eonseo">
+                <img src="./readme-assets/eonseo.jpg" width="160px" height="200px" style="object-fit: cover;" />
+            </a>
+            <hr> <a href="https://github.com/eonseo">
+                <b>오언서</b><br>(Backend & Infra) 
+            </a> 
+        </td>
+    </tr>
+    <tr>
+        <td width="25%" valign="top">
+            <sub>
+                - 
+            </sub>
+        </td>
+        <td width="25%" valign="top">
+            <sub>
+                - 
+            </sub>
+        </td>
+        <td width="25%" valign="top">
+            <sub>
+                - 
+            </sub>
+        </td>
+        <td width="25%" valign="top">
+            <sub>
+                - 
+            </sub>
+        </td>
+    </tr>
+</table>
+
+</div>
+<br>
+
+</div>
+## 🛠️ 기술 스택
+
+<a name="techStack"></a>
+
+### 🌕 Frontend
+
+<div align="center">
+
+<img src="https://img.shields.io/badge/VisualStudioCode-007ACC?style=for-the-badge&logo=VisualStudioCode&logoColor=white">
+<img src="https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white">
+<img src="https://img.shields.io/badge/html5-%23E34F26.svg?style=for-the-badge&logo=html5&logoColor=white">
+<img src="https://img.shields.io/badge/css3-%231572B6.svg?style=for-the-badge&logo=css3&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/react-61DAFB?style=for-the-badge&logo=react&logoColor=white">
+<img src="https://img.shields.io/badge/vite-%23646CFF.svg?style=for-the-badge&logo=vite&logoColor=white">
+<img src="https://img.shields.io/badge/React_Router-CA4245?style=for-the-badge&logo=react-router&logoColor=white">
+<img src="https://img.shields.io/badge/Zustand-orange?style=for-the-badge&logo=Rss&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=Three.js&logoColor=white">
+<img src="https://img.shields.io/badge/React%20Three%20Fiber-000000?style=for-the-badge&logo=react&logoColor=white">
+<img src="https://img.shields.io/badge/Blender-E87D0D?style=for-the-badge&logo=Blender&logoColor=white">
+
+<br>
+
+| **Category** | **Stack** |
+|:---:|:---|
+| **Language** | TypeScript 5.8.3 |
+| **Framework** | React 19.1.0, React Router 7.7.0 |
+| **Library** | Zustand 5.0.6, Axios 1.10.0, React Three Fiber, Drei, Emotion 11.14.0 |
+| **Build Tool** | Vite 6.3.1 |
+| **IDE** | Visual Studio Code 1.103.1 |
+
+</div>
+
+### 🌑 Backend
+
+<div align="center">
+
+<img src="https://img.shields.io/badge/IntelliJ_IDEA-black?style=for-the-badge&logo=intellijidea">
+<img src="https://img.shields.io/badge/Java-orange?style=for-the-badge&logo=openjdk">
+<img src="https://img.shields.io/badge/Gradle-02303A?style=for-the-badge&logo=gradle">
+<br>
+<img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=springboot">
+<img src="https://img.shields.io/badge/Spring_Security-6DB33F?style=for-the-badge&logo=springsecurity">
+<img src="https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=jsonwebtokens">
+<br>
+<img src="https://img.shields.io/badge/Hibernate-59666C?style=for-the-badge&logo=hibernate">
+<img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql">
+<img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis">
+<br>
+<img src="https://img.shields.io/badge/Swagger-85EA2D?style=for-the-badge&logo=swagger">
+<img src="https://img.shields.io/badge/OpenAI-black?style=for-the-badge&logo=openai">
+
+<br>
+
+| **Category** | **Stack** |
+|:---:|:---|
+| **Language** | Java 17 |
+| **Framework** | Spring Boot 3.5.9 |
+| **Library** | Spring Security, Spring Data JPA, Spring Data Redis, <br> Spring Batch, Spring Validation, Springdoc OpenAPI, <br> JWT (jjwt), Lombok |
+| **Build Tool** | Gradle 8.14.3 |
+| **Database** | MySQL 8.0, Redis 7.4 |
+| **IDE** | IntelliJ IDEA 2023.3.8 (Ultimate Edition) |
+
+</div>
+
+### 🤖 AI
+
+<div align="center">
+
+<img src="https://img.shields.io/badge/VisualStudioCode-007ACC?style=for-the-badge&logo=VisualStudioCode&logoColor=white">
+<img src="https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54">
+<br>
+<img src="https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=for-the-badge&logo=PyTorch&logoColor=white">
+<img src="https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/BentoML-FF6F00?style=for-the-badge&logo=bentoml&logoColor=white">
+<img src="https://img.shields.io/badge/ChromaDB-orange?style=for-the-badge&logo=database&logoColor=white">
+<img src="https://img.shields.io/badge/RunPod-purple?style=for-the-badge&logo=serverless&logoColor=white">
+
+<br>
+
+| **Category** | **Stack** |
+|:---:|:---|
+| **Language** | Python 3.9+ |
+| **Framework** | BentoML |
+| **Library** | PyTorch, NumPy, Pandas, ChromaDB, OpenAI CLIP |
+| **Model** | SASRec, Two-Tower Recommender |
+| **Database** | ChromaDB (Vector Store) |
+| **Deployment** | RunPod GPU Pod, Docker |
+| **IDE** | Visual Studio Code |
+
+</div>
+
+### ⚙️ DevOps
+
+<div align="center">
+
+<img src="https://img.shields.io/badge/GitLab-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white">
+<img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white">
+<img src="https://img.shields.io/badge/Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+<img src="https://img.shields.io/badge/Docker_Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+<img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white">
+<br>
+<img src="https://img.shields.io/badge/SSH-4D4D4D?style=for-the-badge&logo=openssh&logoColor=white">
+<img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
+<img src="https://img.shields.io/badge/Mattermost-0058CC?style=for-the-badge&logo=mattermost&logoColor=white">
+
+<br>
+
+#### 서버 스펙
+| **요소** | **스펙** |
+|:---:|:---:|
+| **CPU** | 4vCPUs |
+| **RAM** | 16 GB |
+| **Storage (Disk)** | SSD: 320 GB |
+
+<br>
+
+#### 사용 기술
+| **기술** | **버전** |
+|:---:|:---:|
+| **Jenkins** | 2.528.3 |
+| **Docker** | 29.1.5 |
+| **Docker Compose** | 5.0.1 |
+| **Nginx** | 1.29.4-alpine |
+| **Mattermost** | 10.11.9 |
+
+</div>
+
+
+## 🌐 시스템 아키텍처
+
+<a name="systemArchitecture"></a>
+
+### System Architecture
+<img src="./readme-assets/"/>
+
+### CI/CD Sequence Diagram
+<img src="./readme-assets/"/>
+
+### Event Notification
+
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center" width="50%"><b>❌ Jenkins Pipeline Failure</b></td>
+    <td align="center" width="50%"><b>✅ Jenkins Pipeline Success</b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/"/></td>
+    <td align="center"><img src="./readme-assets/"/></td>
+  </tr>
+</table>
+
+</div>
+
+<br>
+
+## 📲 기능 구성
+
+<a name="skills"></a>
+
+### 🎨 주요 기능
+
+#### 1️⃣ 사용자 인증 및 권한 관리
+- **회원가입/로그인**: 이메일 인증 기반 회원가입, JWT 토큰 기반 인증
+- **역할 구분**: 환자모드 / 보호자모드 권한 분리
+
+
+## 🏛️ 기능 시연
+
+<a name="feature"></a>
+
+### 🖥️ 화면 구성 및 기능
+
+<div align="center">
+
+<table>
+  <tr>
+    <td align="center" width="33%"><b>1. </b></td>
+    <td align="center" width="33%"><b>2. </b></td>
+    <td align="center" width="33%"><b>3. </b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/usescreen/capture/1"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/2"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/3"/></td>
+  </tr>
+
+</table>
+
+</div>
+
+### 🖥️ 실제 기능 시연
+
+<div>
+
+<table>
+  <tr>
+    <td align="center" width="33%"><b>1. </b></td>
+    <td align="center" width="33%"><b>2. </b></td>
+    <td align="center" width="33%"><b>3. </b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+  </tr>
+    <tr>
+    <td align="center" width="33%"><b>4. </b></td>
+    <td align="center" width="33%"><b>5. </b></td>
+    <td align="center" width="33%"><b>6. </b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+  </tr>
+    <tr>
+    <td align="center" width="33%"><b>7. </b></td>
+    <td align="center" width="33%"><b>8. </b></td>
+    <td align="center" width="33%"><b>9. </b></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+  </tr>
+</table>
+
+</div>
+
+### 🎨 화면 구성 및 기능
+
+
+## 📂 디렉터리 구조
+
+<a name="directories"></a>
+
+### 🌕 Frontend
+
+<details align="left">
+  <summary>
+    <strong>Frontend 프로젝트 구조</strong>
+  </summary>
 
 ```
-사용자 (브라우저/앱)
-    ↓ HTTPS
-EC2 서버
-├── Nginx (리버스 프록시 + SSL)
-├── 프론트엔드 (React/Vite)     :5173
-├── 백엔드 (Spring Boot)        :8080          -> AWS S3
-├── MySQL                       :3306
-├── Redis                       :6379
-├── Eye Tracking (Flask)        :5000
-├── Jenkins (CI/CD)             :8080
-└── GitLab Runner
-    ↓ HTTPS
-RunPod GPU 서버 (RTX 4000 Ada)
-├── TTS 서버 (XTTS v2)         :8000
-├── Dev 추천 서버 (Flask)       :5003
-└── Prod 추천 서버 (Flask)      :5004
-    ↓
-OpenAI API
-```
-
----
-
-## 서비스 URL
-
-| 환경 | 프론트엔드 | 백엔드 API |
-|------|-----------|-----------|
-| Dev | https://j14e205.p.ssafy.io/dev | https://j14e205.p.ssafy.io/dev/api/v1 |
-| Prod | https://j14e205.p.ssafy.io | https://j14e205.p.ssafy.io/api/v1 |
-
----
-
-## 프로젝트 구조
 
 ```
-S14P21E205/
-├── backend/                    # Spring Boot 백엔드
-│   ├── src/main/java/e205/eyespeak/
-│   │   ├── domain/             # 도메인별 패키지 (auth, chat, call, tts 등)
-│   │   └── global/             # 공통 (config, error, jwt, websocket)
-│   ├── src/main/resources/     # 설정 파일 (application*.yml)
-│   ├── Dockerfile
-│   └── build.gradle
-│
-├── frontend/                   # React 프론트엔드
-│   ├── src/
-│   │   ├── app/                # 라우터, 레이아웃
-│   │   ├── features/           # 기능별 컴포넌트 (patient, care)
-│   │   ├── pages/              # 페이지 컴포넌트
-│   │   ├── services/           # API 클라이언트
-│   │   └── stores/             # Zustand 상태 관리
-│   ├── Dockerfile / Dockerfile.prod
-│   └── package.json
-│
-├── ai-tts/                     # TTS 음성 합성 서버 (FastAPI)
-├── ai-recommend/               # AI 추천 서버 (Flask)
-├── ai-eyetracking/             # 시선 추적 서버 (Flask)
-│
-├── infra/                      # 인프라 설정
-│   ├── docker-compose*.yml     # Docker Compose 파일들
-│   ├── nginx-proxy/nginx.conf  # Nginx 설정
-│   └── .env.ai                 # AI 서버 환경변수
-│
-├── scripts/                    # 배포 스크립트
-├── Jenkinsfile                 # CI/CD 파이프라인
-├── Makefile                    # 배포 명령어 통합
-└── exec/                       # 산출물 (포팅 매뉴얼 등)
+
+</details>
+
+### 🌑 Backend
+
+<details align="left">
+  <summary>
+    <strong>Backend 프로젝트 구조</strong>
+  </summary>
+
+```
+📦backend
+
 ```
 
+</details>
+
+### 🤖 AI
+
+<details align="left">
+  <summary>
+    <strong>AI 프로젝트 구조</strong>
+  </summary>
+
+```
+📦AI
+
+```
+
+</details>
+
+## 📦 프로젝트 산출물
+
+<a name="projectDeliverables"></a>
+
+<h3>🖼️ 화면 설계서</h3>
+
+<details>
+  <summary><strong>화면 설계서</strong></summary>
+  <br>
+  <div align="left">
+    <img src="./readme-assets/" width="100%" />
+  </div>
+</details>
+
+<h3>🗄️ ERD</h3>
+<div align="center">
+
+<img src="./readme-assets/"/>
+</div>
+
+<h3><a href="https://www.notion.so/305c8be1c65c80f89902ef12c97e4d43?source=copy_link" target="_blank">📋 요구 사항 명세서</a></h3>
+
+<h3><a href="https://www.notion.so/32ec8be1c65c8098a55bc649b2e75e0d?v=32ec8be1c65c810fa34a000c33a6fe52&source=copy_link" target="_blank">📡 API 명세서</a></h3>
+
 ---
 
-## 문서
+## 🚀 Getting Started
 
-| 문서 | 설명 |
-|------|------|
-| [포팅 매뉴얼](exec/포팅_매뉴얼.md) | 빌드/배포/환경변수/DB 접속 정보 |
+### Prerequisites
+
+- **Node.js** 22.17.0+
+- **Java** 17
+- **Python** 3.9+
+- **Docker** 최신 버전
+- **MySQL** 8.0
+- **Redis** 7.4
+
+### Installation & Running
+
+#### 1️⃣ Frontend
+
+```bash
+cd FE
+npm install
+npm run dev
+```
+
+#### 2️⃣ Backend
+
+
+#### 3️⃣ AI Server
+
+
+### Environment Variables
+
+#### Frontend (.env)
+
+
+#### Backend (application.yml)
+
+#### AI (.env)
+
 
 ---
 
-## 팀원
+## 📝 주요 기술적 특징
 
-SSAFY 14기 부울경 2반 E205팀
+### 🔐 보안
+- JWT 기반 인증/권한 시스템
+- Spring Security를 통한 API 보안
+- CORS 정책 적용
 
-| 팀원  | 역할              |
-|-----|-----------------|
-| 김예린 | AI, Backend     |
-| 김하은 | AI              |
-| 김혜령 | Frontend        |
-| 박윤환 | AI              |
-| 박준수 | Backend         |
-| 오언서 | Backend, DevOps |
-| 진채영 | Frontend        |
+### 🚀 성능 최적화
+- 
+
+### 🤖 AI/ML
+- 
+
+### 🎨 3D 경험
+- React Three Fiber 기반 
+- Blender GLB 에셋 최적화
+
+### 📦 CI/CD
+- Jenkins 기반 자동 배포
+- Docker 컨테이너화
+- Nginx 리버스 프록시
+
+
+---
+
+<div align="center">
+
+## 🎉 Thank You!
+
+**eyespeak** | 시선으로 세상을 연결하다/
+
+---
+
+**© 2026 eyespeak. All rights reserved.**
+
+</div>
+
