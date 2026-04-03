@@ -27,9 +27,13 @@ import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'
 import { ROUTE_PATHS } from '../router/routePaths'
 
 const GlobalMenuOverlay = lazy(() => import('../../features/patient/input/components/GlobalMenuOverlay'))
-const IncomingInterruptOverlay = lazy(() => import('../../components/patient/chat/IncomingInterruptOverlay'))
-const LeisureReplyReturnOverlay = lazy(() => import('../../components/patient/chat/LeisureReplyReturnOverlay'))
-const ReplyModePanel = lazy(() => import('../../components/patient/chat/ReplyModePanel'))
+const IncomingInterruptOverlay = lazy(
+  () => import('../../features/patient/chat/components/IncomingInterruptOverlay'),
+)
+const LeisureReplyReturnOverlay = lazy(
+  () => import('../../features/patient/chat/components/LeisureReplyReturnOverlay'),
+)
+const ReplyModePanel = lazy(() => import('../../features/patient/chat/components/ReplyModePanel'))
 const CallStatusOverlay = lazy(() => import('../../components/patient/CallStatusOverlay'))
 
 type PatientLayoutRouteKind = 'talk' | 'custom_talk' | 'leisure' | 'leisure_player' | 'other'
