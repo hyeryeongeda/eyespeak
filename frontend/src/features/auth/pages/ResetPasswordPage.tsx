@@ -1,13 +1,13 @@
 import { type FormEvent, useMemo, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
-import { requestPasswordReset } from '../../services/authService'
-import { getStoredRole } from '../../services/authStorage'
-import { normalizeAuthRole } from '../../services/authRole'
-import type { PasswordResetResponseDto, UserRole } from '../../types/auth'
-import { isValidEmail } from '../../utils/validators'
-import AuthBrand from './AuthBrand'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../authRedirect'
+import { requestPasswordReset } from '../../../services/authService'
+import { getStoredRole } from '../../../services/authStorage'
+import { normalizeAuthRole } from '../../../services/authRole'
+import type { PasswordResetResponseDto, UserRole } from '../../../types/auth'
+import { isValidEmail } from '../../../utils/validators'
+import AuthBrand from '../components/AuthBrand'
 import {
   card,
   errorMessage,
@@ -20,8 +20,8 @@ import {
   successBox,
   successMessage,
   textLink,
-} from './authPageStyles'
-import AuthPageFrame from './AuthPageFrame'
+} from '../ui/authPageStyles'
+import AuthPageFrame from '../components/AuthPageFrame'
 
 export default function ResetPasswordPage() {
   const location = useLocation()

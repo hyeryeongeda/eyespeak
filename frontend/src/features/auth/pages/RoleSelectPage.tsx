@@ -1,15 +1,15 @@
 import { useState, type CSSProperties } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../authRedirect'
 import {
   getStoredEntryMode,
   getStoredRole,
   setStoredEntryMode,
   setStoredRole,
-} from '../../services/authStorage'
-import type { AuthEntryMode, UserRole } from '../../types/auth'
-import AuthBrand from './AuthBrand'
+} from '../../../services/authStorage'
+import type { AuthEntryMode, UserRole } from '../../../types/auth'
+import AuthBrand from '../components/AuthBrand'
 import {
   backButton,
   card,
@@ -22,8 +22,8 @@ import {
   roleDesc,
   roleGrid,
   roleTitle,
-} from './authPageStyles'
-import AuthPageFrame from './AuthPageFrame'
+} from '../ui/authPageStyles'
+import AuthPageFrame from '../components/AuthPageFrame'
 
 const selectedStyle: CSSProperties = {
   ...roleCard,

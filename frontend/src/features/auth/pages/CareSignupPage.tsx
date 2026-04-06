@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
-import { GUARDIAN_SIGNUP_ROUTINE_SLOTS } from '../../features/auth/guardianRoutineSurvey'
-import { useGuardianSignupFlow } from '../../features/auth/hooks/useGuardianSignupFlow'
-import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
-import type { GuardianSignupStage } from '../../services/guardianSignupService'
-import { sanitizeBirthYearInput } from '../../utils/validators'
-import AuthBrand from './AuthBrand'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../authRedirect'
+import { GUARDIAN_SIGNUP_ROUTINE_SLOTS } from '../guardianRoutineSurvey'
+import { useGuardianSignupFlow } from '../hooks/useGuardianSignupFlow'
+import { setStoredEntryMode, setStoredRole } from '../../../services/authStorage'
+import type { GuardianSignupStage } from '../../../services/guardianSignupService'
+import { sanitizeBirthYearInput } from '../../../utils/validators'
+import AuthBrand from '../components/AuthBrand'
 import {
   buttonRow,
   card,
@@ -38,8 +38,8 @@ import {
   teamCodeBox,
   teamCodeValue,
   textLink,
-} from './authPageStyles'
-import AuthPageFrame from './AuthPageFrame'
+} from '../ui/authPageStyles'
+import AuthPageFrame from '../components/AuthPageFrame'
 
 const STEP_LABELS = ['계정', '환자 정보', '루틴', '완료']
 const SIGNUP_STAGES: Array<{ stage: GuardianSignupStage; label: string; helper: string }> = [

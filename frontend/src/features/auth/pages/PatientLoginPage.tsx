@@ -1,11 +1,10 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
-import { useAuth } from '../../features/auth/hooks/useAuth'
-import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
-import type { AuthRouteState } from '../../types/auth'
-import AuthBrand from './AuthBrand'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../authRedirect'
+import { useAuth } from '../hooks/useAuth'
+import { setStoredEntryMode, setStoredRole } from '../../../services/authStorage'
+import AuthBrand from '../components/AuthBrand'
 import {
   card,
   errorMessage,
@@ -17,30 +16,22 @@ import {
   pageTitle,
   primaryButton,
   textLink,
-} from './authPageStyles'
-import AuthPageFrame from './AuthPageFrame'
+} from '../ui/authPageStyles'
+import AuthPageFrame from '../components/AuthPageFrame'
 
-interface CareLoginLocationState extends AuthRouteState {
-  signupCompleted?: boolean
-  guardianEmail?: string
-  patientName?: string
-  teamCode?: string
-}
-
-export default function CareLoginPage() {
+export default function PatientLoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { login, isPending } = useAuth()
-  const locationState = (location.state as CareLoginLocationState | null) ?? null
-  const guardianSignupRoute = resolveAuthEntryRoute('signup', 'guardian', location.state)
+  const { login, isPending, setPatientPostAuth } = useAuth()
+  const patientSignupRoute = resolveAuthEntryRoute('signup', 'patient', location.state)
   const [form, setForm] = useState({
-    identifier: locationState?.guardianEmail ?? '',
+    identifier: '',
     password: '',
   })
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setStoredRole('guardian')
+    setStoredRole('patient')
     setStoredEntryMode('login')
   }, [])
 
@@ -51,10 +42,11 @@ export default function CareLoginPage() {
     const result = await login({
       identifier: form.identifier,
       password: form.password,
-      role: 'guardian',
+      role: 'patient',
     })
 
     if (!result.success) {
+      setPatientPostAuth(null)
       setError(result.message)
       return
     }
@@ -63,49 +55,34 @@ export default function CareLoginPage() {
       entryPoint: 'login',
       locationState: location.state,
     })
+    setPatientPostAuth(resolvedNavigation.patientPostAuthState)
 
-    navigate(resolvedNavigation.path, { replace: true, state: resolvedNavigation.state })
+    navigate(resolvedNavigation.path, {
+      replace: true,
+      state: resolvedNavigation.state,
+    })
   }
 
   return (
     <AuthPageFrame>
       <div style={card}>
-        <AuthBrand subtitleText="보호자 로그인" />
+        <AuthBrand subtitleText="환자 로그인" />
 
-        <h1 style={pageTitle}>보호자 로그인</h1>
+        <h1 style={pageTitle}>환자 로그인</h1>
 
         <div style={infoBox}>
           <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
             현재 로그인 방식
           </p>
           <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-            보호자 회원가입에서 사용한 이메일과 비밀번호로 로그인합니다.
+            회원가입 때 등록한 로그인 이메일과 비밀번호로 로그인합니다.
           </p>
         </div>
-
-        {locationState?.signupCompleted ? (
-          <div style={infoBox}>
-            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
-              가입 완료 안내
-            </p>
-            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-              보호자 회원가입은 이미 완료되었습니다. 자동 로그인은 되지 않으니, 방금 만든 보호자 계정으로 로그인해 주세요.
-            </p>
-            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-              로그인 이메일은 미리 입력되어 있습니다.
-            </p>
-            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
-              {locationState.patientName && locationState.teamCode
-                ? `환자 정보와 팀코드(${locationState.teamCode})는 준비된 상태입니다.`
-                : '환자 정보와 팀코드는 회원가입 단계에서 이미 준비된 상태입니다.'}
-            </p>
-          </div>
-        ) : null}
 
         <form onSubmit={handleSubmit} style={formStack}>
           <input
             type="email"
-            placeholder="이메일"
+            placeholder="로그인 이메일"
             style={input}
             value={form.identifier}
             onChange={event => setForm(prev => ({ ...prev, identifier: event.target.value }))}
@@ -129,13 +106,15 @@ export default function CareLoginPage() {
           </button>
         </form>
 
-        <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
+        <p style={helperText}>
+          로그인 성공 후에는 계정 상태를 먼저 확인하고, 필요한 경우에만 시선 보정 단계로 안내합니다.
+        </p>
 
         <div style={linkRow}>
           <Link
             to={{
               pathname: ROUTE_PATHS.AUTH_RESET_PASSWORD,
-              search: '?role=guardian',
+              search: '?role=patient',
             }}
             state={location.state}
             style={textLink}
@@ -143,11 +122,11 @@ export default function CareLoginPage() {
             비밀번호 재설정
           </Link>
           <Link
-            to={guardianSignupRoute.path}
-            state={guardianSignupRoute.state}
+            to={patientSignupRoute.path}
+            state={patientSignupRoute.state}
             style={textLink}
           >
-            보호자 회원가입
+            환자 회원가입
           </Link>
           <Link
             to={{

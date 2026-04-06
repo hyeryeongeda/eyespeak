@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
-import { getStoredRole } from '../../services/authStorage'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../authRedirect'
+import { getStoredRole } from '../../../services/authStorage'
 
 export default function SignupPage() {
   const location = useLocation()
