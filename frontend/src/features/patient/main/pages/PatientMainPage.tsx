@@ -1,18 +1,18 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../features/auth/hooks/useAuth'
-import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
+import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
   type DwellFeedbackViewModel,
-} from '../../../features/patient/input/hooks/useDwellFeedback'
-import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
-import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
-import { requestMockPatientCall } from '../../../services/patientCallService'
-import type { PatientCallFlowStatus } from '../../../types/patientCall'
-import PatientCallOverlay from './PatientCallOverlay'
+} from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
+import usePatientPageCellMapping from '../../input/hooks/usePatientPageCellMapping'
+import { requestMockPatientCall } from '../../../../services/patientCallService'
+import type { PatientCallFlowStatus } from '../../../../types/patientCall'
+import PatientCallOverlay from '../components/PatientCallOverlay'
 
 type PatientMainTargetId = 'talk' | 'call' | 'leisure'
 

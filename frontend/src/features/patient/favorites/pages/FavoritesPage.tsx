@@ -1,37 +1,37 @@
 import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
-import { useAuth } from '../../../features/auth/hooks/useAuth'
-import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
+import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
   useDwellFeedback,
-} from '../../../features/patient/input/hooks/useDwellFeedback'
-import usePatientNavigateWithFeedback from '../../../features/patient/input/hooks/usePatientNavigateWithFeedback'
-import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
-import type { PatientCellMapping } from '../../../features/patient/input/services/patientCellMapping'
-import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
+} from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
+import { useCellMapping } from '../../input/hooks/useCellMapping'
+import type { PatientCellMapping } from '../../input/services/patientCellMapping'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
 import {
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
   fetchFavorites,
   submitFavoriteSelection,
-} from '../../../services/favoritesService'
+} from '../../../../services/favoritesService'
 import {
   playPatientUtteranceTts,
   submitPatientUtterance,
-} from '../../../services/recommendationService'
+} from '../../../../services/recommendationService'
 import type {
   FavoriteItem,
   FavoritesErrorKind,
   FavoritesSortKey,
   FavoritesStatus,
-} from '../../../types/favorites'
-import FavoriteCard from './components/FavoriteCard'
-import FavoritesActionCard from './components/FavoritesActionCard'
-import FavoritesErrorState from './components/FavoritesErrorState'
-import FavoritesPaginationCard from './components/FavoritesPaginationCard'
-import FavoritesSplitState from './components/FavoritesSplitState'
-import { getFavoriteTileMeta } from './favoritesUi'
+} from '../../../../types/favorites'
+import FavoriteCard from '../components/FavoriteCard'
+import FavoritesActionCard from '../components/FavoritesActionCard'
+import FavoritesErrorState from '../components/FavoritesErrorState'
+import FavoritesPaginationCard from '../components/FavoritesPaginationCard'
+import FavoritesSplitState from '../components/FavoritesSplitState'
+import { getFavoriteTileMeta } from '../ui/favoritesUi'
 
 const pageWrapStyle: CSSProperties = {
   minHeight: 'calc(100dvh + var(--sat, 0px) + var(--sab, 0px))',

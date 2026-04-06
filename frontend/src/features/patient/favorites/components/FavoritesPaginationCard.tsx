@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { DwellFeedbackViewModel } from '../../../../features/patient/input/hooks/useDwellFeedback'
+import type { DwellFeedbackViewModel } from '../../input/hooks/useDwellFeedback'
 import FavoritesActionCard from './FavoritesActionCard'
 
 const wrapStyle: CSSProperties = {

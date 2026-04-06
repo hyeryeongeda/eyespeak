@@ -1,13 +1,13 @@
 import type { CSSProperties } from 'react'
-import DwellFeedbackBadge from '../../../../features/patient/input/components/DwellFeedbackBadge'
+import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
 import {
   isDwellFeedbackTargetActive,
   type DwellFeedbackViewModel,
-} from '../../../../features/patient/input/hooks/useDwellFeedback'
+} from '../../input/hooks/useDwellFeedback'
 import {
   favoriteTileToneStyleMap,
   type FavoriteTileTone,
-} from '../favoritesUi'
+} from '../ui/favoritesUi'
 
 const cardStyle: CSSProperties = {
   flex: 1,

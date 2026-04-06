@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react'
-import type { PatientCallFlowStatus } from '../../../types/patientCall'
+import type { PatientCallFlowStatus } from '../../../../types/patientCall'
 
 interface PatientCallOverlayProps {
   status: PatientCallFlowStatus
