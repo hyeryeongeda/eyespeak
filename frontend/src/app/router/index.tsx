@@ -7,14 +7,14 @@ import CareLayout from '../layouts/CareLayout'
 import { PatientCalibrationRoute, ProtectedRoute, PublicOnlyRoute } from './guards'
 import { ROUTE_PATHS, ROUTE_SEGMENTS } from './routePaths'
 
-const RoleSelectPage = lazy(() => import('../../pages/auth/RoleSelectPage'))
-const CareLoginPage = lazy(() => import('../../pages/auth/CareLoginPage'))
-const PatientLoginPage = lazy(() => import('../../pages/auth/PatientLoginPage'))
-const LoginPage = lazy(() => import('../../pages/auth/LoginPage'))
-const CareSignupPage = lazy(() => import('../../pages/auth/CareSignupPage'))
-const PatientSignupPage = lazy(() => import('../../pages/auth/PatientSignupPage'))
-const SignupPage = lazy(() => import('../../pages/auth/SignupPage'))
-const ResetPasswordPage = lazy(() => import('../../pages/auth/ResetPasswordPage'))
+const RoleSelectPage = lazy(() => import('../../features/auth/pages/RoleSelectPage'))
+const CareLoginPage = lazy(() => import('../../features/auth/pages/CareLoginPage'))
+const PatientLoginPage = lazy(() => import('../../features/auth/pages/PatientLoginPage'))
+const LoginPage = lazy(() => import('../../features/auth/pages/LoginPage'))
+const CareSignupPage = lazy(() => import('../../features/auth/pages/CareSignupPage'))
+const PatientSignupPage = lazy(() => import('../../features/auth/pages/PatientSignupPage'))
+const SignupPage = lazy(() => import('../../features/auth/pages/SignupPage'))
+const ResetPasswordPage = lazy(() => import('../../features/auth/pages/ResetPasswordPage'))
 const PatientLayout = lazy(() => import('../layouts/PatientLayout'))
 
 const CareHomePage = lazy(() => import('../../pages/care/CareHomePage'))

@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react'
 import type { TouchEvent, WheelEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
-import { usePatientSignup } from '../../features/auth/hooks/usePatientSignup'
-import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
-import AuthBrand from './AuthBrand'
+import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../authRedirect'
+import { usePatientSignup } from '../hooks/usePatientSignup'
+import { setStoredEntryMode, setStoredRole } from '../../../services/authStorage'
+import AuthBrand from '../components/AuthBrand'
 import {
   card,
   errorMessage,
@@ -21,8 +21,8 @@ import {
   successBox,
   teamCodeBox,
   textLink,
-} from './authPageStyles'
-import AuthPageFrame from './AuthPageFrame'
+} from '../ui/authPageStyles'
+import AuthPageFrame from '../components/AuthPageFrame'
 
 export default function PatientSignupPage() {
   const location = useLocation()

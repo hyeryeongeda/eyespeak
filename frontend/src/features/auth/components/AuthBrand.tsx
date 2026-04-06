@@ -1,5 +1,5 @@
-import eyespeakLogo from '../../assets/eyespeak_logo.svg'
-import { logoImage, logoWrap, subtitle } from './authPageStyles'
+import eyespeakLogo from '../../../assets/eyespeak_logo.svg'
+import { logoImage, logoWrap, subtitle } from '../ui/authPageStyles'
 
 interface AuthBrandProps {
   subtitleText: string
