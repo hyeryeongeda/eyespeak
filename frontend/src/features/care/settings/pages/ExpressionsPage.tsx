@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import CareSettingLayout from './CareSettingLayout'
-import { getExpressions } from '../../../services/careSettingService'
-import type { Expression, SentimentType } from '../../../types/care'
+import CareSettingLayout from '../components/CareSettingLayout'
+import { getExpressions } from '../../../../services/careSettingService'
+import type { Expression, SentimentType } from '../../../../types/care'
 
 const SENTIMENT_LABELS: Record<SentimentType, { label: string; color: string }> = {
   POSITIVE: { label: '긍정', color: 'bg-green-100 text-green-700' },

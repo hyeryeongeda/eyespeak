@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import CareSettingLayout from './CareSettingLayout'
-import { getRoutines, getActivityTags, saveRoutines } from '../../../services/careSettingService'
-import type { RoutineSlotState, RoutineRequestItem } from '../../../types/care'
+import CareSettingLayout from '../components/CareSettingLayout'
+import { getRoutines, getActivityTags, saveRoutines } from '../../../../services/careSettingService'
+import type { RoutineSlotState, RoutineRequestItem } from '../../../../types/care'
 
 interface ActivityTagOption {
   id: number

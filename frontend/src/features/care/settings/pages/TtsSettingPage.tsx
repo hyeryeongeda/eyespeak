@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import CareSettingLayout from './CareSettingLayout'
+import CareSettingLayout from '../components/CareSettingLayout'
 import {
   getTtsSettings,
   toggleTtsEnabled,
   deleteTtsVoice,
   uploadTtsVoiceFiles,
-} from '../../../services/careSettingService'
-import type { TtsSettingsResponse, TtsVoiceFile } from '../../../types/care'
+} from '../../../../services/careSettingService'
+import type { TtsSettingsResponse, TtsVoiceFile } from '../../../../types/care'
 
 export default function TtsSettingPage() {
   const [settings, setSettings] = useState<TtsSettingsResponse | null>(null)
