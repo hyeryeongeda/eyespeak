@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import CareSettingLayout from './CareSettingLayout'
-import { getPatientInfo, updatePatientInfo } from '../../../services/careSettingService'
-import type { PatientInfo, Gender } from '../../../types/care'
+import CareSettingLayout from '../components/CareSettingLayout'
+import { getPatientInfo, updatePatientInfo } from '../../../../services/careSettingService'
+import type { PatientInfo, Gender } from '../../../../types/care'
 
 export default function PatientInfoPage() {
   const [info, setInfo] = useState<PatientInfo | null>(null)

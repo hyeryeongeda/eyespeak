@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../../app/router/routePaths'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 
 interface CareSettingLayoutProps {
   title: string

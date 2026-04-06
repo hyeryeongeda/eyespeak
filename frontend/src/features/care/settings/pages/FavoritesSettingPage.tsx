@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import CareSettingLayout from './CareSettingLayout'
+import CareSettingLayout from '../components/CareSettingLayout'
 import {
   getFavorites,
   deleteFavorite,
@@ -7,8 +7,8 @@ import {
   getPhrases,
   shouldTreatFavoritesAsEmpty,
   FAVORITES_MAX_COUNT,
-} from '../../../services/favoritesService'
-import type { FavoriteItem, PhraseCategory } from '../../../types/favorite'
+} from '../../../../services/favoritesService'
+import type { FavoriteItem, PhraseCategory } from '../../../../types/favorite'
 
 export default function FavoritesSettingPage() {
   const [favorites, setFavorites] = useState<FavoriteItem[]>([])

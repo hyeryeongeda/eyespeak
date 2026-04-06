@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { useAuth } from '../../features/auth/hooks/useAuth'
-import { removeTokenFromServer } from '../../services/fcmService'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useAuth } from '../../../auth/hooks/useAuth'
+import { removeTokenFromServer } from '../../../../services/fcmService'
 
 const PATIENT_SETTINGS = [
   {

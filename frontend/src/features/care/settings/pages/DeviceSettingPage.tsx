@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
-import CareSettingLayout from './CareSettingLayout'
+import CareSettingLayout from '../components/CareSettingLayout'
 import {
   getDwellTimePreset,
   updateDwellTimePreset,
   getActivationDelayPreset,
   updateActivationDelayPreset,
-} from '../../../services/careSettingService'
+} from '../../../../services/careSettingService'
 import {
   DWELL_TIME_OPTIONS,
   ACTIVATION_DELAY_OPTIONS,
-} from '../../../types/care'
-import type { DwellTimePreset, ActivationDelayPreset } from '../../../types/care'
-import { usePatientModeStore } from '../../../stores/patientModeStore'
+} from '../../../../types/care'
+import type { DwellTimePreset, ActivationDelayPreset } from '../../../../types/care'
+import { usePatientModeStore } from '../../../../stores/patientModeStore'
 
 const DWELL_LABELS: Record<DwellTimePreset, { label: string; desc: string }> = {
   default: { label: '기본', desc: '1.0초 응시 후 선택' },

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
-import { getPatientInfo, getDailyRecord } from '../../services/careSettingService'
-import type { PatientInfo, DailyRecordResponse } from '../../types/care'
-import eyespeakLogo from '../../assets/eyespeak_logo.svg'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { getPatientInfo, getDailyRecord } from '../../../../services/careSettingService'
+import type { PatientInfo, DailyRecordResponse } from '../../../../types/care'
+import eyespeakLogo from '../../../../assets/eyespeak_logo.svg'
 
 function formatToday(): string {
   const d = new Date()

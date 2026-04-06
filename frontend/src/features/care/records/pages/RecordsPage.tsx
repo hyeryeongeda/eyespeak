@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getMonthlyRecords, getDailyRecord } from '../../services/careSettingService'
-import type { MonthlyRecordDay, DailyRecordResponse } from '../../types/care'
-import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { getMonthlyRecords, getDailyRecord } from '../../../../services/careSettingService'
+import type { MonthlyRecordDay, DailyRecordResponse } from '../../../../types/care'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 

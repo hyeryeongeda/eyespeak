@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
-import CareSettingLayout from './CareSettingLayout'
+import CareSettingLayout from '../components/CareSettingLayout'
 import {
   deleteLeisureContent,
   getLeisureContents,
   saveLeisureContent,
   updateLeisureContent,
-} from '../../../services/careSettingService'
-import type { LeisureContentItem } from '../../../types/care'
-import type { LeisureCategoryId } from '../../../types/leisure'
+} from '../../../../services/careSettingService'
+import type { LeisureContentItem } from '../../../../types/care'
+import type { LeisureCategoryId } from '../../../../types/leisure'
 
 const MAX_CONTENTS = 5
 
