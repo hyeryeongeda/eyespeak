@@ -17,22 +17,22 @@
 // userId(number) 와 matchingId(number|null) 는 AuthSession(authStore) 에서 읽는다.
 
 import { useCallback, useEffect, useRef } from 'react'
-import { useStompClient } from './useStompClient'
-import { useAuthStore } from '../stores/authStore'
+import { useStompClient } from '../../../../hooks/useStompClient'
+import { useAuthStore } from '../../../../stores/authStore'
 import {
   STOMP_DESTINATIONS,
   parseChatMessage,
   parseCallConfirmedMessage,
   buildChatPayload,
   buildCallPayload,
-} from '../services/websocket'
+} from '../../../../services/websocket'
 import type {
   StompChatInbound,
   StompCallConfirmedInbound,
   StompContentType,
   StompConnectionStatus,
   StompCallType,
-} from '../services/websocket'
+} from '../../../../services/websocket'
 
 // ----- 콜백 인터페이스 -----
 

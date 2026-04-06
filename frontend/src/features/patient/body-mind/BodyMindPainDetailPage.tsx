@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../auth/hooks/useAuth'
 import usePatientNavigateWithFeedback from '../input/hooks/usePatientNavigateWithFeedback'
-import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
+import useReturnToTalkMainAfterDelay from '../shared/hooks/useReturnToTalkMainAfterDelay'
 import type {
   BodyMindUiStatus,
   PainAreaKey,

@@ -16,11 +16,11 @@ import {
   usePatientModeStore,
 } from '../../features/patient/input/stores/patientModeStore'
 import PatientDailyMoodOverlay from '../../features/patient/daily-mood/components/PatientDailyMoodOverlay'
-import { PatientIncomingChatProvider } from '../../hooks/usePatientIncomingChat'
+import { PatientIncomingChatProvider } from '../../features/patient/chat/providers/PatientIncomingChatProvider'
 import {
   usePatientIncomingChat,
   type PatientIncomingChatContextValue,
-} from '../../hooks/patientIncomingChatContext'
+} from '../../features/patient/chat/context/patientIncomingChatContext'
 import { createDailyMood, getTodayDailyMood } from '../../services/dailyMoodService'
 import { usePatientLeisureResumeStore } from '../../stores/patientLeisureResumeStore'
 import type { DailyMoodCreateRequestDto } from '../../types/dailyMood'

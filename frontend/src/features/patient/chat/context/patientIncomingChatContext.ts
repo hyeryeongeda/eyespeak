@@ -1,13 +1,13 @@
 import { createContext, useContext } from 'react'
-import { PATIENT_CHAT_MESSAGE_PRESETS } from '../services/mockPatientChatService'
-import type { RecommendationCategoryKey } from '../types/recommendation'
+import { PATIENT_CHAT_MESSAGE_PRESETS } from '../../../../services/mockPatientChatService'
+import type { RecommendationCategoryKey } from '../../../../types/recommendation'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
   PatientChatSendOutcome,
   PatientChatSessionState,
   PatientSuggestedResponse,
-} from '../types/chat'
+} from '../../../../types/chat'
 
 export interface PatientIncomingChatContextValue {
   state: PatientChatSessionState

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS } from '../app/router/routePaths'
-import { useTtsPlaybackStore } from '../stores/ttsPlaybackStore'
+import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import { useTtsPlaybackStore } from '../../../../stores/ttsPlaybackStore'
 
 interface UseReturnToTalkMainAfterDelayOptions {
   delayMs?: number

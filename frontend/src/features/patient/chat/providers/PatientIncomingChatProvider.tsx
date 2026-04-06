@@ -3,32 +3,32 @@ import {
   PATIENT_CHAT_MESSAGE_PRESETS,
   PATIENT_CHAT_RESPONSE_TIMEOUT_MS,
   createMockIncomingPatientChatMessage,
-} from '../services/mockPatientChatService'
+} from '../../../../services/mockPatientChatService'
 import {
   MAX_SUGGESTION_RETRIES,
   buildManualWordBank,
-} from '../services/mockSuggestionService'
+} from '../../../../services/mockSuggestionService'
 import {
   fetchSuggestedReplyCategories,
   fetchSuggestedReplies,
   fetchSuggestedSentences,
   playPatientUtteranceTts,
   sendPatientReply,
-} from '../services/recommendationService'
+} from '../../../../services/recommendationService'
 import {
   PatientIncomingChatContext,
   type PatientIncomingChatContextValue,
-} from './patientIncomingChatContext'
-import { getActiveApiMode } from '../config/env'
-import { usePatientStomp } from './usePatientStomp'
-import { useCallStatusStore } from '../stores/callStatusStore'
-import { usePatientChatHistory } from './usePatientChatHistory'
+} from '../context/patientIncomingChatContext'
+import { getActiveApiMode } from '../../../../config/env'
+import { usePatientStomp } from '../hooks/usePatientStomp'
+import { useCallStatusStore } from '../../../../stores/callStatusStore'
+import { usePatientChatHistory } from '../hooks/usePatientChatHistory'
 import {
   registerPatientChatDispatcher,
   type DispatchPatientChatInput,
   type DispatchPatientChatResult,
-} from '../services/patientChatDispatch'
-import type { StompChatInbound } from '../services/websocket'
+} from '../../../../services/patientChatDispatch'
+import type { StompChatInbound } from '../../../../services/websocket'
 import type {
   PatientChatManualInputMode,
   PatientChatMessage,
@@ -37,9 +37,9 @@ import type {
   PatientChatSendOutcome,
   PatientChatSessionState,
   PatientSuggestedResponse,
-} from '../types/chat'
-import type { RecommendationCategoryKey } from '../types/recommendation'
-import { createClientMessageId } from '../utils/clientMessageId'
+} from '../../../../types/chat'
+import type { RecommendationCategoryKey } from '../../../../types/recommendation'
+import { createClientMessageId } from '../../../../utils/clientMessageId'
 
 type PatientChatAction =
   | { type: 'SET_ROUTE_CONTEXT'; route: PatientChatRouteContext }
