@@ -10,7 +10,7 @@ import type {
 import usePatientNavigateWithFeedback from '../input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../input/hooks/usePatientPageCellMapping'
 import { useGazeInputStore } from '../input/stores/gazeInputStore'
-import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
+import { getStoredPainAreaSelection } from './services/bodyMindService'
 import { getPainAreaGroupByAreaKey, getPainAreaGroupByKey } from './bodyMindMock'
 import { getFullBodyModelUrl, getPainAreaGroupModelByKey } from './bodyMindPainModels'
 import BodyMindLayout from './components/BodyMindLayout'

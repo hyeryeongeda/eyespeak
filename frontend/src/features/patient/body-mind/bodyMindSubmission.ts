@@ -3,7 +3,7 @@ import type {
   BodyMindExpressionType,
   PainAreaKey,
 } from './types/bodyMind'
-import { submitBodyMindExpression } from '../../../services/bodyMindService'
+import { submitBodyMindExpression } from './services/bodyMindService'
 import {
   playPatientUtteranceTts,
   submitPatientUtterance,

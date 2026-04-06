@@ -1,7 +1,7 @@
-import { apiClient } from './apiClient'
-import { API_ENDPOINTS } from './apiEndpoints'
-import type { AuthSession } from '../types/auth'
-import { createServiceFailure } from '../utils/errorMapper'
+import { apiClient } from '../../../../services/apiClient'
+import { API_ENDPOINTS } from '../../../../services/apiEndpoints'
+import type { AuthSession } from '../../../../types/auth'
+import { createServiceFailure } from '../../../../utils/errorMapper'
 
 interface CallCreateRequest {
   matchingId: number

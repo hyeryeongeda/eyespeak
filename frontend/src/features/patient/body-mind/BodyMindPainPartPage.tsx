@@ -13,7 +13,7 @@ import { useGazeInputStore } from '../input/stores/gazeInputStore'
 import {
   getStoredPainAreaSelection,
   storePainAreaSelection,
-} from '../../../services/bodyMindService'
+} from './services/bodyMindService'
 import {
   getPainAreaGroupByAreaKey,
   getPainAreaGroupByKey,

@@ -6,7 +6,7 @@ import {
   getPatientLeisurePlayerPath,
 } from '../../../app/router/routePaths'
 import usePatientNavigateWithFeedback from '../input/hooks/usePatientNavigateWithFeedback'
-import { fetchLeisureMain } from '../../../services/leisureService'
+import { fetchLeisureMain } from './services/leisureService'
 import type { LeisureMainStatus, LeisureShortcut } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureLayout from './components/LeisureLayout'

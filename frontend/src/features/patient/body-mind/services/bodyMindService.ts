@@ -1,11 +1,11 @@
-import { getActiveApiMode } from '../config/env'
+import { getActiveApiMode } from '../../../../config/env'
 import type {
   BodyMindExpressionDraft,
   BodyMindStoredState,
   PainAreaKey,
   SubmitBodyMindExpressionResult,
-} from '../features/patient/types/communication'
-import { createUsageLogSilently } from './usageLogService'
+} from '../../types/communication'
+import { createUsageLogSilently } from '../../../../services/usageLogService'
 
 const BODY_MIND_STORAGE_PREFIX = 'bodyMindState'
 
