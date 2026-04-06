@@ -6,7 +6,7 @@ import {
   fetchLeisureCategoryRecommendations,
   getLeisureCategoryErrorMessage,
   getLeisureCategoryById,
-} from '../../../services/leisureService'
+} from './services/leisureService'
 import type { LeisureCategoryStatus, LeisureContent } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureContentCard from './components/LeisureContentCard'

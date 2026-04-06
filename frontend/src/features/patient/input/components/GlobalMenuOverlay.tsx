@@ -7,7 +7,7 @@ import {
   emitPatientGlobalMenuAction,
   type PatientGlobalMenuActionId,
 } from '../services/patientModeBridge'
-import { requestPatientCall as requestPatientSosCall } from '../../../../services/patientSosService'
+import { requestPatientCall as requestPatientSosCall } from '../../shared/services/patientSosService'
 import { useCallStatusStore } from '../../../../stores/callStatusStore'
 import { isPatientTrackingAvailable, usePatientModeStore } from '../stores/patientModeStore'
 

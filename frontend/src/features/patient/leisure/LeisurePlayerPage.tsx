@@ -10,7 +10,7 @@ import {
   fetchLeisureContentDetail,
   fetchRelatedLeisureContents,
   getLeisureCategoryById,
-} from '../../../services/leisureService'
+} from './services/leisureService'
 import type {
   LeisureContent,
   LeisureOverlayStatus,

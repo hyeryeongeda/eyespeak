@@ -1,5 +1,5 @@
-import { getLeisureContentsApi } from './leisureApi'
-import { getActiveApiMode } from './apiClient'
+import { getLeisureContentsApi } from '../../../../services/leisureApi'
+import { getActiveApiMode } from '../../../../services/apiClient'
 import type {
   LeisureCardTone,
   LeisureCategory,
@@ -9,7 +9,7 @@ import type {
   LeisureContentResponseDto,
   LeisureMainPayload,
   LeisureShortcut,
-} from '../types/leisure'
+} from '../../../../types/leisure'
 
 const LEISURE_RECOMMENDATION_SIZE = 4
 const LEISURE_SHORTCUT_SIZE = 5

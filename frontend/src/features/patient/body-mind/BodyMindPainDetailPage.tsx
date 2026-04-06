@@ -10,7 +10,7 @@ import type {
   PainAreaRouteState,
   PainDetailKey,
 } from './types/bodyMind'
-import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
+import { getStoredPainAreaSelection } from './services/bodyMindService'
 import { getPainAreaGroupByAreaKey, getPainAreaOptionByKey, painDetailOptionPages } from './bodyMindMock'
 import { submitBodyMindSelection } from './bodyMindSubmission'
 import BodyMindPagedMenuPage from './components/BodyMindPagedMenuPage'
