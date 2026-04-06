@@ -21,7 +21,7 @@ import {
   fetchVisibleCustomCategories,
   playCustomTalkUtteranceTts,
   submitCustomTalkUtterance,
-} from '../../../../services/recommendationService'
+} from '../services/customTalkRecommendationService'
 import type { AudioPlaybackHandle } from '../../../../types/tts'
 import {
   getKeyboardCharPage,
