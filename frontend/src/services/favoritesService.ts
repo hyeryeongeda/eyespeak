@@ -7,7 +7,6 @@ import type {
   KnownFavoriteErrorCode,
   PhraseCategory,
 } from '../types/favorite'
-import type { FavoriteItem as PatientFavoriteItem, FavoritesSortKey } from '../types/favorites'
 import {
   getApiErrorCode,
   getApiErrorSource,
@@ -25,9 +24,6 @@ import {
   updateFavoriteApi,
 } from './favoriteApi'
 import { MOCK_CATEGORIES, MOCK_FAVORITE_PHRASES, MOCK_PHRASES } from './mockCareData'
-import { logPhraseUsageSilently } from './usageLogService'
-
-const FAVORITES_PAGE_SIZE = 4
 
 export const FAVORITES_MAX_COUNT = 5
 
@@ -102,22 +98,6 @@ function mapFavoriteResponseToItem(response: FavoriteResponseDto): FavoriteItem 
   }
 }
 
-function mapFavoriteToPatientItem(item: FavoriteItem): PatientFavoriteItem {
-  return {
-    id: `${item.favoriteId}:${item.phraseId}`,
-    phraseId: item.phraseId,
-    text: item.content,
-    category: item.categoryName,
-  }
-}
-
-function parsePhraseIdFromFavoriteItemId(favoriteId: string) {
-  const [, phraseIdSegment] = favoriteId.split(':')
-  const phraseId = Number.parseInt(phraseIdSegment ?? '', 10)
-
-  return Number.isInteger(phraseId) ? phraseId : null
-}
-
 function mapMockFavoriteToItem(favorite: FavoritePhrase): FavoriteItem | null {
   const phrase = MOCK_PHRASES.find(candidate => candidate.id === favorite.phraseId)
 
@@ -152,13 +132,6 @@ function isDuplicateMockFavorite(phraseId: number, favoriteIdToIgnore?: number) 
       favorite.phraseId === phraseId &&
       (favoriteIdToIgnore === undefined || favorite.id !== favoriteIdToIgnore),
   )
-}
-
-function sortPatientFavorites(
-  items: PatientFavoriteItem[],
-  _sortKey: FavoritesSortKey,
-): PatientFavoriteItem[] {
-  return items
 }
 
 export function shouldTreatFavoritesAsEmpty(code?: string) {
@@ -304,47 +277,6 @@ export async function deleteFavorite(favoriteId: number): Promise<ServiceResult<
   }
 }
 
-export async function fetchFavorites(
-  _patientId: string,
-  sortKey: FavoritesSortKey = 'recentUsed',
-): Promise<PatientFavoriteItem[]> {
-  const result = await getFavorites()
-
-  if (!result.success) {
-    // MATCHING-803 is treated as an empty list on the patient page so the existing empty
-    // state UX still works when the linked favorite set has not been created yet.
-    if (shouldTreatFavoritesAsEmpty(result.code)) {
-      return []
-    }
-
-    throw new Error(result.message)
-  }
-
-  return sortPatientFavorites(result.data.map(mapFavoriteToPatientItem), sortKey)
-}
-
-export interface SubmitFavoriteSelectionResult {
-  success: boolean
-  source: 'mock' | 'api'
-  errorMessage?: string
-}
-
-export async function submitFavoriteSelection(
-  _patientId: string,
-  favoriteId: string,
-  _text: string,
-): Promise<SubmitFavoriteSelectionResult> {
-  await new Promise<void>(resolve => setTimeout(resolve, 300))
-
-  const phraseId = parsePhraseIdFromFavoriteItemId(favoriteId)
-
-  if (phraseId != null) {
-    logPhraseUsageSilently(phraseId)
-  }
-
-  return { success: true, source: 'mock' }
-}
-
 function mapCategoryTreeToCategories(tree: CategoryTreeResponseDto[]): PhraseCategory[] {
   const result: PhraseCategory[] = []
 
@@ -392,4 +324,3 @@ export async function getPhrases(): Promise<ServiceResult<PhraseCategory[]>> {
   }
 }
 
-export const FAVORITES_PAGE_SIZE_EXPORT = FAVORITES_PAGE_SIZE

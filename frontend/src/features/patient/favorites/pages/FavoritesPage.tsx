@@ -15,7 +15,7 @@ import {
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
   fetchFavorites,
   submitFavoriteSelection,
-} from '../../../../services/favoritesService'
+} from '../services/patientFavoritesService'
 import {
   playPatientUtteranceTts,
   submitPatientUtterance,
