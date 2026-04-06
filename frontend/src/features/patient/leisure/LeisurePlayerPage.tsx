@@ -24,7 +24,7 @@ import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
 import RelatedContentOverlay from './components/RelatedContentOverlay'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
-import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
+import { usePatientIncomingChat } from '../chat/context/patientIncomingChatContext'
 import { usePatientLeisureResumeStore } from '../../../stores/patientLeisureResumeStore'
 import usePatientPageCellMapping from '../input/hooks/usePatientPageCellMapping'
 

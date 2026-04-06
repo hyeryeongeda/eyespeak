@@ -9,7 +9,7 @@ import {
 } from '../../input/hooks/useDwellFeedback'
 import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import usePatientPageCellMapping from '../../input/hooks/usePatientPageCellMapping'
-import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
+import { usePatientIncomingChat } from '../context/patientIncomingChatContext'
 
 type TalkMainTrackingId =
   | 'talk-main-body-mind'

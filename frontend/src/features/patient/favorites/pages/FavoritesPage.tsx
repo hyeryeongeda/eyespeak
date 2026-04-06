@@ -10,7 +10,7 @@ import {
 import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import { useCellMapping } from '../../input/hooks/useCellMapping'
 import type { PatientCellMapping } from '../../input/services/patientCellMapping'
-import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
+import useReturnToTalkMainAfterDelay from '../../shared/hooks/useReturnToTalkMainAfterDelay'
 import {
   FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
   fetchFavorites,

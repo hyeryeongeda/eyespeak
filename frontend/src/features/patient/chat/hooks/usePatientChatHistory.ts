@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react'
-import { fetchChatHistory } from '../features/care/chat/services/chatService'
-import type { ChatMessageDto } from '../features/care/types/chat'
-import { useAuthStore } from '../stores/authStore'
-import type { PatientChatMessage } from '../types/chat'
+import { fetchChatHistory } from '../../../care/chat/services/chatService'
+import type { ChatMessageDto } from '../../../care/types/chat'
+import { useAuthStore } from '../../../../stores/authStore'
+import type { PatientChatMessage } from '../../../../types/chat'
 
 function normalizeDateTime(value: unknown): string {
   if (typeof value === 'string') {

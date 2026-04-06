@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
-import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
+import useReturnToTalkMainAfterDelay from '../../shared/hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
 import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'

@@ -5,7 +5,7 @@ import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
 import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import type { CustomTalkCategoryOption } from '../types'
-import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
+import { usePatientIncomingChat } from '../../chat/context/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
 import type { PatientChatMessage } from '../../../../types/chat'
 
