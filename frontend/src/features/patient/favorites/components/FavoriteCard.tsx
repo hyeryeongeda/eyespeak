@@ -7,7 +7,7 @@ import {
 import {
   favoriteTileToneStyleMap,
   type FavoriteTileTone,
-} from '../favoritesUi'
+} from '../ui/favoritesUi'
 
 const cardStyle: CSSProperties = {
   flex: 1,

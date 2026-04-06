@@ -31,7 +31,7 @@ import FavoritesActionCard from '../components/FavoritesActionCard'
 import FavoritesErrorState from '../components/FavoritesErrorState'
 import FavoritesPaginationCard from '../components/FavoritesPaginationCard'
 import FavoritesSplitState from '../components/FavoritesSplitState'
-import { getFavoriteTileMeta } from '../favoritesUi'
+import { getFavoriteTileMeta } from '../ui/favoritesUi'
 
 const pageWrapStyle: CSSProperties = {
   minHeight: 'calc(100dvh + var(--sat, 0px) + var(--sab, 0px))',
