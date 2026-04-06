@@ -5,7 +5,7 @@ import {
   updateDwellTimePreset,
   getActivationDelayPreset,
   updateActivationDelayPreset,
-} from '../../../../services/careSettingService'
+} from '../../../../services/devicePresetService'
 import {
   DWELL_TIME_OPTIONS,
   ACTIVATION_DELAY_OPTIONS,

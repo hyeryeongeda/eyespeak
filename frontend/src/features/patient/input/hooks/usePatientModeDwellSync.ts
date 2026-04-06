@@ -3,7 +3,7 @@ import {
   CARE_DWELL_TIME_PRESET_UPDATED_EVENT,
   getDwellTimePreset,
   type CareDwellTimePresetUpdatedDetail,
-} from '../../../../services/careSettingService'
+} from '../../../../services/devicePresetService'
 import { usePatientModeStore } from '../stores/patientModeStore'
 import { DWELL_TIME_OPTIONS, type DwellTimePreset } from '../../../../types/care'
 

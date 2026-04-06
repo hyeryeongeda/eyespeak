@@ -4,7 +4,7 @@ import {
   CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
   getActivationDelayPreset,
   type CareActivationDelayPresetUpdatedDetail,
-} from '../../../../services/careSettingService'
+} from '../../../../services/devicePresetService'
 import { submitActiveEyeTrackingSelectionFeedback } from '../services/eyeTrackingSelectionFeedbackService'
 import {
   getCustomTalkSelectableGroupElement,
