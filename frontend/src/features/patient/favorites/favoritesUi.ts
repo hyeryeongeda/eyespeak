@@ -1,4 +1,4 @@
-import type { FavoriteItem } from '../../../../types/favorites'
+import type { FavoriteItem } from '../../../types/favorites'
 
 export type FavoriteTileTone = 'sky' | 'sand' | 'mint' | 'rose' | 'slate'
 
