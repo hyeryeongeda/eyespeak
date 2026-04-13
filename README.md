@@ -6,13 +6,11 @@
 
 <img src="./readme-assets/eyespeak-logo.png" width="50%"/>
 
-
 - **루게릭병(ALS) 환자를 위한 시선 기반 AI 의사소통 플랫폼** <br>
 - **시선 추적 기반 환자-보호자 의사소통 보조 서비스**
-
-- **개발 기간** : 2026.02.16 ~ 2025.04.03 **(7주)**
+- **개발 기간** : 2026.02.16 ~ 2026.04.03 **(7주)**
 - **플랫폼** : 인공지능(영상)
-- **개발 인원** : 7명 
+- **개발 인원** : 7명
 - **주관** : 삼성 청년 SW·AI 아카데미 14기<br><br>
 
 </div> <br>
@@ -22,17 +20,11 @@
 <div align="center">
 
 ### <a href="#developers">🌟 팀원 구성</a>
-
 ### <a href="#techStack">🛠️ 기술 스택</a>
-
 ### <a href="#systemArchitecture">🌐 시스템 아키텍처</a>
-
 ### <a href="#skills">📲 기능 구성</a>
-
-### <a href="#feature"> 🏛️ 기능 시연</a>
-
+### <a href="#feature">🏛️ 기능 시연</a>
 ### <a href="#directories">📂 디렉터리 구조</a>
-
 ### <a href="#projectDeliverables">📦 프로젝트 산출물</a>
 
 </div>
@@ -175,7 +167,6 @@
 </div>
 <br>
 
-</div>
 ## 🛠️ 기술 스택
 
 <a name="techStack"></a>
@@ -231,14 +222,14 @@
 
 <br>
 
-|  **Category**  | **Stack**                                                                                                                             |
-| :------------: | :------------------------------------------------------------------------------------------------------------------------------------ |
-|  **Language**  | Java 17                                                                                                                               |
-| **Framework**  | Spring Boot 3.5.9                                                                                                                     |
-|  **Library**   | Spring Security, Spring Data JPA, Spring Data Redis, <br> Spring Batch, Spring Validation, Springdoc OpenAPI, <br> JWT (jjwt), Lombok |
-| **Build Tool** | Gradle 8.14.3                                                                                                                         |
-|  **Database**  | MySQL 8.0, Redis 7.4                                                                                                                  |
-|    **IDE**     | IntelliJ IDEA 2023.3.8 (Ultimate Edition)                                                                                             |
+|  **Category**  | **Stack**                                                                                                                                  |
+| :------------: | :----------------------------------------------------------------------------------------------------------------------------------------- |
+|  **Language**  | Java 17                                                                                                                                    |
+| **Framework**  | Spring Boot 3.5.9                                                                                                                          |
+|  **Library**   | Spring Security, Spring Data JPA, Spring Data Redis, <br> Spring Batch, Spring Validation, Springdoc OpenAPI, <br> JWT (jjwt), Lombok   |
+| **Build Tool** | Gradle 8.14.3                                                                                                                              |
+|  **Database**  | MySQL 8.0, Redis 7.4                                                                                                                       |
+|    **IDE**     | IntelliJ IDEA 2023.3.8 (Ultimate Edition)                                                                                                  |
 
 </div>
 
@@ -262,9 +253,9 @@
 | :------------: | :-------------------------------------------- |
 |  **Language**  | Python 3.9+                                   |
 | **Framework**  | BentoML                                       |
-|  **Library**   | PyTorch, NumPy, Pandas, ChromaDB, OpenAI CLIP |
-|   **Model**    | SASRec, Two-Tower Recommender                 |
-|  **Database**  | ChromaDB (Vector Store)                       |
+|  **Library**   | PyTorch, NumPy, Pandas, ChromaDB              |
+| **Tracking**   | MediaPipe FaceLandmarker, Eye Tracking Pipeline |
+|   **Model**    | LLM 기반 추천, XTTS v2 음성 합성              |
 | **Deployment** | RunPod GPU Pod, Docker                        |
 |    **IDE**     | Visual Studio Code                            |
 
@@ -283,7 +274,7 @@
 <img src="https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white">
 <br>
 <img src="https://img.shields.io/badge/SSH-4D4D4D?style=for-the-badge&logo=openssh&logoColor=white">
-<img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white">
+<img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu">
 <img src="https://img.shields.io/badge/Mattermost-0058CC?style=for-the-badge&logo=mattermost&logoColor=white">
 
 <br>
@@ -348,9 +339,47 @@
 ### 🎨 주요 기능
 
 #### 1️⃣ 사용자 인증 및 권한 관리
-
-- **회원가입/로그인**: 이메일 인증 기반 회원가입, JWT 토큰 기반 인증
+- **회원가입/로그인**: 이메일 인증 기반 회원가입 및 JWT 토큰 기반 인증
 - **역할 구분**: 환자모드 / 보호자모드 권한 분리
+- **팀코드 가입**: 보호자-환자 1:1 연결을 위한 팀코드 기반 환자 가입
+- **세션 유지**: 재로그인 부담을 줄이기 위한 로그인 상태 유지
+
+#### 2️⃣ 보호자 맞춤 설정 및 관리
+- **환자 정보 관리**: 환자 기본 정보 및 초기 설정 관리
+- **우선순위 설정**: 카테고리/표현 우선순위 조정
+- **즐겨찾기 관리**: 자주 사용하는 표현 저장 및 편집
+- **사용 기록 확인**: 환자 사용 내역 및 소통 기록 조회
+
+#### 3️⃣ 환자 메인 입력 UX
+- **6분할 메인 화면**: 즐겨찾기, 호출, 여가, 몸과 마음, 키보드, STT 소통 진입
+- **시선 dwell 선택**: 일정 시간 응시 시 기능 자동 선택
+- **더블블링크 오버레이**: 홈 / 네 / 아니오 / SOS 빠른 응답 제공
+- **공통 탐색 구조**: 뒤로가기 1 + 선택지 5 기반의 단순한 화면 구조
+
+#### 4️⃣ 환자 커뮤니케이션 기능
+- **맞춤 문장 추천**: 자주 쓰는 표현과 상황 기반 추천 문장 제공
+- **즐겨찾기 표현**: 반복적으로 사용하는 문장 빠른 선택
+- **직접 입력 키보드**: 원하는 문장을 직접 생성하는 입력 화면
+- **STT 소통**: 자유 발화를 텍스트로 변환해 폭넓은 의사소통 지원
+
+#### 5️⃣ 생활 지원 및 상황 표현
+- **몸과 마음 표현**: 통증, 불편감, 컨디션 등 상태 전달
+- **여가 기능**: 영상 등 관심 콘텐츠를 시선으로 선택 및 재생
+- **상황별 빠른 표현**: 즉시 전달이 필요한 표현을 단순한 선택 흐름으로 제공
+
+#### 6️⃣ 실시간 연결 및 알림
+- **보호자 호출**: 도움 요청을 빠르게 전달하는 호출 기능
+- **SOS 긴급 요청**: 빠른 응답 오버레이 기반 긴급 호출 지원
+- **실시간 채팅**: 보호자-환자 간 메시지 송수신
+- **TTS 음성 출력**: 선택한 문장을 음성으로 재생
+
+#### 7️⃣ 시선 추적 안정화 및 예외 처리
+- **실시간 시선 추적**: 홍채 좌표 기반 사용자 시선 입력 처리
+- **캘리브레이션**: 사용자 맞춤 보정 절차 제공
+- **좌표 안정화**: 필터링 및 보정 로직을 통한 선택 안정성 향상
+- **예외 복구**: 얼굴 인식 실패, 재캘리브레이션, 추천 실패 등 예외 상황 대응
+
+---
 
 ## 🏛️ 기능 시연
 
@@ -362,60 +391,135 @@
 
 <table>
   <tr>
-    <td align="center" width="33%"><b>1. </b></td>
-    <td align="center" width="33%"><b>2. </b></td>
-    <td align="center" width="33%"><b>3. </b></td>
+    <td align="center" width="33%">
+      <b>1. 환자 메인 6분할 화면</b><br/>
+      <sub>시선 기반으로 핵심 기능에 빠르게 접근하는 환자 모드의 메인 인터페이스</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>2. 빠른 응답 오버레이</b><br/>
+      <sub>더블블링크 입력으로 홈·네·아니오·SOS를 즉시 선택하는 보조 인터랙션</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>3. 맞춤 문장 및 즐겨찾기</b><br/>
+      <sub>개인화 추천 표현과 자주 쓰는 문장을 빠르게 선택하는 대화 화면</sub>
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="./readme-assets/usescreen/capture/1"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/2"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/3"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/1.png" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/2.png" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/3.png" width="100%"/></td>
   </tr>
 
+  <tr>
+    <td align="center" width="33%">
+      <b>4. 몸과 마음 표현 화면</b><br/>
+      <sub>통증, 불편감, 신체 상태를 직관적으로 전달하는 특화 소통 화면</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>5. 여가 영상 화면</b><br/>
+      <sub>시선 입력으로 관심 콘텐츠를 탐색하고 재생하는 생활 지원 기능</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>6. 키보드 입력 화면</b><br/>
+      <sub>직접 문장을 생성해 보다 자유로운 의사표현을 지원하는 입력 화면</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/usescreen/capture/4.png" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/5.png" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/6.png" width="100%"/></td>
+  </tr>
+
+  <tr>
+    <td align="center" width="33%">
+      <b>7. STT 자유 소통 화면</b><br/>
+      <sub>자유 발화를 텍스트로 변환해 폭넓은 의사소통을 지원하는 화면</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>8. 호출 및 SOS 화면</b><br/>
+      <sub>보호자에게 빠르게 도움 요청을 전달하는 긴급 호출 기능</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>9. 재캘리브레이션 / 예외 처리</b><br/>
+      <sub>트래킹 불안정 상황에서 재인식과 복구를 안내하는 예외 대응 화면</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center"><img src="./readme-assets/usescreen/capture/7.png" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/8.png" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/capture/9.png" width="100%"/></td>
+  </tr>
 </table>
 
 </div>
 
-### 🖥️ 실제 기능 시연
+### 🎥 실제 기능 시연
 
-<div>
+<div align="center">
 
 <table>
   <tr>
-    <td align="center" width="33%"><b>1. </b></td>
-    <td align="center" width="33%"><b>2. </b></td>
-    <td align="center" width="33%"><b>3. </b></td>
+    <td align="center" width="33%">
+      <b>1. 메인 화면 기능 선택</b><br/>
+      <sub>시선 dwell 기반으로 기능에 진입하는 흐름</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>2. 빠른 응답 오버레이 호출</b><br/>
+      <sub>더블블링크 기반 4분할 오버레이 동작</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>3. 맞춤 문장 / 즐겨찾기 선택</b><br/>
+      <sub>추천 표현과 자주 쓰는 문장 선택 흐름</sub>
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/1.gif" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/2.gif" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/3.gif" width="100%"/></td>
   </tr>
-    <tr>
-    <td align="center" width="33%"><b>4. </b></td>
-    <td align="center" width="33%"><b>5. </b></td>
-    <td align="center" width="33%"><b>6. </b></td>
+
+  <tr>
+    <td align="center" width="33%">
+      <b>4. 몸과 마음 상태 표현</b><br/>
+      <sub>불편감과 상태를 단계적으로 전달하는 흐름</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>5. 여가 영상 선택 및 재생</b><br/>
+      <sub>콘텐츠 탐색부터 재생까지의 흐름</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>6. 키보드 직접 입력</b><br/>
+      <sub>문장 생성 및 입력 보조 인터랙션</sub>
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/4.gif" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/5.gif" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/6.gif" width="100%"/></td>
   </tr>
-    <tr>
-    <td align="center" width="33%"><b>7. </b></td>
-    <td align="center" width="33%"><b>8. </b></td>
-    <td align="center" width="33%"><b>9. </b></td>
+
+  <tr>
+    <td align="center" width="33%">
+      <b>7. STT 자유 소통</b><br/>
+      <sub>자유 발화 기반 의사소통 흐름</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>8. 호출 / SOS 요청</b><br/>
+      <sub>긴급 상황에서 빠른 도움 요청 전달</sub>
+    </td>
+    <td align="center" width="33%">
+      <b>9. 예외 복구 및 재보정</b><br/>
+      <sub>얼굴 인식 실패 시 복구 절차 안내</sub>
+    </td>
   </tr>
   <tr>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/7.gif" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/8.gif" width="100%"/></td>
+    <td align="center"><img src="./readme-assets/usescreen/moved/9.gif" width="100%"/></td>
   </tr>
 </table>
 
 </div>
-
-### 🎨 화면 구성 및 기능
 
 ## 📂 디렉터리 구조
 
@@ -428,7 +532,7 @@
     <strong>Frontend 프로젝트 구조</strong>
   </summary>
 
-```
+```bash
 📦frontend/src
  ├── app/               # 앱 진입점, 레이아웃, 라우터
  ├── assets/            # 정적 리소스 (사운드 등)
@@ -449,7 +553,7 @@
  ├── stores/            # 전역 상태 관리
  ├── types/             # 공통 타입 정의
  └── utils/             # 유틸리티 함수
-```
+````
 
 </details>
 
@@ -460,7 +564,7 @@
     <strong>Backend 프로젝트 구조</strong>
   </summary>
 
-```
+```bash
 📦backend/src/main/java/e205/eyespeak
  ├── domain/
  │   ├── ai/              # AI 추천 연동
@@ -500,7 +604,7 @@
     <strong>AI 프로젝트 구조</strong>
   </summary>
 
-```
+```bash
 📦ai-eyetracking/
  ├── eye_speak/
  │   ├── configs/         # 설정 파일
@@ -553,12 +657,12 @@
 
 ### Prerequisites
 
-- **Node.js** 22.17.0+
-- **Java** 17
-- **Python** 3.9+
-- **Docker** 최신 버전
-- **MySQL** 8.0
-- **Redis** 7.4
+* **Node.js** 22.17.0+
+* **Java** 17
+* **Python** 3.9+
+* **Docker** 최신 버전
+* **MySQL** 8.0
+* **Redis** 7.4
 
 ### Installation & Running
 
@@ -572,15 +676,71 @@ npm run dev
 
 #### 2️⃣ Backend
 
-#### 3️⃣ AI Server
+```bash
+cd backend
+./gradlew bootRun
+```
+
+#### 3️⃣ AI Eye-Tracking Server
+
+```bash
+cd ai-eyetracking
+# 확정 필요: 실제 프로젝트 실행 스크립트명으로 교체
+# 예) python scripts/run_server.py
+```
+
+#### 4️⃣ AI Recommendation Server
+
+```bash
+cd ai-recommend
+python caregiver_server_db.py
+```
+
+#### 5️⃣ AI TTS Server
+
+```bash
+cd ai-tts
+python tts_server.py
+```
 
 ### Environment Variables
 
 #### Frontend (.env)
 
+```env
+VITE_API_BASE_URL=
+VITE_WS_BASE_URL=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
+
 #### Backend (application.yml)
 
+```yml
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
+
+openai:
+  api-key: ${OPENAI_API_KEY}
+```
+
 #### AI (.env)
+
+```env
+OPENAI_API_KEY=
+MODEL_PATH=
+TTS_MODEL_PATH=
+RUNPOD_API_KEY=
+```
 
 ---
 
@@ -588,28 +748,37 @@ npm run dev
 
 ### 🔐 보안
 
-- JWT 기반 인증/권한 시스템
-- Spring Security를 통한 API 보안
-- CORS 정책 적용
+* JWT 기반 인증/권한 시스템
+* Spring Security를 통한 API 보안
+* 역할 기반 접근 제어 및 CORS 정책 적용
 
 ### 🚀 성능 최적화
 
--
+* ONNX INT8 양자화를 통한 추천 모델 경량화 및 추론 속도 개선
+* LRU 캐싱을 적용한 TTS 참조 음성 재사용
+* 시선 좌표 필터링 및 보정 로직을 통한 입력 안정성 향상
+* 사용 빈도가 높은 표현 우선 제공을 통한 선택 단계 단축
 
 ### 🤖 AI/ML
 
--
+* MediaPipe 기반 실시간 얼굴·홍채 추적
+* 다항식 캘리브레이션 및 보정 로직 적용
+* 임베딩 검색 + LLM 기반 맞춤 문장 추천
+* XTTS v2 기반 보호자 음성 클로닝 TTS 지원
 
-### 🎨 3D 경험
+### 🎨 사용자 경험 설계
 
-- React Three Fiber 기반
-- Blender GLB 에셋 최적화
+* 6분할 기반 단순한 시선 입력 구조
+* 더블블링크 기반 빠른 응답 오버레이
+* 뒤로가기 고정 + 선택지 5개 기반의 일관된 화면 규칙
+* 얼굴 인식 실패 및 재캘리브레이션 등 예외 복구 흐름 지원
 
 ### 📦 CI/CD
 
-- Jenkins 기반 자동 배포
-- Docker 컨테이너화
-- Nginx 리버스 프록시
+* Jenkins 기반 자동 배포
+* Docker 컨테이너화
+* Nginx 리버스 프록시
+* Dev / Prod 환경 분리 운영
 
 ---
 
