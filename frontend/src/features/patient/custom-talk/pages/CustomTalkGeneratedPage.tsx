@@ -69,24 +69,29 @@ export default function CustomTalkGeneratedPage() {
   const buildGeneratedSentences = useCustomTalkStore(state => state.buildGeneratedSentences)
   const selectGeneratedSentence = useCustomTalkStore(state => state.selectGeneratedSentence)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
+  const isActionLocked =
+    status === 'loading' || status === 'refreshing' || status === 'submitting'
 
   const hasComposeValue = Boolean(
     draft.subject || draft.object || draft.predicate || draft.punctuation,
   )
+  const hasCategoryKey = Boolean(draft.categoryKey)
 
-  if (!draft.categoryKey) {
+  useEffect(() => {
+    if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {
+      return
+    }
+
+    void buildGeneratedSentences()
+  }, [buildGeneratedSentences, generatedSentences.length, hasCategoryKey, hasComposeValue])
+
+  if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
 
   if (!hasComposeValue) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE} replace />
   }
-
-  useEffect(() => {
-    if (generatedSentences.length === 0) {
-      void buildGeneratedSentences()
-    }
-  }, [buildGeneratedSentences, generatedSentences.length])
 
   const visibleGeneratedSentences = getVisibleGeneratedSentences(generatedSentences)
 
@@ -105,7 +110,7 @@ export default function CustomTalkGeneratedPage() {
             void selectGeneratedSentence(visibleGeneratedSentences[0])
           }
         },
-        disabled: !visibleGeneratedSentences[0],
+        disabled: !visibleGeneratedSentences[0] || isActionLocked,
       }}
       leftBottom={{
         title: visibleGeneratedSentences[1] ?? '생성 문장 준비 중',
@@ -116,7 +121,7 @@ export default function CustomTalkGeneratedPage() {
             void selectGeneratedSentence(visibleGeneratedSentences[1])
           }
         },
-        disabled: !visibleGeneratedSentences[1],
+        disabled: !visibleGeneratedSentences[1] || isActionLocked,
       }}
       rightTop={{
         title: '키보드 직접 입력',
@@ -126,6 +131,7 @@ export default function CustomTalkGeneratedPage() {
           openKeyboard('generated')
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
+        disabled: isActionLocked,
       }}
       rightBottom={{
         title: '뒤로가기',

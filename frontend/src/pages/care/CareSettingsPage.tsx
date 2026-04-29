@@ -22,12 +22,6 @@ const PATIENT_SETTINGS = [
     path: ROUTE_PATHS.CARE_SETTINGS_FAVORITES,
   },
   {
-    icon: '💬',
-    label: '커스텀 단어',
-    sub: '주어 · 목적어 · 동사',
-    path: ROUTE_PATHS.CARE_SETTINGS_WORDS,
-  },
-  {
     icon: '📋',
     label: '맞춤 표현 조회',
     sub: '환자 개인화 표현',
@@ -54,12 +48,6 @@ const PATIENT_SETTINGS = [
 ] as const
 
 const MY_PROFILE_SETTINGS = [
-  {
-    icon: '👤',
-    label: '계정 정보',
-    sub: '이름 · 연락처',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 계정 정보 라우트 연결
-  },
   {
     icon: '🔔',
     label: '알림 설정',

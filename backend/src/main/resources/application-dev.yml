@@ -13,9 +13,8 @@ ai:
   tts:
     url: ${AI_TTS_URL:http://eyespeak-ai-tts:8000}
 
-# Nginx 리버스 프록시 뒤에서 Swagger가 올바른 경로로 api-docs를 요청하도록 설정
-server:
-  forward-headers-strategy: framework
+swagger:
+  server-url: /dev/api/v1
 
 springdoc:
   cache:

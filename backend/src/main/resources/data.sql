@@ -3052,11 +3052,11 @@ INSERT INTO general_corpus (content, sentiment, weight, created_at) VALUES
   ('맞아... 에효 ㅠㅠㅠ', 'POSITIVE', 1.0, NOW());
 
 -- 2. 테스트용 USER / PATIENT / GUARDIAN / MATCHING
--- (이미 있으면 SKIP)
+-- 비밀번호: asdf1234 (BCrypt 해시)
 INSERT IGNORE INTO users (id, login_id, password, name, role, is_agree, created_at, updated_at)
-VALUES (1, 'patient001@test.com', '$2a$10$dummyhash', '김영수', 'PATIENT', true, NOW(), NOW());
+VALUES (1, 'p@p.com', '$2a$12$ti5ImhRhBOMDaI3IrmfC2ePN.IRSBJGAI9bvc2rqNOvrVr2U5hupi', '김영수', 'PATIENT', true, NOW(), NOW());
 INSERT IGNORE INTO users (id, login_id, password, name, role, is_agree, created_at, updated_at)
-VALUES (2, 'guardian001@test.com', '$2a$10$dummyhash', '김미영', 'GUARDIAN', true, NOW(), NOW());
+VALUES (2, 'g@g.com', '$2a$12$ti5ImhRhBOMDaI3IrmfC2ePN.IRSBJGAI9bvc2rqNOvrVr2U5hupi', '김미영', 'GUARDIAN', true, NOW(), NOW());
 
 INSERT IGNORE INTO patient (id, user_id, name, birth_year, gender, created_at, updated_at)
 VALUES (1, 1, '김영수', 1960, 'M', NOW(), NOW());
@@ -3065,6 +3065,30 @@ VALUES (1, 2, NOW(), NOW());
 
 INSERT IGNORE INTO matching (id, patient_id, guardian_id, invite_code, status, linked_at, created_at, updated_at)
 VALUES (1, 1, 1, 'TEST001', 'LINKED', NOW(), NOW(), NOW());
+
+-- 2-1. PATIENT_SETTING (matching_id=1)
+INSERT IGNORE INTO patient_setting (id, matching_id, activation_delay, dwell_time, created_at, updated_at)
+VALUES (1, 1, 500, 1000, NOW(), NOW());
+
+-- 2-2. TTS_SETTING (matching_id=1)
+INSERT IGNORE INTO tts_setting (id, matching_id, is_enabled, status, created_at, updated_at)
+VALUES (1, 1, false, 'NONE', NOW(), NOW());
+
+-- 2-3. LEISURE_CONTENT (matching_id=1)
+INSERT IGNORE INTO leisure_content (id, matching_id, name, url, category, created_at, updated_at)
+VALUES (1, 1, '좋아하는 음악', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', NULL, NOW(), NOW()),
+       (2, 1, '뉴스 보기', NULL, 'news', NOW(), NOW()),
+       (3, 1, '스포츠 하이라이트', NULL, 'sports', NOW(), NOW());
+
+-- 2-4. ROUTINE_SLOT_TAG (matching_id=1, 7개 타임슬롯 각 1개 태그)
+INSERT IGNORE INTO routine_slot_tag (id, matching_id, time_slot_id, activity_tag_id, created_at)
+VALUES (1, 1, 1, 1, NOW()),   -- 기상/아침: 경관식/수분섭취
+       (2, 1, 2, 7, NOW()),   -- 오전: 재활/ROM운동
+       (3, 1, 3, 1, NOW()),   -- 점심/낮: 경관식/수분섭취
+       (4, 1, 4, 9, NOW()),   -- 오후: 영상시청
+       (5, 1, 5, 6, NOW()),   -- 저녁: 배변/배뇨케어
+       (6, 1, 6, 8, NOW()),   -- 취침준비: 세면/위생
+       (7, 1, 7, 11, NOW());  -- 야간: 휴식/수면
 
 -- 3. EXPRESSIONS (matching_id=1)
 INSERT INTO expressions (id, matching_id, content, sentiment, category, last_used, created_at)

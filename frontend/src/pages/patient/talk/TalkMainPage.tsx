@@ -3,7 +3,18 @@ import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import ChatMessageList from '../../../components/patient/chat/ChatMessageList'
 import ReplyModePanel from '../../../components/patient/chat/ReplyModePanel'
-import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
+import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  useDwellFeedback,
+} from '../../../features/patient/input/hooks/useDwellFeedback'
+import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
+
+type TalkMainTrackingId =
+  | 'talk-main-body-mind'
+  | 'talk-main-favorites'
+  | 'talk-main-custom-talk'
+  | 'talk-main-back-main'
 
 const pageWrap: CSSProperties = {
   minHeight: '100dvh',
@@ -54,6 +65,7 @@ const cardBase: CSSProperties = {
   cursor: 'pointer',
   backgroundColor: '#ffffff',
   transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+  position: 'relative',
 }
 
 const cardLeftTop: CSSProperties = {
@@ -203,11 +215,11 @@ const cardHoverStyle = `
 `
 
 const statusLabelMap = {
-  idle: '대화 준비',
+  idle: '준비',
   waiting_message: '메시지 대기',
   receiving: '수신 중',
   received: '수신 완료',
-  unread: '미응답 존재',
+  unread: '미응답 있음',
   incoming_interrupt: '인터럽트 표시 중',
   reply_mode: '응답 모드',
   suggestion_loading: '추천 생성 중',
@@ -218,16 +230,43 @@ const statusLabelMap = {
   sending: '전송 중',
   sent: '전송 완료',
   send_failed: '전송 실패',
-  conversation_active: '대화 유지 중',
-  timeout: '무응답 타임아웃',
+  conversation_active: '대화 중',
+  timeout: '응답 타임아웃',
   deferred: '나중에 보기',
   restoring: '복귀 중',
   restored: '복귀 완료',
 } as const
 
+function DwellOnCard({
+  active,
+  phase,
+  progress,
+  remainingMs,
+}: {
+  active: boolean
+  phase: ReturnType<typeof useDwellFeedback>['phase']
+  progress: number
+  remainingMs: number
+}) {
+  if (!active) {
+    return null
+  }
+
+  return (
+    <DwellFeedbackBadge
+      phase={phase}
+      progress={progress}
+      remainingMs={remainingMs}
+    />
+  )
+}
+
 export default function TalkMainPage() {
   const navigate = useNavigate()
   const chat = usePatientIncomingChat()
+  const dwellFeedback = useDwellFeedback<TalkMainTrackingId>({
+    enabled: true,
+  })
 
   const showInlineReplyPanel = Boolean(chat.activeReplyMessage)
 
@@ -238,23 +277,42 @@ export default function TalkMainPage() {
         {statusLabelMap[chat.state.status]} · 미응답 {chat.unreadCount}건 · {chat.state.lastEventLabel}
       </div>
 
-      <div style={threeColLayout}>
+      <div
+        style={threeColLayout}
+        ref={element => {
+          dwellFeedback.containerRef.current = element
+        }}
+      >
         <button
           type="button"
           className="talk-main-card"
           style={cardLeftTop}
+          data-tracking-id="talk-main-body-mind"
           onClick={() => navigate(ROUTE_PATHS.PATIENT_BODY_MIND)}
         >
+          <DwellOnCard
+            active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-body-mind')}
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
           <h2 style={cardTitle}>몸과 마음</h2>
-          <p style={cardSub}>통증, 호흡, 분비물 표현으로 이동</p>
+          <p style={cardSub}>통증, 체온, 분비물 표현으로 이동</p>
         </button>
 
         <button
           type="button"
           className="talk-main-card"
           style={cardLeftBottom}
+          data-tracking-id="talk-main-favorites"
           onClick={() => navigate(ROUTE_PATHS.PATIENT_FAVORITES)}
         >
+          <DwellOnCard
+            active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-favorites')}
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
           <h2 style={cardTitle}>즐겨찾기</h2>
           <p style={cardSub}>자주 쓰는 표현 화면으로 이동</p>
         </button>
@@ -264,13 +322,17 @@ export default function TalkMainPage() {
             <div>
               <h2 style={headerTitleStyle}>보호자 대화 세션</h2>
               <p style={headerSubStyle}>
-                추천 응답, 직접 입력, 인터럽트 복귀를 이 화면에서 이어서 검증할 수 있습니다.
+                추천 응답, 직접 입력, 인터럽트 복귀를 같은 화면에서 처리합니다.
               </p>
             </div>
             {chat.latestUnresolvedMessage ? (
               <div style={buttonRowStyle}>
-                <button type="button" style={primaryButtonStyle} onClick={chat.openLatestPendingReply}>
-                  미응답 응답하기
+                <button
+                  type="button"
+                  style={primaryButtonStyle}
+                  onClick={chat.openLatestPendingReply}
+                >
+                  미응답 바로 열기
                 </button>
               </div>
             ) : null}
@@ -315,12 +377,16 @@ export default function TalkMainPage() {
               <h3 style={pendingTitleStyle}>세션 상태</h3>
               <p style={pendingTextStyle}>
                 {chat.latestUnresolvedMessage
-                  ? '미응답 보호자 메시지가 있습니다. 응답하기를 누르면 추천 응답과 대체 입력을 바로 사용할 수 있습니다.'
-                  : '현재는 유지 중인 대화 세션만 있고, 새 보호자 메시지를 기다리는 상태입니다.'}
+                  ? '미응답 보호자 메시지가 있습니다. 응답하기를 눌러 바로 답변할 수 있습니다.'
+                  : '현재 대기 중인 대화는 없고, 다음 보호자 메시지를 기다리는 상태입니다.'}
               </p>
               <div style={buttonRowStyle}>
                 {chat.latestUnresolvedMessage ? (
-                  <button type="button" style={primaryButtonStyle} onClick={chat.openLatestPendingReply}>
+                  <button
+                    type="button"
+                    style={primaryButtonStyle}
+                    onClick={chat.openLatestPendingReply}
+                  >
                     응답 패널 열기
                   </button>
                 ) : null}
@@ -340,18 +406,32 @@ export default function TalkMainPage() {
           type="button"
           className="talk-main-card"
           style={cardRightTop}
+          data-tracking-id="talk-main-custom-talk"
           onClick={() => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK)}
         >
+          <DwellOnCard
+            active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-custom-talk')}
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
           <h2 style={cardTitle}>맞춤 문장</h2>
-          <p style={cardSub}>추후 단어 조합/키보드 입력 확장 지점</p>
+          <p style={cardSub}>단계형 맞춤대화 화면으로 이동</p>
         </button>
 
         <button
           type="button"
           className="talk-main-card"
           style={cardRightBottom}
+          data-tracking-id="talk-main-back-main"
           onClick={() => navigate(ROUTE_PATHS.PATIENT_MAIN)}
         >
+          <DwellOnCard
+            active={isDwellFeedbackTargetActive(dwellFeedback, 'talk-main-back-main')}
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
           <h2 style={cardTitle}>뒤로 가기</h2>
           <p style={cardSub}>환자 메인으로 복귀</p>
         </button>

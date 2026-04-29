@@ -16,7 +16,7 @@ export default function ChatPage() {
   return (
     <div data-chat-page>
       <h1>채팅</h1>
-      <ChatMessageList messages={messages} />
+      <ChatMessageList messages={messages} isLoading={false} hasMore={false} onLoadMore={() => {}} />
       <ChatInput onSend={handleSend} disabled={!connected} />
     </div>
   )

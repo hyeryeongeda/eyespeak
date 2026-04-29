@@ -19,6 +19,7 @@ from openai import OpenAI
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import pymysql
+from metrics import measure_time, record_api_time, get_timing_summary, reset_timing, log_to_mlflow
 
 load_dotenv()
 
@@ -94,6 +95,7 @@ def cosine_sim(a: np.ndarray, b: np.ndarray) -> float:
 SENTIMENT_MAP_REVERSE = {"POSITIVE": "긍정", "NEGATIVE": "부정", "NEUTRAL": "중립"}
 
 
+@measure_time
 def _load_user_data_from_db(matching_id: int) -> dict | None:
     """matching_id 기준으로 DB에서 데이터 로드"""
     conn = get_db()
@@ -278,6 +280,7 @@ def _calculate_temporal_boost(item: dict, current_hour: int, current_weekday: in
     return 1.0
 
 
+@measure_time
 def _search_sentences(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k: int = 5) -> list:
     pool = user_db
     if sentiment_filter:
@@ -322,6 +325,7 @@ def _search_general(question: str, k: int = 3, sentiment_filter: str | None = No
     return deduped[:k]
 
 
+@measure_time
 def _search_sentences_mixed(question: str, user_db: list, sentiment_filter: str | None = None, intent_filter: str | None = None, k_total: int = 6) -> list:
     if sentiment_filter is not None:
         general_has_sentiment = general_db and "sentiment" in general_db[0]
@@ -406,6 +410,7 @@ def _extract_words_by_pos(sentences: list, category: str) -> list:
 _word_filter_cache: dict = {}
 
 
+@measure_time
 def _llm_filter_words(question: str, candidates: list, category: str) -> list:
     if not candidates:
         return []
@@ -417,16 +422,12 @@ def _llm_filter_words(question: str, candidates: list, category: str) -> list:
         "objects": "목적어로 쓸 수 있는 명사(사물, 음식, 장소, 행위 대상 등)만",
         "verbs": "서술어로 쓸 수 있는 동사·형용사만 (원형, '다'로 끝나는 형태)",
     }.get(category, "적절한 단어만")
-    prompt = f"""보호자 질문: "{question}"
-후보 단어: {json.dumps(candidates, ensure_ascii=False)}
-
-위 후보 중에서 {category_desc} 골라주세요.
-- 부사(많이, 아직도, 오늘 등), 어미, 조사, 감탄사는 제외
-- 해당하는 단어가 없으면 빈 배열 []
-- JSON 배열만 출력, 다른 텍스트 없이"""
+    prompt = f"""질문:"{question}"
+후보:{json.dumps(candidates, ensure_ascii=False)}
+{category_desc} 골라서 JSON배열만 출력.부사/어미/조사제외."""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[
                 {"role": "system", "content": "JSON 배열만 출력하세요."},
                 {"role": "user", "content": prompt},
@@ -502,30 +503,30 @@ def _search_words(question: str, category: str, word_lists: dict, word_usage_fre
 
 
 # ====== LLM 후처리 (caregiver_server.py와 동일) ======
+_refine_cache: dict = {}
+
+@measure_time
 def _refine_recommend(question: str, candidates: list, sentiment_context: str | None = None) -> list:
     texts = [c["text"] for c in candidates]
+    cache_key = (question.strip(), tuple(texts), sentiment_context)
+    if cache_key in _refine_cache:
+        return _refine_cache[cache_key]
     diversity_rule = (
         "이번 답변은 모두 같은 방향(긍정 또는 부정/중립)으로 통일하세요."
         if sentiment_context
         else "긍정 1개, 부정/중립 2개로 다양하게"
     )
-    prompt = f"""보호자 질문: "{question}"
-환자가 과거에 자주 쓴 표현:
-{chr(10).join(f"- {t}" for t in texts)}
-
-위 표현들을 참고해서 질문에 어울리는 자연스러운 환자 답변을 정확히 3개 만드세요.
-- 보호자 질문 시제/맥락에 맞게 (과거 질문→과거형, 현재→현재형)
-- 반말 구어체, 15자 이내
-- {diversity_rule}
-- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
+    prompt = f"""질문:"{question}"
+참고표현:{','.join(texts)}
+반말구어체,15자이내,3개,줄바꿈구분,{diversity_rule}"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
+                {"role": "system", "content": "ALS환자답변생성.시제맞춤.번호없이줄바꿈만."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=100, temperature=0.7,
+            max_tokens=60, temperature=0.7,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -533,30 +534,27 @@ def _refine_recommend(question: str, candidates: list, sentiment_context: str | 
     fallback = [c["text"] for c in candidates]
     while len(lines) < 3:
         lines.append(fallback[len(lines) % len(fallback)] if fallback else "응")
+    _refine_cache[cache_key] = lines
     return lines
 
 
+@measure_time
 def _generate_from_words(words: list, question: str) -> list:
     punct_set = {".", "!", "?"}
     punct = "".join(w for w in words if w in punct_set)
     content_words = [w for w in words if w not in punct_set and w != "없음"]
-    prompt = f"""보호자 질문: "{question}"
-선택된 단어: {', '.join(content_words)}
-문장 끝 부호: {punct if punct else '없음'}
-
-위 단어들로 환자가 답할 법한 자연스러운 한국어 문장을 정확히 3개 만드세요.
-- 보호자 질문 시제에 맞게 (과거형/현재형)
-- 반말 구어체, 15자 이내
-- 지정된 문장 부호로 끝내기
-- 번호나 기호 없이 줄바꿈으로만 구분하여 3개 출력"""
+    prompt = f"""질문:"{question}"
+단어:{','.join(content_words)}
+부호:{punct if punct else '없음'}
+반말구어체,15자이내,3개,줄바꿈구분,부호로끝내기"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[
-                {"role": "system", "content": "ALS 환자 답변 생성 전문가. 요청한 개수만큼만 출력."},
+                {"role": "system", "content": "ALS환자답변생성.시제맞춤.번호없이줄바꿈만."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=120, temperature=0.8,
+            max_tokens=60, temperature=0.8,
         )
         lines = [s.strip() for s in resp.choices[0].message.content.strip().split("\n") if s.strip()][:3]
     except Exception:
@@ -617,7 +615,7 @@ def _classify_sentence_llm(text: str) -> tuple[str, str]:
 JSON만 출력: {{"sentiment": "부정", "intent": "감정"}}"""
     try:
         resp = llm_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4.1-nano",
             messages=[{"role": "system", "content": "JSON만 출력하세요."}, {"role": "user", "content": prompt}],
             max_tokens=50, temperature=0.1,
         )
@@ -668,6 +666,7 @@ def _auto_generate_keywords(text: str) -> list:
     return [t for t in text.replace("?", " ").replace(".", " ").split() if len(t) >= 2]
 
 
+@measure_time
 def _generate_categories(question: str, user_db: list | None = None, max_categories: int = 4) -> dict:
     cache_key = hashlib.md5(question.strip().encode()).hexdigest()
     if cache_key in category_cache:
@@ -685,35 +684,26 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
                         seen.add(kw)
                         all_keywords.append(kw)
         hint_texts = [s["text"] for s in similar[:6]]
-    prompt = f"""보호자 질문: "{question}"
-
-이 질문이 **닫힌 질문**(예/아니오, 좋아/싫어 등으로 답하는지)인지 **개방형 질문**(무엇/어디/어떤 등으로 구체적 답을 구하는지) 스스로 판단한 뒤, 적절한 답변 카테고리를 2~{max_categories}개 생성하세요.
-
-[환자 과거 데이터 참고]
-관련 키워드: {json.dumps(all_keywords[:20], ensure_ascii=False)}
-관련 표현: {json.dumps(hint_texts, ensure_ascii=False)}
-
-[카테고리 생성 규칙]
-- **닫힌 질문**: [예, 아니오], [좋아, 싫어, 그저그래] 등 질문에 맞는 고정 선택지
-- **개방형 질문**: 위 환자 키워드/표현을 참고해 구체적 선택지 제공. 마지막에 "잘 모르겠어" 또는 "다른 거" 1개 포함
-- 공통: 카테고리 라벨은 짧게(4글자 이내 권장). 각 카테고리에 sentiment(긍정/부정/중립)와 intent(의도) 지정
-
-반드시 이 JSON 형식만 출력:
-{{"categories": ["카테고리1", "카테고리2"], "sentimentMap": {{"카테고리1": "긍정"}}, "intentMap": {{"카테고리1": "통증"}}}}"""
+    prompt = f"""질문:"{question}"
+키워드:{json.dumps(all_keywords[:10], ensure_ascii=False)}
+표현:{json.dumps(hint_texts[:4], ensure_ascii=False)}
+닫힌질문→[예,아니오]등 고정선택지. 개방형→키워드참고 구체선택지+마지막"잘모르겠어".
+라벨4자이내,2~{max_categories}개,sentiment(긍정/부정/중립),intent지정.
+JSON만:{{"categories":[],"sentimentMap":{{}},"intentMap":{{}}}}"""
     fallback_result = {
         "categories": ["좋아", "싫어", "그저그래"],
         "sentimentMap": {"좋아": "긍정", "싫어": "부정", "그저그래": "중립"},
         "intentMap": {"좋아": "감정", "싫어": "감정", "그저그래": "감정"}
     }
-    for attempt in range(3):
+    for attempt in range(1):
         try:
             resp = llm_client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-4.1-nano",
                 messages=[
                     {"role": "system", "content": "JSON만 출력하세요. 다른 텍스트 없이."},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=200, temperature=0.3,
+                max_tokens=150, temperature=0.3,
             )
             raw = (resp.choices[0].message.content or "").strip()
             for prefix in ("```json", "```"):
@@ -735,9 +725,7 @@ def _generate_categories(question: str, user_db: list | None = None, max_categor
             category_cache[cache_key] = result
             return result
         except Exception as e:
-            print(f"[카테고리 생성 실패 attempt {attempt + 1}/3] {e}")
-            if attempt < 2:
-                time.sleep(0.5 * (attempt + 1))
+            print(f"[카테고리 생성 실패] {e}")
     return fallback_result
 
 
@@ -922,6 +910,225 @@ def record_expression_use():
     return jsonify({"ok": True, "message": "expression recorded"})
 
 
+@app.route("/recommend/hints", methods=["POST"])
+def recommend_hints():
+    """카테고리 카드에 표시할 hint 데이터 조회"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+
+    mood_hint = None
+    schedule_hint = None
+    frequent_hint = None
+    recent_hint = None
+
+    conn = get_db()
+    try:
+        with conn.cursor() as cur:
+            # 1. mood hint — 오늘의 기분
+            cur.execute("""
+                SELECT mood_type FROM daily_mood
+                WHERE matching_id = %s AND mood_date = CURDATE()
+            """, (matching_id,))
+            mood_row = cur.fetchone()
+            if mood_row:
+                mood_map = {
+                    "HAPPY": "기분 좋음", "SAD": "슬픔", "CALM": "평온",
+                    "JOYFUL": "즐거움", "ANXIOUS": "불안", "ANGRY": "화남", "TIRED": "피곤"
+                }
+                mood_hint = mood_map.get(mood_row["mood_type"], mood_row["mood_type"])
+
+            # 2. schedule hint — 현재 시간대 활동
+            hour = datetime.now().hour
+            if hour < 9:
+                slot_id = 1
+            elif hour < 12:
+                slot_id = 2
+            elif hour < 15:
+                slot_id = 3
+            elif hour < 18:
+                slot_id = 4
+            elif hour < 21:
+                slot_id = 5
+            elif hour < 24:
+                slot_id = 6
+            else:
+                slot_id = 7
+
+            cur.execute("""
+                SELECT at.name AS activity
+                FROM routine_slot_tag rst
+                JOIN activity_tag at ON at.id = rst.activity_tag_id
+                WHERE rst.matching_id = %s AND rst.time_slot_id = %s
+                LIMIT 1
+            """, (matching_id, slot_id))
+            schedule_row = cur.fetchone()
+            if schedule_row:
+                schedule_hint = schedule_row["activity"]
+
+            # 3. frequent hint — 가장 많이 쓴 표현
+            cur.execute("""
+                SELECT e.content AS text, COUNT(*) AS cnt
+                FROM usage_log ul
+                JOIN expressions e ON e.id = ul.expr_id
+                WHERE ul.matching_id = %s
+                GROUP BY ul.expr_id
+                ORDER BY cnt DESC LIMIT 1
+            """, (matching_id,))
+            freq_row = cur.fetchone()
+            if freq_row:
+                frequent_hint = freq_row["text"]
+
+            # 4. recent hint — 가장 최근 사용한 표현
+            cur.execute("""
+                SELECT e.content AS text
+                FROM usage_log ul
+                JOIN expressions e ON e.id = ul.expr_id
+                WHERE ul.matching_id = %s
+                ORDER BY ul.used_at DESC LIMIT 1
+            """, (matching_id,))
+            recent_row = cur.fetchone()
+            if recent_row:
+                recent_hint = recent_row["text"]
+    finally:
+        conn.close()
+
+    return jsonify({
+        "mood_hint": mood_hint,
+        "schedule_hint": schedule_hint,
+        "frequent_hint": frequent_hint,
+        "recent_hint": recent_hint,
+    })
+
+
+@app.route("/recommend/category", methods=["POST"])
+def recommend_by_category():
+    """카테고리 기반 추천 문장 3개 생성 (환자 선발화)"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+    recommend_type_raw = data.get("recommend_type", "")
+    guardian_message = data.get("guardian_message")
+    recent_messages = data.get("recent_messages")
+
+    # 대소문자 모두 처리
+    type_map = {
+        "mood": "mood", "MOOD": "mood",
+        "schedule": "schedule", "SCHEDULE": "schedule",
+        "frequent": "frequent", "FREQUENT": "frequent",
+        "recent": "recent", "RECENT": "recent",
+    }
+    recommend_type = type_map.get(recommend_type_raw)
+    if not recommend_type:
+        return jsonify({"error": f"잘못된 recommend_type: {recommend_type_raw}"}), 400
+
+    user_data = _load_user_data_from_db(matching_id)
+    if not user_data:
+        return jsonify({"error": "matching not found"}), 404
+
+    today_data = user_data["today_data"]
+    user_db = user_data["user_db"]
+
+    # 카테고리별 분기: 컨텍스트 질문 생성
+    if recommend_type == "mood":
+        mood = today_data.get("mood", "")
+        mood_kr = {
+            "HAPPY": "기분 좋음", "SAD": "슬픔", "CALM": "평온",
+            "JOYFUL": "즐거움", "ANXIOUS": "불안", "ANGRY": "화남", "TIRED": "피곤"
+        }.get(mood, "보통")
+        context_question = f"환자의 오늘 기분은 '{mood_kr}'입니다. 이 기분에 맞는 표현을 추천해주세요."
+
+    elif recommend_type == "schedule":
+        schedule = today_data.get("schedule", [])
+        hour = datetime.now().hour
+        if hour < 9:
+            slot_name = "기상/아침"
+        elif hour < 12:
+            slot_name = "오전"
+        elif hour < 15:
+            slot_name = "점심/낮"
+        elif hour < 18:
+            slot_name = "오후"
+        elif hour < 21:
+            slot_name = "저녁"
+        else:
+            slot_name = "취침준비"
+
+        current_activities = [s["event"] for s in schedule if s.get("time") == slot_name] if schedule else []
+        activity_str = ", ".join(current_activities) if current_activities else "등록된 일정 없음"
+        context_question = f"현재 시간대({slot_name})의 활동은 '{activity_str}'입니다. 이 상황에 맞는 표현을 추천해주세요."
+
+    elif recommend_type == "frequent":
+        most_used = today_data.get("mostUsedToday", {})
+        expr = most_used.get("expression", "")
+        if expr:
+            context_question = f"환자가 자주 사용하는 표현은 '{expr}'입니다. 비슷하거나 관련된 표현을 추천해주세요."
+        else:
+            context_question = "환자가 자주 사용하는 표현을 기반으로 추천해주세요."
+
+    elif recommend_type == "recent":
+        last_used = today_data.get("lastUsedFeature", {})
+        expr = last_used.get("expression", "")
+        if expr:
+            context_question = f"환자가 최근에 사용한 표현은 '{expr}'입니다. 이어서 사용할 만한 표현을 추천해주세요."
+        else:
+            context_question = "환자의 최근 사용 맥락을 기반으로 추천해주세요."
+
+    # guardianMessage가 있으면 컨텍스트에 추가
+    if guardian_message:
+        context_question += f" 보호자가 '{guardian_message}'라고 말했습니다."
+
+    # 기존 추천 로직 재활용: context_question을 question으로 사용
+    candidates = _search_sentences_mixed(context_question, user_db, sentiment_filter=None, intent_filter=None, k_total=6)
+    sentences = _refine_recommend(context_question, candidates, sentiment_context=None)
+
+    _recommend_stats["recommend_calls"] += 1
+    _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
+
+    return jsonify({"sentences": sentences})
+
+
+@app.route("/recommend/replies", methods=["POST"])
+def recommend_replies():
+    """보호자 메시지 기반 추천 응답 생성"""
+    data = request.json or {}
+    matching_id = data.get("matching_id", 1)
+    question = data.get("question", "").strip()
+    history = data.get("history")
+
+    if not question:
+        return jsonify({"error": "메시지 내용이 필요합니다"}), 400
+
+    user_data = _load_user_data_from_db(matching_id)
+    if not user_data:
+        return jsonify({"error": "matching not found"}), 404
+
+    # 대화 이력이 있으면 컨텍스트에 추가
+    context = question
+    if history:
+        history_text = " / ".join([f"{h.get('sender','')}: {h.get('content','')}" for h in history[-5:]])
+        context = f"대화 이력: [{history_text}] / 보호자 질문: {question}"
+
+    # 기존 추천 로직 재활용
+    candidates = _search_sentences_mixed(context, user_data["user_db"], sentiment_filter=None, intent_filter=None, k_total=6)
+    sentences = _refine_recommend(context, candidates, sentiment_context=None)
+
+    # 각 문장에 intent 분류 + 메타정보 추가
+    replies = []
+    for rank, sentence in enumerate(sentences, start=1):
+        sentiment, intent = _classify_sentence_keywords(sentence)
+        replies.append({
+            "id": f"reply-{rank}",
+            "label": sentence,
+            "intentKey": intent,
+            "source": "context",
+            "rank": rank,
+        })
+
+    _recommend_stats["recommend_calls"] += 1
+    _last_recommend_by_user[matching_id] = {"sentences": list(sentences), "at": datetime.now().isoformat()}
+
+    return jsonify({"replies": replies})
+
+
 @app.route("/debug/recommend-stats", methods=["GET"])
 def debug_recommend_stats():
     s = _recommend_stats
@@ -932,6 +1139,24 @@ def debug_recommend_stats():
         "counts": s,
         "rates": {"hit_rate_percent": round(hit_rate, 1), "pick_rate_percent": round(pick_rate, 1)},
     })
+
+
+@app.route("/debug/timing", methods=["GET"])
+def debug_timing():
+    return jsonify(get_timing_summary())
+
+
+@app.route("/debug/reset-timing", methods=["POST"])
+def debug_reset_timing():
+    reset_timing()
+    return jsonify({"ok": True, "message": "timing data reset"})
+
+
+@app.route("/debug/mlflow-log", methods=["POST"])
+def debug_mlflow_log():
+    run_name = request.json.get("run_name", "auto") if request.is_json else "auto"
+    log_to_mlflow(_recommend_stats, run_name=run_name)
+    return jsonify({"ok": True, "message": f"logged to mlflow as '{run_name}'"})
 
 
 if __name__ == "__main__":

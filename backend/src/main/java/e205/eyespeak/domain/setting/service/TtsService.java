@@ -90,7 +90,7 @@ public class TtsService {
     }
 
     @Transactional
-    public void deleteVoice(Long userId, Long voiceFileId) {
+    public TtsSettingResponse deleteVoice(Long userId, Long voiceFileId) {
         validateGuardianRole(userId);
         Matching matching = getMatchingByUserId(userId);
         TtsSetting ttsSetting = getTtsSetting(matching.getId());
@@ -105,10 +105,12 @@ public class TtsService {
         fileStorageUtil.deleteFile(voiceFile.getFileUrl());
         ttsVoiceFileRepository.delete(voiceFile);
 
-        long remaining = ttsVoiceFileRepository.countByTtsSettingId(ttsSetting.getId());
-        if (remaining == 0 && ttsSetting.getStatus() == TtsStatus.READY) {
+        List<TtsVoiceFile> remainingFiles = ttsVoiceFileRepository.findByTtsSettingId(ttsSetting.getId());
+        if (remainingFiles.isEmpty() && ttsSetting.getStatus() == TtsStatus.READY) {
             ttsSetting.updateStatus(TtsStatus.NONE);
         }
+
+        return TtsSettingResponse.of(ttsSetting, remainingFiles);
     }
 
     private void validateGuardianRole(Long userId) {

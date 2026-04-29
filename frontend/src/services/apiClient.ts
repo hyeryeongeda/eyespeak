@@ -1,34 +1,23 @@
 import axios from 'axios'
 import type { AxiosError } from 'axios'
-import { ApiError, type ApiRequestOptions, type ApiSource, type ApiTransport } from '../types/api'
+import { getApiBaseUrl, getApiWithCredentials } from '../config/env'
+import { ApiError, type ApiRequestOptions } from '../types/api'
 import type { AuthResponseDto, AuthSession, RefreshRequestDto } from '../types/auth'
 import { API_ENDPOINTS } from './apiEndpoints'
 import { mapAuthResponseToSession } from './authSessionMapper'
 import { applyActiveAuthSession, getActiveAuthSession } from './authSessionRegistry'
 import { setStoredEntryMode, setStoredRole, storeGuardianSessionExitReason } from './authStorage'
-import { mockApiTransport } from './mockAuthApi'
 
-type ApiMode = 'real' | 'mock'
-
-const API_MODE: ApiMode =
-  import.meta.env.VITE_API_MODE === 'real' || import.meta.env.VITE_AUTH_API_MODE === 'real'
-    ? 'real'
-    : 'mock'
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const DEFAULT_WITH_CREDENTIALS = import.meta.env.VITE_API_WITH_CREDENTIALS === 'true'
+const DEFAULT_WITH_CREDENTIALS = getApiWithCredentials()
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   timeout: 8000,
   withCredentials: DEFAULT_WITH_CREDENTIALS,
 })
 
 type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody> & {
   skipGuardianRefreshRetry?: boolean
-}
-
-function getApiSource(): ApiSource {
-  return API_MODE === 'real' ? 'api' : 'mock'
 }
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
@@ -42,12 +31,20 @@ function unwrapApiEnvelope<TResponse>(value: unknown) {
     return envelope.data as TResponse
   }
 
-  // 일부 백엔드 응답이 payload를 cal 키로 내려주는 케이스 호환.
   if ('cal' in envelope) {
     return envelope.cal as TResponse
   }
 
   return value as TResponse
+}
+
+function readApiResponseTextField(value: unknown, fieldName: 'message' | 'code') {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+
+  const fieldValue = (value as Record<string, unknown>)[fieldName]
+  return typeof fieldValue === 'string' && fieldValue.trim() ? fieldValue : undefined
 }
 
 function toApiError(error: unknown) {
@@ -56,24 +53,34 @@ function toApiError(error: unknown) {
   }
 
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ message?: string; code?: string }>
+    const axiosError = error as AxiosError<unknown>
     const statusCode = axiosError.response?.status ?? 500
+    const isNetworkError = !axiosError.response
+    const responseMessage = readApiResponseTextField(axiosError.response?.data, 'message')
+    const responseCode = readApiResponseTextField(axiosError.response?.data, 'code')
+    const code = responseCode ?? (isNetworkError ? 'NETWORK_ERROR' : undefined)
 
     return new ApiError({
       statusCode,
       source: 'api',
       message:
-        axiosError.response?.data?.message ??
+        responseMessage ??
+        (isNetworkError ? '네트워크 연결 상태를 확인한 뒤 다시 시도해주세요.' : undefined) ??
         axiosError.message ??
         'API request failed.',
-      code: axiosError.response?.data?.code,
-      details: axiosError.response?.data,
+      code,
+      details: isNetworkError
+        ? {
+            axiosCode: axiosError.code,
+            isNetworkError: true,
+          }
+        : axiosError.response?.data,
     })
   }
 
   return new ApiError({
     statusCode: 500,
-    source: getApiSource(),
+    source: 'api',
     message: error instanceof Error ? error.message : 'Unexpected error occurred.',
     details: error,
   })
@@ -92,33 +99,29 @@ function buildHeaders(
   return Object.keys(nextHeaders).length > 0 ? nextHeaders : undefined
 }
 
-const realApiTransport: ApiTransport = {
-  async request<TResponse, TBody>(options: ApiRequestOptions<TBody>) {
-    try {
-      const response = await axiosInstance.request({
-        method: options.method,
-        url: options.url,
-        data: options.data,
-        params: options.params,
-        headers: buildHeaders(options.accessToken, options.headers),
-        responseType: options.responseType,
-        withCredentials: options.withCredentials ?? DEFAULT_WITH_CREDENTIALS,
-      })
+async function callTransport<TResponse, TBody = unknown>(
+  options: InternalRequestOptions<TBody>,
+) {
+  const { skipGuardianRefreshRetry: _skipGuardianRefreshRetry, ...requestOptions } = options
 
-      return unwrapApiEnvelope<TResponse>(response.data)
-    } catch (error) {
-      throw toApiError(error)
-    }
-  },
+  try {
+    const response = await axiosInstance.request({
+      method: requestOptions.method,
+      url: requestOptions.url,
+      data: requestOptions.data,
+      params: requestOptions.params,
+      headers: buildHeaders(requestOptions.accessToken, requestOptions.headers),
+      responseType: requestOptions.responseType,
+      withCredentials: requestOptions.withCredentials ?? DEFAULT_WITH_CREDENTIALS,
+    })
+
+    return unwrapApiEnvelope<TResponse>(response.data)
+  } catch (error) {
+    throw toApiError(error)
+  }
 }
 
-const activeTransport = API_MODE === 'real' ? realApiTransport : mockApiTransport
 let guardianRefreshPromise: Promise<AuthSession | null> | null = null
-
-function callTransport<TResponse, TBody = unknown>(options: InternalRequestOptions<TBody>) {
-  const { skipGuardianRefreshRetry: _skipGuardianRefreshRetry, ...transportOptions } = options
-  return activeTransport.request<TResponse, TBody>(transportOptions)
-}
 
 function getGuardianRetrySession<TBody>(
   options: InternalRequestOptions<TBody>,
@@ -133,7 +136,12 @@ function getGuardianRetrySession<TBody>(
 
   const session = getActiveAuthSession()
 
-  if (!session || session.role !== 'guardian' || !session.refreshToken) {
+  if (
+    !session ||
+    session.authMode !== 'real' ||
+    session.role !== 'guardian' ||
+    !session.refreshToken
+  ) {
     return null
   }
 
@@ -148,7 +156,12 @@ async function refreshGuardianSession(): Promise<AuthSession | null> {
   guardianRefreshPromise = (async () => {
     const session = getActiveAuthSession()
 
-    if (!session || session.role !== 'guardian' || !session.refreshToken) {
+    if (
+      !session ||
+      session.authMode !== 'real' ||
+      session.role !== 'guardian' ||
+      !session.refreshToken
+    ) {
       return null
     }
 
@@ -162,7 +175,7 @@ async function refreshGuardianSession(): Promise<AuthSession | null> {
         skipGuardianRefreshRetry: true,
       })
 
-      const nextSession = mapAuthResponseToSession(response)
+      const nextSession = mapAuthResponseToSession(response, 'real')
       applyActiveAuthSession(nextSession)
       return nextSession
     } catch {
@@ -238,6 +251,22 @@ export const apiClient = {
       ...options,
     })
   },
+  put<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
+    return requestWithGuardianRefreshRetry<TResponse, TBody>({
+      method: 'PUT',
+      url,
+      data,
+      ...options,
+    })
+  },
+  patch<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
+    return requestWithGuardianRefreshRetry<TResponse, TBody>({
+      method: 'PATCH',
+      url,
+      data,
+      ...options,
+    })
+  },
   delete<TResponse, TBody = unknown>(
     url: string,
     data?: TBody,
@@ -252,10 +281,4 @@ export const apiClient = {
   },
 }
 
-export function getActiveApiMode() {
-  return API_MODE
-}
-
-export function getApiBaseUrl() {
-  return API_BASE_URL
-}
+export { getActiveApiMode, getApiBaseUrl } from '../config/env'

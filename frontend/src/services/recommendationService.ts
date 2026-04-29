@@ -13,6 +13,7 @@ import type {
   CustomTalkDraft,
 } from '../features/patient/custom-talk/types'
 import type { PatientChatMessage, PatientSuggestedResponse } from '../types/chat'
+import type { AudioPlaybackHandle } from '../types/tts'
 import type {
   RecommendationCategoryKey,
   RecommendationComposeStep,
@@ -23,6 +24,7 @@ import type {
   RecommendationSendSource,
 } from '../types/recommendation'
 import { createServiceFailure } from '../utils/errorMapper'
+import { playAudioSource } from '../utils/audio'
 import { getActiveAuthSession } from './authSessionRegistry'
 import { getActiveAiApiMode } from './aiServiceConfig'
 import {
@@ -33,6 +35,7 @@ import {
   getRecommendationWordsApi,
   sendRecommendationApi,
 } from './recommendationApi'
+import { synthesizeTts } from './ttsService'
 import { mockSendPatientReply, type MockSendPatientReplyInput, type MockSendPatientReplyResult } from './mockPatientChatService'
 import { buildMockSuggestedResponses } from './mockSuggestionService'
 
@@ -114,6 +117,10 @@ function mapReplyTypeToSendSource(
   return value
 }
 
+function normalizeUtteranceText(text: string) {
+  return text.trim()
+}
+
 export async function fetchVisibleCustomCategories(input: {
   refreshCount: number
   shouldFail?: boolean
@@ -161,6 +168,10 @@ export async function fetchComposeWords(input: {
   categoryKey?: CustomCategoryKey
   step: ComposeStep
   refreshCount: number
+  selectedWords?: {
+    subject?: string
+    object?: string
+  }
   shouldFail?: boolean
 }) {
   if (getActiveAiApiMode() !== 'real') {
@@ -174,6 +185,7 @@ export async function fetchComposeWords(input: {
         : undefined,
       step: mapComposeStep(input.step),
       refreshCount: input.refreshCount,
+      selectedWords: input.selectedWords,
     },
     getAccessToken(),
   )
@@ -207,13 +219,22 @@ export async function submitCustomTalkUtterance(input: {
   shouldFail?: boolean
   source: 'recommended' | 'generated' | 'manual'
 }) {
+  const normalizedText = normalizeUtteranceText(input.text)
+
+  if (!normalizedText) {
+    throw new Error('전송할 문장이 비어 있습니다.')
+  }
+
   if (getActiveAiApiMode() !== 'real') {
-    return submitCustomTalkUtteranceMock(input)
+    return submitCustomTalkUtteranceMock({
+      ...input,
+      text: normalizedText,
+    })
   }
 
   const response = await sendRecommendationApi(
     {
-      text: input.text,
+      text: normalizedText,
       source: input.source,
     },
     getAccessToken(),
@@ -224,6 +245,26 @@ export async function submitCustomTalkUtterance(input: {
     id: response.messageId ?? `recommendation-${input.source}-${Date.now()}`,
     submittedAt: getSubmittedAt(response.submittedAt),
   }
+}
+
+export async function playCustomTalkUtteranceTts(input: {
+  text: string
+}): Promise<AudioPlaybackHandle | null> {
+  const normalizedText = normalizeUtteranceText(input.text)
+
+  if (!normalizedText) {
+    throw new Error('재생할 문장이 비어 있습니다.')
+  }
+
+  if (getActiveAiApiMode() !== 'real') {
+    return null
+  }
+
+  const audioSource = await synthesizeTts({
+    text: normalizedText,
+  })
+
+  return playAudioSource(audioSource)
 }
 
 export async function fetchSuggestedReplies(input: {

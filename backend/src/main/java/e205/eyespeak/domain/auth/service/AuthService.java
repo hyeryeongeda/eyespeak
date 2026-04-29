@@ -159,6 +159,8 @@ public class AuthService {
                 .refreshToken(refreshToken)
                 .user(AuthResponse.AuthUserDto.builder()
                         .id(user.getId())
+                        .userId(user.getId())
+                        .matchingId(matching.getId())
                         .role(user.getRole().name())
                         .name(user.getName())
                         .email(user.getLoginId())
@@ -188,33 +190,34 @@ public class AuthService {
         String accessToken = jwtProvider.createAccessToken(user.getId(), user.getRole());
         String refreshToken = jwtProvider.createRefreshToken(user.getId(), user.getRole());
 
-        // user → matching 조회하여 teamCode 가져오기
-        String teamCode = findTeamCode(user);
+        // user → matching 조회하여 teamCode, matchingId 가져오기
+        Matching matching = findMatching(user).orElse(null);
+        String teamCode = matching != null ? matching.getInviteCode() : null;
+        Long matchingId = matching != null ? matching.getId() : null;
 
         return AuthResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .user(AuthResponse.AuthUserDto.builder()
                         .id(user.getId())
+                        .userId(user.getId())
+                        .matchingId(matchingId)
                         .role(user.getRole().name())
                         .name(user.getName())
                         .email(user.getLoginId())
                         .teamCode(teamCode)
                         .build())
+                .matchingId(matchingId)
                 .build();
     }
 
-    private String findTeamCode(User user) {
+    private java.util.Optional<Matching> findMatching(User user) {
         if (user.getRole() == Role.GUARDIAN) {
             return guardianRepository.findByUserId(user.getId())
-                    .flatMap(guardian -> matchingRepository.findByGuardianId(guardian.getId()))
-                    .map(Matching::getInviteCode)
-                    .orElse(null);
+                    .flatMap(guardian -> matchingRepository.findByGuardianId(guardian.getId()));
         } else {
             return patientRepository.findByUserId(user.getId())
-                    .flatMap(patient -> matchingRepository.findByPatientId(patient.getId()))
-                    .map(Matching::getInviteCode)
-                    .orElse(null);
+                    .flatMap(patient -> matchingRepository.findByPatientId(patient.getId()));
         }
     }
 }

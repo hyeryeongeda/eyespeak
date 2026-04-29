@@ -42,6 +42,35 @@ export interface PatientCalibrationStatus {
   completedAt: string | null
 }
 
+export type PatientAuthEntryPoint = 'login' | 'signup'
+
+export type PatientPostAuthStatus = 'idle' | 'authenticated' | 'calibration-required'
+
+export type PatientCalibrationIssueKind =
+  | 'none'
+  | 'calibration-entry-failed'
+  | 'calibration-failed'
+  | 'eye-tracking-preparation-failed'
+
 export interface StoredPatientCalibrationRecord {
   completedAt: string
+  eyeTrackingProfileId: string | null
+  runtimeVerifiedAt: string | null
+}
+
+export interface PatientPostAuthNotice {
+  authSuccessMessage: string
+  calibrationMessage?: string
+}
+
+export interface PatientPostAuthState {
+  status: PatientPostAuthStatus
+  entryPoint: PatientAuthEntryPoint | null
+  notice: PatientPostAuthNotice | null
+  redirectPath: string
+}
+
+export interface PatientCalibrationLocationState {
+  postAuthNotice?: PatientPostAuthNotice
+  redirectPath?: string
 }

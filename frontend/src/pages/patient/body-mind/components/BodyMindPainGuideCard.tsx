@@ -3,7 +3,6 @@ import { Canvas } from '@react-three/fiber'
 import {
   Component,
   Suspense,
-  useEffect,
   useMemo,
   useState,
   type CSSProperties,
@@ -170,31 +169,56 @@ export default function BodyMindPainGuideCard({
   fallbackModelUrl,
   headerText,
 }: BodyMindPainGuideCardProps) {
-  const [resolvedModelUrl, setResolvedModelUrl] = useState(modelUrl)
-  const [hasFatalError, setHasFatalError] = useState(false)
-  const [isFallbackModel, setIsFallbackModel] = useState(false)
+  const [modelState, setModelState] = useState(() => ({
+    sourceModelUrl: modelUrl,
+    hasFatalError: false,
+    isFallbackModel: false,
+  }))
 
-  useEffect(() => {
-    setResolvedModelUrl(modelUrl)
-    setHasFatalError(false)
-    setIsFallbackModel(false)
-  }, [modelUrl])
+  const currentModelState =
+    modelState.sourceModelUrl === modelUrl
+      ? modelState
+      : {
+          sourceModelUrl: modelUrl,
+          hasFatalError: false,
+          isFallbackModel: false,
+        }
+
+  const resolvedModelUrl =
+    currentModelState.isFallbackModel && fallbackModelUrl ? fallbackModelUrl : modelUrl
 
   const handleModelError = () => {
-    if (!isFallbackModel && fallbackModelUrl && fallbackModelUrl !== resolvedModelUrl) {
-      setResolvedModelUrl(fallbackModelUrl)
-      setIsFallbackModel(true)
-      return
-    }
+    setModelState(previousState => {
+      const nextState =
+        previousState.sourceModelUrl === modelUrl
+          ? previousState
+          : {
+              sourceModelUrl: modelUrl,
+              hasFatalError: false,
+              isFallbackModel: false,
+            }
 
-    setHasFatalError(true)
+      if (!nextState.isFallbackModel && fallbackModelUrl && fallbackModelUrl !== modelUrl) {
+        return {
+          sourceModelUrl: modelUrl,
+          hasFatalError: false,
+          isFallbackModel: true,
+        }
+      }
+
+      return {
+        sourceModelUrl: modelUrl,
+        hasFatalError: true,
+        isFallbackModel: nextState.isFallbackModel,
+      }
+    })
   }
 
   return (
     <section style={cardStyle} aria-label={`${badge} 3D 가이드`}>
       <span style={badgeStyle}>{badge}</span>
       {headerText ? <p style={headerTextStyle}>{headerText}</p> : null}
-      {hasFatalError ? (
+      {currentModelState.hasFatalError ? (
         <Placeholder />
       ) : (
         <div style={canvasWrapStyle}>

@@ -1,12 +1,14 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { getHomePathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import {
   consumeGuardianSessionExitReason,
   setStoredEntryMode,
   setStoredRole,
 } from '../../services/authStorage'
-import type { GuardianSessionExitReason } from '../../types/auth'
+import type { AuthRouteState, GuardianSessionExitReason } from '../../types/auth'
 import AuthBrand from './AuthBrand'
 import {
   card,
@@ -22,13 +24,24 @@ import {
 } from './authPageStyles'
 import AuthPageFrame from './AuthPageFrame'
 
+interface CareLoginLocationState extends AuthRouteState {
+  signupCompleted?: boolean
+  guardianEmail?: string
+  patientName?: string
+  teamCode?: string
+}
+
 export default function CareLoginPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { login, isPending } = useAuth()
+  const locationState = (location.state as CareLoginLocationState | null) ?? null
   const [sessionNotice] = useState<GuardianSessionExitReason | null>(() =>
     consumeGuardianSessionExitReason(),
   )
+  const guardianSignupRoute = resolveAuthEntryRoute('signup', 'guardian', location.state)
   const [form, setForm] = useState({
-    identifier: '',
+    identifier: locationState?.guardianEmail ?? '',
     password: '',
   })
   const [error, setError] = useState('')
@@ -53,7 +66,12 @@ export default function CareLoginPage() {
       return
     }
 
-    window.location.replace(resolveAppPath(getHomePathByRole(result.data.role)))
+    const resolvedNavigation = await resolveAuthSuccessNavigation(result.data, {
+      entryPoint: 'login',
+      locationState: location.state,
+    })
+
+    navigate(resolvedNavigation.path, { replace: true, state: resolvedNavigation.state })
   }
 
   return (
@@ -81,6 +99,25 @@ export default function CareLoginPage() {
               {sessionNotice === 'idle-timeout'
                 ? '오랫동안 활동이 없어 보호자 세션이 자동으로 종료되었습니다. 다시 로그인해주세요.'
                 : '보호자 세션을 갱신하지 못해 다시 로그인이 필요합니다.'}
+            </p>
+          </div>
+        ) : null}
+
+        {locationState?.signupCompleted ? (
+          <div style={infoBox}>
+            <p style={{ margin: '0 0 6px', color: '#203042', fontWeight: 700, fontSize: '14px' }}>
+              가입 완료 안내
+            </p>
+            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              보호자 회원가입은 이미 완료되었습니다. 자동 로그인은 되지 않으니, 방금 만든 보호자 계정으로 로그인해 주세요.
+            </p>
+            <p style={{ margin: '0 0 6px', color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              로그인 이메일은 미리 입력되어 있습니다.
+            </p>
+            <p style={{ margin: 0, color: '#6d7f8f', fontSize: '13px', lineHeight: 1.5 }}>
+              {locationState.patientName && locationState.teamCode
+                ? `환자 정보와 팀코드(${locationState.teamCode})는 준비된 상태입니다.`
+                : '환자 정보와 팀코드는 회원가입 단계에서 이미 준비된 상태입니다.'}
             </p>
           </div>
         ) : null}
@@ -115,15 +152,33 @@ export default function CareLoginPage() {
         <p style={helperText}>로그인 성공 시 보호자 홈으로 이동합니다.</p>
 
         <div style={linkRow}>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=guardian`)} style={textLink}>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_RESET_PASSWORD,
+              search: '?role=guardian',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             비밀번호 재설정
-          </a>
-          <a href={resolveAppPath(ROUTE_PATHS.AUTH_SIGNUP_CARE)} style={textLink}>
+          </Link>
+          <Link
+            to={guardianSignupRoute.path}
+            state={guardianSignupRoute.state}
+            style={textLink}
+          >
             보호자 회원가입
-          </a>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=login`)} style={textLink}>
+          </Link>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=login',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             역할 다시 선택
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>

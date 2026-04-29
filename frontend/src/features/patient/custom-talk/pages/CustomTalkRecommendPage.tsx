@@ -73,16 +73,21 @@ export default function CustomTalkRecommendPage() {
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const startCompose = useCustomTalkStore(state => state.startCompose)
-
-  if (!draft.categoryKey) {
-    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
-  }
+  const hasCategoryKey = Boolean(draft.categoryKey)
+  const isActionLocked =
+    status === 'loading' || status === 'refreshing' || status === 'submitting'
 
   useEffect(() => {
-    if (recommendedSentences.length === 0) {
-      void loadRecommendedSentences(draft.categoryKey)
+    if (!hasCategoryKey || recommendedSentences.length > 0) {
+      return
     }
-  }, [draft.categoryKey, loadRecommendedSentences, recommendedSentences.length])
+
+    void loadRecommendedSentences(draft.categoryKey)
+  }, [draft.categoryKey, hasCategoryKey, loadRecommendedSentences, recommendedSentences.length])
+
+  if (!hasCategoryKey) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
+  }
 
   const categoryLabel =
     CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === draft.categoryKey)?.title ?? '맞춤대화'
@@ -103,7 +108,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[0])
           }
         },
-        disabled: !visibleSentences[0],
+        disabled: !visibleSentences[0] || isActionLocked,
       }}
       leftBottom={{
         title: visibleSentences[1] ?? '추천 문장 준비 중',
@@ -114,7 +119,7 @@ export default function CustomTalkRecommendPage() {
             void selectRecommendedSentence(visibleSentences[1])
           }
         },
-        disabled: !visibleSentences[1],
+        disabled: !visibleSentences[1] || isActionLocked,
       }}
       rightTop={{
         title: '단어로 표현하기',
@@ -124,6 +129,7 @@ export default function CustomTalkRecommendPage() {
           await startCompose()
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
         },
+        disabled: isActionLocked,
       }}
       rightBottom={{
         title: '뒤로가기',

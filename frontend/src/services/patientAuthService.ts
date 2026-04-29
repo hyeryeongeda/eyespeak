@@ -1,16 +1,16 @@
-import { getActiveApiMode } from './apiClient'
-import { findMockTeamCode } from './mockAuthApi'
-import { signUpPatientApi } from './patientApi'
-import { normalizeTeamCode } from './authStorage'
-import { mapAuthResponseToSession } from './authSessionMapper'
+import { getActiveApiMode, resolveApiSource } from '../config/env'
+import type { ServiceResult } from '../types/api'
 import type { AuthSession } from '../types/auth'
 import type {
   PatientAccountFormValues,
   PatientSignupRequestDto,
   VerifiedTeamCode,
 } from '../types/patient'
-import type { ServiceResult } from '../types/api'
-import { createServiceFailure } from '../utils/errorMapper'
+import { createServiceFailure, logServiceFailure } from '../utils/errorMapper'
+import { normalizeTeamCode } from './authStorage'
+import { mapAuthResponseToSession } from './authSessionMapper'
+import { findMockTeamCode, signUpPatientMockApi } from './mockAuthApi'
+import { signUpPatientApi } from './patientApi'
 
 export interface PatientSignupInput {
   teamCode: string
@@ -35,50 +35,63 @@ function mapPatientSignupInputToRequest(input: PatientSignupInput): PatientSignu
 export async function verifyTeamCode(
   teamCode: string,
 ): Promise<ServiceResult<VerifiedTeamCode>> {
+  const apiMode = getActiveApiMode()
   const normalizedTeamCode = normalizeTeamCode(teamCode)
 
   if (!normalizedTeamCode) {
     return {
       success: false,
-      source: 'mock',
+      source: resolveApiSource(apiMode),
       statusCode: 400,
-      message: '팀코드를 입력해주세요.',
+      message: '팀 코드를 입력해 주세요.',
     }
   }
 
   try {
-    if (getActiveApiMode() === 'mock') {
+    if (apiMode === 'mock') {
       const verifiedTeamCode = await findMockTeamCode(normalizedTeamCode)
 
       return {
         success: true,
-        source: 'mock',
+        source: resolveApiSource(apiMode),
         data: verifiedTeamCode,
       }
     }
 
-    // TODO(BE): 팀코드 사전 검증용 API 또는 signup precheck 계약 확정 필요.
     return {
-      success: false,
-      source: 'api',
-      statusCode: 400,
-      message: '팀코드 검증 API 명세가 아직 확정되지 않았습니다.',
+      success: true,
+      source: resolveApiSource(apiMode),
+      data: {
+        teamCode: normalizedTeamCode,
+        patientName: null,
+        verificationMode: 'provisional',
+      },
     }
   } catch (error) {
-    return createServiceFailure(error, '팀코드 확인에 실패했습니다.')
+    const failure = createServiceFailure(error, '팀코드 확인에 실패했습니다.')
+    logServiceFailure('patient-auth.verify-team-code', error, failure, {
+      teamCode: normalizedTeamCode,
+    })
+    return failure
   }
 }
 
 export async function signUpPatient(
   input: PatientSignupInput,
 ): Promise<ServiceResult<PatientSignupSuccess>> {
+  const apiMode = getActiveApiMode()
+
   try {
-    const response = await signUpPatientApi(mapPatientSignupInputToRequest(input))
-    const session = mapAuthResponseToSession(response)
+    const request = mapPatientSignupInputToRequest(input)
+    const response =
+      apiMode === 'mock'
+        ? await signUpPatientMockApi(request)
+        : await signUpPatientApi(request)
+    const session = mapAuthResponseToSession(response, apiMode)
 
     return {
       success: true,
-      source: response.accessToken.startsWith('mock-') ? 'mock' : 'api',
+      source: resolveApiSource(apiMode),
       data: {
         session,
         patientId: response.patientId,
@@ -86,6 +99,10 @@ export async function signUpPatient(
       },
     }
   } catch (error) {
-    return createServiceFailure(error, '환자 회원가입에 실패했습니다.')
+    const failure = createServiceFailure(error, '환자 회원가입에 실패했습니다.')
+    logServiceFailure('patient-auth.signup', error, failure, {
+      teamCode: normalizeTeamCode(input.teamCode),
+    })
+    return failure
   }
 }

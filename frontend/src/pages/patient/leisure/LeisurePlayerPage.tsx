@@ -1,13 +1,9 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
-import {
-  ROUTE_PATHS,
-  getPatientLeisureCategoryPath,
-} from '../../../app/router/routePaths'
+import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
 import {
   fetchLeisureContentDetail,
   getLeisureCategoryById,
-  parseLeisureMockScenario,
 } from '../../../services/leisureService'
 import type { LeisureContent, LeisurePlayerRouteState, LeisurePlayerStatus } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
@@ -16,20 +12,20 @@ import LeisureErrorState from './components/LeisureErrorState'
 import LeisureLayout from './components/LeisureLayout'
 import LeisureLoadingState from './components/LeisureLoadingState'
 import { leisurePanelSurfaceStyle } from './components/leisureTheme'
-import { usePatientIncomingChat } from '../../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../../hooks/patientIncomingChatContext'
 
 function getPlayerStatusText(status: LeisurePlayerStatus) {
   switch (status) {
     case 'loading':
-      return '콘텐츠를 준비하고 있습니다'
+      return '콘텐츠를 불러오는 중'
     case 'empty':
-      return '선택한 영상이 없습니다'
+      return '재생 가능한 콘텐츠 없음'
     case 'error':
-      return '영상을 불러올 수 없습니다'
+      return '콘텐츠를 불러오지 못함'
     case 'transitioning':
-      return '선택한 영상으로 이동합니다'
+      return '이전 화면으로 이동 중'
     default:
-      return 'YouTube iframe으로 재생 중입니다'
+      return 'YouTube 플레이어 준비 완료'
   }
 }
 
@@ -132,8 +128,6 @@ export default function LeisurePlayerPage() {
   const chat = usePatientIncomingChat()
   const params = useParams()
   const routeState = (location.state as LeisurePlayerRouteState | null) ?? null
-  const searchParams = new URLSearchParams(location.search)
-  const playerScenario = parseLeisureMockScenario(searchParams.get('playerScenario'))
 
   const [status, setStatus] = useState<LeisurePlayerStatus>('idle')
   const [content, setContent] = useState<LeisureContent | null>(null)
@@ -151,7 +145,7 @@ export default function LeisurePlayerPage() {
       setStatus('loading')
 
       try {
-        const nextContent = await fetchLeisureContentDetail(params.contentId, playerScenario)
+        const nextContent = await fetchLeisureContentDetail(params.contentId)
 
         if (!isMounted) {
           return
@@ -159,7 +153,9 @@ export default function LeisurePlayerPage() {
 
         setContent(nextContent)
         setStatus(nextContent ? 'playing' : 'empty')
-      } catch {
+      } catch (error) {
+        console.error('Failed to load leisure player content.', error)
+
         if (!isMounted) {
           return
         }
@@ -174,12 +170,11 @@ export default function LeisurePlayerPage() {
     return () => {
       isMounted = false
     }
-  }, [params.contentId, playerScenario])
+  }, [params.contentId])
 
   const currentCategory = getLeisureCategoryById(content?.categoryId ?? routeState?.categoryId)
-  const fallbackBackPath = content
-    ? getPatientLeisureCategoryPath(content.categoryId)
-    : ROUTE_PATHS.PATIENT_LEISURE
+  const fallbackBackPath =
+    content?.categoryId ? getPatientLeisureCategoryPath(content.categoryId) : ROUTE_PATHS.PATIENT_LEISURE
   const relatedContentsPath =
     content?.categoryId || routeState?.categoryId
       ? getPatientLeisureCategoryPath(content?.categoryId ?? routeState?.categoryId ?? '')
@@ -205,17 +200,17 @@ export default function LeisurePlayerPage() {
     return (
       <LeisureLayout
         code="PAT-LEISURE-003"
-        title="여가 재생"
-        description="YouTube 콘텐츠를 전체 화면 기반으로 준비합니다."
+        title="여가 플레이어"
+        description="선택한 YouTube 콘텐츠를 실제 API 기준으로 불러오고 있습니다."
         statusText={getPlayerStatusText(status)}
-        contextLabel="iframe embed 준비 중"
+        contextLabel="iframe 플레이어"
         hideHeader
       >
         <section className="leisure-player-grid" style={playerPanelStyle}>
           <div style={{ ...stateCardWrapStyle, gridColumn: '1 / span 2' }}>
             <LeisureLoadingState
-              title="선택한 영상을 불러오는 중입니다"
-              description="iframe 재생 영역과 이동 액션을 함께 준비하고 있습니다."
+              title="플레이어를 준비하는 중입니다"
+              description="영상 URL과 임베드 정보를 확인하고 있습니다."
             />
           </div>
         </section>
@@ -227,24 +222,24 @@ export default function LeisurePlayerPage() {
     return (
       <LeisureLayout
         code="PAT-LEISURE-003"
-        title="여가 재생"
-        description="선택한 영상을 찾지 못했습니다."
+        title="여가 플레이어"
+        description="재생 가능한 콘텐츠를 찾지 못했습니다."
         statusText={getPlayerStatusText(status)}
-        contextLabel="mock content 확인 필요"
+        contextLabel="재생 불가 콘텐츠"
         hideHeader
       >
         <section className="leisure-player-grid" style={playerPanelStyle}>
           <div style={stateCardWrapStyle}>
             <LeisureEmptyState
-              title="선택한 영상이 없습니다"
-              description="다른 카테고리나 여가 메인에서 콘텐츠를 다시 선택해 주세요."
+              title="재생 가능한 콘텐츠가 없습니다"
+              description="유효한 YouTube URL이 없는 항목은 플레이어에서 제외됩니다."
             />
           </div>
           <div className="leisure-player-side-actions" style={sideActionWrapStyle}>
             <LeisureActionCard
               title="뒤로가기"
-              description="직전 화면 또는 여가 메인으로 돌아갑니다"
-              badge="고정 위치"
+              description="이전 화면으로 돌아갑니다."
+              badge="메인 이동"
               variant="hero"
               tone="slate"
               slotId="player-empty-back"
@@ -260,24 +255,24 @@ export default function LeisurePlayerPage() {
     return (
       <LeisureLayout
         code="PAT-LEISURE-003"
-        title="여가 재생"
-        description="YouTube mock 콘텐츠를 재생할 수 없습니다."
+        title="여가 플레이어"
+        description="콘텐츠를 불러오는 중 오류가 발생했습니다."
         statusText={getPlayerStatusText('error')}
-        contextLabel="mock fetch 실패"
+        contextLabel="API 오류"
         hideHeader
       >
         <section className="leisure-player-grid" style={playerPanelStyle}>
           <div style={stateCardWrapStyle}>
             <LeisureErrorState
-              title="영상을 불러올 수 없습니다"
+              title="콘텐츠를 불러오지 못했습니다"
               description="잠시 후 다시 시도하거나 이전 화면으로 돌아가 주세요."
             />
           </div>
           <div className="leisure-player-side-actions" style={sideActionWrapStyle}>
             <LeisureActionCard
               title="뒤로가기"
-              description="직전 화면 또는 여가 메인으로 돌아갑니다"
-              badge="고정 위치"
+              description="이전 화면으로 돌아갑니다."
+              badge="메인 이동"
               variant="hero"
               tone="slate"
               slotId="player-error-back"
@@ -292,10 +287,10 @@ export default function LeisurePlayerPage() {
   return (
     <LeisureLayout
       code="PAT-LEISURE-003"
-      title="여가 재생"
-      description={`${content.channelName} · ${routeState?.fromLabel ?? currentCategory?.label ?? '추천 콘텐츠'}`}
+      title="여가 플레이어"
+      description={`${content.channelName} · ${content.categoryLabel ?? currentCategory?.label ?? '분류 없음'}`}
       statusText={getPlayerStatusText(status)}
-      contextLabel="대표 영상 재생 화면"
+      contextLabel="YouTube 재생"
       hideHeader
     >
       <section className="leisure-player-grid" style={playerPanelStyle}>
@@ -303,7 +298,7 @@ export default function LeisurePlayerPage() {
           <div style={videoOuterWrapStyle}>
             <div style={videoInnerWrapStyle}>
               {chat.state.isMediaPausedByInterrupt ? (
-                <div style={pausedBadgeStyle}>채팅 인터럽트로 mock 일시정지</div>
+                <div style={pausedBadgeStyle}>채팅 인터럽트로 일시정지</div>
               ) : null}
               <iframe
                 title={content.title}
@@ -322,9 +317,9 @@ export default function LeisurePlayerPage() {
 
         <div className="leisure-player-side-actions" style={sideActionWrapStyle}>
           <LeisureActionCard
-            title="다른 콘텐츠"
-            description="연관 콘텐츠 4개 추천 보기"
-            badge="상단 고정"
+            title="카테고리 목록"
+            description="같은 카테고리의 다른 콘텐츠를 확인합니다."
+            badge="추천 이동"
             variant="hero"
             tone="mint"
             slotId="player-related"
@@ -332,8 +327,8 @@ export default function LeisurePlayerPage() {
           />
           <LeisureActionCard
             title="뒤로가기"
-            description="여가 카테고리 목록으로"
-            badge="하단 고정"
+            description="이전 화면으로 돌아갑니다."
+            badge="메인 이동"
             variant="hero"
             tone="slate"
             slotId="player-back"

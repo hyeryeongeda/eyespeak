@@ -1,10 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { LeisureCardTone } from '../../../../types/leisure'
-import {
-  leisureCardBaseStyle,
-  leisurePillStyle,
-  leisureToneMap,
-} from './leisureTheme'
+import { leisureCardBaseStyle, leisurePillStyle, leisureToneMap } from './leisureTheme'
 
 const titleStyle: CSSProperties = {
   margin: 0,
@@ -48,6 +44,8 @@ export default function LeisureActionCard({
 }: LeisureActionCardProps) {
   const toneStyle = leisureToneMap[tone]
   const isHero = variant === 'hero'
+  const badgeText = busy ? '처리 중' : badge ?? '동작'
+  const titleText = busy ? `${title}...` : title
 
   return (
     <button
@@ -71,9 +69,7 @@ export default function LeisureActionCard({
         padding: isHero ? '18px 22px 22px' : leisureCardBaseStyle.padding,
       }}
     >
-      <span style={{ ...leisurePillStyle, color: toneStyle.accent }}>
-        {busy ? '처리 중' : badge ?? '액션'}
-      </span>
+      <span style={{ ...leisurePillStyle, color: toneStyle.accent }}>{badgeText}</span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <h3
           style={{
@@ -82,7 +78,7 @@ export default function LeisureActionCard({
             lineHeight: isHero ? 1.05 : titleStyle.lineHeight,
           }}
         >
-          {busy ? `${title} 중` : title}
+          {titleText}
         </h3>
         <p style={descriptionStyle}>{description}</p>
       </div>

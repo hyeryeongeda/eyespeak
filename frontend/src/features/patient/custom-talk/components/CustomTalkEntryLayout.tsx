@@ -1,15 +1,25 @@
 import type { CSSProperties, ReactNode } from 'react'
+import DwellFeedbackBadge from '../../input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  type UseDwellFeedbackResult,
+} from '../../input/hooks/useDwellFeedback'
 import type { CustomTalkStageActionCard } from './CustomTalkStageLayout'
+
+type CustomTalkEntryActionCard = CustomTalkStageActionCard & {
+  trackingId?: string
+}
 
 interface CustomTalkEntryLayoutProps {
   title: string
   centerChildren: ReactNode
-  topLeft: CustomTalkStageActionCard
-  topCenter: CustomTalkStageActionCard
-  topRight: CustomTalkStageActionCard
-  bottomLeft: CustomTalkStageActionCard
-  bottomCenter: CustomTalkStageActionCard
-  bottomRight: CustomTalkStageActionCard
+  topLeft: CustomTalkEntryActionCard
+  topCenter: CustomTalkEntryActionCard
+  topRight: CustomTalkEntryActionCard
+  bottomLeft: CustomTalkEntryActionCard
+  bottomCenter: CustomTalkEntryActionCard
+  bottomRight: CustomTalkEntryActionCard
+  dwellFeedback?: UseDwellFeedbackResult<string>
 }
 
 const pageWrap: CSSProperties = {
@@ -48,6 +58,7 @@ const cardBaseStyle: CSSProperties = {
   textAlign: 'center',
   transition: 'transform 0.16s ease, box-shadow 0.16s ease',
   cursor: 'pointer',
+  position: 'relative',
 }
 
 function getCardStyle(
@@ -113,10 +124,19 @@ const layoutCss = `
 function ActionCard({
   gridArea,
   card,
+  dwellFeedback,
 }: {
   gridArea: string
-  card: CustomTalkStageActionCard
+  card: CustomTalkEntryActionCard
+  dwellFeedback?: UseDwellFeedbackResult<string>
 }) {
+  const shouldShowDwellFeedback = isDwellFeedbackTargetActive(dwellFeedback ?? {
+    activeTargetId: null,
+    phase: 'idle',
+    progress: 0,
+    remainingMs: 0,
+  }, card.trackingId)
+
   return (
     <button
       type="button"
@@ -124,7 +144,15 @@ function ActionCard({
       style={getCardStyle(gridArea, card.tone, card.disabled ?? false)}
       disabled={card.disabled}
       onClick={card.onSelect}
+      data-tracking-id={card.disabled ? undefined : card.trackingId}
     >
+      {shouldShowDwellFeedback && dwellFeedback ? (
+        <DwellFeedbackBadge
+          phase={dwellFeedback.phase}
+          progress={dwellFeedback.progress}
+          remainingMs={dwellFeedback.remainingMs}
+        />
+      ) : null}
       <h2 style={cardTitleStyle}>{card.title}</h2>
       <p style={cardDescriptionStyle}>{card.description}</p>
     </button>
@@ -140,22 +168,31 @@ export default function CustomTalkEntryLayout({
   bottomLeft,
   bottomCenter,
   bottomRight,
+  dwellFeedback,
 }: CustomTalkEntryLayoutProps) {
   return (
     <main style={pageWrap} aria-label={title}>
       <style>{layoutCss}</style>
-      <div className="custom-talk-entry-layout" style={gridStyle}>
-        <ActionCard gridArea="top-left" card={topLeft} />
-        <ActionCard gridArea="top-center" card={topCenter} />
-        <ActionCard gridArea="top-right" card={topRight} />
+      <div
+        className="custom-talk-entry-layout"
+        style={gridStyle}
+        ref={element => {
+          if (dwellFeedback) {
+            dwellFeedback.containerRef.current = element
+          }
+        }}
+      >
+        <ActionCard gridArea="top-left" card={topLeft} dwellFeedback={dwellFeedback} />
+        <ActionCard gridArea="top-center" card={topCenter} dwellFeedback={dwellFeedback} />
+        <ActionCard gridArea="top-right" card={topRight} dwellFeedback={dwellFeedback} />
 
         <section style={centerAreaStyle} aria-label={`${title} 대화 맥락`}>
           {centerChildren}
         </section>
 
-        <ActionCard gridArea="bottom-left" card={bottomLeft} />
-        <ActionCard gridArea="bottom-center" card={bottomCenter} />
-        <ActionCard gridArea="bottom-right" card={bottomRight} />
+        <ActionCard gridArea="bottom-left" card={bottomLeft} dwellFeedback={dwellFeedback} />
+        <ActionCard gridArea="bottom-center" card={bottomCenter} dwellFeedback={dwellFeedback} />
+        <ActionCard gridArea="bottom-right" card={bottomRight} dwellFeedback={dwellFeedback} />
       </div>
     </main>
   )

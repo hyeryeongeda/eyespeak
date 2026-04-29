@@ -48,8 +48,6 @@ export type LeisureViewStatus =
   | LeisurePlayerStatus
   | LeisureOverlayStatus
 
-export type LeisureMockScenario = 'success' | 'empty' | 'error' | 'loading'
-
 export interface LeisureCategory {
   id: LeisureCategoryId
   label: string
@@ -64,7 +62,10 @@ export interface LeisureContent {
   channelName: string
   thumbnailUrl: string
   embedUrl: string
-  categoryId: LeisureCategoryId
+  youtubeUrl: string
+  videoId: string
+  categoryId: LeisureCategoryId | null
+  categoryLabel: string | null
   tags: string[]
   description: string
   durationLabel?: string
@@ -86,3 +87,19 @@ export interface LeisurePlayerRouteState {
   fromLabel?: string
   categoryId?: LeisureCategoryId
 }
+
+export interface LeisureContentResponseDto {
+  id: number
+  name: string
+  url: string | null
+  category: LeisureCategoryId | null
+  categoryName: string | null
+}
+
+export interface LeisureContentCreateRequestDto {
+  name: string
+  url: string | null
+  category: LeisureCategoryId | null
+}
+
+export type LeisureContentUpdateRequestDto = LeisureContentCreateRequestDto

@@ -15,7 +15,7 @@ import type {
   CustomTalkKeyboardOption,
   KeyboardRootMenu,
 } from '../types'
-import { usePatientIncomingChat } from '../../../../hooks/usePatientIncomingChat'
+import { usePatientIncomingChat } from '../../../../hooks/patientIncomingChatContext'
 import { useCustomTalkStore } from '../store/customTalkStore'
 
 const centerStackStyle: CSSProperties = {
@@ -70,16 +70,19 @@ export default function CustomTalkKeyboardPage() {
   const goKeyboardBack = useCustomTalkStore(state => state.goKeyboardBack)
   const deleteLastManualChar = useCustomTalkStore(state => state.deleteLastManualChar)
   const submitManualInput = useCustomTalkStore(state => state.submitManualInput)
-
-  if (!keyboardNavigation.entrySource) {
-    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
-  }
+  const hasEntrySource = Boolean(keyboardNavigation.entrySource)
 
   useEffect(() => {
-    if (keyboardStatus === 'idle') {
-      void initializeKeyboard()
+    if (!hasEntrySource || keyboardStatus !== 'idle') {
+      return
     }
-  }, [initializeKeyboard, keyboardStatus])
+
+    void initializeKeyboard()
+  }, [hasEntrySource, initializeKeyboard, keyboardStatus])
+
+  if (!hasEntrySource) {
+    return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
+  }
 
   const hasGlobalInterrupt = chat.shouldShowInterruptOverlay || chat.shouldShowReplyOverlay
   const isInputBlocked =

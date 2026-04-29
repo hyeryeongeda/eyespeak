@@ -1,22 +1,319 @@
-import type { FavoriteItem, FavoritesSortKey } from '../types/favorites'
+import type { FavoritePhrase } from '../types/care'
+import type { ApiSource, ServiceFailure, ServiceResult } from '../types/api'
+import type {
+  FavoriteErrorCode,
+  FavoriteItem,
+  FavoriteResponseDto,
+  KnownFavoriteErrorCode,
+  PhraseCategory,
+} from '../types/favorite'
+import type { FavoriteItem as PatientFavoriteItem, FavoritesSortKey } from '../types/favorites'
+import {
+  getApiErrorCode,
+  getApiErrorSource,
+  getApiErrorStatusCode,
+  mapApiErrorToMessage,
+} from '../utils/errorMapper'
+import { getActiveApiMode } from './apiClient'
+import { getActiveAuthSession } from './authSessionRegistry'
+import type { CategoryTreeResponseDto } from '../types/favorite'
+import {
+  createFavoriteApi,
+  deleteFavoriteApi,
+  getCategoryTreeApi,
+  getFavoritesApi,
+  updateFavoriteApi,
+} from './favoriteApi'
+import { MOCK_CATEGORIES, MOCK_FAVORITE_PHRASES, MOCK_PHRASES } from './mockCareData'
 
 const FAVORITES_PAGE_SIZE = 4
 
-/** API 연동 시 이 함수만 교체하면 됨. 반환 타입은 그대로 FavoriteItem[] 유지 */
-export async function fetchFavorites(
-  _patientId: string,
-  _sortKey: FavoritesSortKey = 'recentUsed',
-): Promise<FavoriteItem[]> {
-  // TODO: Replace with real API, e.g. GET /api/patient/favorites?sort=recentUsed
-  await new Promise<void>(resolve => setTimeout(resolve, 400))
+export const FAVORITES_MAX_COUNT = 5
 
-  return getMockFavorites()
+export const FAVORITE_ERROR_MESSAGES: Record<KnownFavoriteErrorCode, string> = {
+  'COMM-603': '문구를 찾을 수 없습니다.',
+  'COMM-605': '즐겨찾기는 최대 5개까지 등록할 수 있습니다.',
+  'COMM-606': '즐겨찾기를 찾을 수 없습니다.',
+  'COMM-607': '이미 즐겨찾이에 등록된 표현입니다.',
+  'AUTH-203': '접근 권한이 없습니다.',
+  'MATCHING-803': '매칭 정보를 찾을 수 없습니다.',
 }
 
-/**
- * 즐겨찾기 항목 선택 전송.
- * API 연동 시 이 함수 내부만 수정하면 됨.
- */
+let mockFavoritesState: FavoritePhrase[] = MOCK_FAVORITE_PHRASES.map(favorite => ({ ...favorite }))
+
+function getServiceSource(): ApiSource {
+  return getActiveApiMode() === 'real' ? 'api' : 'mock'
+}
+
+function getAccessToken() {
+  return getActiveAuthSession()?.accessToken ?? null
+}
+
+function buildSuccess<T>(data: T): ServiceResult<T> {
+  return {
+    success: true,
+    source: getServiceSource(),
+    data,
+  }
+}
+
+function buildFailure({
+  message,
+  code,
+  statusCode,
+  source = getServiceSource(),
+}: {
+  message: string
+  code?: FavoriteErrorCode
+  statusCode?: number
+  source?: ApiSource
+}): ServiceFailure {
+  return {
+    success: false,
+    source,
+    message,
+    code,
+    statusCode,
+  }
+}
+
+function createFavoriteFailure(error: unknown, fallbackMessage: string): ServiceFailure {
+  const code = getApiErrorCode(error)
+
+  return {
+    success: false,
+    source: getApiErrorSource(error),
+    message:
+      (code && FAVORITE_ERROR_MESSAGES[code as KnownFavoriteErrorCode]) ??
+      mapApiErrorToMessage(error, fallbackMessage),
+    statusCode: getApiErrorStatusCode(error),
+    code,
+  }
+}
+
+function mapFavoriteResponseToItem(response: FavoriteResponseDto): FavoriteItem {
+  return {
+    favoriteId: response.favoriteId,
+    phraseId: response.phraseId,
+    content: response.content,
+    categoryId: response.categoryId,
+    categoryName: response.categoryName,
+  }
+}
+
+function mapFavoriteToPatientItem(item: FavoriteItem): PatientFavoriteItem {
+  return {
+    id: String(item.favoriteId),
+    text: item.content,
+    category: item.categoryName,
+  }
+}
+
+function mapMockFavoriteToItem(favorite: FavoritePhrase): FavoriteItem | null {
+  const phrase = MOCK_PHRASES.find(candidate => candidate.id === favorite.phraseId)
+
+  if (!phrase) {
+    return null
+  }
+
+  const category = MOCK_CATEGORIES.find(candidate => candidate.id === phrase.categoryId)
+
+  if (!category) {
+    return null
+  }
+
+  return {
+    favoriteId: favorite.id,
+    phraseId: phrase.id,
+    content: phrase.content,
+    categoryId: category.id,
+    categoryName: category.name,
+  }
+}
+
+function getMockFavorites(): FavoriteItem[] {
+  return mockFavoritesState
+    .map(mapMockFavoriteToItem)
+    .filter((item): item is FavoriteItem => item !== null)
+}
+
+function isDuplicateMockFavorite(phraseId: number, favoriteIdToIgnore?: number) {
+  return mockFavoritesState.some(
+    favorite =>
+      favorite.phraseId === phraseId &&
+      (favoriteIdToIgnore === undefined || favorite.id !== favoriteIdToIgnore),
+  )
+}
+
+function sortPatientFavorites(
+  items: PatientFavoriteItem[],
+  _sortKey: FavoritesSortKey,
+): PatientFavoriteItem[] {
+  return items
+}
+
+export function shouldTreatFavoritesAsEmpty(code?: string) {
+  return code === 'MATCHING-803'
+}
+
+export async function getFavorites(): Promise<ServiceResult<FavoriteItem[]>> {
+  if (getActiveApiMode() !== 'real') {
+    return buildSuccess(getMockFavorites())
+  }
+
+  try {
+    const response = await getFavoritesApi(getAccessToken())
+
+    return buildSuccess(response.map(mapFavoriteResponseToItem))
+  } catch (error) {
+    return createFavoriteFailure(error, '즐겨찾기 목록을 불러오지 못했습니다.')
+  }
+}
+
+export async function createFavorite(phraseId: number): Promise<ServiceResult<null>> {
+  if (getActiveApiMode() !== 'real') {
+    const phrase = MOCK_PHRASES.find(candidate => candidate.id === phraseId)
+
+    if (!phrase) {
+      return buildFailure({
+        code: 'COMM-603',
+        statusCode: 404,
+        message: FAVORITE_ERROR_MESSAGES['COMM-603'],
+      })
+    }
+
+    if (mockFavoritesState.length >= FAVORITES_MAX_COUNT) {
+      return buildFailure({
+        code: 'COMM-605',
+        statusCode: 400,
+        message: FAVORITE_ERROR_MESSAGES['COMM-605'],
+      })
+    }
+
+    if (isDuplicateMockFavorite(phraseId)) {
+      return buildFailure({
+        code: 'COMM-607',
+        statusCode: 400,
+        message: FAVORITE_ERROR_MESSAGES['COMM-607'],
+      })
+    }
+
+    mockFavoritesState = [
+      ...mockFavoritesState,
+      {
+        id: Date.now(),
+        matchingId: 1,
+        phraseId,
+      },
+    ]
+
+    return buildSuccess(null)
+  }
+
+  try {
+    await createFavoriteApi({ phraseId }, getAccessToken())
+    return buildSuccess(null)
+  } catch (error) {
+    return createFavoriteFailure(error, '즐겨찾기 등록에 실패했습니다.')
+  }
+}
+
+export async function updateFavorite(
+  favoriteId: number,
+  phraseId: number,
+): Promise<ServiceResult<null>> {
+  if (getActiveApiMode() !== 'real') {
+    const favoriteIndex = mockFavoritesState.findIndex(favorite => favorite.id === favoriteId)
+
+    if (favoriteIndex < 0) {
+      return buildFailure({
+        code: 'COMM-606',
+        statusCode: 404,
+        message: FAVORITE_ERROR_MESSAGES['COMM-606'],
+      })
+    }
+
+    const phrase = MOCK_PHRASES.find(candidate => candidate.id === phraseId)
+
+    if (!phrase) {
+      return buildFailure({
+        code: 'COMM-603',
+        statusCode: 404,
+        message: FAVORITE_ERROR_MESSAGES['COMM-603'],
+      })
+    }
+
+    if (isDuplicateMockFavorite(phraseId, favoriteId)) {
+      return buildFailure({
+        code: 'COMM-607',
+        statusCode: 400,
+        message: FAVORITE_ERROR_MESSAGES['COMM-607'],
+      })
+    }
+
+    mockFavoritesState = mockFavoritesState.map(favorite =>
+      favorite.id === favoriteId
+        ? {
+            ...favorite,
+            phraseId,
+          }
+        : favorite,
+    )
+
+    return buildSuccess(null)
+  }
+
+  try {
+    await updateFavoriteApi(favoriteId, { phraseId }, getAccessToken())
+    return buildSuccess(null)
+  } catch (error) {
+    return createFavoriteFailure(error, '즐겨찾기 수정에 실패했습니다.')
+  }
+}
+
+export async function deleteFavorite(favoriteId: number): Promise<ServiceResult<null>> {
+  if (getActiveApiMode() !== 'real') {
+    const exists = mockFavoritesState.some(favorite => favorite.id === favoriteId)
+
+    if (!exists) {
+      return buildFailure({
+        code: 'COMM-606',
+        statusCode: 404,
+        message: FAVORITE_ERROR_MESSAGES['COMM-606'],
+      })
+    }
+
+    mockFavoritesState = mockFavoritesState.filter(favorite => favorite.id !== favoriteId)
+    return buildSuccess(null)
+  }
+
+  try {
+    await deleteFavoriteApi(favoriteId, getAccessToken())
+    return buildSuccess(null)
+  } catch (error) {
+    return createFavoriteFailure(error, '즐겨찾기 삭제에 실패했습니다.')
+  }
+}
+
+export async function fetchFavorites(
+  _patientId: string,
+  sortKey: FavoritesSortKey = 'recentUsed',
+): Promise<PatientFavoriteItem[]> {
+  const result = await getFavorites()
+
+  if (!result.success) {
+    // MATCHING-803 is treated as an empty list on the patient page so the existing empty
+    // state UX still works when the linked favorite set has not been created yet.
+    if (shouldTreatFavoritesAsEmpty(result.code)) {
+      return []
+    }
+
+    throw new Error(result.message)
+  }
+
+  return sortPatientFavorites(result.data.map(mapFavoriteToPatientItem), sortKey)
+}
+
 export interface SubmitFavoriteSelectionResult {
   success: boolean
   source: 'mock' | 'api'
@@ -28,23 +325,56 @@ export async function submitFavoriteSelection(
   _favoriteId: string,
   _text: string,
 ): Promise<SubmitFavoriteSelectionResult> {
-  // TODO: Replace with real API, e.g. POST /api/patient/favorites/select { favoriteId, text }
   await new Promise<void>(resolve => setTimeout(resolve, 300))
 
   return { success: true, source: 'mock' }
 }
 
-/** 현재 mock 기준 고정 정렬. 정책 확정 후 sortKey에 따라 정렬 로직 추가 */
-function getMockFavorites(): FavoriteItem[] {
-  return [
-    { id: 'fav-1', text: '물 마시고 싶어요', category: '식사', usageCount: 12, updatedAt: '2025-03-18T10:00:00Z' },
-    { id: 'fav-2', text: '화장실 가고 싶어요', category: '배변', usageCount: 8, updatedAt: '2025-03-18T09:30:00Z' },
-    { id: 'fav-3', text: '아파요', category: '몸과마음', usageCount: 15, updatedAt: '2025-03-18T09:00:00Z' },
-    { id: 'fav-4', text: '잘 모르겠어요', category: '일반', usageCount: 5, updatedAt: '2025-03-17T14:00:00Z' },
-    { id: 'fav-5', text: '네, 좋아요', category: '일반', usageCount: 20, updatedAt: '2025-03-17T12:00:00Z' },
-    { id: 'fav-6', text: '조금만 더 주세요', category: '식사', usageCount: 3, updatedAt: '2025-03-16T11:00:00Z' },
-  ]
+function mapCategoryTreeToCategories(tree: CategoryTreeResponseDto[]): PhraseCategory[] {
+  const result: PhraseCategory[] = []
+
+  for (const node of tree) {
+    if (node.phrases.length > 0) {
+      result.push({
+        categoryId: node.categoryId,
+        categoryName: node.name,
+        phrases: node.phrases.map(p => ({
+          phraseId: p.phraseId,
+          content: p.content,
+        })),
+      })
+    }
+
+    if (node.children.length > 0) {
+      result.push(...mapCategoryTreeToCategories(node.children))
+    }
+  }
+
+  return result
 }
 
-/** 페이지당 개수 (목록 조회와 무관하게 UI에서 사용하는 상수) */
+function getMockPhraseCategories(): PhraseCategory[] {
+  return MOCK_CATEGORIES.map(cat => ({
+    categoryId: cat.id,
+    categoryName: cat.name,
+    phrases: MOCK_PHRASES
+      .filter(p => p.categoryId === cat.id)
+      .map(p => ({ phraseId: p.id, content: p.content })),
+  }))
+}
+
+export async function getPhrases(): Promise<ServiceResult<PhraseCategory[]>> {
+  if (getActiveApiMode() !== 'real') {
+    return buildSuccess(getMockPhraseCategories())
+  }
+
+  try {
+    const response = await getCategoryTreeApi(getAccessToken())
+
+    return buildSuccess(mapCategoryTreeToCategories(response))
+  } catch (error) {
+    return createFavoriteFailure(error, '표현 목록을 불러오지 못했습니다.')
+  }
+}
+
 export const FAVORITES_PAGE_SIZE_EXPORT = FAVORITES_PAGE_SIZE

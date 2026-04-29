@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.security.core.Authentication;
+
 import java.util.List;
 
 @Tag(name = "TTS 음성 설정", description = "TTS 음성 파일 관리 API. 보호자가 환자 음성 파일을 업로드/삭제하고 TTS 기능을 ON/OFF 할 수 있다. 최대 10개 파일.")
@@ -38,9 +40,8 @@ public class TtsController {
                     }))
     })
     @GetMapping("/settings")
-    public ApiResponse<TtsSettingResponse> getSettings() {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<TtsSettingResponse> getSettings(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         TtsSettingResponse response = ttsService.getSettings(userId);
         return ApiResponse.ok(response);
     }
@@ -59,9 +60,8 @@ public class TtsController {
                     }))
     })
     @PatchMapping("/settings/toggle")
-    public ApiResponse<TtsSettingResponse> toggleEnabled() {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+    public ApiResponse<TtsSettingResponse> toggleEnabled(Authentication authentication) {
+        Long userId = (Long) authentication.getPrincipal();
         TtsSettingResponse response = ttsService.toggleEnabled(userId);
         return ApiResponse.ok(response);
     }
@@ -84,9 +84,9 @@ public class TtsController {
     @PostMapping("/voices")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<TtsSettingResponse> uploadVoices(
+            Authentication authentication,
             @RequestPart("files") List<MultipartFile> files) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
+        Long userId = (Long) authentication.getPrincipal();
         TtsSettingResponse response = ttsService.uploadVoices(userId, files);
         return ApiResponse.created(response);
     }
@@ -100,12 +100,12 @@ public class TtsController {
                     content = @Content(examples = @ExampleObject(value = "{\"code\":\"TTS-1104\",\"message\":\"TTS 음성 파일을 찾을 수 없습니다\",\"timestamp\":\"2026-03-19T14:30:00\"}")))
     })
     @DeleteMapping("/voices/{voiceFileId}")
-    public ApiResponse<Void> deleteVoice(
+    public ApiResponse<TtsSettingResponse> deleteVoice(
+            Authentication authentication,
             @Parameter(description = "음성 파일의 고유 식별자 (GET 조회 응답의 id 필드)")
             @PathVariable Long voiceFileId) {
-        // TODO: JWT에서 userId 추출 — Spring Security 구현 후 교체
-        Long userId = 1L;
-        ttsService.deleteVoice(userId, voiceFileId);
-        return ApiResponse.ok();
+        Long userId = (Long) authentication.getPrincipal();
+        TtsSettingResponse response = ttsService.deleteVoice(userId, voiceFileId);
+        return ApiResponse.ok(response);
     }
 }

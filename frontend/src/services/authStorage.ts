@@ -1,9 +1,12 @@
+import { getActiveApiMode } from '../config/env'
+import type { ApiMode } from '../types/api'
 import type {
   AuthEntryMode,
   AuthSession,
   GuardianSessionExitReason,
   UserRole,
 } from '../types/auth'
+import { normalizeAuthRole } from './authRole'
 
 export const SELECTED_ROLE_STORAGE_KEY = 'selectedRole'
 export const AUTH_ENTRY_MODE_STORAGE_KEY = 'authEntryMode'
@@ -21,17 +24,56 @@ export function normalizeTeamCode(value: string) {
 }
 
 export function normalizeUserRole(role: string | null | undefined): UserRole | null {
-  const normalizedRole = role?.trim().toLowerCase()
-
-  return normalizedRole === 'guardian' || normalizedRole === 'patient'
-    ? normalizedRole
-    : null
+  return normalizeAuthRole(role)
 }
 
 function normalizeGuardianSessionExitReason(
   value: string | null | undefined,
 ): GuardianSessionExitReason | null {
   return value === 'idle-timeout' || value === 'refresh-failed' ? value : null
+}
+
+function normalizeStoredNumericId(value: unknown): number | null {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null
+  }
+
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  const numericValue = Number(normalizedValue)
+  return Number.isFinite(numericValue) ? numericValue : null
+}
+
+function normalizeStoredOptionalText(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+
+  const normalizedValue = value.trim()
+  return normalizedValue ? normalizedValue : null
+}
+
+function normalizeStoredAuthMode(
+  value: unknown,
+  accessToken: string | null | undefined,
+): ApiMode | null {
+  if (value === 'mock' || value === 'real') {
+    return value
+  }
+
+  if (typeof accessToken !== 'string' || !accessToken.trim()) {
+    return null
+  }
+
+  return accessToken.startsWith('mock-access:') ? 'mock' : 'real'
 }
 
 export function getStoredRole(): UserRole | null {
@@ -110,6 +152,17 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
 
   parsed.role = normalizedRole
   parsed.id = String(parsed.id ?? '')
+  parsed.userId = normalizeStoredNumericId(parsed.userId)
+  parsed.matchingId = normalizeStoredNumericId(parsed.matchingId)
+  parsed.refreshToken = normalizeStoredOptionalText(parsed.refreshToken)
+  parsed.teamCode = normalizeStoredOptionalText(parsed.teamCode)
+  const normalizedAuthMode = normalizeStoredAuthMode(parsed.authMode, parsed.accessToken)
+
+  if (!normalizedAuthMode) {
+    return false
+  }
+
+  parsed.authMode = normalizedAuthMode
 
   return (
     (parsed.role === 'guardian' || parsed.role === 'patient') &&
@@ -117,12 +170,14 @@ function isValidStoredSession(parsed: Partial<AuthSession>): parsed is AuthSessi
     parsed.id.trim().length > 0 &&
     typeof parsed.name === 'string' &&
     typeof parsed.accessToken === 'string' &&
-    (typeof parsed.refreshToken === 'string' || parsed.refreshToken === null)
+    parsed.accessToken.trim().length > 0 &&
+    (typeof parsed.refreshToken === 'string' || parsed.refreshToken === null) &&
+    (parsed.authMode === 'mock' || parsed.authMode === 'real')
   )
 }
 
 function shouldPersistAuthSession(role: UserRole) {
-  return role === 'patient'
+  return role === 'guardian' || role === 'patient'
 }
 
 function getSessionStorageValue() {
@@ -134,6 +189,10 @@ function getSessionStorageValue() {
     sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY) ??
     sessionStorage.getItem(LEGACY_AUTH_SESSION_STORAGE_KEY)
   )
+}
+
+function isStoredSessionCompatibleWithActiveMode(session: Pick<AuthSession, 'authMode'>) {
+  return session.authMode === getActiveApiMode()
 }
 
 export function getStoredAuthSession(): AuthSession | null {
@@ -149,6 +208,10 @@ export function getStoredAuthSession(): AuthSession | null {
     if (isValidStoredSession(parsed)) {
       if (!shouldPersistAuthSession(parsed.role)) {
         clearStoredAuthSession()
+        return null
+      }
+
+      if (!isStoredSessionCompatibleWithActiveMode(parsed)) {
         return null
       }
 

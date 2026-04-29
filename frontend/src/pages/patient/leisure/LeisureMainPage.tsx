@@ -1,13 +1,7 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
-import {
-  fetchLeisureMain,
-  getLeisureCategoryById,
-  getLeisureEntryContentByCategory,
-  getLeisureCategories,
-  parseLeisureMockScenario,
-} from '../../../services/leisureService'
+import { fetchLeisureMain, getLeisureCategories } from '../../../services/leisureService'
 import type { LeisureMainStatus } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
 import LeisureCategoryCard from './components/LeisureCategoryCard'
@@ -16,17 +10,17 @@ import LeisureLayout from './components/LeisureLayout'
 function getMainStatusText(status: LeisureMainStatus) {
   switch (status) {
     case 'loading':
-      return '여가 유형을 준비하고 있습니다'
+      return '콘텐츠를 불러오는 중'
     case 'empty':
-      return '등록된 영상이 없습니다'
+      return '재생 가능한 콘텐츠 없음'
     case 'selecting':
-      return '카테고리를 선택했습니다'
+      return '카테고리 선택 중'
     case 'transitioning':
-      return '선택한 화면으로 이동합니다'
+      return '다음 화면으로 이동 중'
     case 'error':
-      return '추천 콘텐츠를 불러올 수 없습니다'
+      return '콘텐츠를 불러오지 못함'
     default:
-      return '여가 유형을 선택하세요'
+      return '카테고리를 선택하세요'
   }
 }
 
@@ -82,8 +76,6 @@ const mainGridStyle: CSSProperties = {
 export default function LeisureMainPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const searchParams = new URLSearchParams(location.search)
-  const scenario = parseLeisureMockScenario(searchParams.get('mainScenario'))
   const categoryCards = getLeisureCategories()
 
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
@@ -95,14 +87,16 @@ export default function LeisureMainPage() {
       setStatus('loading')
 
       try {
-        const data = await fetchLeisureMain(scenario)
+        const data = await fetchLeisureMain()
 
         if (!isMounted) {
           return
         }
 
         setStatus(data.featuredContent || data.registeredContents.length > 0 ? 'visible' : 'empty')
-      } catch {
+      } catch (error) {
+        console.error('Failed to load leisure main contents.', error)
+
         if (!isMounted) {
           return
         }
@@ -116,53 +110,32 @@ export default function LeisureMainPage() {
     return () => {
       isMounted = false
     }
-  }, [scenario])
+  }, [])
 
   const handleSelectCategory = (categoryId: string) => {
-    const category = getLeisureCategoryById(categoryId)
-    const entryContent = getLeisureEntryContentByCategory(categoryId)
-
     setStatus('transitioning')
-
-    if (!entryContent) {
-      navigate({
-        pathname: getPatientLeisureCategoryPath(categoryId),
-        search: location.search,
-      })
-      return
-    }
-
-    navigate(
-      {
-        pathname: ROUTE_PATHS.PATIENT_LEISURE_PLAYER.replace(':contentId', entryContent.id),
-        search: location.search,
-      },
-      {
-        state: {
-          fromPath: getPatientLeisureCategoryPath(categoryId),
-          fromLabel: `${category?.label ?? '여가'} 추천`,
-          categoryId: category?.id,
-        },
-      },
-    )
+    navigate({
+      pathname: getPatientLeisureCategoryPath(categoryId),
+      search: location.search,
+    })
   }
 
   const noticeMessage =
     status === 'loading'
-      ? '여가 유형을 불러오는 중입니다.'
+      ? '백엔드에서 여가 콘텐츠를 조회하고 있습니다.'
       : status === 'empty'
-        ? '등록된 영상이 없습니다. 카테고리를 선택해 추천 영상을 볼 수 있습니다.'
+        ? '재생 가능한 YouTube 콘텐츠가 아직 없습니다. 보호자 설정에서 URL을 등록해 주세요.'
         : status === 'error'
-          ? '추천 콘텐츠를 불러올 수 없습니다. 카테고리 선택만 우선 제공합니다.'
-          : '여가 카테고리를 선택하면 대표 영상 재생 화면으로 이동합니다.'
+          ? '여가 콘텐츠를 불러오지 못했습니다. 네트워크와 백엔드 응답을 확인해 주세요.'
+          : '카테고리를 선택하면 실제 API에서 조회한 재생 가능한 콘텐츠만 표시됩니다.'
 
   return (
     <LeisureLayout
       code="PAT-LEISURE-001"
-      title="여가 카테고리 선택"
-      description="카테고리를 누르면 대표 영상을 먼저 보여주고, 이후 다른 콘텐츠 목록으로 이동할 수 있습니다."
+      title="여가"
+      description="카테고리를 선택해 실제 API와 연결된 YouTube 콘텐츠를 탐색합니다."
       statusText={getMainStatusText(status)}
-      contextLabel="6칸 + 가운데 pill 레이아웃"
+      contextLabel="6분할 카드 레이아웃"
       hideHeader
     >
       <div style={contentWrapStyle}>
@@ -172,8 +145,8 @@ export default function LeisureMainPage() {
               <div key={category.id} style={{ minHeight: 0, height: '100%' }}>
                 <LeisureCategoryCard
                   category={category}
-                  contentCount={6}
-                  badge="여가"
+                  contentCount={0}
+                  badge="카테고리"
                   variant="hero"
                   disabled={status === 'transitioning'}
                   slotId={`main-category-${category.id}`}
@@ -190,8 +163,8 @@ export default function LeisureMainPage() {
               <div key={category.id} style={{ minHeight: 0, height: '100%' }}>
                 <LeisureCategoryCard
                   category={category}
-                  contentCount={6}
-                  badge="여가"
+                  contentCount={0}
+                  badge="카테고리"
                   variant="hero"
                   disabled={status === 'transitioning'}
                   slotId={`main-category-${category.id}`}
@@ -199,11 +172,12 @@ export default function LeisureMainPage() {
                 />
               </div>
             ))}
+
             <div style={{ minHeight: 0, height: '100%' }}>
               <LeisureActionCard
                 title="뒤로가기"
-                description="메인으로"
-                badge="고정 위치"
+                description="환자 메인 화면으로 돌아갑니다."
+                badge="메인 이동"
                 variant="hero"
                 tone="slate"
                 slotId="main-back"
