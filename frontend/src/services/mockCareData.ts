@@ -4,73 +4,14 @@
  */
 
 import type {
-  PatientInfo,
-  TimeSlot,
-  ActivityTag,
-  RoutineSlotWithTags,
   Category,
   Phrase,
   FavoritePhrase,
-  LeisureContentItem,
   DwellTimePreset,
   ActivationDelayPreset,
-  TtsSetting,
-  TtsVoiceFile,
   Call,
-  DailySummary,
-  UserWords,
   Expression,
-  DailyMood,
 } from '../types/care'
-
-// ========================
-// 환자 기본 정보
-// ========================
-
-export const MOCK_PATIENT_INFO: PatientInfo = {
-  id: 1,
-  name: '이환자',
-  birthYear: 1965,
-  gender: 'M',
-}
-
-// ========================
-// 루틴 — 시드 데이터
-// ========================
-
-export const MOCK_TIME_SLOTS: TimeSlot[] = [
-  { id: 1, name: '기상/아침', startTime: '06:00', endTime: '09:00' },
-  { id: 2, name: '오전', startTime: '09:00', endTime: '12:00' },
-  { id: 3, name: '점심/낮', startTime: '12:00', endTime: '15:00' },
-  { id: 4, name: '오후', startTime: '15:00', endTime: '18:00' },
-  { id: 5, name: '저녁', startTime: '18:00', endTime: '21:00' },
-  { id: 6, name: '취침 준비', startTime: '21:00', endTime: '00:00' },
-  { id: 7, name: '야간', startTime: '00:00', endTime: '06:00' },
-]
-
-export const MOCK_ACTIVITY_TAGS: ActivityTag[] = [
-  { id: 1, name: '경관식/수분 섭취', orderIndex: 0 },
-  { id: 2, name: '약물 투여', orderIndex: 1 },
-  { id: 3, name: '구강 케어', orderIndex: 2 },
-  { id: 4, name: '체위 변경', orderIndex: 3 },
-  { id: 5, name: '흡인/호흡 케어', orderIndex: 4 },
-  { id: 6, name: '배변/배뇨 케어', orderIndex: 5 },
-  { id: 7, name: '재활/ROM 운동', orderIndex: 6 },
-  { id: 8, name: '세면/위생', orderIndex: 7 },
-  { id: 9, name: '영상 시청', orderIndex: 8 },
-  { id: 10, name: '외부인 방문', orderIndex: 9 },
-  { id: 11, name: '휴식/수면', orderIndex: 10 },
-]
-
-export const MOCK_ROUTINES: RoutineSlotWithTags[] = [
-  { timeSlot: MOCK_TIME_SLOTS[0], selectedTagIds: [1, 2, 3, 5, 8] },
-  { timeSlot: MOCK_TIME_SLOTS[1], selectedTagIds: [4, 7] },
-  { timeSlot: MOCK_TIME_SLOTS[2], selectedTagIds: [1, 4, 6] },
-  { timeSlot: MOCK_TIME_SLOTS[3], selectedTagIds: [9, 10] },
-  { timeSlot: MOCK_TIME_SLOTS[4], selectedTagIds: [1, 2, 8, 11] },
-  { timeSlot: MOCK_TIME_SLOTS[5], selectedTagIds: [5, 11] },
-  { timeSlot: MOCK_TIME_SLOTS[6], selectedTagIds: [] },
-]
 
 // ========================
 // 즐겨찾기 — 시드 데이터
@@ -190,39 +131,11 @@ export const MOCK_FAVORITE_PHRASES: FavoritePhrase[] = [
 ]
 
 // ========================
-// 여가 콘텐츠
-// ========================
-
-export const MOCK_LEISURE_CONTENTS: LeisureContentItem[] = [
-  { id: 1, matchingId: 1, position: 0, name: 'KBS 뉴스 라이브', url: 'https://youtube.com/watch?v=mock001', category: 'news' },
-  { id: 2, matchingId: 1, position: 1, name: '클래식 음악 모음', url: 'https://youtube.com/watch?v=mock002', category: 'music' },
-  { id: 3, matchingId: 1, position: 2, name: '프로야구 하이라이트', url: 'https://youtube.com/watch?v=mock003', category: 'sports' },
-  { id: 4, matchingId: 1, position: 3, name: '라디오 낭독', url: null, category: 'audiobook' },
-]
-
-// ========================
 // 기기 설정
 // ========================
 
 export const MOCK_DWELL_TIME_PRESET: DwellTimePreset = 'default'
 export const MOCK_ACTIVATION_DELAY_PRESET: ActivationDelayPreset = 'medium'
-
-// ========================
-// TTS 설정
-// ========================
-
-export const MOCK_TTS_SETTING: TtsSetting = {
-  id: 1,
-  matchingId: 1,
-  isEnabled: true,
-  status: 'READY',
-}
-
-export const MOCK_TTS_VOICE_FILES: TtsVoiceFile[] = [
-  { id: 1, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_001.wav', fileName: '이환자_음성샘플_01.wav', createdAt: '2026-02-20T10:00:00' },
-  { id: 2, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_002.wav', fileName: '이환자_음성샘플_02.wav', createdAt: '2026-02-20T10:05:00' },
-  { id: 3, ttsSettingId: 1, fileUrl: 'https://s3.example.com/tts/voice_003.wav', fileName: '이환자_음성샘플_03.wav', createdAt: '2026-02-20T10:10:00' },
-]
 
 // ========================
 // 호출 기록
@@ -238,70 +151,6 @@ export const MOCK_CALLS: Call[] = [
 ]
 
 // ========================
-// 소통 기록 캘린더
-// ========================
-
-export const MOCK_DAILY_MOODS: DailyMood[] = [
-  { id: 1, matchingId: 1, moodDate: '2026-03-15', moodType: 'HAPPY', moodLevel: 4, createdAt: '2026-03-15T07:30:00' },
-  { id: 2, matchingId: 1, moodDate: '2026-03-16', moodType: 'TIRED', moodLevel: 3, createdAt: '2026-03-16T08:00:00' },
-  { id: 3, matchingId: 1, moodDate: '2026-03-17', moodType: 'CALM', moodLevel: 3, createdAt: '2026-03-17T07:45:00' },
-  { id: 4, matchingId: 1, moodDate: '2026-03-18', moodType: 'ANXIOUS', moodLevel: 4, createdAt: '2026-03-18T08:10:00' },
-  { id: 5, matchingId: 1, moodDate: '2026-03-19', moodType: 'JOYFUL', moodLevel: 5, createdAt: '2026-03-19T07:30:00' },
-]
-
-export const MOCK_DAILY_SUMMARIES: DailySummary[] = [
-  {
-    date: '2026-03-17',
-    totalExpressions: 18,
-    hasSos: true,
-    topPhrases: [
-      { content: '물을 마시고 싶어요', count: 4 },
-      { content: '자세를 바꿔주세요', count: 3 },
-      { content: '기분이 좋아요', count: 2 },
-    ],
-    normalCallCount: 2,
-    sosCallCount: 1,
-    mood: { type: 'CALM', level: 3 },
-  },
-  {
-    date: '2026-03-18',
-    totalExpressions: 24,
-    hasSos: false,
-    topPhrases: [
-      { content: '머리가 아파요', count: 3 },
-      { content: '물을 마시고 싶어요', count: 3 },
-      { content: '고마워', count: 2 },
-      { content: '음악 틀어줘', count: 2 },
-    ],
-    normalCallCount: 2,
-    sosCallCount: 0,
-    mood: { type: 'ANXIOUS', level: 4 },
-  },
-  {
-    date: '2026-03-19',
-    totalExpressions: 12,
-    hasSos: true,
-    topPhrases: [
-      { content: '기분이 좋아요', count: 3 },
-      { content: '음악 틀어줘', count: 2 },
-    ],
-    normalCallCount: 0,
-    sosCallCount: 1,
-    mood: { type: 'JOYFUL', level: 5 },
-  },
-]
-
-// ========================
-// 커스텀 단어
-// ========================
-
-export const MOCK_USER_WORDS: UserWords = {
-  matchingId: 1,
-  subjects: ['나', '우리', '아들'],
-  objects: ['물', '밥', '약', '음악', '텔레비전'],
-  verbs: ['먹다', '마시다', '듣다', '보다', '가다', '자다'],
-}
-
 // ========================
 // 맞춤 표현
 // ========================
@@ -313,3 +162,4 @@ export const MOCK_EXPRESSIONS: Expression[] = [
   { id: 4, matchingId: 1, content: '가족들 보고 싶어', sentiment: 'NEUTRAL', category: '감정', lastUsed: '2026-03-15T11:00:00', createdAt: '2026-03-08T10:00:00' },
   { id: 5, matchingId: 1, content: '오늘 약 먹었어?', sentiment: 'NEUTRAL', category: '일상', lastUsed: null, createdAt: '2026-03-18T08:00:00' },
 ]
+

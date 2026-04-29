@@ -80,7 +80,7 @@ class GazeEstimator:
             if self.model_name == "mobilegaze":
                 net: torch.nn.Module = MobileGaze().to(self.device)
             else:
-                net = L2CSNet().to(self.device)
+                net = L2CSNet(arch="ResNet50").to(self.device)
             state = torch.load(path, map_location=self.device, weights_only=False)
             if isinstance(state, dict) and "state_dict" in state:
                 state = state["state_dict"]

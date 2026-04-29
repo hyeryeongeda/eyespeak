@@ -51,9 +51,7 @@ export const ROUTE_SEGMENTS = {
     SETTINGS_LEISURE: 'settings/leisure',
     SETTINGS_DEVICE: 'settings/device',
     SETTINGS_TTS: 'settings/tts',
-    SETTINGS_WORDS: 'settings/words',
     SETTINGS_EXPRESSIONS: 'settings/expressions',
-    VOICE: 'voice',
   },
 } as const
 
@@ -106,7 +104,6 @@ export const CARE_ROUTE_PATHS = {
   CARE_SETTINGS_LEISURE: `/${ROUTE_SEGMENTS.CARE.ROOT}/${ROUTE_SEGMENTS.CARE.SETTINGS_LEISURE}`,
   CARE_SETTINGS_DEVICE: `/${ROUTE_SEGMENTS.CARE.ROOT}/${ROUTE_SEGMENTS.CARE.SETTINGS_DEVICE}`,
   CARE_SETTINGS_TTS: `/${ROUTE_SEGMENTS.CARE.ROOT}/${ROUTE_SEGMENTS.CARE.SETTINGS_TTS}`,
-  CARE_SETTINGS_WORDS: `/${ROUTE_SEGMENTS.CARE.ROOT}/${ROUTE_SEGMENTS.CARE.SETTINGS_WORDS}`,
   CARE_SETTINGS_EXPRESSIONS: `/${ROUTE_SEGMENTS.CARE.ROOT}/${ROUTE_SEGMENTS.CARE.SETTINGS_EXPRESSIONS}`,
 } as const
 
@@ -132,8 +129,12 @@ export function getAuthPathByRole(mode: AuthEntryMode, role: UserRole) {
   return role === 'guardian' ? ROUTE_PATHS.AUTH_SIGNUP_CARE : ROUTE_PATHS.AUTH_SIGNUP_PATIENT
 }
 
-export function getHomePathByRole(role: UserRole) {
+export function getDefaultRouteByRole(role: UserRole) {
   return role === 'guardian' ? ROUTE_PATHS.CARE_HOME : ROUTE_PATHS.PATIENT_MAIN
+}
+
+export function getHomePathByRole(role: UserRole) {
+  return getDefaultRouteByRole(role)
 }
 
 export function getPatientBodyMindCategoryDetailPath(categoryKey: BodyMindCategoryKey) {

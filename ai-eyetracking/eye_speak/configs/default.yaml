@@ -1,5 +1,5 @@
-# 아이트래킹 파이프라인 공통 설정 (config_gaze.py와 동일 기본값)
-# 환경변수로 개별 항목 오버라이드 가능 — loader.py 참고
+# Shared runtime defaults for the gaze pipeline.
+# loader.py may still override individual values from environment variables.
 
 detector:
   # "haar" | "mediapipe"
@@ -14,62 +14,84 @@ grid:
   cols: 3
   pitch_offset_deg: 0.0
   yaw_offset_deg: 0.0
-  cell_stability_count: 3
-  # 셀 경계 근처에서 이전 안정 셀 유지 (0이면 비활성)
-  hysteresis_threshold: 0.05
+  cell_stability_count: 4
+  hysteresis_threshold: 0.10
 
 smoothing:
   use_gaze_refiner: true
-  # "ema" | "one_euro"
   refiner_type: one_euro
   gaze_refiner_alpha: 0.3
-  one_euro_min_cutoff: 0.5
-  one_euro_beta: 0.05
-  # EAR 이 값 이하 → 눈 감음 (iris 정규화 신뢰도)
-  blink_ear_threshold: 0.18
+  one_euro_min_cutoff_x: 0.5
+  one_euro_beta_x: 0.2
+  one_euro_min_cutoff_y: 0.40
+  one_euro_beta_y: 2.0
+  screen_hold_ms: 500
+  screen_outlier_distance: 0.5
+  screen_fallback_jump_margin: 0.10
+  readiness_valid_streak: 2
+  blink_ear_threshold: 0.15
 
 weights:
-  head_pose_weight: 0.35
-  iris_gaze_weight: 0.65
-  l2cs_weight: 0.20
+  head_pose_weight: 0.0
+  iris_gaze_weight: 0.7
+  l2cs_weight: 0.3
 
 calibration:
-  points: 12
+  points: 18
+  # 3x6 센터-퍼스트: JS getCalibPoints(18)과 동일 순서
   target_rx:
-    - 0.03
-    - 0.20
-    - 0.40
-    - 0.60
-    - 0.80
-    - 0.97
-    - 0.03
-    - 0.20
-    - 0.40
-    - 0.60
-    - 0.80
-    - 0.97
+    - 0.50
+    - 0.30
+    - 0.70
+    - 0.10
+    - 0.90
+    - 0.01
+    - 0.50
+    - 0.30
+    - 0.70
+    - 0.10
+    - 0.90
+    - 0.01
+    - 0.50
+    - 0.30
+    - 0.70
+    - 0.10
+    - 0.90
+    - 0.99
   target_ry:
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.03
-    - 0.97
-    - 0.97
-    - 0.97
-    - 0.97
-    - 0.97
-    - 0.97
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.50
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.01
+    - 0.99
+    - 0.99
+    - 0.99
+    - 0.99
+    - 0.99
+    - 0.99
 
 trigger:
   dwell_time_sec: 1.5
-  blink_select_min_sec: 0.3
-  blink_select_max_sec: 1.0
-  double_blink_window_sec: 2.0
+  blink_select_min_sec: 0.08
+  blink_select_max_sec: 0.6
+  double_blink_window_sec: 1.5
   long_close_sec: 3.0
-  triple_blink_window_sec: 3.0
-  blink_history_ttl_sec: 5.0
+  triple_blink_window_sec: 2.5
+  blink_history_ttl_sec: 4.0
 
 paths:
   calib_save_dir: calibration_data
+
+runtime:
+  poll_interval_ms: 50
+  frame_max_width: 480
+  frame_jpeg_quality: 0.72
+  lerp_factor: 0.35

@@ -32,4 +32,9 @@ public class Guardian extends BaseEntity {
     public Guardian(User user) {
         this.user = user;
     }
+
+    /** [Unit 6] FCM 토큰 등록/갱신/삭제. null을 넣으면 삭제 효과. */
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
+    }
 }

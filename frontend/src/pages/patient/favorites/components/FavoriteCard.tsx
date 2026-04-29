@@ -1,8 +1,18 @@
 import type { CSSProperties } from 'react'
+import DwellFeedbackBadge from '../../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  type DwellFeedbackViewModel,
+} from '../../../../features/patient/input/hooks/useDwellFeedback'
+import {
+  favoriteTileToneStyleMap,
+  type FavoriteTileTone,
+} from '../favoritesUi'
 
 const cardStyle: CSSProperties = {
+  flex: 1,
   width: '100%',
-  minHeight: 'clamp(120px, 22vh, 200px)',
+  minHeight: 'clamp(148px, 28vh, 280px)',
   padding: '20px 18px',
   borderRadius: '24px',
   border: '1px solid rgba(204, 216, 226, 0.95)',
@@ -12,37 +22,43 @@ const cardStyle: CSSProperties = {
   flexDirection: 'column',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '8px',
+  gap: '10px',
   textAlign: 'center',
-  background: 'linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)',
   cursor: 'pointer',
-  transition: 'transform 0.18s ease, box-shadow 0.18s ease',
+  transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
   appearance: 'none',
+  position: 'relative',
 }
 
 const textStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.1rem, 1.9vw, 1.5rem)',
+  maxWidth: '100%',
+  fontSize: 'clamp(2.7rem, 4.8vw, 4.4rem)',
   fontWeight: 800,
-  lineHeight: 1.3,
+  lineHeight: 1.22,
+  letterSpacing: '-0.03em',
+  wordBreak: 'keep-all',
   color: '#203042',
 }
 
-const categoryStyle: CSSProperties = {
+const descriptionStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(0.8rem, 1.2vw, 0.95rem)',
+  maxWidth: '100%',
+  fontSize: 'clamp(1rem, 1.55vw, 1.15rem)',
   fontWeight: 600,
+  lineHeight: 1.4,
+  wordBreak: 'keep-all',
   color: '#647587',
 }
 
 const interactiveCss = `
-  .favorite-card-btn:hover:not(:disabled),
-  .favorite-card-btn:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .favorite-card-btn:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .favorite-card-btn:focus-visible:not(:disabled) {
     transform: translateY(-3px);
-    box-shadow: 0 24px 48px rgba(40, 66, 90, 0.14);
+    box-shadow: 0 28px 54px rgba(40, 66, 90, 0.16);
     outline: none;
   }
-  .favorite-card-btn:active:not(:disabled) {
+  html:not([data-patient-mode='true']) .favorite-card-btn:active:not(:disabled) {
     transform: translateY(0);
   }
 `
@@ -51,17 +67,31 @@ export interface FavoriteCardProps {
   id: string
   text: string
   category?: string
+  description?: string
+  tone?: FavoriteTileTone
   disabled?: boolean
   onSelect: () => void
+  trackingId?: string
+  dwellFeedback?: DwellFeedbackViewModel<string>
 }
 
 export default function FavoriteCard({
   id,
   text,
   category,
+  description,
+  tone = 'sky',
   disabled = false,
   onSelect,
+  trackingId,
+  dwellFeedback,
 }: FavoriteCardProps) {
+  const toneStyle = favoriteTileToneStyleMap[tone]
+  const shouldShowDwellFeedback = isDwellFeedbackTargetActive(
+    dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+    trackingId,
+  )
+
   return (
     <>
       <style>{interactiveCss}</style>
@@ -70,17 +100,28 @@ export default function FavoriteCard({
         className="favorite-card-btn"
         style={{
           ...cardStyle,
+          background: toneStyle.background,
+          borderColor: 'rgba(204, 216, 226, 0.95)',
           opacity: disabled ? 0.7 : 1,
           cursor: disabled ? 'not-allowed' : 'pointer',
         }}
         disabled={disabled}
         onClick={onSelect}
         onKeyDown={e => e.key === 'Enter' && !disabled && onSelect()}
-        aria-label={category ? `${text} (${category})` : text}
+        aria-label={[text, description ?? category].filter(Boolean).join('. ')}
         data-favorite-id={id}
+        data-tracking-id={disabled ? undefined : trackingId}
+        data-patient-confirm-until-tts={disabled ? undefined : 'true'}
       >
+        {shouldShowDwellFeedback && dwellFeedback ? (
+          <DwellFeedbackBadge
+            phase={dwellFeedback.phase}
+            progress={dwellFeedback.progress}
+            remainingMs={dwellFeedback.remainingMs}
+          />
+        ) : null}
         <span style={textStyle}>{text}</span>
-        {category ? <span style={categoryStyle}>{category}</span> : null}
+        {description ? <span style={descriptionStyle}>{description}</span> : null}
       </button>
     </>
   )

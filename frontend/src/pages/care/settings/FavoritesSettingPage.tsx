@@ -1,104 +1,121 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import CareSettingLayout from './CareSettingLayout'
 import {
-  getCategories,
-  getPhrasesByCategory,
-  getFavoritePhrases,
-  addFavoritePhrase,
-  removeFavoritePhrase,
-} from '../../../services/careSettingService'
-import type { Category, Phrase, FavoritePhrase } from '../../../types/care'
-
-const MAX_FAVORITES_PER_CATEGORY = 5
+  getFavorites,
+  deleteFavorite,
+  createFavorite,
+  getPhrases,
+  shouldTreatFavoritesAsEmpty,
+  FAVORITES_MAX_COUNT,
+} from '../../../services/favoritesService'
+import type { FavoriteItem, PhraseCategory } from '../../../types/favorite'
 
 export default function FavoritesSettingPage() {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [phrases, setPhrases] = useState<Record<number, Phrase[]>>({})
-  const [favorites, setFavorites] = useState<FavoritePhrase[]>([])
-  const [openCategoryId, setOpenCategoryId] = useState<number | null>(null)
+  const [favorites, setFavorites] = useState<FavoriteItem[]>([])
+  const [categories, setCategories] = useState<PhraseCategory[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [loadingPhraseId, setLoadingPhraseId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [togglingPhraseId, setTogglingPhraseId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [justToggledPhraseId, setJustToggledPhraseId] = useState<number | null>(null)
 
   useEffect(() => {
-    const fetchBase = async () => {
-      try {
-        const [catRes, favRes] = await Promise.all([
-          getCategories(),
-          getFavoritePhrases(),
-        ])
-        if (catRes.success) setCategories(catRes.data.sort((a, b) => a.orderIndex - b.orderIndex))
-        if (favRes.success) setFavorites(favRes.data)
-      } catch {
-        setError('데이터를 불러오지 못했습니다.')
-      } finally {
-        setIsLoading(false)
+    const fetchData = async () => {
+      const [favResult, phraseResult] = await Promise.all([
+        getFavorites(),
+        getPhrases(),
+      ])
+
+      if (favResult.success) {
+        setFavorites(favResult.data)
+      } else if (!shouldTreatFavoritesAsEmpty(favResult.code)) {
+        setError(favResult.message)
       }
+
+      if (phraseResult.success) {
+        setCategories(phraseResult.data)
+      }
+
+      setIsLoading(false)
     }
-    fetchBase()
+
+    fetchData()
   }, [])
 
-  const handleOpenCategory = async (categoryId: number) => {
-    if (openCategoryId === categoryId) {
-      setOpenCategoryId(null)
-      return
-    }
-    setOpenCategoryId(categoryId)
+  const existingPhraseIds = useMemo(
+    () => new Set(favorites.map((f) => f.phraseId)),
+    [favorites],
+  )
 
-    if (phrases[categoryId]) return
+  const isFull = favorites.length >= FAVORITES_MAX_COUNT
 
-    try {
-      const res = await getPhrasesByCategory(categoryId)
-      if (res.success) {
-        setPhrases((prev) => ({ ...prev, [categoryId]: res.data }))
-      }
-    } catch {
-      setError('표현 목록을 불러오지 못했습니다.')
-    }
+  const showError = (msg: string) => {
+    setError(msg)
+    setTimeout(() => setError(null), 2000)
   }
 
-  const isFavorite = (phraseId: number) => favorites.some((f) => f.phraseId === phraseId)
-
-  const getFavCountForCategory = (categoryId: number) => {
-    const categoryPhraseIds = (phrases[categoryId] ?? []).map((p) => p.id)
-    return favorites.filter((f) => categoryPhraseIds.includes(f.phraseId)).length
+  const flashToggled = (phraseId: number) => {
+    setJustToggledPhraseId(phraseId)
+    setTimeout(() => setJustToggledPhraseId(null), 1500)
   }
 
-  const handleToggleFavorite = async (phrase: Phrase) => {
-    if (loadingPhraseId !== null) return
-    setLoadingPhraseId(phrase.id)
+  const handleDelete = async (favoriteId: number) => {
+    if (deletingId !== null) return
+    setDeletingId(favoriteId)
     setError(null)
 
-    try {
-      if (isFavorite(phrase.id)) {
-        const res = await removeFavoritePhrase(phrase.id)
-        if (res.success) {
-          setFavorites((prev) => prev.filter((f) => f.phraseId !== phrase.id))
-        }
-      } else {
-        const count = getFavCountForCategory(phrase.categoryId)
-        if (count >= MAX_FAVORITES_PER_CATEGORY) {
-          setError(`카테고리당 최대 ${MAX_FAVORITES_PER_CATEGORY}개까지 등록할 수 있습니다.`)
-          setTimeout(() => setError(null), 2000)
-          return
-        }
-        const res = await addFavoritePhrase(phrase.id)
-        if (res.success && res.data) {
-          setFavorites((prev) => [...prev, res.data])
-        }
-      }
-    } catch {
-      setError('처리에 실패했습니다.')
-    } finally {
-      setLoadingPhraseId(null)
+    const result = await deleteFavorite(favoriteId)
+
+    if (result.success) {
+      setFavorites((prev) => prev.filter((f) => f.favoriteId !== favoriteId))
+    } else {
+      showError(result.message)
     }
+
+    setDeletingId(null)
+  }
+
+  const handleToggleFavorite = async (phraseId: number) => {
+    if (togglingPhraseId !== null) return
+    setTogglingPhraseId(phraseId)
+    setError(null)
+
+    const existing = favorites.find((f) => f.phraseId === phraseId)
+
+    if (existing) {
+      const result = await deleteFavorite(existing.favoriteId)
+      if (result.success) {
+        setFavorites((prev) => prev.filter((f) => f.favoriteId !== existing.favoriteId))
+        flashToggled(phraseId)
+      } else {
+        showError(result.message)
+      }
+    } else {
+      if (isFull) {
+        showError(`즐겨찾기는 최대 ${FAVORITES_MAX_COUNT}개까지 등록할 수 있습니다.`)
+        setTogglingPhraseId(null)
+        return
+      }
+      const result = await createFavorite(phraseId)
+      if (result.success) {
+        const refreshed = await getFavorites()
+        if (refreshed.success) {
+          setFavorites(refreshed.data)
+        }
+        flashToggled(phraseId)
+      } else {
+        showError(result.message)
+      }
+    }
+
+    setTogglingPhraseId(null)
   }
 
   if (isLoading) {
     return (
       <CareSettingLayout title="표현 즐겨찾기">
         <div className="flex items-center justify-center h-40">
-          <span className="text-[14px] text-[#718096]">불러오는 중...</span>
+          <span className="text-[15px] text-[#718096]">불러오는 중...</span>
         </div>
       </CareSettingLayout>
     )
@@ -106,67 +123,135 @@ export default function FavoritesSettingPage() {
 
   return (
     <CareSettingLayout title="표현 즐겨찾기">
-      <div className="flex flex-col gap-4 mt-6">
-        <p className="text-[13px] text-[#718096]">
-          카테고리별로 자주 쓰는 표현을 즐겨찾기에 등록하세요. (카테고리당 최대 {MAX_FAVORITES_PER_CATEGORY}개)
-        </p>
+      <div className="flex flex-col gap-6 mt-6">
+        {/* 에러 메시지 */}
+        {error && <p className="text-[14px] text-red-500 text-center">{error}</p>}
 
-        {error && <p className="text-[13px] text-red-500 text-center">{error}</p>}
+        {/* ===== 상단: 등록된 즐겨찾기 ===== */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#3D405B]">
+            <h2 className="text-[15px] font-bold text-white">등록된 즐겨찾기</h2>
+            <span className="text-[14px] text-[#CBD5E0]">
+              {favorites.length} / {FAVORITES_MAX_COUNT}
+            </span>
+          </div>
 
-        <div className="flex flex-col gap-2">
-          {categories.map((cat) => {
-            const isOpen = openCategoryId === cat.id
-            const catPhrases = phrases[cat.id] ?? []
-            const favCount = getFavCountForCategory(cat.id)
-
-            return (
-              <div key={cat.id} className="rounded-xl border border-[#E2E8F0] overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => handleOpenCategory(cat.id)}
-                  className="w-full min-h-[52px] px-4 flex items-center justify-between bg-[#F0F4F8] active:bg-[#E2E8F0]"
-                >
-                  <span className="text-[15px] font-medium text-[#3D405B]">{cat.name}</span>
-                  <div className="flex items-center gap-2">
-                    {favCount > 0 && (
-                      <span className="text-[12px] text-white bg-[#3D405B] rounded-full px-2 py-0.5">
-                        {favCount}
+          {favorites.length === 0 ? (
+            <div className="flex items-center justify-center h-24 rounded-xl border border-[#E2E8F0]">
+              <p className="text-[15px] text-[#A0AEC0]">등록된 즐겨찾기가 없습니다.</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[#E2E8F0] overflow-hidden bg-white">
+              {favorites.map((item, idx) => {
+                const isDeleting = deletingId === item.favoriteId
+                return (
+                  <div
+                    key={item.favoriteId}
+                    className={`min-h-[52px] px-4 flex items-center justify-between ${
+                      idx > 0 ? 'border-t border-[#F0F4F8]' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="text-[12px] text-[#718096] bg-[#F0F4F8] rounded px-1.5 py-0.5 shrink-0">
+                        {item.categoryName}
                       </span>
-                    )}
-                    <span className="text-[16px] text-[#718096]">{isOpen ? '▲' : '▼'}</span>
+                      <span className="text-[15px] text-[#3D405B] truncate">{item.content}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item.favoriteId)}
+                      disabled={isDeleting}
+                      className="text-[14px] text-red-400 active:text-red-600 min-h-[44px] px-2 shrink-0"
+                    >
+                      {isDeleting ? '삭제 중...' : '삭제'}
+                    </button>
                   </div>
-                </button>
+                )
+              })}
+            </div>
+          )}
+        </section>
 
-                {isOpen && (
-                  <div className="bg-white">
-                    {catPhrases.length === 0 ? (
-                      <p className="px-4 py-3 text-[13px] text-[#A0AEC0]">불러오는 중...</p>
-                    ) : (
-                      catPhrases.map((phrase) => {
-                        const faved = isFavorite(phrase.id)
-                        const isToggling = loadingPhraseId === phrase.id
-                        return (
-                          <button
-                            key={phrase.id}
-                            type="button"
-                            onClick={() => handleToggleFavorite(phrase)}
-                            disabled={isToggling}
-                            className="w-full min-h-[44px] px-4 flex items-center justify-between border-t border-[#F0F4F8] active:bg-[#F7FAFC]"
-                          >
-                            <span className="text-[14px] text-[#3D405B]">{phrase.content}</span>
-                            <span className={`text-[20px] ${faved ? 'text-yellow-400' : 'text-[#CBD5E0]'}`}>
-                              {faved ? '★' : '☆'}
-                            </span>
-                          </button>
-                        )
-                      })
-                    )}
-                  </div>
-                )}
+        {/* ===== 하단: 카테고리별 표현 목록 (등록용) ===== */}
+        <section className="flex flex-col gap-3">
+          <div className="px-3 py-2.5 rounded-lg bg-[#F0F4F8]">
+            <h2 className="text-[15px] font-bold text-[#3D405B]">표현 목록</h2>
+            <span className="text-[12px] text-[#718096]">
+              표현을 선택하면 즐겨찾기에 등록됩니다.
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {categories.map((cat) => (
+              <div key={cat.categoryId} className="flex flex-col gap-1">
+                {/* 카테고리 섹션 헤더 */}
+                <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#E8EDF3]">
+                  <span className="text-[14px] font-bold text-[#3D405B]">{cat.categoryName}</span>
+                  <span className="text-[12px] text-[#718096]">{cat.phrases.length}개</span>
+                </div>
+
+                {/* 표현 리스트 */}
+                <div className="rounded-xl border border-[#E2E8F0] overflow-hidden bg-white">
+                  {cat.phrases.map((phrase, idx) => {
+                    const isAlreadyFavorited = existingPhraseIds.has(phrase.phraseId)
+                    const isToggling = togglingPhraseId === phrase.phraseId
+                    const isJustToggled = justToggledPhraseId === phrase.phraseId
+                    const isDisabled = (!isAlreadyFavorited && isFull) || togglingPhraseId !== null
+
+                    return (
+                      <button
+                        key={phrase.phraseId}
+                        type="button"
+                        onClick={() => handleToggleFavorite(phrase.phraseId)}
+                        disabled={isDisabled}
+                        className={`w-full min-h-[48px] px-4 flex items-center gap-3 text-left ${
+                          idx > 0 ? 'border-t border-[#F0F4F8]' : ''
+                        } ${
+                          isAlreadyFavorited
+                            ? 'bg-[#F0F7FF]'
+                            : isFull
+                              ? 'bg-[#FAFAFA]'
+                              : 'active:bg-[#EDF2F7]'
+                        }`}
+                      >
+                        <span
+                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isAlreadyFavorited
+                              ? 'bg-[#3D405B] border-[#3D405B]'
+                              : 'border-[#CBD5E0] bg-white'
+                          }`}
+                        >
+                          {isAlreadyFavorited && (
+                            <span className="text-white text-[11px] leading-none">&#10003;</span>
+                          )}
+                        </span>
+                        <span
+                          className={`text-[15px] flex-1 ${
+                            isAlreadyFavorited
+                              ? 'text-[#3D405B] font-medium'
+                              : isFull
+                                ? 'text-[#A0AEC0]'
+                                : 'text-[#3D405B]'
+                          }`}
+                        >
+                          {phrase.content}
+                        </span>
+                        {isToggling && (
+                          <span className="text-[12px] text-[#718096] shrink-0">처리 중...</span>
+                        )}
+                        {!isToggling && isJustToggled && (
+                          <span className={`text-[12px] shrink-0 ${isAlreadyFavorited ? 'text-green-600' : 'text-[#718096]'}`}>
+                            {isAlreadyFavorited ? '등록 완료' : '해제 완료'}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            )
-          })}
-        </div>
+            ))}
+          </div>
+        </section>
       </div>
     </CareSettingLayout>
   )

@@ -1,4 +1,4 @@
-export type RecommendationCategoryKey = 'mood' | 'schedule' | 'frequent' | 'recent'
+export type RecommendationCategoryKey = 'mood' | 'schedule' | 'frequent' | 'recent' | string
 
 export type RecommendationComposeStep = 'subject' | 'object' | 'predicate' | 'punctuation'
 
@@ -25,6 +25,16 @@ export interface RecommendationCategoryListResponseDto {
   categories: RecommendationCategoryDto[]
 }
 
+export interface ReplyCategoriesRequestDto {
+  message: string
+}
+
+export interface ReplyCategoriesResponseDto {
+  categories: string[]
+  sentimentMap: Record<string, string>
+  intentMap: Record<string, string>
+}
+
 export interface RecommendationSentencesRequestDto {
   categoryKey: RecommendationCategoryKey
   guardianMessage?: string
@@ -39,6 +49,10 @@ export interface RecommendationWordsRequestDto {
   categoryKey?: RecommendationCategoryKey
   step: RecommendationComposeStep
   refreshCount?: number
+  selectedWords?: {
+    subject?: string
+    object?: string
+  }
 }
 
 export interface RecommendationWordsResponseDto {
@@ -58,6 +72,15 @@ export interface RecommendationComposeRequestDto {
 
 export interface RecommendationComposeResponseDto {
   sentences: string[]
+}
+
+export interface RecommendationRecordRequestDto {
+  text: string
+}
+
+export interface RecommendationRecordResponseDto {
+  expressionId: number
+  isNew: boolean
 }
 
 export interface RecommendationReplyHistoryItemDto {

@@ -53,4 +53,9 @@ public class Call {
         this.type = type;
         this.status = status;
     }
+
+    /** [Unit 8] 보호자가 호출을 확인하면 PENDING → RECEIVED로 변경 */
+    public void acknowledge() {
+        this.status = CallStatus.RECEIVED;
+    }
 }

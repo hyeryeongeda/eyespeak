@@ -1,14 +1,15 @@
 import { Bounds, Center, Html, useGLTF } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useFrame } from '@react-three/fiber'
 import {
   Component,
   Suspense,
-  useEffect,
   useMemo,
+  useRef,
   useState,
   type CSSProperties,
   type ReactNode,
 } from 'react'
+import { Color, Group, MathUtils, Mesh, MeshStandardMaterial } from 'three'
 import { painAreaModelUrls } from '../bodyMindPainModels'
 
 const cardStyle: CSSProperties = {
@@ -90,11 +91,21 @@ const placeholderDescriptionStyle: CSSProperties = {
   color: '#6e7d93',
 }
 
+export interface BodyViewOffset {
+  /** 카메라 Y 좌표 오프셋 (모델 중심 대비) */
+  y: number
+  /** 카메라 Z 거리 (줌 레벨, 작을수록 가까움) */
+  z: number
+}
+
 interface BodyMindPainGuideCardProps {
-  badge: string
+  badge?: string
   modelUrl: string
   fallbackModelUrl?: string
   headerText?: string
+  highlightModelUrl?: string | null
+  rotationY?: number
+  viewOffset?: BodyViewOffset | null
 }
 
 interface ModelErrorBoundaryProps {
@@ -136,17 +147,82 @@ function LoadingOverlay() {
   )
 }
 
+const BASE_BODY_MATERIAL = new MeshStandardMaterial({
+  color: '#F0F4F8',
+})
+
 function ModelScene({ modelUrl }: { modelUrl: string }) {
   const { scene } = useGLTF(modelUrl)
-  const clonedScene = useMemo(() => scene.clone(true), [scene])
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse(child => {
+      if (child instanceof Mesh) {
+        child.material = BASE_BODY_MATERIAL
+      }
+    })
+    return clone
+  }, [scene])
 
-  return (
-    <Bounds fit clip observe margin={1.15}>
-      <Center>
-        <primitive object={clonedScene} />
-      </Center>
-    </Bounds>
-  )
+  return <primitive object={clonedScene} />
+}
+
+const HIGHLIGHT_MATERIAL = new MeshStandardMaterial({
+  color: '#8FA8FF',
+  emissive: new Color('#4A6AFF'),
+  emissiveIntensity: 0.6,
+  transparent: true,
+  opacity: 0.55,
+  depthWrite: false,
+})
+
+function HighlightModelScene({ modelUrl }: { modelUrl: string }) {
+  const { scene } = useGLTF(modelUrl)
+  const clonedScene = useMemo(() => {
+    const clone = scene.clone(true)
+    clone.traverse(child => {
+      if (child instanceof Mesh) {
+        child.material = HIGHLIGHT_MATERIAL
+      }
+    })
+    return clone
+  }, [scene])
+
+  return <primitive object={clonedScene} />
+}
+
+const ROTATION_LERP_SPEED = 5
+
+function SmoothRotationGroup({
+  targetRotationY,
+  children,
+}: {
+  targetRotationY: number
+  children: ReactNode
+}) {
+  const groupRef = useRef<Group>(null)
+
+  useFrame((_, delta) => {
+    if (!groupRef.current) return
+    groupRef.current.rotation.y = MathUtils.lerp(
+      groupRef.current.rotation.y,
+      targetRotationY,
+      1 - Math.exp(-ROTATION_LERP_SPEED * delta),
+    )
+  })
+
+  return <group ref={groupRef}>{children}</group>
+}
+
+const CAMERA_LERP_SPEED = 4
+
+function CameraController({ viewOffset }: { viewOffset: BodyViewOffset }) {
+  useFrame(({ camera }, delta) => {
+    const t = 1 - Math.exp(-CAMERA_LERP_SPEED * delta)
+    camera.position.y = MathUtils.lerp(camera.position.y, viewOffset.y, t)
+    camera.position.z = MathUtils.lerp(camera.position.z, viewOffset.z, t)
+    camera.lookAt(0, viewOffset.y, 0)
+  })
+  return null
 }
 
 function Placeholder() {
@@ -169,32 +245,60 @@ export default function BodyMindPainGuideCard({
   modelUrl,
   fallbackModelUrl,
   headerText,
+  highlightModelUrl,
+  rotationY = 0,
+  viewOffset,
 }: BodyMindPainGuideCardProps) {
-  const [resolvedModelUrl, setResolvedModelUrl] = useState(modelUrl)
-  const [hasFatalError, setHasFatalError] = useState(false)
-  const [isFallbackModel, setIsFallbackModel] = useState(false)
+  const [modelState, setModelState] = useState(() => ({
+    sourceModelUrl: modelUrl,
+    hasFatalError: false,
+    isFallbackModel: false,
+  }))
 
-  useEffect(() => {
-    setResolvedModelUrl(modelUrl)
-    setHasFatalError(false)
-    setIsFallbackModel(false)
-  }, [modelUrl])
+  const currentModelState =
+    modelState.sourceModelUrl === modelUrl
+      ? modelState
+      : {
+          sourceModelUrl: modelUrl,
+          hasFatalError: false,
+          isFallbackModel: false,
+        }
+
+  const resolvedModelUrl =
+    currentModelState.isFallbackModel && fallbackModelUrl ? fallbackModelUrl : modelUrl
 
   const handleModelError = () => {
-    if (!isFallbackModel && fallbackModelUrl && fallbackModelUrl !== resolvedModelUrl) {
-      setResolvedModelUrl(fallbackModelUrl)
-      setIsFallbackModel(true)
-      return
-    }
+    setModelState(previousState => {
+      const nextState =
+        previousState.sourceModelUrl === modelUrl
+          ? previousState
+          : {
+              sourceModelUrl: modelUrl,
+              hasFatalError: false,
+              isFallbackModel: false,
+            }
 
-    setHasFatalError(true)
+      if (!nextState.isFallbackModel && fallbackModelUrl && fallbackModelUrl !== modelUrl) {
+        return {
+          sourceModelUrl: modelUrl,
+          hasFatalError: false,
+          isFallbackModel: true,
+        }
+      }
+
+      return {
+        sourceModelUrl: modelUrl,
+        hasFatalError: true,
+        isFallbackModel: nextState.isFallbackModel,
+      }
+    })
   }
 
   return (
-    <section style={cardStyle} aria-label={`${badge} 3D 가이드`}>
-      <span style={badgeStyle}>{badge}</span>
+    <section style={badge || headerText ? cardStyle : { ...cardStyle, padding: '8px', gap: '0px' }} aria-label={`${badge ?? '3D'} 가이드`}>
+      {badge ? <span style={badgeStyle}>{badge}</span> : null}
       {headerText ? <p style={headerTextStyle}>{headerText}</p> : null}
-      {hasFatalError ? (
+      {currentModelState.hasFatalError ? (
         <Placeholder />
       ) : (
         <div style={canvasWrapStyle}>
@@ -204,7 +308,26 @@ export default function BodyMindPainGuideCard({
               <directionalLight position={[4, 5, 4]} intensity={1.15} />
               <directionalLight position={[-3, 2, -3]} intensity={0.42} />
               <Suspense fallback={<LoadingOverlay />}>
-                <ModelScene modelUrl={resolvedModelUrl} />
+                {viewOffset ? (
+                  <>
+                    <CameraController viewOffset={viewOffset} />
+                    <Center>
+                      <SmoothRotationGroup targetRotationY={rotationY}>
+                        <ModelScene modelUrl={resolvedModelUrl} />
+                        {highlightModelUrl ? <HighlightModelScene modelUrl={highlightModelUrl} /> : null}
+                      </SmoothRotationGroup>
+                    </Center>
+                  </>
+                ) : (
+                  <Bounds fit clip observe margin={1.15}>
+                    <Center>
+                      <SmoothRotationGroup targetRotationY={rotationY}>
+                        <ModelScene modelUrl={resolvedModelUrl} />
+                        {highlightModelUrl ? <HighlightModelScene modelUrl={highlightModelUrl} /> : null}
+                      </SmoothRotationGroup>
+                    </Center>
+                  </Bounds>
+                )}
               </Suspense>
             </Canvas>
           </ModelErrorBoundary>

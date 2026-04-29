@@ -1,15 +1,16 @@
 import { useState } from 'react'
-import { ROUTE_PATHS, resolveAppPath } from '../../../app/router/routePaths'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { checkEmailAvailability } from '../../../services/authService'
 import {
   clearVerifiedTeamCode,
-  getStoredVerifiedTeamCode,
+  normalizeTeamCode,
   storeVerifiedTeamCode,
 } from '../../../services/authStorage'
-import { getPatientCalibrationStatus } from '../../../services/calibration/patientCalibrationService'
 import { signUpPatient, verifyTeamCode } from '../../../services/patientAuthService'
-import { useAuth } from './useAuth'
 import type { PatientAccountFormValues, VerifiedTeamCode } from '../../../types/patient'
-import { isValidEmail, validatePassword } from '../../../utils/validators'
+import { isValidEmail, normalizeEmailAddress, validatePassword } from '../../../utils/validators'
+import { resolveAuthSuccessNavigation } from '../authRedirect'
+import { useAuth } from './useAuth'
 
 const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   name: '',
@@ -18,25 +19,56 @@ const INITIAL_PATIENT_ACCOUNT: PatientAccountFormValues = {
   passwordConfirm: '',
 }
 
+const TEAM_CODE_PREFILL_SOURCE = 'guardian-signup-complete'
+
+interface PatientSignupLocationState {
+  prefilledTeamCode?: string
+  prefilledTeamCodeSource?: typeof TEAM_CODE_PREFILL_SOURCE
+}
+
+function getPrefilledTeamCode(state: unknown) {
+  if (!state || typeof state !== 'object') {
+    return ''
+  }
+
+  const { prefilledTeamCode, prefilledTeamCodeSource } = state as PatientSignupLocationState
+
+  if (prefilledTeamCodeSource !== TEAM_CODE_PREFILL_SOURCE || typeof prefilledTeamCode !== 'string') {
+    return ''
+  }
+
+  return normalizeTeamCode(prefilledTeamCode)
+}
+
 export function usePatientSignup() {
-  const { setSession } = useAuth()
-  const storedVerifiedTeamCode = getStoredVerifiedTeamCode()
-  const [teamCode, setTeamCode] = useState(storedVerifiedTeamCode ?? '')
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { setSession, setPatientPostAuth } = useAuth()
+  const [teamCode, setTeamCode] = useState(() => getPrefilledTeamCode(location.state))
   const [verifiedTeamCode, setVerifiedTeamCode] = useState<VerifiedTeamCode | null>(null)
   const [patientAccount, setPatientAccount] =
     useState<PatientAccountFormValues>(INITIAL_PATIENT_ACCOUNT)
   const [errorMessage, setErrorMessage] = useState('')
-  const [infoMessage, setInfoMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isVerifyingTeamCode, setIsVerifyingTeamCode] = useState(false)
+  const [isCheckingPatientEmail, setIsCheckingPatientEmail] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [checkedPatientEmail, setCheckedPatientEmail] = useState('')
+  const [patientEmailCheckMessage, setPatientEmailCheckMessage] = useState('')
+  const [patientEmailCheckMessageType, setPatientEmailCheckMessageType] = useState<
+    'success' | 'error' | null
+  >(null)
+
+  const normalizedPatientEmail = normalizeEmailAddress(patientAccount.loginId)
+  const isPatientEmailChecked =
+    normalizedPatientEmail.length > 0 && checkedPatientEmail === normalizedPatientEmail
 
   const handleVerifyTeamCode = async () => {
     setErrorMessage('')
-    setInfoMessage('')
-    setIsLoading(true)
+    setIsVerifyingTeamCode(true)
 
     const result = await verifyTeamCode(teamCode)
 
-    setIsLoading(false)
+    setIsVerifyingTeamCode(false)
 
     if (!result.success) {
       setVerifiedTeamCode(null)
@@ -48,36 +80,123 @@ export function usePatientSignup() {
     setTeamCode(result.data.teamCode)
     setPatientAccount(prev => ({
       ...prev,
-      name: prev.name || result.data.patientName,
+      name: prev.name || result.data.patientName || '',
     }))
     storeVerifiedTeamCode(result.data.teamCode)
-    setInfoMessage('팀코드 확인이 완료되었습니다.')
   }
 
-  const handleResetTeamCode = () => {
-    clearVerifiedTeamCode()
-    setVerifiedTeamCode(null)
-    setTeamCode('')
+  const setTeamCodeValue = (
+    nextState: string | ((previousState: string) => string),
+  ) => {
     setErrorMessage('')
-    setInfoMessage('')
+    setTeamCode(previousState => {
+      const resolvedState =
+        typeof nextState === 'function'
+          ? nextState(previousState)
+          : nextState
+      const normalizedNextTeamCode = normalizeTeamCode(resolvedState)
+
+      if (verifiedTeamCode && normalizedNextTeamCode !== verifiedTeamCode.teamCode) {
+        clearVerifiedTeamCode()
+        setVerifiedTeamCode(null)
+      }
+
+      return resolvedState
+    })
   }
 
-  const handleSubmit = async () => {
+  const setPatientAccountValues = (
+    nextState:
+      | PatientAccountFormValues
+      | ((previousState: PatientAccountFormValues) => PatientAccountFormValues),
+  ) => {
     setErrorMessage('')
-    setInfoMessage('')
+    setPatientAccount(previousState => {
+      const resolvedState =
+        typeof nextState === 'function'
+          ? nextState(previousState)
+          : nextState
+      const normalizedNextEmail = normalizeEmailAddress(resolvedState.loginId)
 
-    if (!verifiedTeamCode) {
-      setErrorMessage('팀코드 확인을 먼저 완료해주세요.')
-      return
-    }
+      if (normalizedNextEmail !== checkedPatientEmail) {
+        setCheckedPatientEmail('')
+        setPatientEmailCheckMessage('')
+        setPatientEmailCheckMessageType(null)
+      }
 
-    if (!patientAccount.name.trim() || !patientAccount.loginId.trim()) {
-      setErrorMessage('환자 이름과 로그인 이메일을 입력해주세요.')
+      return resolvedState
+    })
+  }
+
+  const handleCheckPatientEmail = async () => {
+    setErrorMessage('')
+    setPatientEmailCheckMessage('')
+    setPatientEmailCheckMessageType(null)
+    setCheckedPatientEmail('')
+
+    if (!patientAccount.loginId.trim()) {
+      setErrorMessage('로그인 이메일을 입력해 주세요.')
       return
     }
 
     if (!isValidEmail(patientAccount.loginId)) {
-      setErrorMessage('올바른 이메일 형식의 로그인 이메일을 입력해주세요.')
+      setErrorMessage('이메일 형식의 로그인 계정을 입력해 주세요.')
+      return
+    }
+
+    setIsCheckingPatientEmail(true)
+
+    let result: Awaited<ReturnType<typeof checkEmailAvailability>>
+
+    try {
+      result = await checkEmailAvailability(normalizedPatientEmail)
+    } finally {
+      setIsCheckingPatientEmail(false)
+    }
+
+    if (!result.success) {
+      if (
+        result.code === 'AUTH-204' ||
+        result.code === 'GUARDIAN_EMAIL_DUPLICATED' ||
+        result.code === 'PATIENT_LOGIN_ID_DUPLICATED'
+      ) {
+        setPatientEmailCheckMessage('이미 사용 중인 로그인 이메일입니다.')
+        setPatientEmailCheckMessageType('error')
+        setErrorMessage('')
+        return
+      }
+
+      setPatientEmailCheckMessage(result.message)
+      setPatientEmailCheckMessageType('error')
+      setErrorMessage('')
+      return
+    }
+
+    setCheckedPatientEmail(normalizedPatientEmail)
+    setPatientEmailCheckMessage('사용 가능한 로그인 이메일입니다.')
+    setPatientEmailCheckMessageType('success')
+  }
+
+  const handleSubmit = async () => {
+    setErrorMessage('')
+
+    if (!verifiedTeamCode) {
+      setErrorMessage('팀코드 확인을 먼저 완료해 주세요.')
+      return
+    }
+
+    if (!patientAccount.name.trim() || !patientAccount.loginId.trim()) {
+      setErrorMessage('환자 이름과 로그인 이메일을 입력해 주세요.')
+      return
+    }
+
+    if (!isValidEmail(patientAccount.loginId)) {
+      setErrorMessage('이메일 형식의 로그인 계정을 입력해 주세요.')
+      return
+    }
+
+    if (!isPatientEmailChecked) {
+      setErrorMessage('로그인 이메일 중복확인을 완료해 주세요.')
       return
     }
 
@@ -93,43 +212,51 @@ export function usePatientSignup() {
       return
     }
 
-    setIsLoading(true)
+    setIsSubmitting(true)
 
     const result = await signUpPatient({
       teamCode: verifiedTeamCode.teamCode,
       account: patientAccount,
     })
 
-    setIsLoading(false)
+    setIsSubmitting(false)
 
     if (!result.success) {
+      setPatientPostAuth(null)
       setErrorMessage(result.message)
       return
     }
 
     clearVerifiedTeamCode()
     setSession(result.data.session)
+    const resolvedNavigation = await resolveAuthSuccessNavigation(result.data.session, {
+      entryPoint: 'signup',
+      locationState: location.state,
+    })
+    setPatientPostAuth(resolvedNavigation.patientPostAuthState)
 
-    const calibrationStatus = await getPatientCalibrationStatus(result.data.session)
-    const nextPath =
-      calibrationStatus.success && !calibrationStatus.data.required
-        ? ROUTE_PATHS.PATIENT_MAIN
-        : ROUTE_PATHS.PATIENT_CALIBRATION
-
-    window.location.replace(resolveAppPath(nextPath))
+    navigate(resolvedNavigation.path, {
+      replace: true,
+      state: resolvedNavigation.state,
+    })
   }
 
   return {
     teamCode,
     verifiedTeamCode,
     patientAccount,
+    normalizedPatientEmail,
+    isPatientEmailChecked,
+    patientEmailCheckMessage,
+    patientEmailCheckMessageType,
     errorMessage,
-    infoMessage,
-    isLoading,
-    setTeamCode,
-    setPatientAccount,
+    isVerifyingTeamCode,
+    isCheckingPatientEmail,
+    isSubmitting,
+    setTeamCode: setTeamCodeValue,
+    setPatientAccount: setPatientAccountValues,
     handleVerifyTeamCode,
-    handleResetTeamCode,
+    handleCheckPatientEmail,
     handleSubmit,
   }
 }

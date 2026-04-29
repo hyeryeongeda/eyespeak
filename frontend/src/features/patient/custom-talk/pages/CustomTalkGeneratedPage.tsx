@@ -1,66 +1,73 @@
 import { type CSSProperties, useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
-import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
-import CustomTalkStageLayout from '../components/CustomTalkStageLayout'
-import {
-  customTalkErrorNoticeStyle,
-  customTalkLoadingNoticeStyle,
-  customTalkPanelStyle,
-  customTalkSuccessNoticeStyle,
-} from '../components/customTalkUi'
+import useReturnToTalkMainAfterDelay from '../../../../hooks/useReturnToTalkMainAfterDelay'
+import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
+import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
 import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
 
 const centerStackStyle: CSSProperties = {
+  height: '100%',
+  minHeight: 0,
+  padding: '18px',
+  boxSizing: 'border-box',
+}
+
+const sentenceDisplayStyle: CSSProperties = {
+  height: '100%',
+  minHeight: 0,
+  borderRadius: '24px',
+  border: '1px solid #dde7ed',
+  backgroundColor: '#ffffff',
+  boxShadow: '0 18px 40px rgba(63, 86, 111, 0.08)',
   display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
   flexDirection: 'column',
-  gap: '12px',
+  gap: '10px',
+  padding: '20px 24px',
+  textAlign: 'center',
+  transition: 'border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease',
 }
 
-const sectionTitleStyle: CSSProperties = {
+const sentenceLabelStyle: CSSProperties = {
   margin: 0,
-  color: '#223247',
-  fontSize: '18px',
-  fontWeight: 900,
-}
-
-const sectionTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#65778f',
-  fontSize: '14px',
-  fontWeight: 600,
-  lineHeight: 1.6,
-}
-
-const previewStyle: CSSProperties = {
-  padding: '16px 18px',
-  borderRadius: '20px',
-  backgroundColor: '#eef8f1',
-  border: '1px solid #cce4d2',
-  color: '#3f6e4c',
-  fontSize: '15px',
+  color: '#6d7f95',
+  fontSize: '0.85rem',
   fontWeight: 800,
-  lineHeight: 1.6,
+  letterSpacing: '0.02em',
+  textTransform: 'uppercase',
 }
+
+const sentenceTextStyle: CSSProperties = {
+  margin: 0,
+  color: '#111827',
+  fontSize: 'clamp(1.2rem, 2.3vw, 2rem)',
+  fontWeight: 900,
+  lineHeight: 1.45,
+  wordBreak: 'keep-all',
+  whiteSpace: 'pre-wrap',
+}
+
+type CustomTalkGeneratedTrackingId =
+  | 'custom-talk-generated-option-1'
+  | 'custom-talk-generated-option-2'
+  | 'custom-talk-generated-option-3'
+  | 'custom-talk-generated-keyboard'
+  | 'custom-talk-generated-refresh'
+  | 'custom-talk-generated-back'
 
 function getVisibleGeneratedSentences(sentences: string[]) {
-  const fallbackSentences = ['조금만 쉬고 싶어요.', '지금은 괜찮아요.']
-  const visible = [...sentences]
-
-  fallbackSentences.forEach(sentence => {
-    if (visible.length < 2 && !visible.includes(sentence)) {
-      visible.push(sentence)
-    }
-  })
-
-  return visible.slice(0, 2)
+  return sentences.filter(Boolean).slice(0, 3)
 }
 
 export default function CustomTalkGeneratedPage() {
   const navigate = useNavigate()
-  const context = useCustomTalkStore(state => state.context)
-  const conversationLog = useCustomTalkStore(state => state.conversationLog)
+  const dwellFeedback = useDwellFeedback<CustomTalkGeneratedTrackingId>({
+    enabled: true,
+  })
   const draft = useCustomTalkStore(state => state.draft)
   const generatedSentences = useCustomTalkStore(state => state.generatedSentences)
   const status = useCustomTalkStore(state => state.status)
@@ -69,12 +76,30 @@ export default function CustomTalkGeneratedPage() {
   const buildGeneratedSentences = useCustomTalkStore(state => state.buildGeneratedSentences)
   const selectGeneratedSentence = useCustomTalkStore(state => state.selectGeneratedSentence)
   const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
-
+  const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
   const hasComposeValue = Boolean(
     draft.subject || draft.object || draft.predicate || draft.punctuation,
   )
+  const hasCategoryKey = Boolean(draft.categoryKey)
+  const isBusy =
+    status === 'loading' || status === 'refreshing' || status === 'submitting'
+  const isGeneratedLoading = status === 'loading' || status === 'refreshing'
+  const previewText = draft.selectedGeneratedSentence?.trim() || buildCustomTalkDraftPreview(draft)
 
-  if (!draft.categoryKey) {
+  useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
+    onAfterNavigate: resetCustomTalkSession,
+  })
+  useAutoDismissCustomTalkError(errorMessage)
+
+  useEffect(() => {
+    if (!hasCategoryKey || !hasComposeValue || generatedSentences.length > 0) {
+      return
+    }
+
+    void buildGeneratedSentences()
+  }, [buildGeneratedSentences, generatedSentences.length, hasCategoryKey, hasComposeValue])
+
+  if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
 
@@ -82,82 +107,151 @@ export default function CustomTalkGeneratedPage() {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE} replace />
   }
 
-  useEffect(() => {
-    if (generatedSentences.length === 0) {
-      void buildGeneratedSentences()
-    }
-  }, [buildGeneratedSentences, generatedSentences.length])
-
   const visibleGeneratedSentences = getVisibleGeneratedSentences(generatedSentences)
+  const centerTone = isGeneratedLoading
+    ? 'loading'
+    : errorMessage
+      ? 'error'
+      : completionMessage
+        ? 'success'
+        : 'default'
+  const centerLabel =
+    centerTone === 'loading'
+      ? '불러오는 중'
+      : centerTone === 'error'
+        ? '안내'
+        : centerTone === 'success'
+          ? '완료'
+          : previewText
+            ? undefined
+            : '문장 미리보기'
+  const centerText =
+    centerTone === 'loading'
+      ? '생성 문장을 준비하는 중입니다.'
+      : errorMessage || completionMessage || previewText || '조합한 문장이 여기에 표시됩니다.'
+  const centerToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? {
+          borderColor: '#d7e4ef',
+          backgroundColor: '#f7fbff',
+          boxShadow: '0 18px 40px rgba(91, 122, 155, 0.1)',
+        }
+      : centerTone === 'error'
+        ? {
+            borderColor: '#efc8c8',
+            backgroundColor: '#fff5f5',
+            boxShadow: '0 18px 40px rgba(178, 77, 77, 0.08)',
+          }
+        : centerTone === 'success'
+          ? {
+              borderColor: '#cce4d2',
+              backgroundColor: '#eef8f1',
+              boxShadow: '0 18px 40px rgba(63, 110, 76, 0.08)',
+            }
+          : {}
+  const centerLabelToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? { color: '#5f738a' }
+      : centerTone === 'error'
+        ? { color: '#a54f4f' }
+        : centerTone === 'success'
+          ? { color: '#3f6e4c' }
+          : {}
+  const centerTextToneStyle: CSSProperties =
+    centerTone === 'loading'
+      ? { color: '#5f738a', fontSize: 'clamp(1.2rem, 2.2vw, 1.8rem)' }
+      : centerTone === 'error'
+        ? { color: '#a54f4f', fontSize: 'clamp(1.15rem, 2vw, 1.65rem)' }
+        : centerTone === 'success'
+          ? { color: '#3f6e4c', fontSize: 'clamp(1.15rem, 2vw, 1.7rem)' }
+          : {}
 
   return (
-    <CustomTalkStageLayout
-      code="PAT-CUSTOM-004"
-      title="생성 문장 추천"
-      description="이 단계도 환자 입력은 옆의 네 버튼으로만 처리합니다."
-      stepLabel="생성 문장 / 키보드 / 뒤로가기"
-      leftTop={{
+    <CustomTalkEntryLayout
+      title="생성 문장 선택"
+      topLeft={{
         title: visibleGeneratedSentences[0] ?? '생성 문장 준비 중',
-        description: '이 문장으로 바로 발화합니다.',
+        description: '',
         tone: 'sky',
         onSelect: () => {
           if (visibleGeneratedSentences[0]) {
             void selectGeneratedSentence(visibleGeneratedSentences[0])
           }
         },
-        disabled: !visibleGeneratedSentences[0],
+        disabled: !visibleGeneratedSentences[0] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[0],
+        loadingLabel: 'AI 문장 생성 중',
+        trackingId: 'custom-talk-generated-option-1',
+        confirmUntilTts: true,
       }}
-      leftBottom={{
+      topCenter={{
         title: visibleGeneratedSentences[1] ?? '생성 문장 준비 중',
-        description: '이 문장으로 바로 발화합니다.',
+        description: '',
         tone: 'sand',
         onSelect: () => {
           if (visibleGeneratedSentences[1]) {
             void selectGeneratedSentence(visibleGeneratedSentences[1])
           }
         },
-        disabled: !visibleGeneratedSentences[1],
+        disabled: !visibleGeneratedSentences[1] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[1],
+        loadingLabel: 'AI 문장 생성 중',
+        trackingId: 'custom-talk-generated-option-2',
+        confirmUntilTts: true,
       }}
-      rightTop={{
-        title: '키보드 직접 입력',
-        description: '생성 문장 대신 직접 입력 화면으로 이동합니다.',
+      topRight={{
+        title: visibleGeneratedSentences[2] ?? '생성 문장 준비 중',
+        description: '',
         tone: 'mint',
         onSelect: () => {
-          openKeyboard('generated')
+          if (visibleGeneratedSentences[2]) {
+            void selectGeneratedSentence(visibleGeneratedSentences[2])
+          }
+        },
+        disabled: !visibleGeneratedSentences[2] || isBusy,
+        loading: isGeneratedLoading && !visibleGeneratedSentences[2],
+        loadingLabel: 'AI 문장 생성 중',
+        trackingId: 'custom-talk-generated-option-3',
+        confirmUntilTts: true,
+      }}
+      bottomLeft={{
+        title: '키보드',
+        description: '',
+        tone: 'mint',
+        onSelect: () => {
+          openKeyboard('generated', previewText)
           navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
         },
+        disabled: isBusy,
+        trackingId: 'custom-talk-generated-keyboard',
       }}
-      rightBottom={{
+      bottomCenter={{
+        title: '새로고침',
+        description: '',
+        tone: 'sky',
+        onSelect: () => {
+          void buildGeneratedSentences()
+        },
+        disabled: isBusy,
+        trackingId: 'custom-talk-generated-refresh',
+      }}
+      bottomRight={{
         title: '뒤로가기',
-        description: '단어 조합 단계로 돌아갑니다.',
+        description: '',
         tone: 'slate',
         onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE),
+        disabled: isBusy,
+        trackingId: 'custom-talk-generated-back',
       }}
+      dwellFeedback={dwellFeedback}
       centerChildren={
         <div style={centerStackStyle}>
-          <CustomTalkContextPanel
-            context={context}
-            conversationLog={conversationLog}
-            previewText={buildCustomTalkDraftPreview(draft)}
-          />
-
-          {status === 'loading' ? (
-            <div style={customTalkLoadingNoticeStyle}>생성 문장을 준비하는 중입니다.</div>
-          ) : null}
-          {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
-          {completionMessage ? (
-            <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
-          ) : null}
-
-          <section style={customTalkPanelStyle}>
-            <h3 style={sectionTitleStyle}>조합 결과 요약</h3>
-            <p style={sectionTextStyle}>
-              왼쪽 두 버튼은 생성 문장, 오른쪽 위는 키보드 입력, 오른쪽 아래는 뒤로가기입니다.
-            </p>
-            <div style={previewStyle}>
-              현재 조합: {buildCustomTalkDraftPreview(draft) || '아직 조합된 문장이 없습니다.'}
-            </div>
-          </section>
+          <div style={{ ...sentenceDisplayStyle, ...centerToneStyle }} aria-live="polite">
+            {centerLabel ? (
+              <p style={{ ...sentenceLabelStyle, ...centerLabelToneStyle }}>{centerLabel}</p>
+            ) : null}
+            <p style={{ ...sentenceTextStyle, ...centerTextToneStyle }}>{centerText}</p>
+          </div>
         </div>
       }
     />

@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig } from 'axios'
 
-export type ApiMethod = 'GET' | 'POST' | 'DELETE'
+export type ApiMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+export type ApiMode = 'mock' | 'real'
 
 export type ApiSource = 'mock' | 'api'
 
@@ -9,6 +10,7 @@ export interface ApiRequestOptions<TBody = unknown> {
   url: string
   data?: TBody
   accessToken?: string | null
+  skipAuthInvalidation?: boolean
   params?: Record<string, string | number | boolean | null | undefined>
   headers?: Record<string, string>
   responseType?: AxiosRequestConfig['responseType']

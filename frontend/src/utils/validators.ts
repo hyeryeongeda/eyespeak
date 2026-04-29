@@ -4,6 +4,10 @@ export function isValidEmail(value: string) {
   return EMAIL_PATTERN.test(value.trim())
 }
 
+export function normalizeEmailAddress(value: string) {
+  return value.trim().toLowerCase()
+}
+
 export function sanitizeBirthYearInput(value: string) {
   return value.replace(/\D/g, '').slice(0, 4)
 }

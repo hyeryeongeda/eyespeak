@@ -1,8 +1,9 @@
 import { type FormEvent, useEffect, useState } from 'react'
-import { ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute, resolveAuthSuccessNavigation } from '../../features/auth/authRedirect'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { setStoredEntryMode, setStoredRole } from '../../services/authStorage'
-import { requestPatientRecalibration } from '../../services/calibration/patientCalibrationService'
 import AuthBrand from './AuthBrand'
 import {
   card,
@@ -19,7 +20,10 @@ import {
 import AuthPageFrame from './AuthPageFrame'
 
 export default function PatientLoginPage() {
-  const { login, isPending } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { login, isPending, setPatientPostAuth } = useAuth()
+  const patientSignupRoute = resolveAuthEntryRoute('signup', 'patient', location.state)
   const [form, setForm] = useState({
     identifier: '',
     password: '',
@@ -42,12 +46,21 @@ export default function PatientLoginPage() {
     })
 
     if (!result.success) {
+      setPatientPostAuth(null)
       setError(result.message)
       return
     }
 
-    requestPatientRecalibration(result.data)
-    window.location.replace(resolveAppPath(ROUTE_PATHS.PATIENT_CALIBRATION))
+    const resolvedNavigation = await resolveAuthSuccessNavigation(result.data, {
+      entryPoint: 'login',
+      locationState: location.state,
+    })
+    setPatientPostAuth(resolvedNavigation.patientPostAuthState)
+
+    navigate(resolvedNavigation.path, {
+      replace: true,
+      state: resolvedNavigation.state,
+    })
   }
 
   return (
@@ -93,18 +106,38 @@ export default function PatientLoginPage() {
           </button>
         </form>
 
-        <p style={helperText}>로그인 후 환자 시선 캘리브레이션을 다시 진행합니다.</p>
+        <p style={helperText}>
+          로그인 성공 후에는 계정 상태를 먼저 확인하고, 필요한 경우에만 시선 보정 단계로 안내합니다.
+        </p>
 
         <div style={linkRow}>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_RESET_PASSWORD}?role=patient`)} style={textLink}>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_RESET_PASSWORD,
+              search: '?role=patient',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             비밀번호 재설정
-          </a>
-          <a href={resolveAppPath(ROUTE_PATHS.AUTH_SIGNUP_PATIENT)} style={textLink}>
+          </Link>
+          <Link
+            to={patientSignupRoute.path}
+            state={patientSignupRoute.state}
+            style={textLink}
+          >
             환자 회원가입
-          </a>
-          <a href={resolveAppPath(`${ROUTE_PATHS.AUTH_ROLE}?mode=login`)} style={textLink}>
+          </Link>
+          <Link
+            to={{
+              pathname: ROUTE_PATHS.AUTH_ROLE,
+              search: '?mode=login',
+            }}
+            state={location.state}
+            style={textLink}
+          >
             역할 다시 선택
-          </a>
+          </Link>
         </div>
       </div>
     </AuthPageFrame>

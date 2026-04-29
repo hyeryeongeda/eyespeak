@@ -1,49 +1,61 @@
-/**
- * 보호자 설정 Mock 서비스
- * API 연동 시 이 파일의 함수 내부만 교체하면 됨
- */
-
 import type {
-  PatientInfo,
-  RoutineSlotWithTags,
+  ActivationDelayPreset,
+  ApiResponse,
   Category,
-  Phrase,
+  DailyRecordResponse,
+  DwellTimePreset,
+  Expression,
   FavoritePhrase,
   LeisureContentItem,
-  DwellTimePreset,
-  ActivationDelayPreset,
-  TtsSetting,
-  TtsVoiceFile,
-  UserWords,
-  Expression,
-  DailySummary,
-  ApiResponse,
-  TimeSlot,
-  ActivityTag,
+  MonthlyRecordDay,
+  PatientInfo,
+  PatientInfoUpdateRequest,
+  Phrase,
+  RoutineRequestItem,
+  RoutineSlotState,
+  TtsSettingsResponse,
 } from '../types/care'
-import { DWELL_TIME_OPTIONS, ACTIVATION_DELAY_OPTIONS } from '../types/care'
-
 import {
-  MOCK_PATIENT_INFO,
-  MOCK_TIME_SLOTS,
-  MOCK_ACTIVITY_TAGS,
-  MOCK_ROUTINES,
+  ACTIVATION_DELAY_OPTIONS,
+  DWELL_TIME_OPTIONS,
+  DWELL_TIME_MS_TO_PRESET,
+  ACTIVATION_DELAY_MS_TO_PRESET,
+} from '../types/care'
+import type {
+  LeisureContentCreateRequestDto,
+  LeisureContentResponseDto,
+  LeisureContentUpdateRequestDto,
+} from '../types/leisure'
+import {
   MOCK_CATEGORIES,
-  MOCK_PHRASES,
-  MOCK_FAVORITE_PHRASES,
-  MOCK_LEISURE_CONTENTS,
-  MOCK_DWELL_TIME_PRESET,
-  MOCK_ACTIVATION_DELAY_PRESET,
-  MOCK_TTS_SETTING,
-  MOCK_TTS_VOICE_FILES,
-  MOCK_USER_WORDS,
   MOCK_EXPRESSIONS,
-  MOCK_DAILY_SUMMARIES,
+  MOCK_FAVORITE_PHRASES,
+  MOCK_PHRASES,
 } from './mockCareData'
+import {
+  getTtsSettingsApi,
+  toggleTtsSettingsApi,
+  uploadTtsVoicesApi,
+  deleteTtsVoiceApi,
+} from './ttsApi'
+import {
+  createLeisureContentApi,
+  deleteLeisureContentApi,
+  getLeisureContentsApi,
+  updateLeisureContentApi,
+} from './leisureApi'
+import { getMonthlyRecordsApi, getDailyRecordApi } from './communicationRecordApi'
+import { getRoutinesApi, updateRoutinesApi } from './routineApi'
+import { getPatientInfoApi, updatePatientInfoApi } from './patientInfoApi'
+import {
+  getDwellTimeApi,
+  updateDwellTimeApi,
+  getActivationDelayApi,
+  updateActivationDelayApi,
+} from './deviceSettingApi'
+import { GUARDIAN_SIGNUP_ROUTINE_SLOTS, ROUTINE_ACTIVITY_TAGS } from '../constants/routineCatalog'
 
 const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms))
-const CARE_DWELL_TIME_PRESET_STORAGE_KEY = 'careSetting:dwellTimePreset'
-const CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY = 'careSetting:activationDelayPreset'
 
 export const CARE_DWELL_TIME_PRESET_UPDATED_EVENT = 'care-setting:dwell-time-updated'
 export const CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT =
@@ -61,260 +73,231 @@ function isBrowser() {
   return typeof window !== 'undefined'
 }
 
-function readStoredPreset<TPreset extends string>(
-  storageKey: string,
-  isValidPreset: (value: unknown) => value is TPreset,
-) {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const storedValue = localStorage.getItem(storageKey)
-
-  if (!storedValue || !isValidPreset(storedValue)) {
-    return null
-  }
-
-  return storedValue
-}
-
-function writeStoredPreset(storageKey: string, preset: string) {
-  if (!isBrowser()) {
-    return
-  }
-
-  localStorage.setItem(storageKey, preset)
-}
-
-function isDwellTimePreset(value: unknown): value is DwellTimePreset {
-  return typeof value === 'string' && value in DWELL_TIME_OPTIONS
-}
-
-function isActivationDelayPreset(value: unknown): value is ActivationDelayPreset {
-  return typeof value === 'string' && value in ACTIVATION_DELAY_OPTIONS
-}
-
-// 환자 기본 정보
 export async function getPatientInfo(): Promise<ApiResponse<PatientInfo>> {
-  await delay()
-  return { success: true, data: { ...MOCK_PATIENT_INFO }, message: '조회 성공' }
+  const data = await getPatientInfoApi()
+  return { success: true, data, message: 'Fetched patient info.' }
 }
 
-export async function updatePatientInfo(info: Partial<PatientInfo>): Promise<ApiResponse<PatientInfo>> {
-  await delay()
-  const updated = { ...MOCK_PATIENT_INFO, ...info }
-  return { success: true, data: updated, message: '수정 성공' }
+export async function updatePatientInfo(info: PatientInfoUpdateRequest): Promise<ApiResponse<PatientInfo>> {
+  await updatePatientInfoApi(info)
+  const data = await getPatientInfoApi()
+  return { success: true, data, message: 'Updated patient info.' }
 }
 
-
-// 루틴
-export async function getTimeSlots(): Promise<ApiResponse<TimeSlot[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_TIME_SLOTS], message: '조회 성공' }
+export function getActivityTags() {
+  return ROUTINE_ACTIVITY_TAGS
 }
 
-export async function getActivityTags(): Promise<ApiResponse<ActivityTag[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_ACTIVITY_TAGS], message: '조회 성공' }
+export async function getRoutines(): Promise<ApiResponse<RoutineSlotState[]>> {
+  try {
+    const response = await getRoutinesApi()
+    const routines: RoutineSlotState[] = response.routines.map(item => ({
+      timeSlotId: item.timeSlotId,
+      timeSlotName: item.timeSlotName,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      activityTagId: item.activityTagId,
+    }))
+
+    return { success: true, data: routines, message: 'Fetched routines.' }
+  } catch {
+    const emptyRoutines: RoutineSlotState[] = GUARDIAN_SIGNUP_ROUTINE_SLOTS.map(slot => ({
+      timeSlotId: slot.id,
+      timeSlotName: slot.label,
+      startTime: slot.timeRange.split(' ~ ')[0],
+      endTime: slot.timeRange.split(' ~ ')[1],
+      activityTagId: null,
+    }))
+
+    return { success: true, data: emptyRoutines, message: 'No routines found.' }
+  }
 }
 
-export async function getRoutines(): Promise<ApiResponse<RoutineSlotWithTags[]>> {
-  await delay()
-  return { success: true, data: MOCK_ROUTINES.map(r => ({ ...r })), message: '조회 성공' }
+export async function saveRoutines(routines: RoutineRequestItem[]): Promise<ApiResponse<null>> {
+  await updateRoutinesApi(routines)
+  return { success: true, data: null, message: 'Saved routines.' }
 }
 
-export async function updateRoutines(routines: RoutineSlotWithTags[]): Promise<ApiResponse<RoutineSlotWithTags[]>> {
-  await delay()
-  return { success: true, data: routines, message: '저장 성공' }
-}
-
-
-// 즐겨찾기
 export async function getCategories(): Promise<ApiResponse<Category[]>> {
   await delay()
-  return { success: true, data: [...MOCK_CATEGORIES], message: '조회 성공' }
+  return { success: true, data: [...MOCK_CATEGORIES], message: 'Fetched categories.' }
 }
 
 export async function getPhrasesByCategory(categoryId: number): Promise<ApiResponse<Phrase[]>> {
   await delay()
-  const filtered = MOCK_PHRASES.filter(p => p.categoryId === categoryId)
-  return { success: true, data: filtered, message: '조회 성공' }
+  return {
+    success: true,
+    data: MOCK_PHRASES.filter(phrase => phrase.categoryId === categoryId),
+    message: 'Fetched phrases.',
+  }
 }
 
 export async function getFavoritePhrases(): Promise<ApiResponse<FavoritePhrase[]>> {
   await delay()
-  return { success: true, data: [...MOCK_FAVORITE_PHRASES], message: '조회 성공' }
+  return { success: true, data: [...MOCK_FAVORITE_PHRASES], message: 'Fetched favorite phrases.' }
 }
 
 export async function addFavoritePhrase(phraseId: number): Promise<ApiResponse<FavoritePhrase>> {
   await delay()
-  const newFav: FavoritePhrase = { id: Date.now(), matchingId: 1, phraseId }
-  return { success: true, data: newFav, message: '등록 성공' }
+  return {
+    success: true,
+    data: { id: Date.now(), matchingId: 1, phraseId },
+    message: 'Added favorite phrase.',
+  }
 }
 
 export async function removeFavoritePhrase(phraseId: number): Promise<ApiResponse<null>> {
   await delay(200)
   void phraseId
-  return { success: true, data: null, message: '삭제 성공' }
+  return { success: true, data: null, message: 'Removed favorite phrase.' }
 }
 
-
-// 여가 콘텐츠
-export async function getLeisureContents(): Promise<ApiResponse<LeisureContentItem[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_LEISURE_CONTENTS], message: '조회 성공' }
-}
-
-export async function saveLeisureContent(item: Omit<LeisureContentItem, 'id' | 'matchingId'>): Promise<ApiResponse<LeisureContentItem>> {
-  await delay()
-  const created: LeisureContentItem = { id: Date.now(), matchingId: 1, ...item }
-  return { success: true, data: created, message: '등록 성공' }
-}
-
-export async function deleteLeisureContent(id: number): Promise<ApiResponse<null>> {
-  await delay(200)
-  void id
-  return { success: true, data: null, message: '삭제 성공' }
-}
-
-
-// Dwell Time
-export async function getDwellTimePreset(): Promise<ApiResponse<DwellTimePreset>> {
-  await delay()
-
+function mapLeisureContentResponseToItem(item: LeisureContentResponseDto): LeisureContentItem {
   return {
-    success: true,
-    data:
-      readStoredPreset(CARE_DWELL_TIME_PRESET_STORAGE_KEY, isDwellTimePreset) ??
-      MOCK_DWELL_TIME_PRESET,
-    message: '조회 성공',
+    id: item.id,
+    name: item.name,
+    url: item.url,
+    category: item.category,
+    categoryName: item.categoryName,
   }
 }
 
-export async function updateDwellTimePreset(preset: DwellTimePreset): Promise<ApiResponse<DwellTimePreset>> {
-  await delay()
-  writeStoredPreset(CARE_DWELL_TIME_PRESET_STORAGE_KEY, preset)
+export async function getLeisureContents(): Promise<ApiResponse<LeisureContentItem[]>> {
+  try {
+    const response = await getLeisureContentsApi()
+
+    return {
+      success: true,
+      data: response.map(mapLeisureContentResponseToItem),
+      message: 'Fetched leisure contents.',
+    }
+  } catch (error) {
+    console.error('Failed to fetch leisure contents.', error)
+    throw error
+  }
+}
+
+export async function saveLeisureContent(
+  item: LeisureContentCreateRequestDto,
+): Promise<ApiResponse<LeisureContentItem[]>> {
+  try {
+    await createLeisureContentApi(item)
+    return await getLeisureContents()
+  } catch (error) {
+    console.error('Failed to save leisure content.', error)
+    throw error
+  }
+}
+
+export async function updateLeisureContent(
+  contentId: number,
+  item: LeisureContentUpdateRequestDto,
+): Promise<ApiResponse<LeisureContentItem[]>> {
+  try {
+    await updateLeisureContentApi(contentId, item)
+    return await getLeisureContents()
+  } catch (error) {
+    console.error('Failed to update leisure content.', error)
+    throw error
+  }
+}
+
+export async function deleteLeisureContent(id: number): Promise<ApiResponse<LeisureContentItem[]>> {
+  try {
+    await deleteLeisureContentApi(id)
+    return await getLeisureContents()
+  } catch (error) {
+    console.error('Failed to delete leisure content.', error)
+    throw error
+  }
+}
+
+// Dwell Time
+export async function getDwellTimePreset(): Promise<ApiResponse<DwellTimePreset>> {
+  const res = await getDwellTimeApi()
+  const preset = DWELL_TIME_MS_TO_PRESET[res.dwellTime] ?? 'default'
+  return { success: true, data: preset, message: 'Fetched dwell time preset.' }
+}
+
+export async function updateDwellTimePreset(
+  preset: DwellTimePreset,
+): Promise<ApiResponse<DwellTimePreset>> {
+  const ms = DWELL_TIME_OPTIONS[preset].value
+  await updateDwellTimeApi({ dwellTime: ms })
 
   if (isBrowser()) {
     window.dispatchEvent(
       new CustomEvent<CareDwellTimePresetUpdatedDetail>(CARE_DWELL_TIME_PRESET_UPDATED_EVENT, {
-        detail: {
-          preset,
-        },
+        detail: { preset },
       }),
     )
   }
 
-  return { success: true, data: preset, message: '저장 성공' }
+  return { success: true, data: preset, message: 'Updated dwell time preset.' }
 }
 
-// ========================
-// 입력 잠금 시간
-// ========================
-
+// Activation Delay
 export async function getActivationDelayPreset(): Promise<ApiResponse<ActivationDelayPreset>> {
-  await delay()
-  return {
-    success: true,
-    data:
-      readStoredPreset(
-        CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY,
-        isActivationDelayPreset,
-      ) ?? MOCK_ACTIVATION_DELAY_PRESET,
-    message: '조회 성공',
-  }
+  const res = await getActivationDelayApi()
+  const preset = ACTIVATION_DELAY_MS_TO_PRESET[res.activationDelay] ?? 'medium'
+  return { success: true, data: preset, message: 'Fetched activation delay preset.' }
 }
 
-export async function updateActivationDelayPreset(preset: ActivationDelayPreset): Promise<ApiResponse<ActivationDelayPreset>> {
-  await delay()
-  writeStoredPreset(CARE_ACTIVATION_DELAY_PRESET_STORAGE_KEY, preset)
+export async function updateActivationDelayPreset(
+  preset: ActivationDelayPreset,
+): Promise<ApiResponse<ActivationDelayPreset>> {
+  const ms = ACTIVATION_DELAY_OPTIONS[preset].value
+  await updateActivationDelayApi({ activationDelay: ms })
+
   if (isBrowser()) {
     window.dispatchEvent(
       new CustomEvent<CareActivationDelayPresetUpdatedDetail>(
         CARE_ACTIVATION_DELAY_PRESET_UPDATED_EVENT,
         {
-          detail: {
-            preset,
-          },
+          detail: { preset },
         },
       ),
     )
   }
-  return { success: true, data: preset, message: '저장 성공' }
+
+  return { success: true, data: preset, message: 'Updated activation delay preset.' }
 }
 
-// ========================
-// TTS 설정
-// ========================
-
-export async function getTtsSetting(): Promise<ApiResponse<TtsSetting>> {
-  await delay()
-  return { success: true, data: { ...MOCK_TTS_SETTING }, message: '조회 성공' }
+export async function getTtsSettings(): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await getTtsSettingsApi()
+  return { success: true, data, message: 'Fetched TTS settings.' }
 }
 
-export async function updateTtsEnabled(isEnabled: boolean): Promise<ApiResponse<TtsSetting>> {
-  await delay()
-  return { success: true, data: { ...MOCK_TTS_SETTING, isEnabled }, message: '저장 성공' }
+export async function toggleTtsEnabled(): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await toggleTtsSettingsApi()
+  return { success: true, data, message: 'Toggled TTS setting.' }
 }
 
-export async function getTtsVoiceFiles(): Promise<ApiResponse<TtsVoiceFile[]>> {
-  await delay()
-  return { success: true, data: [...MOCK_TTS_VOICE_FILES], message: '조회 성공' }
+export async function uploadTtsVoiceFiles(files: File[]): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await uploadTtsVoicesApi(files)
+  return { success: true, data, message: 'Uploaded TTS voice files.' }
 }
 
-export async function deleteTtsVoiceFile(id: number): Promise<ApiResponse<null>> {
-  await delay(200)
-  void id
-  return { success: true, data: null, message: '삭제 성공' }
+export async function deleteTtsVoice(voiceFileId: number): Promise<ApiResponse<TtsSettingsResponse>> {
+  const data = await deleteTtsVoiceApi(voiceFileId)
+  return { success: true, data, message: 'Deleted TTS voice file.' }
 }
-
-export async function uploadTtsVoiceFile(file: File): Promise<ApiResponse<TtsVoiceFile>> {
-  await delay(500)
-  const created: TtsVoiceFile = {
-    id: Date.now(),
-    ttsSettingId: 1,
-    fileUrl: `https://s3.example.com/tts/${file.name}`,
-    fileName: file.name,
-    createdAt: new Date().toISOString(),
-  }
-  return { success: true, data: created, message: '업로드 성공' }
-}
-
-// ========================
-// 커스텀 단어
-// ========================
-
-export async function getUserWords(): Promise<ApiResponse<UserWords>> {
-  await delay()
-  return { success: true, data: { ...MOCK_USER_WORDS }, message: '조회 성공' }
-}
-
-export async function updateUserWords(words: UserWords): Promise<ApiResponse<UserWords>> {
-  await delay()
-  return { success: true, data: words, message: '저장 성공' }
-}
-
-// ========================
-// 맞춤 표현
-// ========================
 
 export async function getExpressions(): Promise<ApiResponse<Expression[]>> {
   await delay()
-  return { success: true, data: [...MOCK_EXPRESSIONS], message: '조회 성공' }
+  return { success: true, data: [...MOCK_EXPRESSIONS], message: 'Fetched expressions.' }
 }
 
-// ========================
-// 소통 기록 캘린더
-// ========================
-
-export async function getDailySummaries(yearMonth: string): Promise<ApiResponse<DailySummary[]>> {
-  await delay()
-  void yearMonth
-  return { success: true, data: [...MOCK_DAILY_SUMMARIES], message: '조회 성공' }
+export async function getMonthlyRecords(
+  year: number,
+  month: number,
+): Promise<ApiResponse<MonthlyRecordDay[]>> {
+  const res = await getMonthlyRecordsApi(year, month)
+  return { success: true, data: res.days, message: 'Fetched monthly records.' }
 }
 
-export async function getDailySummary(date: string): Promise<ApiResponse<DailySummary | null>> {
-  await delay()
-  const found = MOCK_DAILY_SUMMARIES.find(s => s.date === date) ?? null
-  return { success: true, data: found, message: '조회 성공' }
+export async function getDailyRecord(date: string): Promise<ApiResponse<DailyRecordResponse>> {
+  const res = await getDailyRecordApi(date)
+  return { success: true, data: res, message: 'Fetched daily record.' }
 }
+

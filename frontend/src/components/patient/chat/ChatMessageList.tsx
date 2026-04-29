@@ -1,10 +1,12 @@
-import { type CSSProperties, useEffect, useRef } from 'react'
+import { type CSSProperties, useLayoutEffect, useRef } from 'react'
 import type { PatientChatMessage } from '../../../types/chat'
 
 interface ChatMessageListProps {
   messages: PatientChatMessage[]
   activeMessageId?: string | null
 }
+
+const AUTO_FOLLOW_THRESHOLD_PX = 72
 
 const listWrapStyle: CSSProperties = {
   flex: 1,
@@ -19,13 +21,6 @@ const listWrapStyle: CSSProperties = {
 const rowBaseStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: '4px',
-}
-
-const metaStyle: CSSProperties = {
-  fontSize: '11px',
-  fontWeight: 700,
-  color: '#7b8a9f',
 }
 
 const emptyStyle: CSSProperties = {
@@ -35,7 +30,7 @@ const emptyStyle: CSSProperties = {
   backgroundColor: '#f6f9fc',
   border: '1px solid #d9e3eb',
   color: '#607086',
-  fontSize: '14px',
+  fontSize: '28px',
   fontWeight: 600,
   textAlign: 'center',
 }
@@ -55,46 +50,81 @@ function getBubbleStyle(message: PatientChatMessage, isActive: boolean): CSSProp
   }
 }
 
-function getStatusLabel(message: PatientChatMessage) {
-  if (message.sender === 'patient') {
-    return message.type === 'word_combination'
-      ? '단어 조합'
-      : message.type === 'manual_text'
-        ? '직접 입력'
-        : '빠른 응답'
-  }
+function isScrolledNearBottom(container: HTMLDivElement) {
+  const distanceFromBottom =
+    container.scrollHeight - container.clientHeight - container.scrollTop
 
-  if (message.status === 'unread') {
-    return '미응답'
-  }
+  return distanceFromBottom <= AUTO_FOLLOW_THRESHOLD_PX
+}
 
-  if (message.status === 'pending_reply') {
-    return '응답 중'
-  }
-
-  if (message.status === 'replied') {
-    return '응답 완료'
-  }
-
-  return '수신됨'
+function scrollToBottom(container: HTMLDivElement) {
+  container.scrollTo({
+    top: container.scrollHeight,
+    behavior: 'auto',
+  })
 }
 
 export default function ChatMessageList({
   messages,
   activeMessageId = null,
 }: ChatMessageListProps) {
-  const bottomRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const hasInitializedScrollRef = useRef(false)
+  const prevMessageCountRef = useRef(0)
+  const shouldAutoFollowRef = useRef(true)
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  useLayoutEffect(() => {
+    const container = containerRef.current
+
+    if (!container) {
+      prevMessageCountRef.current = messages.length
+      return
+    }
+
+    if (messages.length === 0) {
+      hasInitializedScrollRef.current = false
+      shouldAutoFollowRef.current = true
+      prevMessageCountRef.current = 0
+      return
+    }
+
+    const prevMessageCount = prevMessageCountRef.current
+    const hasNewMessage = messages.length > prevMessageCount
+
+    if (!hasInitializedScrollRef.current) {
+      // 초기 진입 시 강제 auto-scroll 방지: 첫 위치는 최신 메시지에 즉시 고정한다.
+      scrollToBottom(container)
+      hasInitializedScrollRef.current = true
+      shouldAutoFollowRef.current = true
+      prevMessageCountRef.current = messages.length
+      return
+    }
+
+    if (hasNewMessage && shouldAutoFollowRef.current) {
+      scrollToBottom(container)
+      shouldAutoFollowRef.current = true
+    }
+
+    prevMessageCountRef.current = messages.length
   }, [messages.length])
+
+  const handleScroll = () => {
+    const container = containerRef.current
+
+    if (!container) {
+      return
+    }
+
+    // 사용자가 수동 스크롤 중이면 자동 추적을 멈추고, 하단 근처로 돌아오면 다시 허용한다.
+    shouldAutoFollowRef.current = isScrolledNearBottom(container)
+  }
 
   if (messages.length === 0) {
     return <div style={emptyStyle}>아직 수신된 보호자 대화가 없습니다.</div>
   }
 
   return (
-    <div style={listWrapStyle}>
+    <div ref={containerRef} style={listWrapStyle} onScroll={handleScroll}>
       {messages.map(message => {
         const isGuardian = message.sender === 'guardian'
         const isActive = activeMessageId === message.id
@@ -107,14 +137,10 @@ export default function ChatMessageList({
               alignItems: isGuardian ? 'flex-start' : 'flex-end',
             }}
           >
-            <span style={metaStyle}>
-              {isGuardian ? '보호자' : '환자'} · {message.createdAt} · {getStatusLabel(message)}
-              {message.type === 'stt' ? ' · STT' : null}
-            </span>
             <div style={getBubbleStyle(message, isActive)}>
               <div
                 style={{
-                  fontSize: '15px',
+                  fontSize: '30px',
                   fontWeight: 700,
                   lineHeight: 1.55,
                   whiteSpace: 'pre-wrap',
@@ -126,7 +152,6 @@ export default function ChatMessageList({
           </div>
         )
       })}
-      <div ref={bottomRef} />
     </div>
   )
 }

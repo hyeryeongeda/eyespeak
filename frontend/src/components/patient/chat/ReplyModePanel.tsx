@@ -1,18 +1,34 @@
-import type { CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
+import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  useDwellFeedback,
+} from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientPageCellMapping, {
+  type PatientSixCellTrackingIds,
+} from '../../../features/patient/input/hooks/usePatientPageCellMapping'
+import usePatientGlobalMenuActionTarget from '../../../features/patient/input/hooks/usePatientGlobalMenuActionTarget'
 import type {
+  PatientChatCategoryState,
   PatientChatFallbackState,
   PatientChatManualInputMode,
   PatientChatMessage,
+  PatientChatRecommendationMode,
   PatientChatSessionStatus,
   PatientChatSuggestionState,
+  PatientRecommendationCategory,
   PatientSuggestedResponse,
 } from '../../../types/chat'
-import FallbackInputPanel from './FallbackInputPanel'
-import SuggestionList from './SuggestionList'
+import type { RecommendationCategoryKey } from '../../../types/recommendation'
 
 interface ReplyModePanelProps {
   message: PatientChatMessage | null
   status: PatientChatSessionStatus
+  recommendationMode: PatientChatRecommendationMode
+  categoryState: PatientChatCategoryState
+  categories: PatientRecommendationCategory[]
+  selectedCategoryKey: RecommendationCategoryKey | null
+  categoryPage: number
   suggestionState: PatientChatSuggestionState
   fallbackState: PatientChatFallbackState
   suggestions: PatientSuggestedResponse[]
@@ -25,6 +41,8 @@ interface ReplyModePanelProps {
   unresolvedCount: number
   timeoutMs: number
   overlay?: boolean
+  onSelectCategory: (categoryKey: RecommendationCategoryKey) => void
+  onChangeCategoryPage: (page: number) => void
   onSelectSuggestion: (suggestion: PatientSuggestedResponse) => void
   onRetrySuggestions: () => void
   onOpenManualInputSelect: () => void
@@ -38,303 +56,770 @@ interface ReplyModePanelProps {
   onOpenLatestPendingReply: () => void
 }
 
+type SuggestionCard = {
+  id: string
+  label: string
+  suggestion: PatientSuggestedResponse
+  disabled?: boolean
+}
+
+type CategoryTone = 'sky' | 'sand' | 'mint' | 'slate'
+
+type ReplyTrackingId =
+  | 'reply-category-1'
+  | 'reply-category-2'
+  | 'reply-category-3'
+  | 'reply-category-prev'
+  | 'reply-category-next'
+  | 'reply-suggestion-1'
+  | 'reply-suggestion-2'
+  | 'reply-suggestion-3'
+  | 'reply-suggestion-4'
+  | 'reply-refresh'
+  | 'reply-back'
+
+const CATEGORY_PAGE_SIZE = 3
+
 const overlayWrapStyle: CSSProperties = {
   position: 'fixed',
   inset: 0,
-  padding: '20px',
-  backgroundColor: 'rgba(24, 38, 56, 0.22)',
-  backdropFilter: 'blur(6px)',
+  padding: 0,
+  background: 'linear-gradient(180deg, #f4f7fb 0%, #edf2f7 100%)',
   display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  zIndex: 1100,
+  alignItems: 'stretch',
+  justifyContent: 'stretch',
+  zIndex: 1120,
+  overflow: 'hidden',
 }
 
 const panelStyle: CSSProperties = {
-  width: 'min(760px, 100%)',
-  maxHeight: 'min(92dvh, 940px)',
-  overflow: 'auto',
-  padding: '24px',
-  borderRadius: '28px',
-  backgroundColor: 'rgba(255, 255, 255, 0.97)',
-  border: '1px solid #d8e2ea',
-  boxShadow: '0 30px 64px rgba(53, 71, 95, 0.18)',
+  width: '100%',
+  minHeight: '100dvh',
+  height: '100%',
+  padding: '8px',
+  background: 'linear-gradient(180deg, #f6f4f1 0%, #f8f7f4 100%)',
   display: 'flex',
   flexDirection: 'column',
-  gap: '16px',
+  boxSizing: 'border-box',
+  overflow: 'hidden',
+  position: 'relative',
 }
 
-const headerRowStyle: CSSProperties = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  gap: '12px',
-  flexWrap: 'wrap',
-}
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: '#213247',
-  fontSize: 'clamp(1.4rem, 2.4vw, 2rem)',
-  fontWeight: 900,
-  letterSpacing: '-0.03em',
-}
-
-const badgeStyle: CSSProperties = {
+const metaStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  width: 'fit-content',
   padding: '8px 14px',
   borderRadius: '999px',
-  backgroundColor: '#eef5ff',
-  color: '#6580a4',
-  fontSize: '13px',
-  fontWeight: 800,
-}
-
-const guardianBoxStyle: CSSProperties = {
-  padding: '18px 20px',
-  borderRadius: '22px',
-  backgroundColor: '#f5f8fb',
-  border: '1px solid #dae4eb',
-}
-
-const guardianLabelStyle: CSSProperties = {
-  margin: '0 0 8px',
-  color: '#7b8a9f',
-  fontSize: '12px',
-  fontWeight: 800,
-}
-
-const guardianTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#23354b',
-  fontSize: '20px',
-  lineHeight: 1.5,
-  fontWeight: 800,
-}
-
-const statusTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#63748a',
+  backgroundColor: '#eef3fb',
+  color: '#6b7e9d',
   fontSize: '14px',
-  fontWeight: 700,
-  lineHeight: 1.55,
+  fontWeight: 800,
 }
 
-const sectionCardStyle: CSSProperties = {
+const srOnlyStyle: CSSProperties = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: 'hidden',
+  clip: 'rect(0, 0, 0, 0)',
+  whiteSpace: 'nowrap',
+  border: 0,
+}
+
+const categoryGridStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(220px, 0.98fr) minmax(0, 1fr)',
+  gridTemplateRows: 'minmax(0, 1fr) minmax(0, 1fr)',
+  gridTemplateAreas: `
+    "top-left center top-right"
+    "bottom-left center bottom-right"
+  `,
+  gap: '8px',
+}
+
+const cardBaseStyle: CSSProperties = {
+  borderRadius: '18px',
+  border: '1px solid #d9dee5',
+  backgroundColor: '#ffffff',
+  boxShadow: '0 10px 26px rgba(76, 91, 108, 0.06)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 0,
+  minHeight: 0,
   padding: '18px',
-  borderRadius: '20px',
-  backgroundColor: '#fbfdff',
-  border: '1px solid #dbe4eb',
+  textAlign: 'center',
+  boxSizing: 'border-box',
+  position: 'relative',
+}
+
+const inlineWrapStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  flex: 1,
+  minHeight: 0,
+}
+
+const categoryCenterPanelStyle: CSSProperties = {
+  gridArea: 'center',
+  minHeight: 0,
+  borderRadius: '18px',
+  border: '1px solid #d8dade',
+  background: 'linear-gradient(180deg, #e8e7e6 0%, #e2e2e2 100%)',
+  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.52)',
+  overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
 }
 
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#243246',
-  fontSize: '16px',
-  fontWeight: 900,
-}
-
-const loadingBoxStyle: CSSProperties = {
-  padding: '18px',
-  borderRadius: '18px',
-  backgroundColor: '#f6f9fc',
-  border: '1px solid #dce5ed',
-  color: '#677a90',
-  fontSize: '14px',
-  fontWeight: 700,
-}
-
-const errorTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#c04d4d',
-  fontSize: '14px',
-  fontWeight: 800,
-}
-
-const actionRowStyle: CSSProperties = {
+const categoryCenterBodyStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
   display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
+  padding: '18px',
 }
 
-const buttonBaseStyle: CSSProperties = {
-  minWidth: '120px',
-  height: '48px',
-  padding: '0 18px',
-  borderRadius: '999px',
-  border: '1px solid #ccd8e2',
+const categoryCenterMessageWrapStyle: CSSProperties = {
+  width: '100%',
+  height: '100%',
+  alignSelf: 'stretch',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '18px',
+}
+
+const categoryCenterMessageTextStyle: CSSProperties = {
+  margin: 0,
+  maxWidth: '84%',
+  padding: '16px 22px',
+  borderRadius: '6px',
+  color: '#4a4f56',
   backgroundColor: '#ffffff',
-  color: '#31455e',
-  fontSize: '14px',
+  border: '1px solid rgba(219, 223, 228, 0.92)',
+  boxShadow: '0 10px 22px rgba(110, 116, 124, 0.08)',
+  fontSize: 'clamp(1rem, 1.35vmax, 1.2rem)',
   fontWeight: 800,
-  cursor: 'pointer',
+  lineHeight: 1.5,
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'keep-all',
+  textAlign: 'center',
 }
 
-const primaryButtonStyle: CSSProperties = {
-  ...buttonBaseStyle,
-  border: '1px solid #5f8cc9',
-  background: 'linear-gradient(135deg, #e8f2ff 0%, #dbe9ff 100%)',
-}
+function getCategoryCardStyle(
+  gridArea: CSSProperties['gridArea'],
+  tone: CategoryTone,
+  disabled: boolean,
+  selected: boolean,
+): CSSProperties {
+  const backgrounds: Record<CategoryTone, string> = {
+    sky: 'linear-gradient(180deg, #f0f1ff 0%, #eaecff 100%)',
+    sand: 'linear-gradient(180deg, #fff5c9 0%, #fff1b6 100%)',
+    mint: 'linear-gradient(180deg, #f3fbfb 0%, #eef8f8 100%)',
+    slate: 'linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%)',
+  }
 
-function getStatusCopy(
-  status: PatientChatSessionStatus,
-  timeoutMs: number,
-  unresolvedCount: number,
-) {
-  switch (status) {
-    case 'suggestion_loading':
-      return `보호자 메시지를 바탕으로 추천 응답을 생성 중입니다. dev 기준 ${Math.round(timeoutMs / 1000)}초 안에 입력이 없으면 복귀합니다.`
-    case 'suggestion_failed':
-      return '추천 응답 생성에 실패했습니다. 직접 입력이나 단어 조합으로 바로 전환할 수 있습니다.'
-    case 'manual_input_select':
-      return '추천 응답이 맞지 않으면 대체 입력 방식을 선택하세요.'
-    case 'manual_input_typing':
-      return '직접 입력 또는 단어 조합으로 응답을 작성 중입니다.'
-    case 'sending':
-      return '중복 전송을 막기 위해 현재 응답을 잠금 상태로 전송 중입니다.'
-    case 'sent':
-      return '응답 전송이 완료되었습니다. 대화 세션은 계속 유지됩니다.'
-    case 'send_failed':
-      return '응답 전송에 실패했습니다. 재전송하거나 대체 입력으로 다시 보낼 수 있습니다.'
-    case 'conversation_active':
-      return unresolvedCount > 0
-        ? `대화 세션이 유지 중입니다. 아직 미응답 메시지 ${unresolvedCount}건이 남아 있습니다.`
-        : '대화 세션이 유지 중입니다. 다음 보호자 메시지를 계속 받을 수 있습니다.'
-    default:
-      return '추천 응답을 선택하거나 직접 입력으로 응답할 수 있습니다.'
+  return {
+    ...cardBaseStyle,
+    gridArea,
+    appearance: 'none',
+    cursor: disabled ? 'default' : 'pointer',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '22px 18px',
+    background: backgrounds[tone],
+    opacity: disabled ? 0.58 : 1,
+    border:
+      selected
+        ? '2px solid #7e9dcc'
+        : tone === 'slate'
+          ? '1px solid #d5dbe2'
+          : cardBaseStyle.border,
+    boxShadow: selected
+      ? '0 18px 40px rgba(94, 121, 165, 0.16)'
+      : '0 10px 26px rgba(76, 91, 108, 0.06)',
   }
 }
 
-export default function ReplyModePanel({
-  message,
-  status,
-  suggestionState,
-  fallbackState,
-  suggestions,
-  selectedSuggestionId,
-  suggestionError,
-  sendError,
-  manualInputMode,
-  manualDraft,
-  manualWordBank,
-  unresolvedCount,
-  timeoutMs,
-  overlay = false,
-  onSelectSuggestion,
-  onRetrySuggestions,
-  onOpenManualInputSelect,
-  onSelectManualInputMode,
-  onDraftChange,
-  onAppendWord,
-  onClearDraft,
-  onSendManualReply,
-  onDefer,
-  onClose,
-  onOpenLatestPendingReply,
-}: ReplyModePanelProps) {
+const categoryTitleStyle: CSSProperties = {
+  margin: 0,
+  maxWidth: '12ch',
+  color: '#111111',
+  fontSize: 'clamp(2.25rem, 4.1vmin, 3.5rem)',
+  fontWeight: 900,
+  lineHeight: 1.28,
+  letterSpacing: '-0.03em',
+  wordBreak: 'keep-all',
+  whiteSpace: 'pre-wrap',
+}
+
+const pagerWrapStyle: CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+}
+
+const pagerButtonStyle: CSSProperties = {
+  appearance: 'none',
+  border: '1px solid #d6dee8',
+  backgroundColor: 'rgba(255, 255, 255, 0.96)',
+  borderRadius: '999px',
+  minHeight: '38px',
+  padding: '0 14px',
+  color: '#42536b',
+  fontSize: '13px',
+  fontWeight: 800,
+  cursor: 'pointer',
+  position: 'relative',
+}
+
+const floatingPagerWrapStyle: CSSProperties = {
+  position: 'absolute',
+  top: '12px',
+  right: '12px',
+  zIndex: 2,
+}
+
+const panelCss = `
+  @media (max-width: 940px) {
+    .reply-mode-category-grid,
+    .reply-mode-sentence-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      grid-template-rows: minmax(240px, 0.9fr) minmax(0, 1fr) minmax(0, 1fr) !important;
+      grid-template-areas:
+        "center center"
+        "top-left top-right"
+        "bottom-left bottom-right" !important;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .reply-mode-category-grid,
+    .reply-mode-sentence-grid {
+      grid-template-columns: 1fr !important;
+      grid-template-rows: auto !important;
+      grid-template-areas: none !important;
+    }
+
+    .reply-mode-category-grid > *,
+    .reply-mode-sentence-grid > * {
+      grid-area: auto !important;
+    }
+  }
+`
+
+const defaultQuickReplyLabels = ['네', '아니요', '조금만요', '잘 모르겠어요']
+
+function buildSuggestionCards(
+  message: PatientChatMessage,
+  suggestions: PatientSuggestedResponse[],
+): SuggestionCard[] {
+  const cards: SuggestionCard[] = suggestions.slice(0, 4).map(suggestion => ({
+    id: suggestion.id,
+    label: suggestion.label,
+    suggestion,
+    disabled: false,
+  }))
+
+  if (cards.length >= 4) {
+    return cards
+  }
+
+  const usedLabels = new Set(cards.map(card => card.label))
+
+  while (cards.length < 4) {
+    const fallbackLabel =
+      defaultQuickReplyLabels.find(label => !usedLabels.has(label)) ??
+      defaultQuickReplyLabels[cards.length] ??
+      '잘 모르겠어요'
+
+    usedLabels.add(fallbackLabel)
+
+    cards.push({
+      id: `${message.id}-fallback-${cards.length + 1}`,
+      label: fallbackLabel,
+      disabled: false,
+      suggestion: {
+        id: `${message.id}-fallback-${cards.length + 1}`,
+        label: fallbackLabel,
+        intentKey: 'fallback',
+        source: 'fallback',
+        rank: cards.length + 1,
+      },
+    })
+  }
+
+  return cards
+}
+
+function getStatusCopy(input: {
+  recommendationMode: PatientChatRecommendationMode
+  categoryState: PatientChatCategoryState
+  suggestionState: PatientChatSuggestionState
+  suggestionError: string | null
+  sendError: string | null
+  timeoutMs: number
+  totalCategoryPages: number
+  categoryPage: number
+  selectedCategoryKey: RecommendationCategoryKey | null
+}) {
+  if (input.sendError) {
+    return input.sendError
+  }
+
+  if (input.recommendationMode === 'category') {
+    if (input.categoryState === 'loading') {
+      return '보호자 메시지에 맞는 카테고리를 준비하고 있습니다.'
+    }
+
+    if (input.totalCategoryPages > 1) {
+      return `카테고리를 선택해 주세요. ${input.categoryPage + 1}/${input.totalCategoryPages}`
+    }
+
+    return '카테고리를 선택하면 추천 문장을 이어서 보여드립니다.'
+  }
+
+  if (input.suggestionState === 'failed') {
+    return (
+      input.suggestionError ??
+      '추천 응답을 불러오지 못했습니다. 새로고침으로 다시 시도해 주세요.'
+    )
+  }
+
+  if (input.suggestionState === 'loading') {
+    return `추천 문장을 준비하고 있습니다. 약 ${Math.round(input.timeoutMs / 1000)}초 정도 기다려 주세요.`
+  }
+
+  if (input.selectedCategoryKey) {
+    return '선택한 카테고리에 맞는 문장을 골라 주세요.'
+  }
+
+  return '추천 응답을 선택하거나 직접 입력으로 전환할 수 있습니다.'
+}
+
+function DwellOnTarget({
+  trackingId,
+  dwellFeedback,
+}: {
+  trackingId?: ReplyTrackingId
+  dwellFeedback: ReturnType<typeof useDwellFeedback<ReplyTrackingId>>
+}) {
+  if (!trackingId || !isDwellFeedbackTargetActive(dwellFeedback, trackingId)) {
+    return null
+  }
+
+  return (
+    <DwellFeedbackBadge
+      phase={dwellFeedback.phase}
+      progress={dwellFeedback.progress}
+      remainingMs={dwellFeedback.remainingMs}
+    />
+  )
+}
+
+function CategoryActionCard({
+  gridArea,
+  tone,
+  category,
+  trackingId,
+  disabled,
+  onSelect,
+  dwellFeedback,
+}: {
+  gridArea: CSSProperties['gridArea']
+  tone: CategoryTone
+  category: PatientRecommendationCategory | null
+  trackingId: ReplyTrackingId
+  disabled: boolean
+  onSelect: () => void
+  dwellFeedback: ReturnType<typeof useDwellFeedback<ReplyTrackingId>>
+}) {
+  const isDisabled = disabled || !category
+
+  return (
+    <button
+      type="button"
+      className="reply-mode-button"
+      style={getCategoryCardStyle(gridArea, tone, isDisabled, false)}
+      disabled={isDisabled}
+      onClick={onSelect}
+      data-tracking-id={isDisabled ? undefined : trackingId}
+    >
+      <DwellOnTarget trackingId={isDisabled ? undefined : trackingId} dwellFeedback={dwellFeedback} />
+      <h2 style={categoryTitleStyle}>{category?.title ?? '카테고리'}</h2>
+    </button>
+  )
+}
+
+function SuggestionActionCard({
+  gridArea,
+  tone,
+  label,
+  trackingId,
+  disabled,
+  selected,
+  confirmUntilTts,
+  onSelect,
+  dwellFeedback,
+}: {
+  gridArea: CSSProperties['gridArea']
+  tone: CategoryTone
+  label: string
+  trackingId: ReplyTrackingId
+  disabled: boolean
+  selected: boolean
+  confirmUntilTts?: boolean
+  onSelect: () => void
+  dwellFeedback: ReturnType<typeof useDwellFeedback<ReplyTrackingId>>
+}) {
+  return (
+    <button
+      type="button"
+      className="reply-mode-button"
+      style={getCategoryCardStyle(gridArea, tone, disabled, selected)}
+      disabled={disabled}
+      onClick={onSelect}
+      data-tracking-id={disabled ? undefined : trackingId}
+      data-patient-confirm-until-tts={
+        !disabled && confirmUntilTts ? 'true' : undefined
+      }
+    >
+      <DwellOnTarget trackingId={disabled ? undefined : trackingId} dwellFeedback={dwellFeedback} />
+      <h2 style={categoryTitleStyle}>{label}</h2>
+    </button>
+  )
+}
+
+export default function ReplyModePanel(props: ReplyModePanelProps) {
+  const {
+    message,
+    status,
+    recommendationMode,
+    categoryState,
+    categories,
+    selectedCategoryKey,
+    categoryPage,
+    suggestionState,
+    suggestions,
+    selectedSuggestionId,
+    suggestionError,
+    sendError,
+    unresolvedCount,
+    timeoutMs,
+    overlay = false,
+    onSelectCategory,
+    onChangeCategoryPage,
+    onSelectSuggestion,
+    onRetrySuggestions,
+    onClose,
+  } = props
+
+  const isSending = status === 'sending'
+  const suggestionCards = useMemo(
+    () => (message ? buildSuggestionCards(message, suggestions) : []),
+    [message, suggestions],
+  )
+  const topCards = useMemo(() => suggestionCards.slice(0, 3), [suggestionCards])
+  const totalCategoryPages = Math.max(1, Math.ceil(categories.length / CATEGORY_PAGE_SIZE))
+  const safeCategoryPage = Math.min(categoryPage, Math.max(totalCategoryPages - 1, 0))
+  const visibleCategories = useMemo(
+    () =>
+      categories.slice(
+        safeCategoryPage * CATEGORY_PAGE_SIZE,
+        safeCategoryPage * CATEGORY_PAGE_SIZE + CATEGORY_PAGE_SIZE,
+      ),
+    [categories, safeCategoryPage],
+  )
+  const firstVisibleCategory = visibleCategories[0] ?? null
+  const secondVisibleCategory = visibleCategories[1] ?? null
+  const thirdVisibleCategory = visibleCategories[2] ?? null
+  const firstTopCard = topCards[0] ?? null
+  const secondTopCard = topCards[1] ?? null
+  const thirdTopCard = topCards[2] ?? null
+  const statusCopy = getStatusCopy({
+    recommendationMode,
+    categoryState,
+    suggestionState,
+    suggestionError,
+    sendError,
+    timeoutMs,
+    totalCategoryPages,
+    categoryPage: safeCategoryPage,
+    selectedCategoryKey,
+  })
+  const dwellFeedback = useDwellFeedback<ReplyTrackingId>({
+    enabled: overlay,
+  })
+
+  const cellTargets = useMemo<PatientSixCellTrackingIds>(() => {
+    if (recommendationMode === 'category') {
+      return [
+        firstVisibleCategory && !isSending ? 'reply-category-1' : null,
+        null,
+        secondVisibleCategory && !isSending ? 'reply-category-2' : null,
+        thirdVisibleCategory && !isSending ? 'reply-category-3' : null,
+        null,
+        !isSending ? 'reply-back' : null,
+      ]
+    }
+
+    return [
+      firstTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-1' : null,
+      null,
+      secondTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-2' : null,
+      thirdTopCard && !isSending && suggestionState !== 'loading' ? 'reply-suggestion-3' : null,
+      null,
+      !isSending ? 'reply-back' : null,
+    ]
+  }, [
+    firstTopCard,
+    firstVisibleCategory,
+    isSending,
+    categoryState,
+    recommendationMode,
+    secondTopCard,
+    secondVisibleCategory,
+    suggestionState,
+    thirdTopCard,
+    thirdVisibleCategory,
+  ])
+
+  usePatientPageCellMapping(cellTargets)
+
+  usePatientGlobalMenuActionTarget({
+    enabled: overlay,
+    priority: 320,
+    onPositiveAction:
+      recommendationMode === 'category'
+        ? !isSending && firstVisibleCategory
+          ? () => onSelectCategory(firstVisibleCategory.key)
+          : undefined
+        : !isSending && firstTopCard && suggestionState !== 'loading'
+          ? () => onSelectSuggestion(firstTopCard.suggestion)
+          : suggestionState === 'failed'
+            ? onRetrySuggestions
+            : undefined,
+    onNegativeAction: onClose,
+  })
+
   if (!message) {
     return null
   }
 
-  const isSending = status === 'sending'
-  const content = (
-    <section style={panelStyle}>
-      <div style={headerRowStyle}>
-        <div>
-          <span style={badgeStyle}>응답 모드 · 미응답 {unresolvedCount}건</span>
-          <h2 style={titleStyle}>보호자 메시지에 응답합니다.</h2>
+  const sentenceContent = (
+    <div style={categoryGridStyle} className="reply-mode-sentence-grid">
+      <SuggestionActionCard
+        gridArea="top-left"
+        tone="sky"
+        label={suggestionState === 'loading' ? '답변 준비 중' : firstTopCard?.label ?? '답변1'}
+        trackingId="reply-suggestion-1"
+        disabled={!firstTopCard || isSending || suggestionState === 'loading'}
+        selected={selectedSuggestionId === firstTopCard?.id}
+        confirmUntilTts
+        onSelect={() => {
+          if (firstTopCard) {
+            onSelectSuggestion(firstTopCard.suggestion)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <SuggestionActionCard
+        gridArea="top-right"
+        tone="mint"
+        label={suggestionState === 'loading' ? '답변 준비 중' : secondTopCard?.label ?? '답변2'}
+        trackingId="reply-suggestion-2"
+        disabled={!secondTopCard || isSending || suggestionState === 'loading'}
+        selected={selectedSuggestionId === secondTopCard?.id}
+        confirmUntilTts
+        onSelect={() => {
+          if (secondTopCard) {
+            onSelectSuggestion(secondTopCard.suggestion)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <section style={categoryCenterPanelStyle} aria-label="읽기 전용 채팅 영역">
+        <div style={categoryCenterBodyStyle}>
+          <div style={categoryCenterMessageWrapStyle} aria-live="polite">
+            <p style={categoryCenterMessageTextStyle}>{message.content || '내용 없음'}</p>
+          </div>
         </div>
-        <div style={actionRowStyle}>
-          <button type="button" style={buttonBaseStyle} onClick={onDefer}>
-            나중에 보기
-          </button>
-          <button type="button" style={buttonBaseStyle} onClick={onClose}>
-            닫기
-          </button>
-        </div>
-      </div>
-
-      <div style={guardianBoxStyle}>
-        <p style={guardianLabelStyle}>보호자 원문</p>
-        <p style={guardianTextStyle}>{message.content || '내용 없음'}</p>
-      </div>
-
-      <p style={statusTextStyle}>{getStatusCopy(status, timeoutMs, unresolvedCount)}</p>
-
-      <section style={sectionCardStyle}>
-        <h3 style={sectionTitleStyle}>추천 응답</h3>
-        {suggestionState === 'loading' ? (
-          <div style={loadingBoxStyle}>추천 응답을 생성 중입니다...</div>
-        ) : null}
-        {suggestionState === 'ready' && suggestions.length > 0 ? (
-          <SuggestionList
-            suggestions={suggestions}
-            selectedSuggestionId={selectedSuggestionId}
-            disabled={isSending}
-            onSelect={onSelectSuggestion}
-          />
-        ) : null}
-        {suggestionState === 'failed' ? (
-          <>
-            <p style={errorTextStyle}>{suggestionError}</p>
-            <div style={actionRowStyle}>
-              <button type="button" style={buttonBaseStyle} onClick={onRetrySuggestions}>
-                추천 다시 시도
-              </button>
-              <button type="button" style={primaryButtonStyle} onClick={onOpenManualInputSelect}>
-                직접 입력으로 전환
-              </button>
-            </div>
-          </>
-        ) : null}
-        {sendError && fallbackState !== 'manual_input_typing' ? (
-          <p style={errorTextStyle}>{sendError}</p>
-        ) : null}
       </section>
 
-      <section style={sectionCardStyle}>
-        <h3 style={sectionTitleStyle}>대체 입력</h3>
-        <FallbackInputPanel
-          manualInputMode={manualInputMode}
-          manualDraft={manualDraft}
-          wordBank={manualWordBank}
-          disabled={isSending}
-          error={fallbackState === 'send_failed' ? sendError : null}
-          onSelectMode={onSelectManualInputMode}
-          onDraftChange={onDraftChange}
-          onAppendWord={onAppendWord}
-          onClearDraft={onClearDraft}
-          onSend={onSendManualReply}
+      <SuggestionActionCard
+        gridArea="bottom-left"
+        tone="sand"
+        label={suggestionState === 'loading' ? '답변 준비 중' : thirdTopCard?.label ?? '답변3'}
+        trackingId="reply-suggestion-3"
+        disabled={!thirdTopCard || isSending || suggestionState === 'loading'}
+        selected={selectedSuggestionId === thirdTopCard?.id}
+        confirmUntilTts
+        onSelect={() => {
+          if (thirdTopCard) {
+            onSelectSuggestion(thirdTopCard.suggestion)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <button
+        type="button"
+        className="reply-mode-button"
+        style={getCategoryCardStyle('bottom-right', 'slate', isSending, false)}
+        disabled={isSending}
+        onClick={onClose}
+        data-tracking-id={isSending ? undefined : 'reply-back'}
+      >
+        <DwellOnTarget
+          trackingId={isSending ? undefined : 'reply-back'}
+          dwellFeedback={dwellFeedback}
         />
-        {(fallbackState === 'manual_input_select' || fallbackState === 'manual_input_typing') &&
-        suggestionState !== 'loading' ? (
-          <button type="button" style={buttonBaseStyle} onClick={onRetrySuggestions}>
-            추천 응답으로 복귀
-          </button>
-        ) : (
-          <button type="button" style={buttonBaseStyle} onClick={onOpenManualInputSelect}>
-            단어 조합 / 직접 입력 열기
-          </button>
-        )}
+        <h2 style={categoryTitleStyle}>뒤로가기</h2>
+      </button>
+    </div>
+  )
+
+  const categoryContent = (
+    <div style={categoryGridStyle} className="reply-mode-category-grid">
+      <CategoryActionCard
+        gridArea="top-left"
+        tone="sky"
+        category={firstVisibleCategory}
+        trackingId="reply-category-1"
+        disabled={isSending || categoryState === 'loading'}
+        onSelect={() => {
+          if (firstVisibleCategory) {
+            void onSelectCategory(firstVisibleCategory.key)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <CategoryActionCard
+        gridArea="top-right"
+        tone="mint"
+        category={secondVisibleCategory}
+        trackingId="reply-category-2"
+        disabled={isSending || categoryState === 'loading'}
+        onSelect={() => {
+          if (secondVisibleCategory) {
+            void onSelectCategory(secondVisibleCategory.key)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <section style={categoryCenterPanelStyle} aria-label="읽기 전용 채팅 영역">
+        <div style={categoryCenterBodyStyle}>
+          <div style={categoryCenterMessageWrapStyle} aria-live="polite">
+            <p style={categoryCenterMessageTextStyle}>{message.content || '내용 없음'}</p>
+          </div>
+        </div>
       </section>
 
-      {unresolvedCount > 1 ? (
-        <div style={actionRowStyle}>
-          <button type="button" style={primaryButtonStyle} onClick={onOpenLatestPendingReply}>
-            다음 미응답 보기
-          </button>
-        </div>
-      ) : null}
+      <CategoryActionCard
+        gridArea="bottom-left"
+        tone="sand"
+        category={thirdVisibleCategory}
+        trackingId="reply-category-3"
+        disabled={isSending || categoryState === 'loading'}
+        onSelect={() => {
+          if (thirdVisibleCategory) {
+            void onSelectCategory(thirdVisibleCategory.key)
+          }
+        }}
+        dwellFeedback={dwellFeedback}
+      />
+
+      <button
+        type="button"
+        className="reply-mode-button"
+        style={getCategoryCardStyle('bottom-right', 'slate', isSending, false)}
+        disabled={isSending}
+        onClick={onClose}
+        data-tracking-id={isSending ? undefined : 'reply-back'}
+      >
+        <DwellOnTarget
+          trackingId={isSending ? undefined : 'reply-back'}
+          dwellFeedback={dwellFeedback}
+        />
+        <h2 style={categoryTitleStyle}>뒤로가기</h2>
+      </button>
+    </div>
+  )
+
+  const pagerControls =
+    recommendationMode === 'category' && totalCategoryPages > 1 ? (
+      <div style={pagerWrapStyle}>
+        <button
+          type="button"
+          className="reply-mode-button"
+          style={pagerButtonStyle}
+          onClick={() => onChangeCategoryPage(safeCategoryPage - 1)}
+          disabled={safeCategoryPage === 0}
+          data-tracking-id={safeCategoryPage === 0 ? undefined : 'reply-category-prev'}
+        >
+          <DwellOnTarget
+            trackingId={safeCategoryPage === 0 ? undefined : 'reply-category-prev'}
+            dwellFeedback={dwellFeedback}
+          />
+          이전
+        </button>
+        <span style={metaStyle}>
+          {safeCategoryPage + 1}/{totalCategoryPages}
+        </span>
+        <button
+          type="button"
+          className="reply-mode-button"
+          style={pagerButtonStyle}
+          onClick={() => onChangeCategoryPage(safeCategoryPage + 1)}
+          disabled={safeCategoryPage >= totalCategoryPages - 1}
+          data-tracking-id={
+            safeCategoryPage >= totalCategoryPages - 1 ? undefined : 'reply-category-next'
+          }
+        >
+          <DwellOnTarget
+            trackingId={
+              safeCategoryPage >= totalCategoryPages - 1 ? undefined : 'reply-category-next'
+            }
+            dwellFeedback={dwellFeedback}
+          />
+          다음
+        </button>
+      </div>
+    ) : null
+
+  const content = (
+    <section
+      style={panelStyle}
+      aria-label="추천 응답"
+      ref={dwellFeedback.setContainerElement}
+    >
+      <style>{panelCss}</style>
+      {pagerControls ? <div style={floatingPagerWrapStyle}>{pagerControls}</div> : null}
+      <div style={srOnlyStyle}>{`${statusCopy} 대기 ${unresolvedCount}건`}</div>
+      {recommendationMode === 'category' ? categoryContent : sentenceContent}
     </section>
   )
 
   if (!overlay) {
-    return content
+    return <div style={inlineWrapStyle}>{content}</div>
   }
 
-  return <div style={overlayWrapStyle}>{content}</div>
+  return (
+    <div style={overlayWrapStyle} role="dialog" aria-modal="true" aria-labelledby="guardian-reply-title">
+      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} id="guardian-reply-title">
+        추천 응답
+      </div>
+      {content}
+    </div>
+  )
 }

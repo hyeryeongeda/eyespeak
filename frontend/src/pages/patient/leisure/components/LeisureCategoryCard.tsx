@@ -1,15 +1,11 @@
 import type { CSSProperties } from 'react'
 import type { LeisureCategory } from '../../../../types/leisure'
-import {
-  leisureCardBaseStyle,
-  leisurePillStyle,
-  leisureToneMap,
-} from './leisureTheme'
+import { leisureCardBaseStyle, leisurePillStyle, leisureToneMap } from './leisureTheme'
 
 const titleStyle: CSSProperties = {
   margin: 0,
   color: '#203042',
-  fontSize: 'clamp(1.35rem, 1.8vw, 1.72rem)',
+  fontSize: 'clamp(1.6rem, 2.2vw, 2.05rem)',
   fontWeight: 900,
   letterSpacing: '-0.03em',
   lineHeight: 1.15,
@@ -18,7 +14,7 @@ const titleStyle: CSSProperties = {
 const descriptionStyle: CSSProperties = {
   margin: 0,
   color: '#60758b',
-  fontSize: '15px',
+  fontSize: '17px',
   fontWeight: 700,
   lineHeight: 1.45,
 }
@@ -69,13 +65,13 @@ export default function LeisureCategoryCard({
       aria-label={`${category.label} 카테고리`}
     >
       <span style={{ ...leisurePillStyle, color: toneStyle.accent }}>
-        {badge ?? `추천 ${contentCount}개`}
+        {badge ?? `콘텐츠 ${contentCount}개`}
       </span>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         <h3
           style={{
             ...titleStyle,
-            fontSize: isHero ? 'clamp(2rem, 3vw, 2.55rem)' : titleStyle.fontSize,
+            fontSize: isHero ? 'clamp(2.35rem, 3.6vw, 3.1rem)' : titleStyle.fontSize,
             lineHeight: isHero ? 1.02 : titleStyle.lineHeight,
           }}
         >

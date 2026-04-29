@@ -1,15 +1,17 @@
-import { createRoutineApi } from './routineApi'
+import { resolveApiSource } from '../config/env'
 import type { AuthSession } from '../types/auth'
-import type { PatientRoutinesFormValues, RoutineCreateRequestDto } from '../types/patient'
 import type { ServiceResult } from '../types/api'
+import type { PatientRoutinesFormValues, RoutineCreateRequestDto } from '../types/patient'
 import { createServiceFailure } from '../utils/errorMapper'
+import { createRoutineMockApi } from './mockAuthApi'
+import { createRoutineApi } from './routineApi'
 
 export function mapPatientRoutinesToRequest(
   patientRoutines: PatientRoutinesFormValues,
 ): RoutineCreateRequestDto {
   const routines = Object.entries(patientRoutines).map(([timeSlotId, activityTagId]) => {
     if (typeof activityTagId !== 'number') {
-      throw new Error('모든 시간대의 대표 활동을 선택해주세요.')
+      throw new Error('모든 시간대 루틴을 선택해 주세요.')
     }
 
     return {
@@ -25,17 +27,18 @@ export function mapPatientRoutinesToRequest(
 
 export async function createPatientRoutines(
   patientRoutines: PatientRoutinesFormValues,
-  guardianSession: Pick<AuthSession, 'accessToken'>,
+  guardianSession: Pick<AuthSession, 'accessToken' | 'authMode'>,
 ): Promise<ServiceResult<null>> {
   try {
-    const response = await createRoutineApi(
-      mapPatientRoutinesToRequest(patientRoutines),
-      guardianSession.accessToken,
-    )
+    const request = mapPatientRoutinesToRequest(patientRoutines)
+    const response =
+      guardianSession.authMode === 'mock'
+        ? await createRoutineMockApi(request, guardianSession.accessToken)
+        : await createRoutineApi(request, guardianSession.accessToken)
 
     return {
       success: true,
-      source: guardianSession.accessToken.startsWith('mock-') ? 'mock' : 'api',
+      source: resolveApiSource(guardianSession.authMode),
       data: response,
     }
   } catch (error) {

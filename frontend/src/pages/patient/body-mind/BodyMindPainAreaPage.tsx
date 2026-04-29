@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -7,9 +7,11 @@ import type {
   PainAreaGroupKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
+import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import { getStoredPainAreaSelection } from '../../../services/bodyMindService'
 import { getPainAreaGroupByAreaKey, getPainAreaGroupByKey } from './bodyMindMock'
-import { getFullBodyModelUrl } from './bodyMindPainModels'
+import { getFullBodyModelUrl, getPainAreaGroupModelByKey } from './bodyMindPainModels'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
 import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
@@ -29,9 +31,52 @@ export default function BodyMindPainAreaPage() {
   const navigationTimeoutRef = useRef<number | null>(null)
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedGroupKey, setSelectedGroupKey] = useState<PainAreaGroupKey | null>(initialGroupKey)
+  const [hoveredGroupKey, setHoveredGroupKey] = useState<PainAreaGroupKey | null>(null)
 
   const selectedGroup = getPainAreaGroupByKey(selectedGroupKey)
   const guideModelUrl = getFullBodyModelUrl()
+  const highlightGroupModel = getPainAreaGroupModelByKey(hoveredGroupKey)
+  const highlightModelUrl = highlightGroupModel?.modelUrl ?? null
+  const gazePoint = useGazeInputStore(state => state.point)
+
+  usePatientPageCellMapping([
+    'upper_body',
+    null,
+    'lower_body',
+    'middle_body',
+    null,
+    'body-mind-pain-area-back',
+  ])
+
+  useEffect(() => {
+    if (!gazePoint) {
+      setHoveredGroupKey(null)
+      return
+    }
+
+    const elements = document.elementsFromPoint(gazePoint.clientX, gazePoint.clientY)
+
+    for (const el of elements) {
+      if (!(el instanceof HTMLElement)) continue
+      const tracked = el.closest<HTMLElement>('[data-tracking-id]')
+      if (!tracked) continue
+      const id = tracked.dataset.trackingId as PainAreaGroupKey | undefined
+      if (id === 'upper_body' || id === 'middle_body' || id === 'lower_body') {
+        setHoveredGroupKey(id)
+        return
+      }
+    }
+
+    setHoveredGroupKey(null)
+  }, [gazePoint])
+
+  const handleGazeEnter = useCallback((groupKey: PainAreaGroupKey) => {
+    setHoveredGroupKey(groupKey)
+  }, [])
+
+  const handleGazeLeave = useCallback(() => {
+    setHoveredGroupKey(null)
+  }, [])
 
   const clearPendingNavigation = () => {
     if (navigationTimeoutRef.current !== null) {
@@ -64,60 +109,65 @@ export default function BodyMindPainAreaPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-004"
-      title="통증 메인"
-      description="통증이 있는 큰 부위를 먼저 고른 뒤 세부 부위로 이동합니다."
+      title="아파"
+      description="상체, 몸통, 하체 중 아픈 범위를 먼저 고른 뒤 세부 부위를 선택합니다."
       status={status}
-      contextLabel={selectedGroup ? `현재 선택: ${selectedGroup.label}` : '대분류 선택'}
-      feedbackText="상체, 몸통, 하체 중 통증이 있는 범위를 먼저 선택하세요."
+      contextLabel={selectedGroup ? `현재 선택: ${selectedGroup.label}` : '통증 범위 선택'}
+      feedbackText="아픈 범위를 먼저 선택하면 다음 화면에서 세부 부위를 고를 수 있습니다."
     >
       <BodyMindPainOverviewGrid
         upperCard={
           <BodyMindOptionCard
             title="상체"
-            description="머리 · 목 · 어깨 · 팔 · 손"
+            description="머리, 목, 어깨, 가슴"
             tone="sky"
-            badge="대분류"
+            badge="부위 선택"
+            trackingId="upper_body"
             selected={selectedGroupKey === 'upper_body'}
             onSelect={() => handleSelectGroup('upper_body')}
+            onGazeEnter={() => handleGazeEnter('upper_body')}
+            onGazeLeave={handleGazeLeave}
           />
         }
         middleCard={
           <BodyMindOptionCard
             title="몸통"
-            description="가슴 · 배 · 허리 · 엉덩이"
-            tone="sky"
-            badge="대분류"
+            description="배, 팔, 손, 허리"
+            tone="sand"
+            badge="부위 선택"
+            trackingId="middle_body"
             selected={selectedGroupKey === 'middle_body'}
             onSelect={() => handleSelectGroup('middle_body')}
+            onGazeEnter={() => handleGazeEnter('middle_body')}
+            onGazeLeave={handleGazeLeave}
           />
         }
         guideCard={
           <BodyMindPainGuideCard
-            badge="전신 가이드"
             modelUrl={guideModelUrl}
-            headerText={
-              selectedGroup
-                ? `${selectedGroup.label} 선택 후 세부 부위를 이어서 고릅니다.`
-                : '가운데 가이드에서 전체 신체를 확인한 뒤 대분류를 선택하세요.'
-            }
+            highlightModelUrl={highlightModelUrl}
           />
         }
         lowerCard={
           <BodyMindOptionCard
             title="하체"
-            description="허벅지 · 무릎 · 종아리 · 발"
-            tone="sky"
-            badge="대분류"
+            description="다리, 발, 엉덩이, 전신"
+            tone="mint"
+            badge="부위 선택"
+            trackingId="lower_body"
             selected={selectedGroupKey === 'lower_body'}
             onSelect={() => handleSelectGroup('lower_body')}
+            onGazeEnter={() => handleGazeEnter('lower_body')}
+            onGazeLeave={handleGazeLeave}
           />
         }
         backCard={
           <BodyMindOptionCard
-            title="뒤로가기"
-            description="몸과마음 메인으로"
+            title="← 뒤로가기"
+            description="몸과 마음 메인으로 이동"
             tone="slate"
             badge="고정 위치"
+            trackingId="body-mind-pain-area-back"
             onSelect={handleBack}
           />
         }

@@ -1,23 +1,27 @@
 import { apiClient } from './apiClient'
+import { API_ENDPOINTS } from './apiEndpoints'
 import type { AuthSession } from '../types/auth'
-import type { ServiceResult } from '../types/api'
 import { createServiceFailure } from '../utils/errorMapper'
 
-export const PATIENT_SOS_COOLDOWN_MS = 30_000
-
-const PATIENT_SOS_STORAGE_PREFIX = 'patientSosLastTriggeredAt'
-const PATIENT_SOS_API_ENDPOINT = import.meta.env.VITE_PATIENT_SOS_ENDPOINT?.trim() || null
-
-export interface PatientSosRequestPayload {
-  patientId: string
-  requestedAt: string
-  teamCode?: string | null
+interface CallCreateRequest {
+  matchingId: number
+  type: 'NORMAL' | 'SOS'
 }
 
-interface MockPatientSosRequestResult {
+interface CallCreateResponse {
+  callId: number
+  matchingId: number
+  type: string
+  status: string
+  senderId: number
+  timestamp: string
+}
+
+export interface PatientCallRequestResult {
   success: boolean
   remainingMs: number
   requestedAt: number | null
+  callId?: number
   message?: string
 }
 
@@ -26,53 +30,9 @@ type AudioContextWindow = Window & {
 }
 
 let sharedAudioContext: AudioContext | null = null
-let patientSosRequestTransport: null | ((
-  payload: PatientSosRequestPayload,
-  session: Pick<AuthSession, 'accessToken' | 'teamCode'> | null,
-) => Promise<ServiceResult<null>>) = null
-
-function isBrowser() {
-  return typeof window !== 'undefined'
-}
-
-function getPatientSosStorageKey(patientId: string) {
-  return `${PATIENT_SOS_STORAGE_PREFIX}:${patientId}`
-}
-
-function getStoredLastPatientSosAt(patientId: string) {
-  if (!isBrowser()) {
-    return null
-  }
-
-  const savedValue = sessionStorage.getItem(getPatientSosStorageKey(patientId))
-
-  if (!savedValue) {
-    return null
-  }
-
-  const parsed = Number(savedValue)
-  return Number.isFinite(parsed) ? parsed : null
-}
-
-function storeLastPatientSosAt(patientId: string, requestedAt: number) {
-  if (!isBrowser()) {
-    return
-  }
-
-  sessionStorage.setItem(getPatientSosStorageKey(patientId), String(requestedAt))
-}
-
-export function registerPatientSosRequestTransport(
-  transport: null | ((
-    payload: PatientSosRequestPayload,
-    session: Pick<AuthSession, 'accessToken' | 'teamCode'> | null,
-  ) => Promise<ServiceResult<null>>),
-) {
-  patientSosRequestTransport = transport
-}
 
 function getAudioContext() {
-  if (!isBrowser()) {
+  if (typeof window === 'undefined') {
     return null
   }
 
@@ -88,20 +48,6 @@ function getAudioContext() {
   }
 
   return sharedAudioContext
-}
-
-export function getRemainingPatientSosCooldownMs(patientId: string, now = Date.now()) {
-  const lastTriggeredAt = getStoredLastPatientSosAt(patientId)
-
-  if (!lastTriggeredAt) {
-    return 0
-  }
-
-  return Math.max(0, PATIENT_SOS_COOLDOWN_MS - (now - lastTriggeredAt))
-}
-
-export function getPatientSosCooldownSeconds(patientId: string, now = Date.now()) {
-  return Math.ceil(getRemainingPatientSosCooldownMs(patientId, now) / 1000)
 }
 
 export async function playPatientSirenSound(durationMs = 1800) {
@@ -142,60 +88,55 @@ export async function playPatientSirenSound(durationMs = 1800) {
   }
 }
 
-export async function requestMockPatientSos(
-  patientId: string,
-  session: Pick<AuthSession, 'accessToken' | 'teamCode'> | null = null,
-): Promise<MockPatientSosRequestResult> {
-  const remainingMs = getRemainingPatientSosCooldownMs(patientId)
-
-  if (remainingMs > 0) {
+export async function requestPatientCall(
+  matchingId: number,
+  callType: 'NORMAL' | 'SOS',
+  session: Pick<AuthSession, 'accessToken'> | null = null,
+): Promise<PatientCallRequestResult> {
+  if (!session?.accessToken) {
     return {
       success: false,
-      remainingMs,
+      remainingMs: 0,
       requestedAt: null,
+      message: '인증 정보가 없습니다.',
+    }
+  }
+
+  if (matchingId == null) {
+    return {
+      success: false,
+      remainingMs: 0,
+      requestedAt: null,
+      message: '매칭 정보가 없습니다.',
     }
   }
 
   const requestedAt = Date.now()
-  const payload: PatientSosRequestPayload = {
-    patientId,
-    requestedAt: new Date(requestedAt).toISOString(),
-    teamCode: session?.teamCode ?? null,
+
+  if (callType === 'SOS') {
+    await playPatientSirenSound()
   }
 
-  storeLastPatientSosAt(patientId, requestedAt)
-  await playPatientSirenSound()
-
   try {
-    if (patientSosRequestTransport) {
-      const transportResult = await patientSosRequestTransport(payload, session)
+    const response = await apiClient.post<CallCreateResponse, CallCreateRequest>(
+      API_ENDPOINTS.CALL_CREATE,
+      { matchingId, type: callType },
+      { accessToken: session.accessToken },
+    )
 
-      if (!transportResult.success) {
-        return {
-          success: false,
-          remainingMs: 0,
-          requestedAt,
-          message: transportResult.message,
-        }
-      }
-    } else if (PATIENT_SOS_API_ENDPOINT && session?.accessToken) {
-      await apiClient.post<null, PatientSosRequestPayload>(PATIENT_SOS_API_ENDPOINT, payload, {
-        accessToken: session.accessToken,
-      })
+    return {
+      success: true,
+      remainingMs: 0,
+      requestedAt,
+      callId: response?.callId,
     }
   } catch (error) {
-    const failure = createServiceFailure(error, 'SOS 호출 전송에 실패했습니다.')
+    const failure = createServiceFailure(error, '호출 전송에 실패했습니다.')
     return {
       success: false,
       remainingMs: 0,
       requestedAt,
       message: failure.message,
     }
-  }
-
-  return {
-    success: true,
-    remainingMs: 0,
-    requestedAt,
   }
 }
