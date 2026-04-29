@@ -5,23 +5,22 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.filter.ForwardedHeaderFilter;
 
 @Configuration
 public class SwaggerConfig {
 
-    @Bean
-    ForwardedHeaderFilter forwardedHeaderFilter() {
-        return new ForwardedHeaderFilter();
-    }
+    @Value("${swagger.server-url:}")
+    private String serverUrl;
 
     @Bean
     public OpenAPI openAPI() {
         String securitySchemeName = "bearerAuth";
 
-        return new OpenAPI()
+        OpenAPI openAPI = new OpenAPI()
                 .info(new Info()
                         .title("eyespeak API")
                         .description("시선추적 기반 환자-보호자 의사소통 보조 API")
@@ -34,5 +33,11 @@ public class SwaggerConfig {
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")));
+
+        if (!serverUrl.isEmpty()) {
+            openAPI.addServersItem(new Server().url(serverUrl));
+        }
+
+        return openAPI;
     }
 }

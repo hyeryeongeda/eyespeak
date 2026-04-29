@@ -2,6 +2,8 @@ import { API_ENDPOINTS } from './apiEndpoints'
 import { ROUTINE_ACTIVITY_TAG_IDS, ROUTINE_TIME_SLOT_IDS } from '../constants/routineCatalog'
 import type {
   AuthResponseDto,
+  EmailCheckRequestDto,
+  EmailCheckResponseDto,
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
@@ -29,6 +31,7 @@ const DEMO_GUARDIAN_EMAIL = 'care123@eyespeak.mock'
 const DEMO_PATIENT_EMAIL = 'pat123@eyespeak.mock'
 const DEMO_PASSWORD = 'e205e205@'
 const DEMO_TEAM_CODE = 'TEAM123'
+const DEMO_MATCHING_ID = 1
 
 interface MockGuardianAccountRecord {
   userId: string
@@ -43,6 +46,7 @@ interface MockGuardianAccountRecord {
 interface MockPatientProfileRecord {
   patientId: string
   guardianUserId: string
+  matchingId: number
   name: string
   birthYear: number
   gender: 'M' | 'F'
@@ -95,6 +99,17 @@ function migrateDatabase(database: MockAuthDatabase) {
     }
   })
 
+  let nextMatchingId = 1
+
+  database.patientProfiles.forEach(patientProfile => {
+    if (!Number.isInteger(patientProfile.matchingId) || patientProfile.matchingId <= 0) {
+      patientProfile.matchingId = nextMatchingId
+      didMutate = true
+    }
+
+    nextMatchingId = Math.max(nextMatchingId, patientProfile.matchingId + 1)
+  })
+
   return didMutate
 }
 
@@ -114,6 +129,31 @@ function delay(ms = MOCK_NETWORK_DELAY_MS) {
   return new Promise<void>(resolve => {
     window.setTimeout(resolve, ms)
   })
+}
+
+function createMockNumericUserId(value: string) {
+  return Array.from(value).reduce((result, char) => {
+    return (result * 31 + char.charCodeAt(0)) % 2147483647
+  }, 17)
+}
+
+function createNextMatchingId(database: MockAuthDatabase) {
+  return (
+    database.patientProfiles.reduce((maxId, patientProfile) => {
+      return Math.max(maxId, patientProfile.matchingId)
+    }, 0) + 1
+  )
+}
+
+function findPatientProfileByGuardianUserId(
+  database: MockAuthDatabase,
+  guardianUserId: string,
+) {
+  return database.patientProfiles.find(profile => profile.guardianUserId === guardianUserId) ?? null
+}
+
+function findPatientProfileByPatientId(database: MockAuthDatabase, patientId: string) {
+  return database.patientProfiles.find(profile => profile.patientId === patientId) ?? null
 }
 
 function createSeedDatabase(): MockAuthDatabase {
@@ -136,6 +176,7 @@ function createSeedDatabase(): MockAuthDatabase {
       {
         patientId,
         guardianUserId,
+        matchingId: DEMO_MATCHING_ID,
         name: '환자 데모',
         birthYear: 1992,
         gender: 'M',
@@ -231,12 +272,16 @@ function createAuthResponse(params: {
   name: string
   email?: string
   teamCode?: string | null
+  userId?: number | null
+  matchingId?: number | null
 }): AuthResponseDto {
   return {
     accessToken: `mock-access:${params.role}:${params.id}:${Date.now()}`,
     refreshToken: `mock-refresh:${params.role}:${params.id}`,
     user: {
       id: params.id,
+      userId: params.userId ?? createMockNumericUserId(params.id),
+      matchingId: params.matchingId ?? null,
       role: params.role,
       name: params.name,
       email: params.email,
@@ -331,12 +376,18 @@ function handleLogin(request: LoginRequestDto) {
       })
     }
 
+    const patientProfile =
+      guardianAccount.patientId != null
+        ? findPatientProfileByPatientId(database, guardianAccount.patientId)
+        : null
+
     return createAuthResponse({
       id: guardianAccount.userId,
       role: 'guardian',
       name: guardianAccount.name,
       email: guardianAccount.email,
       teamCode: guardianAccount.teamCode,
+      matchingId: patientProfile?.matchingId ?? null,
     })
   }
 
@@ -352,12 +403,15 @@ function handleLogin(request: LoginRequestDto) {
     })
   }
 
+  const patientProfile = findPatientProfileByPatientId(database, patientAccount.patientId)
+
   return createAuthResponse({
     id: patientAccount.userId,
     role: 'patient',
     name: patientAccount.name,
     email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
+    matchingId: patientProfile?.matchingId ?? null,
   })
 }
 
@@ -500,7 +554,32 @@ function handleGuardianSignup(request: GuardianSignupRequestDto) {
     role: 'guardian',
     name: guardianRecord.name,
     email: guardianRecord.email,
+    matchingId: null,
   })
+}
+
+function handleCheckEmail(request: EmailCheckRequestDto) {
+  assertRequiredText(request.email, '이메일을 입력해주세요.')
+
+  const database = readDatabase()
+  const normalizedEmail = request.email.trim().toLowerCase()
+  const isDuplicated =
+    database.guardians.some(guardian => guardian.email.toLowerCase() === normalizedEmail) ||
+    database.patientAccounts.some(account => account.loginId === normalizedEmail)
+
+  if (isDuplicated) {
+    throw new ApiError({
+      statusCode: 409,
+      source: 'mock',
+      message: '이미 가입된 이메일입니다.',
+      code: 'AUTH-204',
+    })
+  }
+
+  return {
+    code: 'SUCCESS',
+    message: '요청이 성공하였습니다',
+  } satisfies EmailCheckResponseDto
 }
 
 function handleRegisterPatientInfo(
@@ -551,6 +630,7 @@ function handleRegisterPatientInfo(
   const patientProfile: MockPatientProfileRecord = {
     patientId,
     guardianUserId,
+    matchingId: createNextMatchingId(database),
     name: request.name.trim(),
     birthYear: request.birthYear,
     gender: request.gender,
@@ -713,6 +793,7 @@ function handlePatientSignup(request: PatientSignupRequestDto) {
       name: patientAccount.name,
       email: patientAccount.loginId,
       teamCode: patientAccount.teamCode,
+      matchingId: patientProfile.matchingId,
     }),
     patientId: patientAccount.patientId,
     teamCode: patientAccount.teamCode,
@@ -753,12 +834,15 @@ function handleRefresh(request: RefreshRequestDto) {
       })
     }
 
+    const patientProfile = findPatientProfileByGuardianUserId(database, guardianRecord.userId)
+
     return createAuthResponse({
       id: guardianRecord.userId,
       role: 'guardian',
       name: guardianRecord.name,
       email: guardianRecord.email,
       teamCode: guardianRecord.teamCode,
+      matchingId: patientProfile?.matchingId ?? null,
     })
   }
 
@@ -772,12 +856,15 @@ function handleRefresh(request: RefreshRequestDto) {
     })
   }
 
+  const patientProfile = findPatientProfileByPatientId(database, patientAccount.patientId)
+
   return createAuthResponse({
     id: patientAccount.userId,
     role: 'patient',
     name: patientAccount.name,
     email: patientAccount.loginId,
     teamCode: patientAccount.teamCode,
+    matchingId: patientProfile?.matchingId ?? null,
   })
 }
 
@@ -845,6 +932,7 @@ export async function findMockTeamCode(
   return {
     teamCode: patientProfile.teamCode,
     patientName: patientProfile.name,
+    verificationMode: 'lookup',
   }
 }
 
@@ -860,6 +948,8 @@ export const mockApiTransport: ApiTransport = {
     switch (`${method} ${url}`) {
       case `POST ${API_ENDPOINTS.AUTH_LOGIN}`:
         return handleLogin(data as LoginRequestDto) as TResponse
+      case `POST ${API_ENDPOINTS.AUTH_CHECK_EMAIL}`:
+        return handleCheckEmail(data as EmailCheckRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.AUTH_SIGNUP_GUARDIAN}`:
         return handleGuardianSignup(data as GuardianSignupRequestDto) as TResponse
       case `POST ${API_ENDPOINTS.PATIENTS}`:
@@ -887,6 +977,100 @@ export const mockApiTransport: ApiTransport = {
         })
     }
   },
+}
+
+function callMockApi<TResponse, TBody = unknown>(options: ApiRequestOptions<TBody>) {
+  return mockApiTransport.request<TResponse, TBody>(options)
+}
+
+export function loginMockApi(request: LoginRequestDto) {
+  return callMockApi<AuthResponseDto, LoginRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_LOGIN,
+    data: request,
+  })
+}
+
+export function checkEmailMockApi(request: EmailCheckRequestDto) {
+  return callMockApi<EmailCheckResponseDto, EmailCheckRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_CHECK_EMAIL,
+    data: request,
+  })
+}
+
+export function logoutMockApi(request: LogoutRequestDto, accessToken?: string | null) {
+  return callMockApi<{ success: boolean }, LogoutRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_LOGOUT,
+    data: request,
+    accessToken,
+  })
+}
+
+export function signUpGuardianMockApi(request: GuardianSignupRequestDto) {
+  return callMockApi<AuthResponseDto, GuardianSignupRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_SIGNUP_GUARDIAN,
+    data: request,
+  })
+}
+
+export function refreshMockApi(request: RefreshRequestDto) {
+  return callMockApi<AuthResponseDto, RefreshRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_REFRESH,
+    data: request,
+  })
+}
+
+export function requestPasswordResetMockApi(request: PasswordResetRequestDto) {
+  return callMockApi<PasswordResetResponseDto, PasswordResetRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_RESET_PASSWORD,
+    data: request,
+  })
+}
+
+export function withdrawMockApi(request: WithdrawRequestDto, accessToken?: string | null) {
+  return callMockApi<{ success: boolean }, WithdrawRequestDto>({
+    method: 'DELETE',
+    url: API_ENDPOINTS.AUTH_WITHDRAW,
+    data: request,
+    accessToken,
+  })
+}
+
+export function registerPatientInfoMockApi(
+  request: RegisterPatientInfoRequestDto,
+  accessToken?: string | null,
+) {
+  return callMockApi<RegisterPatientInfoResponseDto, RegisterPatientInfoRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.PATIENTS,
+    data: request,
+    accessToken,
+  })
+}
+
+export function createRoutineMockApi(
+  request: RoutineCreateRequestDto,
+  accessToken?: string | null,
+) {
+  return callMockApi<null, RoutineCreateRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.ROUTINES,
+    data: request,
+    accessToken,
+  })
+}
+
+export function signUpPatientMockApi(request: PatientSignupRequestDto) {
+  return callMockApi<PatientSignupResponseDto, PatientSignupRequestDto>({
+    method: 'POST',
+    url: API_ENDPOINTS.AUTH_SIGNUP_PATIENT,
+    data: request,
+  })
 }
 
 export const MOCK_AUTH_DEMO_CREDENTIALS = {

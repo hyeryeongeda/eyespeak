@@ -1,4 +1,9 @@
 import type { CSSProperties } from 'react'
+import DwellFeedbackBadge from '../../../../features/patient/input/components/DwellFeedbackBadge'
+import {
+  isDwellFeedbackTargetActive,
+  type DwellFeedbackViewModel,
+} from '../../../../features/patient/input/hooks/useDwellFeedback'
 
 const wrapStyle: CSSProperties = {
   flex: 1,
@@ -42,6 +47,7 @@ const retryBtnStyle: CSSProperties = {
   fontSize: '16px',
   fontWeight: 800,
   cursor: 'pointer',
+  position: 'relative',
 }
 
 export interface FavoritesErrorStateProps {
@@ -49,6 +55,8 @@ export interface FavoritesErrorStateProps {
   description: string
   onRetry?: () => void
   retryLabel?: string
+  retryTrackingId?: string
+  dwellFeedback?: DwellFeedbackViewModel<string>
 }
 
 export default function FavoritesErrorState({
@@ -56,13 +64,33 @@ export default function FavoritesErrorState({
   description,
   onRetry,
   retryLabel = '다시 시도',
+  retryTrackingId,
+  dwellFeedback,
 }: FavoritesErrorStateProps) {
+  const isRetryDwellActive = isDwellFeedbackTargetActive(
+    dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+    retryTrackingId,
+  )
+
   return (
     <section style={wrapStyle} role="alert" aria-label="오류">
       <h3 style={titleStyle}>{title}</h3>
       <p style={descriptionStyle}>{description}</p>
       {onRetry ? (
-        <button type="button" style={retryBtnStyle} onClick={onRetry} aria-label={retryLabel}>
+        <button
+          type="button"
+          style={retryBtnStyle}
+          onClick={onRetry}
+          aria-label={retryLabel}
+          data-tracking-id={retryTrackingId}
+        >
+          {isRetryDwellActive && dwellFeedback ? (
+            <DwellFeedbackBadge
+              phase={dwellFeedback.phase}
+              progress={dwellFeedback.progress}
+              remainingMs={dwellFeedback.remainingMs}
+            />
+          ) : null}
           {retryLabel}
         </button>
       ) : null}

@@ -14,8 +14,8 @@ def trig() -> TriggerDetector:
 
 def test_select_intentional_blink(trig: TriggerDetector) -> None:
     assert trig.update(0.10, 0.0) == "none"
-    assert trig.update(0.10, 0.5) == "none"
-    out = trig.update(0.25, 0.8)
+    assert trig.update(0.10, 0.2) == "none"
+    out = trig.update(0.25, 0.4)
     assert out == "select"
     assert trig.update(0.25, 1.0) == "none"
 
@@ -29,12 +29,12 @@ def test_stop_long_close(trig: TriggerDetector) -> None:
 
 def test_double_blink_start(trig: TriggerDetector) -> None:
     trig.update(0.08, 0.0)
-    trig.update(0.08, 0.3)
-    first = trig.update(0.25, 0.85)
+    trig.update(0.08, 0.15)
+    first = trig.update(0.25, 0.35)
     assert first == "select"
-    trig.update(0.08, 1.0)
-    trig.update(0.08, 1.3)
-    second = trig.update(0.25, 2.0)
+    trig.update(0.08, 0.8)
+    trig.update(0.08, 0.95)
+    second = trig.update(0.25, 1.2)
     assert second == "start"
 
 

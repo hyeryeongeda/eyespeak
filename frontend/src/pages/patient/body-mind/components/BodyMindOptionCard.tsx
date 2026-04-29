@@ -44,7 +44,7 @@ const baseStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.08rem, 1.85vw, 1.45rem)',
+  fontSize: 'clamp(3.5rem, 6vw, 4.75rem)',
   fontWeight: 800,
   lineHeight: 1.25,
   color: '#203042',
@@ -52,7 +52,7 @@ const labelStyle: CSSProperties = {
 
 const descriptionStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(0.88rem, 1.3vw, 1rem)',
+  fontSize: 'clamp(1rem, 1.55vw, 1.15rem)',
   fontWeight: 600,
   lineHeight: 1.4,
   color: '#647587',
@@ -66,7 +66,7 @@ const badgeStyle: CSSProperties = {
   padding: '0 12px',
   borderRadius: '999px',
   backgroundColor: 'rgba(255, 255, 255, 0.88)',
-  fontSize: '12px',
+  fontSize: '14px',
   fontWeight: 800,
   color: '#516375',
 }
@@ -80,7 +80,10 @@ interface BodyMindOptionCardProps {
   badge?: string
   className?: string
   style?: CSSProperties
+  trackingId?: string
   onSelect?: () => void
+  onGazeEnter?: () => void
+  onGazeLeave?: () => void
 }
 
 export default function BodyMindOptionCard({
@@ -92,7 +95,10 @@ export default function BodyMindOptionCard({
   badge,
   className,
   style,
+  trackingId,
   onSelect,
+  onGazeEnter,
+  onGazeLeave,
 }: BodyMindOptionCardProps) {
   const toneStyle = toneStyleMap[tone]
   const resolvedStyle: CSSProperties = {
@@ -136,6 +142,9 @@ export default function BodyMindOptionCard({
       disabled={disabled}
       aria-pressed={selected}
       style={resolvedStyle}
+      data-tracking-id={disabled ? undefined : trackingId}
+      onMouseEnter={onGazeEnter}
+      onMouseLeave={onGazeLeave}
     >
       {content}
     </button>

@@ -4,6 +4,7 @@
  */
 export interface FavoriteItem {
   id: string
+  phraseId: number
   text: string
   category?: string
   usageCount?: number

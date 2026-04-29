@@ -7,10 +7,7 @@ import fullBodyModelUrl from './full_body.glb?url'
 import lowerBodyFallbackModelUrl from './lower_body.glb?url'
 import middleBodyFallbackModelUrl from './middle_body.glb?url'
 import upperBodyFallbackModelUrl from './upper_body.glb?url'
-import lowerCalfModelUrl from './lower_body/lower_calf.glb?url'
 import lowerFootsModelUrl from './lower_body/lower_foots.glb?url'
-import lowerKneeModelUrl from './lower_body/lower_knee.glb?url'
-import lowerThighModelUrl from './lower_body/lower_thigh.glb?url'
 import middleBackModelUrl from './middle_body/middle_back.glb?url'
 import middleButtsModelUrl from './middle_body/middle_butts.glb?url'
 import middleChestModelUrl from './middle_body/middle_chest.glb?url'
@@ -52,17 +49,23 @@ const painAreaModelMap: Record<PainAreaKey, PainAreaModelDefinition> = {
     modelUrl: upperShoulderModelUrl,
     fallbackModelUrl: upperBodyFallbackModelUrl,
   },
-  arm_hand: {
-    key: 'arm_hand',
-    groupKey: 'upper_body',
+  arm: {
+    key: 'arm',
+    groupKey: 'middle_body',
     modelUrl: upperArmsModelUrl,
-    fallbackModelUrl: upperBodyFallbackModelUrl,
+    fallbackModelUrl: middleBodyFallbackModelUrl,
+  },
+  hand: {
+    key: 'hand',
+    groupKey: 'middle_body',
+    modelUrl: upperArmsModelUrl,
+    fallbackModelUrl: middleBodyFallbackModelUrl,
   },
   chest: {
     key: 'chest',
-    groupKey: 'middle_body',
+    groupKey: 'upper_body',
     modelUrl: middleChestModelUrl,
-    fallbackModelUrl: middleBodyFallbackModelUrl,
+    fallbackModelUrl: upperBodyFallbackModelUrl,
   },
   stomach: {
     key: 'stomach',
@@ -70,8 +73,8 @@ const painAreaModelMap: Record<PainAreaKey, PainAreaModelDefinition> = {
     modelUrl: middleStomachModelUrl,
     fallbackModelUrl: middleBodyFallbackModelUrl,
   },
-  back: {
-    key: 'back',
+  waist: {
+    key: 'waist',
     groupKey: 'middle_body',
     modelUrl: middleBackModelUrl,
     fallbackModelUrl: middleBodyFallbackModelUrl,
@@ -82,22 +85,10 @@ const painAreaModelMap: Record<PainAreaKey, PainAreaModelDefinition> = {
     modelUrl: middleButtsModelUrl,
     fallbackModelUrl: middleBodyFallbackModelUrl,
   },
-  thigh: {
-    key: 'thigh',
+  leg: {
+    key: 'leg',
     groupKey: 'lower_body',
-    modelUrl: lowerThighModelUrl,
-    fallbackModelUrl: lowerBodyFallbackModelUrl,
-  },
-  knee: {
-    key: 'knee',
-    groupKey: 'lower_body',
-    modelUrl: lowerKneeModelUrl,
-    fallbackModelUrl: lowerBodyFallbackModelUrl,
-  },
-  calf: {
-    key: 'calf',
-    groupKey: 'lower_body',
-    modelUrl: lowerCalfModelUrl,
+    modelUrl: lowerBodyFallbackModelUrl,
     fallbackModelUrl: lowerBodyFallbackModelUrl,
   },
   foot: {
@@ -105,6 +96,12 @@ const painAreaModelMap: Record<PainAreaKey, PainAreaModelDefinition> = {
     groupKey: 'lower_body',
     modelUrl: lowerFootsModelUrl,
     fallbackModelUrl: lowerBodyFallbackModelUrl,
+  },
+  whole_body: {
+    key: 'whole_body',
+    groupKey: 'lower_body',
+    modelUrl: fullBodyModelUrl,
+    fallbackModelUrl: fullBodyModelUrl,
   },
 }
 

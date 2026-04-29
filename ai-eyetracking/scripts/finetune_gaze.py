@@ -54,7 +54,7 @@ def main():
         print("오류: torch 미설치. pip install torch torchvision")
         sys.exit(1)
 
-    from models.l2cs_net import L2CSNet, IMAGENET_MEAN, IMAGENET_STD
+    from eye_speak.iris_model.model import L2CSNet, IMAGENET_MEAN, IMAGENET_STD
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"디바이스: {device}")

@@ -56,7 +56,7 @@ class PolynomialCalibrator:
             ry: 수직 비율.
 
         Returns:
-            ``(pred_x, pred_y)``.
+            ``(pred_x, pred_y)`` 각각 ``0.0``~``1.0``으로 클램핑된 화면 정규화 좌표.
 
         Raises:
             RuntimeError: :meth:`fit` 호출 전.
@@ -69,6 +69,20 @@ class PolynomialCalibrator:
         )
         pred_x = float(np.dot(features, self._coeff_x))
         pred_y = float(np.dot(features, self._coeff_y))
+
+        if pred_x < -0.1 or pred_x > 1.1 or pred_y < -0.1 or pred_y > 1.1:
+            logger.warning(
+                "[DIAG] polynomial out-of-range: input(%.3f, %.3f) -> output(%.3f, %.3f)",
+                rx,
+                ry,
+                pred_x,
+                pred_y,
+            )
+
+        # 소프트 클램핑: 극단 외삽을 줄이면서 [0, 1] 화면 정규화 좌표로 반환
+        pred_x = max(0.0, min(1.0, pred_x))
+        pred_y = max(0.0, min(1.0, pred_y))
+
         return (pred_x, pred_y)
 
     @property

@@ -1,32 +1,32 @@
 import { type CSSProperties, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ROUTE_PATHS, getPatientLeisureCategoryPath } from '../../../app/router/routePaths'
 import {
-  fetchLeisureMain,
-  getLeisureCategoryById,
-  getLeisureEntryContentByCategory,
-  getLeisureCategories,
-  parseLeisureMockScenario,
-} from '../../../services/leisureService'
-import type { LeisureMainStatus } from '../../../types/leisure'
+  ROUTE_PATHS,
+  getPatientLeisureCategoryPath,
+  getPatientLeisurePlayerPath,
+} from '../../../app/router/routePaths'
+import { fetchLeisureMain } from '../../../services/leisureService'
+import type { LeisureMainStatus, LeisureShortcut } from '../../../types/leisure'
 import LeisureActionCard from './components/LeisureActionCard'
-import LeisureCategoryCard from './components/LeisureCategoryCard'
 import LeisureLayout from './components/LeisureLayout'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
+
+const MAX_SHORTCUT_CARDS = 5
 
 function getMainStatusText(status: LeisureMainStatus) {
   switch (status) {
     case 'loading':
-      return '여가 유형을 준비하고 있습니다'
+      return '여가 버튼을 불러오는 중입니다.'
     case 'empty':
-      return '등록된 영상이 없습니다'
+      return '등록된 여가 버튼이 없습니다.'
     case 'selecting':
-      return '카테고리를 선택했습니다'
+      return '선택한 버튼을 여는 중입니다.'
     case 'transitioning':
-      return '선택한 화면으로 이동합니다'
+      return '재생 화면으로 이동하는 중입니다.'
     case 'error':
-      return '추천 콘텐츠를 불러올 수 없습니다'
+      return '여가 버튼을 불러오지 못했습니다.'
     default:
-      return '여가 유형을 선택하세요'
+      return '보호자가 등록한 여가 버튼을 표시합니다.'
   }
 }
 
@@ -42,12 +42,14 @@ const noticeWrapStyle: CSSProperties = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
+  gap: '12px',
   padding: '6px 12px',
   flexShrink: 0,
 }
 
 const noticeStyle: CSSProperties = {
   margin: 0,
+  flex: 1,
   padding: '8px 16px',
   borderRadius: '999px',
   backgroundColor: 'rgba(255, 255, 255, 0.88)',
@@ -79,14 +81,28 @@ const mainGridStyle: CSSProperties = {
   gap: '16px',
 }
 
+const placeholderTones: LeisureShortcut['tone'][] = ['sand', 'sky', 'mint', 'slate', 'rose']
+
+function buildPlaceholderShortcut(index: number): LeisureShortcut {
+  return {
+    id: `placeholder-${index + 1}`,
+    title: '빈 버튼',
+    description: '보호자 설정에서 여가 버튼을 등록하면 여기에 표시됩니다.',
+    tone: placeholderTones[index % placeholderTones.length],
+    badgeLabel: '설정 필요',
+    kind: 'content',
+    contentId: null,
+    categoryId: null,
+    categoryLabel: null,
+  }
+}
+
 export default function LeisureMainPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const searchParams = new URLSearchParams(location.search)
-  const scenario = parseLeisureMockScenario(searchParams.get('mainScenario'))
-  const categoryCards = getLeisureCategories()
 
   const [status, setStatus] = useState<LeisureMainStatus>('idle')
+  const [shortcutCards, setShortcutCards] = useState<LeisureShortcut[]>([])
 
   useEffect(() => {
     let isMounted = true
@@ -95,18 +111,22 @@ export default function LeisureMainPage() {
       setStatus('loading')
 
       try {
-        const data = await fetchLeisureMain(scenario)
+        const data = await fetchLeisureMain()
 
         if (!isMounted) {
           return
         }
 
-        setStatus(data.featuredContent || data.registeredContents.length > 0 ? 'visible' : 'empty')
-      } catch {
+        setShortcutCards(data.shortcutCards)
+        setStatus(data.shortcutCards.length > 0 ? 'visible' : 'empty')
+      } catch (error) {
+        console.error('Failed to load leisure main contents.', error)
+
         if (!isMounted) {
           return
         }
 
+        setShortcutCards([])
         setStatus('error')
       }
     }
@@ -116,32 +136,47 @@ export default function LeisureMainPage() {
     return () => {
       isMounted = false
     }
-  }, [scenario])
+  }, [])
 
-  const handleSelectCategory = (categoryId: string) => {
-    const category = getLeisureCategoryById(categoryId)
-    const entryContent = getLeisureEntryContentByCategory(categoryId)
-
-    setStatus('transitioning')
-
-    if (!entryContent) {
-      navigate({
-        pathname: getPatientLeisureCategoryPath(categoryId),
-        search: location.search,
-      })
+  const handleSelectShortcut = async (shortcut: LeisureShortcut) => {
+    if (status === 'selecting' || status === 'transitioning') {
       return
     }
 
+    if (shortcut.kind === 'content' && shortcut.contentId) {
+      setStatus('transitioning')
+      navigate(
+        {
+          pathname: getPatientLeisurePlayerPath(shortcut.contentId),
+          search: location.search,
+        },
+        {
+          state: {
+            fromPath: location.pathname,
+            fromLabel: shortcut.title,
+            categoryId: shortcut.categoryId ?? undefined,
+          },
+        },
+      )
+      return
+    }
+
+    if (!shortcut.categoryId) {
+      setStatus('empty')
+      return
+    }
+
+    setStatus('transitioning')
     navigate(
       {
-        pathname: ROUTE_PATHS.PATIENT_LEISURE_PLAYER.replace(':contentId', entryContent.id),
+        pathname: getPatientLeisureCategoryPath(shortcut.categoryId),
         search: location.search,
       },
       {
         state: {
-          fromPath: getPatientLeisureCategoryPath(categoryId),
-          fromLabel: `${category?.label ?? '여가'} 추천`,
-          categoryId: category?.id,
+          fromPath: location.pathname,
+          fromLabel: shortcut.title,
+          categoryId: shortcut.categoryId,
         },
       },
     )
@@ -149,35 +184,53 @@ export default function LeisureMainPage() {
 
   const noticeMessage =
     status === 'loading'
-      ? '여가 유형을 불러오는 중입니다.'
+      ? '보호자가 저장한 여가 버튼을 불러오고 있습니다.'
       : status === 'empty'
-        ? '등록된 영상이 없습니다. 카테고리를 선택해 추천 영상을 볼 수 있습니다.'
+        ? '등록된 여가 버튼이 없습니다. 보호자 설정에서 최대 5개까지 등록해 주세요.'
         : status === 'error'
-          ? '추천 콘텐츠를 불러올 수 없습니다. 카테고리 선택만 우선 제공합니다.'
-          : '여가 카테고리를 선택하면 대표 영상 재생 화면으로 이동합니다.'
+          ? '여가 버튼을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'
+          : '뒤로가기를 제외한 버튼은 보호자 설정 순서대로 표시됩니다.'
+
+  const slots = Array.from({ length: MAX_SHORTCUT_CARDS }, (_, index) => {
+    return shortcutCards[index] ?? buildPlaceholderShortcut(index)
+  })
+
+  const isBusy = status === 'selecting' || status === 'transitioning'
+
+  usePatientPageCellMapping([
+    isBusy || (!slots[0]?.contentId && !slots[0]?.categoryId) ? null : 'main-shortcut-1',
+    isBusy || (!slots[1]?.contentId && !slots[1]?.categoryId) ? null : 'main-shortcut-2',
+    isBusy || (!slots[2]?.contentId && !slots[2]?.categoryId) ? null : 'main-shortcut-3',
+    isBusy || (!slots[3]?.contentId && !slots[3]?.categoryId) ? null : 'main-shortcut-4',
+    isBusy || (!slots[4]?.contentId && !slots[4]?.categoryId) ? null : 'main-shortcut-5',
+    'main-back',
+  ] as const)
 
   return (
     <LeisureLayout
       code="PAT-LEISURE-001"
-      title="여가 카테고리 선택"
-      description="카테고리를 누르면 대표 영상을 먼저 보여주고, 이후 다른 콘텐츠 목록으로 이동할 수 있습니다."
+      title="여가"
+      description="보호자가 등록한 여가 버튼을 선택해 바로 재생하거나 연결된 콘텐츠를 엽니다."
       statusText={getMainStatusText(status)}
-      contextLabel="6칸 + 가운데 pill 레이아웃"
+      contextLabel="보호자 맞춤 버튼 5개"
       hideHeader
     >
       <div style={contentWrapStyle}>
         <section style={mainGridShellStyle}>
           <div className="leisure-main-grid" style={mainGridStyle}>
-            {categoryCards.slice(0, 3).map(category => (
-              <div key={category.id} style={{ minHeight: 0, height: '100%' }}>
-                <LeisureCategoryCard
-                  category={category}
-                  contentCount={6}
-                  badge="여가"
+            {slots.slice(0, 3).map((shortcut, index) => (
+              <div key={shortcut.id} style={{ minHeight: 0, height: '100%' }}>
+                <LeisureActionCard
+                  title={shortcut.title}
+                  description={shortcut.description}
+                  badge={shortcut.badgeLabel}
+                  tone={shortcut.tone}
                   variant="hero"
-                  disabled={status === 'transitioning'}
-                  slotId={`main-category-${category.id}`}
-                  onSelect={() => handleSelectCategory(category.id)}
+                  disabled={isBusy || !shortcut.contentId && !shortcut.categoryId}
+                  slotId={`main-shortcut-${index + 1}`}
+                  onSelect={() => {
+                    void handleSelectShortcut(shortcut)
+                  }}
                 />
               </div>
             ))}
@@ -186,24 +239,28 @@ export default function LeisureMainPage() {
               <p style={noticeStyle}>{noticeMessage}</p>
             </div>
 
-            {categoryCards.slice(3, 5).map(category => (
-              <div key={category.id} style={{ minHeight: 0, height: '100%' }}>
-                <LeisureCategoryCard
-                  category={category}
-                  contentCount={6}
-                  badge="여가"
+            {slots.slice(3, 5).map((shortcut, index) => (
+              <div key={shortcut.id} style={{ minHeight: 0, height: '100%' }}>
+                <LeisureActionCard
+                  title={shortcut.title}
+                  description={shortcut.description}
+                  badge={shortcut.badgeLabel}
+                  tone={shortcut.tone}
                   variant="hero"
-                  disabled={status === 'transitioning'}
-                  slotId={`main-category-${category.id}`}
-                  onSelect={() => handleSelectCategory(category.id)}
+                  disabled={isBusy || !shortcut.contentId && !shortcut.categoryId}
+                  slotId={`main-shortcut-${index + 4}`}
+                  onSelect={() => {
+                    void handleSelectShortcut(shortcut)
+                  }}
                 />
               </div>
             ))}
+
             <div style={{ minHeight: 0, height: '100%' }}>
               <LeisureActionCard
                 title="뒤로가기"
-                description="메인으로"
-                badge="고정 위치"
+                description="환자 메인 화면으로 돌아갑니다."
+                badge="메인 이동"
                 variant="hero"
                 tone="slate"
                 slotId="main-back"

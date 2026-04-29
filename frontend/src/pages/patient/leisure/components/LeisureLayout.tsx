@@ -49,7 +49,7 @@ const codeStyle: CSSProperties = {
   borderRadius: '999px',
   backgroundColor: 'rgba(255, 255, 255, 0.92)',
   color: '#5c7188',
-  fontSize: '13px',
+  fontSize: '15px',
   fontWeight: 800,
   letterSpacing: '-0.01em',
 }
@@ -57,7 +57,7 @@ const codeStyle: CSSProperties = {
 const titleStyle: CSSProperties = {
   margin: 0,
   color: '#203042',
-  fontSize: 'clamp(2rem, 3vw, 2.7rem)',
+  fontSize: 'clamp(2.35rem, 3.4vw, 3.25rem)',
   fontWeight: 900,
   letterSpacing: '-0.04em',
   lineHeight: 1.05,
@@ -66,7 +66,7 @@ const titleStyle: CSSProperties = {
 const descriptionStyle: CSSProperties = {
   margin: 0,
   color: '#62768c',
-  fontSize: 'clamp(1rem, 1.4vw, 1.12rem)',
+  fontSize: 'clamp(1.15rem, 1.6vw, 1.3rem)',
   fontWeight: 700,
   lineHeight: 1.5,
 }
@@ -87,7 +87,7 @@ const metaItemStyle: CSSProperties = {
   backgroundColor: 'rgba(255, 255, 255, 0.86)',
   border: '1px solid rgba(213, 222, 233, 0.84)',
   color: '#53667d',
-  fontSize: '14px',
+  fontSize: '16px',
   fontWeight: 800,
 }
 
@@ -96,6 +96,7 @@ const contentStyle: CSSProperties = {
   minHeight: 0,
   display: 'flex',
   flexDirection: 'column',
+  overflow: 'hidden',
 }
 
 const srOnlyStyle: CSSProperties = {

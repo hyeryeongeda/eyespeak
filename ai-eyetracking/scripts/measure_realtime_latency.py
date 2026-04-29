@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     import cv2
-    from pipeline import GazePipeline
+    from eye_speak.pipeline import GazePipeline
 
     print(f"파이프라인 초기화 중... (checkpoint={args.checkpoint or '없음'})")
     pipeline = GazePipeline(checkpoint_path=args.checkpoint)

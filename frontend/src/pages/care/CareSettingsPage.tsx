@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 import { useAuth } from '../../features/auth/hooks/useAuth'
+import { removeTokenFromServer } from '../../services/fcmService'
 
 const PATIENT_SETTINGS = [
   {
@@ -20,12 +21,6 @@ const PATIENT_SETTINGS = [
     label: '표현 즐겨찾기',
     sub: '카테고리별 설정',
     path: ROUTE_PATHS.CARE_SETTINGS_FAVORITES,
-  },
-  {
-    icon: '💬',
-    label: '커스텀 단어',
-    sub: '주어 · 목적어 · 동사',
-    path: ROUTE_PATHS.CARE_SETTINGS_WORDS,
   },
   {
     icon: '📋',
@@ -54,12 +49,6 @@ const PATIENT_SETTINGS = [
 ] as const
 
 const MY_PROFILE_SETTINGS = [
-  {
-    icon: '👤',
-    label: '계정 정보',
-    sub: '이름 · 연락처',
-    path: ROUTE_PATHS.CARE_SETTINGS, // TODO: 계정 정보 라우트 연결
-  },
   {
     icon: '🔔',
     label: '알림 설정',
@@ -98,7 +87,8 @@ export default function CareSettingsPage() {
   const navigate = useNavigate()
   const { logout } = useAuth()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await removeTokenFromServer()
     logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }

@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { getAuthPathByRole, ROUTE_PATHS, resolveAppPath } from '../../app/router/routePaths'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { ROUTE_PATHS } from '../../app/router/routePaths'
+import { resolveAuthEntryRoute } from '../../features/auth/authRedirect'
 import {
   getStoredEntryMode,
   getStoredRole,
@@ -30,6 +31,8 @@ const selectedStyle: CSSProperties = {
 }
 
 export default function RoleSelectPage() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const savedMode = getStoredEntryMode()
   const modeParam = searchParams.get('mode')
@@ -55,7 +58,8 @@ export default function RoleSelectPage() {
     }
 
     setStoredEntryMode(mode)
-    window.location.assign(resolveAppPath(getAuthPathByRole(mode, selectedRole)))
+    const authEntryRoute = resolveAuthEntryRoute(mode, selectedRole, location.state)
+    navigate(authEntryRoute.path, { replace: true, state: authEntryRoute.state })
   }
 
   return (
@@ -116,7 +120,7 @@ export default function RoleSelectPage() {
           <button
             type="button"
             style={backButton}
-            onClick={() => window.location.assign(resolveAppPath(ROUTE_PATHS.HOME))}
+            onClick={() => navigate(ROUTE_PATHS.HOME, { replace: true })}
           >
             이전으로
           </button>

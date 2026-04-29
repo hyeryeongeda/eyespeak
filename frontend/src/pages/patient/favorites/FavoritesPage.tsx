@@ -1,13 +1,25 @@
 import type { CSSProperties } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
+import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
 import {
+  isDwellFeedbackTargetActive,
+  useDwellFeedback,
+} from '../../../features/patient/input/hooks/useDwellFeedback'
+import { useCellMapping } from '../../../features/patient/input/hooks/useCellMapping'
+import type { PatientCellMapping } from '../../../features/patient/input/services/patientCellMapping'
+import useReturnToTalkMainAfterDelay from '../../../hooks/useReturnToTalkMainAfterDelay'
+import {
+  FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
   fetchFavorites,
   submitFavoriteSelection,
-  FAVORITES_PAGE_SIZE_EXPORT as PAGE_SIZE,
 } from '../../../services/favoritesService'
+import {
+  playPatientUtteranceTts,
+  submitPatientUtterance,
+} from '../../../services/recommendationService'
 import type {
   FavoriteItem,
   FavoritesErrorKind,
@@ -16,36 +28,27 @@ import type {
 } from '../../../types/favorites'
 import FavoriteCard from './components/FavoriteCard'
 import FavoritesActionCard from './components/FavoritesActionCard'
-import FavoritesEmptyState from './components/FavoritesEmptyState'
 import FavoritesErrorState from './components/FavoritesErrorState'
 import FavoritesPaginationCard from './components/FavoritesPaginationCard'
-
-const PAGE_CODE = 'PAT-FAV-001'
+import FavoritesSplitState from './components/FavoritesSplitState'
+import { getFavoriteTileMeta } from './favoritesUi'
 
 const pageWrapStyle: CSSProperties = {
-  minHeight: '100dvh',
-  width: '100%',
-  padding: '16px',
-  background: 'linear-gradient(180deg, #f3f8fb 0%, #ecf3f6 100%)',
+  minHeight: 'calc(100dvh + var(--sat, 0px) + var(--sab, 0px))',
+  width: 'calc(100% + var(--sal, 0px) + var(--sar, 0px))',
+  marginTop: 'calc(var(--sat, 0px) * -1)',
+  marginRight: 'calc(var(--sar, 0px) * -1)',
+  marginBottom: 'calc(var(--sab, 0px) * -1)',
+  marginLeft: 'calc(var(--sal, 0px) * -1)',
+  padding: '4px',
+  background: 'linear-gradient(180deg, #f5fafc 0%, #edf4f7 100%)',
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  position: 'relative',
 }
 
-const headerStyle: CSSProperties = {
-  flexShrink: 0,
-  marginBottom: '12px',
-  padding: '12px 16px',
-  borderRadius: '18px',
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  border: '1px solid #dde7ed',
-  fontSize: '14px',
-  fontWeight: 700,
-  color: '#203042',
-}
-
-/** 3열 x 2행: 좌측 4칸 콘텐츠, 우측 상단 페이지네이션, 우측 하단 뒤로가기 */
 const gridStyle: CSSProperties = {
   flex: 1,
   minHeight: 0,
@@ -56,7 +59,7 @@ const gridStyle: CSSProperties = {
     "slot-1 slot-2 pagination"
     "slot-3 slot-4 back"
   `,
-  gap: '14px',
+  gap: '12px',
 }
 
 const slotWrapStyle: CSSProperties = {
@@ -78,6 +81,7 @@ const bottomBarStyle: CSSProperties = {
   alignItems: 'stretch',
   gap: '12px',
   marginTop: '12px',
+  padding: '0 4px 4px',
 }
 
 const backBtnStyle: CSSProperties = {
@@ -89,6 +93,7 @@ const backBtnStyle: CSSProperties = {
   fontSize: '16px',
   fontWeight: 700,
   cursor: 'pointer',
+  position: 'relative',
 }
 
 const loadingMessageStyle: CSSProperties = {
@@ -102,30 +107,51 @@ const loadingMessageStyle: CSSProperties = {
   color: '#647587',
 }
 
-/** 정렬 기준: 정책 미확정 시 mock 고정. 추후 정렬 선택 UI 붙일 때 이 값만 바꾸면 됨 */
-const SORT_KEY: FavoritesSortKey = 'recentUsed'
+const completedStateStyle: CSSProperties = {
+  flex: 1,
+  minHeight: 0,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '24px',
+}
 
-function getStatusLabel(status: FavoritesStatus): string {
-  switch (status) {
-    case 'idle':
-      return '대기 중'
-    case 'loading':
-      return '즐겨찾기를 불러오는 중입니다'
-    case 'visible':
-      return '항목을 선택하세요'
-    case 'selecting':
-      return '선택 반영 중'
-    case 'completed':
-      return '선택했어요'
-    case 'empty':
-      return '등록된 즐겨찾기가 없어요'
-    case 'transitioning':
-      return '화면 이동 중'
-    case 'error':
-      return '오류가 발생했어요'
-    default:
-      return '즐겨찾기'
-  }
+const completedCardStyle: CSSProperties = {
+  width: 'min(720px, 100%)',
+  borderRadius: '30px',
+  border: '1px solid rgba(203, 225, 214, 0.94)',
+  background:
+    'linear-gradient(180deg, rgba(247, 253, 249, 0.98) 0%, rgba(238, 249, 243, 0.98) 100%)',
+  boxShadow: '0 24px 56px rgba(54, 96, 76, 0.12)',
+  padding: '40px 28px',
+  textAlign: 'center',
+}
+
+const completedTitleStyle: CSSProperties = {
+  margin: 0,
+  color: '#2d5a47',
+  fontSize: 'clamp(1.7rem, 2.6vw, 2.2rem)',
+  fontWeight: 900,
+  lineHeight: 1.3,
+}
+
+const completedDescriptionStyle: CSSProperties = {
+  margin: '14px 0 0',
+  color: '#557767',
+  fontSize: 'clamp(1rem, 1.4vw, 1.12rem)',
+  fontWeight: 700,
+  lineHeight: 1.7,
+}
+
+const SORT_KEY: FavoritesSortKey = 'recentUsed'
+const TRACKING_BACK_BUTTON = 'favorites-back'
+const TRACKING_PAGINATION_PREV = 'favorites-pagination-prev'
+const TRACKING_PAGINATION_NEXT = 'favorites-pagination-next'
+const TRACKING_RETRY_FETCH = 'favorites-retry-fetch'
+const TRACKING_RETRY_SUBMIT = 'favorites-retry-submit'
+
+function getFavoriteTrackingId(itemId: string) {
+  return `favorites-item-${itemId}`
 }
 
 function paginate<T>(items: T[], pageIndex: number, pageSize: number): T[] {
@@ -136,22 +162,105 @@ function paginate<T>(items: T[], pageIndex: number, pageSize: number): T[] {
 export default function FavoritesPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const dwellFeedback = useDwellFeedback<string>({
+    enabled: true,
+  })
   const patientId = user?.id ?? 'patient-guest'
 
   const [status, setStatus] = useState<FavoritesStatus>('loading')
   const [list, setList] = useState<FavoriteItem[]>([])
   const [pageIndex, setPageIndex] = useState(0)
-  const [feedbackText, setFeedbackText] = useState('')
   const [errorKind, setErrorKind] = useState<FavoritesErrorKind | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [reloadToken, setReloadToken] = useState(0)
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE))
   const currentItems = paginate(list, pageIndex, PAGE_SIZE)
-  const showPagination = list.length > PAGE_SIZE
+  const isGridBusy = status === 'selecting' || status === 'transitioning'
+  const isBackButtonDwellActive = isDwellFeedbackTargetActive(
+    dwellFeedback,
+    TRACKING_BACK_BUTTON,
+  )
+
+  const cellMapping = useMemo<PatientCellMapping>(() => {
+    if (status === 'completed') {
+      return {
+        0: null,
+        1: null,
+        2: null,
+        3: null,
+        4: null,
+        5: null,
+      }
+    }
+
+    if (status === 'loading' && list.length === 0) {
+      return {
+        0: null,
+        1: null,
+        2: null,
+        3: TRACKING_BACK_BUTTON,
+        4: TRACKING_BACK_BUTTON,
+        5: TRACKING_BACK_BUTTON,
+      }
+    }
+
+    if (status === 'empty' || (status === 'error' && errorKind === 'fetch')) {
+      return {
+        0: TRACKING_RETRY_FETCH,
+        1: null,
+        2: TRACKING_BACK_BUTTON,
+        3: TRACKING_RETRY_FETCH,
+        4: null,
+        5: TRACKING_BACK_BUTTON,
+      }
+    }
+
+    if (status === 'error' && errorKind === 'submit') {
+      return {
+        0: TRACKING_RETRY_SUBMIT,
+        1: TRACKING_RETRY_SUBMIT,
+        2: TRACKING_RETRY_SUBMIT,
+        3: TRACKING_RETRY_SUBMIT,
+        4: TRACKING_RETRY_SUBMIT,
+        5: TRACKING_BACK_BUTTON,
+      }
+    }
+
+    const hasPrevPage = totalPages > 1 && pageIndex > 0
+    const hasNextPage = totalPages > 1 && pageIndex < totalPages - 1
+    const paginationTarget =
+      isGridBusy || (!hasPrevPage && !hasNextPage)
+        ? null
+        : hasPrevPage && hasNextPage
+          ? {
+              // This is the one remaining ambiguous slot: when both buttons coexist in one cell,
+              // the gaze click hook logs the ambiguity and falls back to direct point hit-testing.
+              targets: [TRACKING_PAGINATION_NEXT, TRACKING_PAGINATION_PREV],
+              groupId: 'favorites-pagination',
+            }
+          : hasNextPage
+            ? TRACKING_PAGINATION_NEXT
+            : TRACKING_PAGINATION_PREV
+
+    return {
+      0: !isGridBusy && currentItems[0] ? getFavoriteTrackingId(currentItems[0].id) : null,
+      1: !isGridBusy && currentItems[1] ? getFavoriteTrackingId(currentItems[1].id) : null,
+      2: paginationTarget,
+      3: !isGridBusy && currentItems[2] ? getFavoriteTrackingId(currentItems[2].id) : null,
+      4: !isGridBusy && currentItems[3] ? getFavoriteTrackingId(currentItems[3].id) : null,
+      5: !isGridBusy ? TRACKING_BACK_BUTTON : null,
+    }
+  }, [currentItems, errorKind, isGridBusy, list.length, pageIndex, status, totalPages])
+
+  useCellMapping(cellMapping, {
+    debugLabel: 'favorites-page',
+  })
+
+  useReturnToTalkMainAfterDelay(status === 'completed')
 
   const loadFavorites = useCallback(() => {
-    setFeedbackText('')
     setErrorKind(null)
     setErrorMessage('')
     setStatus('loading')
@@ -164,9 +273,11 @@ export default function FavoritesPage() {
     async function loadInitialFavorites() {
       try {
         const data = await fetchFavorites(patientId, SORT_KEY)
+
         if (!isActive) {
           return
         }
+
         setList(data)
         setPageIndex(0)
         setStatus(data.length === 0 ? 'empty' : 'visible')
@@ -174,6 +285,7 @@ export default function FavoritesPage() {
         if (!isActive) {
           return
         }
+
         setErrorKind('fetch')
         setErrorMessage('목록을 불러오지 못했어요. 다시 시도해 주세요.')
         setStatus('error')
@@ -192,16 +304,10 @@ export default function FavoritesPage() {
     navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
   }, [navigate])
 
-  /**
-   * 선택 완료 후 동작.
-   * MVP: 현재 화면 유지. 정책 확정 후 "대화하기 메인으로 복귀" 등으로 변경 시 이 블록만 수정.
-   */
   const handleAfterSelection = useCallback((_item: FavoriteItem, success: boolean) => {
     if (success) {
-      setFeedbackText('선택했어요')
+      setSuccessMessage('선택한 문장을 보호자에게 전달했어요. 잠시 후 대화하기 메인으로 이동합니다.')
       setStatus('completed')
-      // MVP: stay on page. Uncomment below when policy is "return to talk main":
-      // navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
     }
   }, [])
 
@@ -210,18 +316,38 @@ export default function FavoritesPage() {
       setStatus('selecting')
       setErrorKind(null)
       setErrorMessage('')
+
       try {
-        const result = await submitFavoriteSelection(patientId, item.id, item.text)
-        if (result.success) {
-          handleAfterSelection(item, true)
-        } else {
-          setErrorKind('submit')
-          setErrorMessage(result.errorMessage ?? '선택을 반영하지 못했어요. 다시 선택해 주세요.')
-          setStatus('error')
+        await submitPatientUtterance({
+          text: item.text,
+          source: 'manual',
+        })
+
+        try {
+          const result = await submitFavoriteSelection(patientId, item.id, item.text)
+
+          if (!result.success) {
+            console.warn(
+              'Favorite selection persistence failed after chat send.',
+              result.errorMessage,
+            )
+          }
+        } catch (error) {
+          console.warn('Favorite selection persistence threw after chat send.', error)
         }
+
+        try {
+          await playPatientUtteranceTts({
+            text: item.text,
+          })
+        } catch (error) {
+          console.warn('Favorite utterance TTS playback failed.', error)
+        }
+
+        handleAfterSelection(item, true)
       } catch {
         setErrorKind('submit')
-        setErrorMessage('선택을 반영하지 못했어요. 다시 선택해 주세요.')
+        setErrorMessage('선택한 문장을 보내지 못했어요. 다시 시도해 주세요.')
         setStatus('error')
       }
     },
@@ -229,27 +355,48 @@ export default function FavoritesPage() {
   )
 
   const handlePrevPage = useCallback(() => {
-    if (pageIndex <= 0) return
+    if (pageIndex <= 0) {
+      return
+    }
+
     setStatus('transitioning')
-    setPageIndex(p => p - 1)
+    setPageIndex(currentPage => currentPage - 1)
     setStatus('visible')
   }, [pageIndex])
 
   const handleNextPage = useCallback(() => {
-    if (pageIndex >= totalPages - 1) return
+    if (pageIndex >= totalPages - 1) {
+      return
+    }
+
     setStatus('transitioning')
-    setPageIndex(p => p + 1)
+    setPageIndex(currentPage => currentPage + 1)
     setStatus('visible')
   }, [pageIndex, totalPages])
 
   if (status === 'loading' && list.length === 0) {
     return (
-      <main style={pageWrapStyle} aria-label="즐겨찾기">
-        <div style={headerStyle}>{getStatusLabel('loading')}</div>
-        <div style={loadingMessageStyle}>잠시만 기다려 주세요.</div>
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={dwellFeedback.setContainerElement}
+      >
+        <div style={loadingMessageStyle}>즐겨찾기를 불러오는 중이에요.</div>
         <div style={bottomBarStyle}>
-          <button type="button" style={backBtnStyle} onClick={handleBack}>
-            대화하기로 돌아가기
+          <button
+            type="button"
+            style={backBtnStyle}
+            onClick={handleBack}
+            data-tracking-id={TRACKING_BACK_BUTTON}
+          >
+            {isBackButtonDwellActive ? (
+              <DwellFeedbackBadge
+                phase={dwellFeedback.phase}
+                progress={dwellFeedback.progress}
+                remainingMs={dwellFeedback.remainingMs}
+              />
+            ) : null}
+            뒤로가기
           </button>
         </div>
       </main>
@@ -258,90 +405,150 @@ export default function FavoritesPage() {
 
   if (status === 'empty') {
     return (
-      <main style={pageWrapStyle} aria-label="즐겨찾기">
-        <div style={headerStyle}>{getStatusLabel('empty')}</div>
-        <FavoritesEmptyState />
-        <div style={bottomBarStyle}>
-          <button type="button" style={backBtnStyle} onClick={handleBack}>
-            대화하기로 돌아가기
-          </button>
-        </div>
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={dwellFeedback.setContainerElement}
+      >
+        <FavoritesSplitState
+          title="등록된 즐겨찾기가 없어요"
+          description="보호자가 즐겨찾기를 등록하면 여기에서 바로 선택할 수 있어요."
+          leftLabel="새로고침"
+          rightLabel="뒤로가기"
+          onLeftAction={loadFavorites}
+          onRightAction={handleBack}
+          leftTrackingId={TRACKING_RETRY_FETCH}
+          rightTrackingId={TRACKING_BACK_BUTTON}
+          dwellFeedback={dwellFeedback}
+        />
       </main>
     )
   }
 
   if (status === 'error' && errorKind === 'fetch') {
     return (
-      <main style={pageWrapStyle} aria-label="즐겨찾기">
-        <div style={headerStyle}>{getStatusLabel('error')}</div>
-        <FavoritesErrorState
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={dwellFeedback.setContainerElement}
+      >
+        <FavoritesSplitState
           title="즐겨찾기를 불러올 수 없어요"
           description={errorMessage}
-          onRetry={loadFavorites}
-          retryLabel="다시 불러오기"
+          leftLabel="새로고침"
+          rightLabel="뒤로가기"
+          onLeftAction={loadFavorites}
+          onRightAction={handleBack}
+          leftTrackingId={TRACKING_RETRY_FETCH}
+          rightTrackingId={TRACKING_BACK_BUTTON}
+          dwellFeedback={dwellFeedback}
+          centerAriaRole="alert"
         />
-        <div style={bottomBarStyle}>
-          <button type="button" style={backBtnStyle} onClick={handleBack}>
-            대화하기로 돌아가기
-          </button>
-        </div>
+      </main>
+    )
+  }
+
+  if (status === 'completed') {
+    return (
+      <main
+        style={pageWrapStyle}
+        aria-label="즐겨찾기"
+        ref={dwellFeedback.setContainerElement}
+      >
+        <section style={completedStateStyle} role="status" aria-live="polite">
+          <div style={completedCardStyle}>
+            <h2 style={completedTitleStyle}>보호자에게 전달했어요.</h2>
+            <p style={completedDescriptionStyle}>
+              {successMessage || '잠시 후 대화하기 메인으로 이동합니다.'}
+            </p>
+          </div>
+        </section>
       </main>
     )
   }
 
   return (
-    <main style={pageWrapStyle} aria-label="즐겨찾기">
-      <div style={headerStyle} aria-live="polite">
-        {PAGE_CODE} · {getStatusLabel(status)}
-        {feedbackText ? ` · ${feedbackText}` : ''}
-        {showPagination ? ` · ${pageIndex + 1}/${totalPages}` : ''}
-      </div>
-
+    <main
+      style={pageWrapStyle}
+      aria-label="즐겨찾기"
+      ref={dwellFeedback.setContainerElement}
+    >
       {status === 'error' && errorKind === 'submit' ? (
         <>
           <FavoritesErrorState
-            title="선택을 반영하지 못했어요"
+            title="즐겨찾기 선택에 실패했어요"
             description={errorMessage}
             onRetry={() => setStatus('visible')}
-            retryLabel="다시 선택하기"
+            retryLabel="다시 선택"
+            retryTrackingId={TRACKING_RETRY_SUBMIT}
+            dwellFeedback={dwellFeedback}
           />
           <div style={bottomBarStyle}>
-            <button type="button" style={backBtnStyle} onClick={handleBack}>
-              대화하기로 돌아가기
+            <button
+              type="button"
+              style={backBtnStyle}
+              onClick={handleBack}
+              data-tracking-id={TRACKING_BACK_BUTTON}
+            >
+              {isBackButtonDwellActive ? (
+                <DwellFeedbackBadge
+                  phase={dwellFeedback.phase}
+                  progress={dwellFeedback.progress}
+                  remainingMs={dwellFeedback.remainingMs}
+                />
+              ) : null}
+              뒤로가기
             </button>
           </div>
         </>
       ) : (
         <section style={gridStyle} aria-label="즐겨찾기 목록">
-          {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => (
-            <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
-              {currentItems[index] ? (
-                <FavoriteCard
-                  key={currentItems[index].id}
-                  id={currentItems[index].id}
-                  text={currentItems[index].text}
-                  category={currentItems[index].category}
-                  disabled={status === 'selecting' || status === 'transitioning'}
-                  onSelect={() => handleSelect(currentItems[index])}
-                />
-              ) : (
-                <div aria-hidden style={placeholderStyle} />
-              )}
-            </div>
-          ))}
+          {['slot-1', 'slot-2', 'slot-3', 'slot-4'].map((area, index) => {
+            const item = currentItems[index]
+            const tileMeta = item ? getFavoriteTileMeta(item) : null
+
+            return (
+              <div key={area} style={{ ...slotWrapStyle, gridArea: area }}>
+                {item && tileMeta ? (
+                  <FavoriteCard
+                    key={item.id}
+                    id={item.id}
+                    text={item.text}
+                    category={item.category}
+                    description={tileMeta.description}
+                    tone={tileMeta.tone}
+                    disabled={isGridBusy}
+                    onSelect={() => handleSelect(item)}
+                    trackingId={getFavoriteTrackingId(item.id)}
+                    dwellFeedback={dwellFeedback}
+                  />
+                ) : (
+                  <div aria-hidden style={placeholderStyle} />
+                )}
+              </div>
+            )
+          })}
           <div style={{ ...slotWrapStyle, gridArea: 'pagination' }}>
             <FavoritesPaginationCard
               pageIndex={pageIndex}
               totalPages={totalPages}
               onPrev={handlePrevPage}
               onNext={handleNextPage}
+              disabled={isGridBusy}
+              prevTrackingId={TRACKING_PAGINATION_PREV}
+              nextTrackingId={TRACKING_PAGINATION_NEXT}
+              dwellFeedback={dwellFeedback}
             />
           </div>
           <div style={{ ...slotWrapStyle, gridArea: 'back' }}>
             <FavoritesActionCard
-              primaryText="뒤로가기"
-              description="메인 화면으로"
+              primaryText="← 뒤로가기"
+              description="대화 메인으로 이동"
+              tone="slate"
               onClick={handleBack}
+              disabled={isGridBusy}
+              trackingId={TRACKING_BACK_BUTTON}
+              dwellFeedback={dwellFeedback}
             />
           </div>
         </section>

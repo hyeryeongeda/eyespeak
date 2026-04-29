@@ -3,41 +3,8 @@ import { getEyeTrackingApiBaseUrl, getEyeTrackingRequestTimeoutMs } from './eyeT
 import { ApiError } from '../types/api'
 import type {
   EyeTrackingCalibrationLoadResponseDto,
-  EyeTrackingCalibrationResponseDto,
-  EyeTrackingCalibrationSample,
-  EyeTrackingFrame,
-  EyeTrackingFrameResponseDto,
-  EyeTrackingHealthResponseDto,
-  EyeTrackingHealthStatus,
   EyeTrackingSelectionResponseDto,
-  EyeTrackingTrigger,
 } from '../types/eyeTracking'
-
-function clamp01(value: number | null | undefined, fallback: number) {
-  if (!Number.isFinite(value)) {
-    return fallback
-  }
-
-  return Math.min(1, Math.max(0, value as number))
-}
-
-function toOptionalNumber(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
-}
-
-function normalizeTrigger(value: unknown): EyeTrackingTrigger {
-  if (
-    value === 'none' ||
-    value === 'select' ||
-    value === 'start' ||
-    value === 'stop' ||
-    value === 'sos'
-  ) {
-    return value
-  }
-
-  return 'none'
-}
 
 function buildUrl(path: string) {
   const baseUrl = getEyeTrackingApiBaseUrl().trim()
@@ -155,88 +122,6 @@ async function requestEyeTrackingApi<TResponse, TBody = unknown>(args: {
   }
 }
 
-function mapFrameResponse(value: EyeTrackingFrameResponseDto): EyeTrackingFrame {
-  return {
-    cell: Number.isInteger(value.cell) ? value.cell : null,
-    ratioX: toOptionalNumber(value.rx),
-    ratioY: toOptionalNumber(value.ry),
-    rawRatioX: toOptionalNumber(value.raw_rx),
-    rawRatioY: toOptionalNumber(value.raw_ry),
-    eyeAspectRatio: toOptionalNumber(value.ear) ?? 0,
-    faceDetected: Boolean(value.face),
-    blinkDetected: Boolean(value.blink),
-    trigger: normalizeTrigger(value.trigger),
-    screenX: clamp01(toOptionalNumber(value.screen_x), 0.5),
-    screenY: clamp01(toOptionalNumber(value.screen_y), 0.5),
-  }
-}
-
-function mapHealthResponse(value: EyeTrackingHealthResponseDto): EyeTrackingHealthStatus {
-  return {
-    status: typeof value.status === 'string' && value.status.trim() ? value.status : 'unknown',
-    calibrated: Boolean(value.calibrated),
-  }
-}
-
-export async function getEyeTrackingHealthApi(signal?: AbortSignal) {
-  const response = await requestEyeTrackingApi<EyeTrackingHealthResponseDto>({
-    method: 'GET',
-    path: API_ENDPOINTS.EYE_TRACKING_HEALTH,
-    signal,
-  })
-
-  return mapHealthResponse(response)
-}
-
-export async function analyzeEyeTrackingFrameApi(
-  imageBase64: string,
-  signal?: AbortSignal,
-) {
-  const response = await requestEyeTrackingApi<EyeTrackingFrameResponseDto, { image: string }>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_GAZE,
-    body: {
-      image: imageBase64,
-    },
-    signal,
-  })
-
-  return mapFrameResponse(response)
-}
-
-export function resetEyeTrackingCalibrationApi(signal?: AbortSignal) {
-  return requestEyeTrackingApi<EyeTrackingCalibrationResponseDto>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE_RESET,
-    signal,
-  })
-}
-
-export function submitEyeTrackingCalibrationApi(
-  samples: EyeTrackingCalibrationSample[],
-  signal?: AbortSignal,
-) {
-  return requestEyeTrackingApi<EyeTrackingCalibrationResponseDto, { calibration: EyeTrackingCalibrationSample[] }>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE,
-    body: {
-      calibration: samples,
-    },
-    signal,
-  })
-}
-
-export function saveEyeTrackingCalibrationApi(userId: string, signal?: AbortSignal) {
-  return requestEyeTrackingApi<EyeTrackingCalibrationResponseDto, { user_id: string }>({
-    method: 'POST',
-    path: API_ENDPOINTS.EYE_TRACKING_CALIBRATE_SAVE,
-    body: {
-      user_id: userId,
-    },
-    signal,
-  })
-}
-
 export function loadEyeTrackingCalibrationApi(userId: string, signal?: AbortSignal) {
   return requestEyeTrackingApi<EyeTrackingCalibrationLoadResponseDto, { user_id: string }>({
     method: 'POST',
@@ -248,12 +133,19 @@ export function loadEyeTrackingCalibrationApi(userId: string, signal?: AbortSign
   })
 }
 
-export function submitEyeTrackingSelectionApi(cell: number, signal?: AbortSignal) {
-  return requestEyeTrackingApi<EyeTrackingSelectionResponseDto, { cell: number }>({
+export function submitEyeTrackingSelectionApi(
+  args: {
+    cell: number
+    userId: string
+  },
+  signal?: AbortSignal,
+) {
+  return requestEyeTrackingApi<EyeTrackingSelectionResponseDto, { cell: number; user_id: string }>({
     method: 'POST',
     path: API_ENDPOINTS.EYE_TRACKING_SELECTION,
     body: {
-      cell,
+      cell: args.cell,
+      user_id: args.userId,
     },
     signal,
   })
