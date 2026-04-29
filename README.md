@@ -385,141 +385,58 @@
 
 <a name="feature"></a>
 
-### 🖥️ 화면 구성 및 기능
+시선 고정(dwell)과 보조 오버레이를 중심으로, 환자가 소통·호출·여가 기능에 빠르게 접근하도록 설계한 핵심 화면만 정리했습니다.
+
+### 1. 환자 메인 허브
+
+<img src="./readme-assets/usescreen/capture/환자메인.png" alt="환자 메인 허브 화면" width="100%" />
+
+시선 입력으로 소통, 호출, 여가 기능에 빠르게 진입할 수 있는 환자 모드의 메인 화면입니다.
+
+### 2. 소통 메인 허브
+
+<img src="./readme-assets/usescreen/capture/소통메인.gif" alt="소통 메인 허브 화면" width="100%" />
+
+자주 쓰는 표현, 몸과 마음 상태 표현, 직접 말하기 흐름으로 자연스럽게 이어지는 소통 중심 허브입니다.
+
+### 3. 몸과 마음 상태 표현
+
+<img src="./readme-assets/usescreen/capture/몸과 마음 통증 부위 선택.png" alt="몸과 마음 통증 부위 선택 화면" width="100%" />
+
+통증 위치와 상태를 단계적으로 선택해 보호자에게 더 정확한 신체 신호를 전달할 수 있도록 구성했습니다.
+
+### 4. 직접 말하기 키보드
+
+<img src="./readme-assets/usescreen/capture/직접 말하기 키보드.png" alt="직접 말하기 키보드 화면" width="100%" />
+
+추천 문장에 없는 표현도 시선 입력만으로 직접 조합해 전달할 수 있는 맞춤 대화 입력 화면입니다.
+
+### 5. 글로벌 보조 메뉴
+
+<img src="./readme-assets/usescreen/capture/글로벌 메뉴.png" alt="글로벌 보조 메뉴 오버레이 화면" width="100%" />
+
+어느 화면에서든 홈, 네, 아니오, SOS 같은 핵심 응답에 빠르게 접근하는 공통 오버레이입니다.
+
+### 6. 호출 / SOS 요청
 
 <div align="center">
-
-<table>
-  <tr>
-    <td align="center" width="33%">
-      <b>1. 환자 메인 6분할 화면</b><br/>
-      <sub>시선 기반으로 핵심 기능에 빠르게 접근하는 환자 모드의 메인 인터페이스</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>2. 빠른 응답 오버레이</b><br/>
-      <sub>더블블링크 입력으로 홈·네·아니오·SOS를 즉시 선택하는 보조 인터랙션</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>3. 맞춤 문장 및 즐겨찾기</b><br/>
-      <sub>개인화 추천 표현과 자주 쓰는 문장을 빠르게 선택하는 대화 화면</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><img src="./readme-assets/usescreen/capture/1.png" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/2.png" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/3.png" width="100%"/></td>
-  </tr>
-
-  <tr>
-    <td align="center" width="33%">
-      <b>4. 몸과 마음 표현 화면</b><br/>
-      <sub>통증, 불편감, 신체 상태를 직관적으로 전달하는 특화 소통 화면</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>5. 여가 영상 화면</b><br/>
-      <sub>시선 입력으로 관심 콘텐츠를 탐색하고 재생하는 생활 지원 기능</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>6. 키보드 입력 화면</b><br/>
-      <sub>직접 문장을 생성해 보다 자유로운 의사표현을 지원하는 입력 화면</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><img src="./readme-assets/usescreen/capture/4.png" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/5.png" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/6.png" width="100%"/></td>
-  </tr>
-
-  <tr>
-    <td align="center" width="33%">
-      <b>7. STT 자유 소통 화면</b><br/>
-      <sub>자유 발화를 텍스트로 변환해 폭넓은 의사소통을 지원하는 화면</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>8. 호출 및 SOS 화면</b><br/>
-      <sub>보호자에게 빠르게 도움 요청을 전달하는 긴급 호출 기능</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>9. 재캘리브레이션 / 예외 처리</b><br/>
-      <sub>트래킹 불안정 상황에서 재인식과 복구를 안내하는 예외 대응 화면</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><img src="./readme-assets/usescreen/capture/7.png" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/8.png" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/capture/9.png" width="100%"/></td>
-  </tr>
-</table>
-
+  <img src="./readme-assets/usescreen/capture/호출.png" alt="호출 화면" width="49%" />
+  <img src="./readme-assets/usescreen/capture/SOS 요청.gif" alt="SOS 요청 기능 시연 화면" width="49%" />
 </div>
 
-### 🎥 실제 기능 시연
+일반 호출과 긴급 SOS 요청을 분리해, 상황에 따라 빠르게 도움을 요청할 수 있도록 설계한 응급 대응 화면입니다.
 
-<div align="center">
+### 7. 보호자 답장 인터럽트 오버레이
 
-<table>
-  <tr>
-    <td align="center" width="33%">
-      <b>1. 메인 화면 기능 선택</b><br/>
-      <sub>시선 dwell 기반으로 기능에 진입하는 흐름</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>2. 빠른 응답 오버레이 호출</b><br/>
-      <sub>더블블링크 기반 4분할 오버레이 동작</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>3. 맞춤 문장 / 즐겨찾기 선택</b><br/>
-      <sub>추천 표현과 자주 쓰는 문장 선택 흐름</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><img src="./readme-assets/usescreen/moved/1.gif" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/2.gif" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/3.gif" width="100%"/></td>
-  </tr>
+<img src="./readme-assets/usescreen/capture/인터럽트 오버레이.png" alt="보호자 답장 인터럽트 오버레이 화면" width="100%" />
 
-  <tr>
-    <td align="center" width="33%">
-      <b>4. 몸과 마음 상태 표현</b><br/>
-      <sub>불편감과 상태를 단계적으로 전달하는 흐름</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>5. 여가 영상 선택 및 재생</b><br/>
-      <sub>콘텐츠 탐색부터 재생까지의 흐름</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>6. 키보드 직접 입력</b><br/>
-      <sub>문장 생성 및 입력 보조 인터랙션</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><img src="./readme-assets/usescreen/moved/4.gif" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/5.gif" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/6.gif" width="100%"/></td>
-  </tr>
+현재 활동을 끊지 않으면서도 보호자 메시지에 즉시 반응할 수 있도록 설계한 인터럽트 UX입니다.
 
-  <tr>
-    <td align="center" width="33%">
-      <b>7. STT 자유 소통</b><br/>
-      <sub>자유 발화 기반 의사소통 흐름</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>8. 호출 / SOS 요청</b><br/>
-      <sub>긴급 상황에서 빠른 도움 요청 전달</sub>
-    </td>
-    <td align="center" width="33%">
-      <b>9. 예외 복구 및 재보정</b><br/>
-      <sub>얼굴 인식 실패 시 복구 절차 안내</sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center"><img src="./readme-assets/usescreen/moved/7.gif" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/8.gif" width="100%"/></td>
-    <td align="center"><img src="./readme-assets/usescreen/moved/9.gif" width="100%"/></td>
-  </tr>
-</table>
+### 8. 여가 플레이어
 
-</div>
+<img src="./readme-assets/usescreen/capture/여가 플레이어.gif" alt="여가 플레이어 화면" width="100%" />
+
+소통 보조를 넘어 영상 소비까지 이어지는 생활 지원 경험을 제공하는 여가 기능 화면입니다.
 
 ## 📂 디렉터리 구조
 
@@ -637,7 +554,7 @@
   <summary><strong>화면 설계서</strong></summary>
   <br>
   <div align="left">
-    <img src="./readme-assets/eyespeak-erd.webp" width="100%" />
+    <img src="./readme-assets/eyespeak-erd.png" width="100%" />
   </div>
 </details>
 
