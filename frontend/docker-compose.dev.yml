@@ -12,13 +12,21 @@ services:
     build: .
     container_name: eyespeak-front-dev
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     expose:
       - "5173"
     environment:
-      - VITE_API_BASE_URL=/dev/api/v1
+      - VITE_APP_ENV=dev
+      - VITE_API_BASE_URL=https://j14e205.p.ssafy.io/dev/api/v1
       - VITE_API_MODE=real
-      - VITE_AI_API_MODE=mock
+      - VITE_AI_API_MODE=real
       - VITE_BASE_URL=/dev/
+      - VITE_EYE_TRACKING_API_MODE=real
+      - VITE_EYE_TRACKING_API_BASE_URL=/dev/eye-tracking-api
+      - VITE_EYE_TRACKING_UI_URL=/dev/eye-tracking-api
+      - VITE_EYE_TRACKING_PROXY_TARGET=http://host.docker.internal:5000
+      - VITE_YOUTUBE_API_KEY=${VITE_YOUTUBE_API_KEY}
     networks:
       - dev-net
     healthcheck:

@@ -1,9 +1,13 @@
 import { apiClient } from './apiClient'
 import { API_ENDPOINTS } from './apiEndpoints'
 import type {
+  ReplyCategoriesRequestDto,
+  ReplyCategoriesResponseDto,
   RecommendationCategoryListResponseDto,
   RecommendationComposeRequestDto,
   RecommendationComposeResponseDto,
+  RecommendationRecordRequestDto,
+  RecommendationRecordResponseDto,
   RecommendationRepliesRequestDto,
   RecommendationRepliesResponseDto,
   RecommendationSendRequestDto,
@@ -18,6 +22,17 @@ export function getRecommendationCategoriesApi(accessToken?: string | null) {
   return apiClient.get<RecommendationCategoryListResponseDto>(API_ENDPOINTS.RECOMMENDATION_CATEGORIES, {
     accessToken,
   })
+}
+
+export function getReplyCategoriesApi(
+  request: ReplyCategoriesRequestDto,
+  accessToken?: string | null,
+) {
+  return apiClient.post<ReplyCategoriesResponseDto, ReplyCategoriesRequestDto>(
+    API_ENDPOINTS.RECOMMENDATION_REPLY_CATEGORIES,
+    request,
+    { accessToken },
+  )
 }
 
 export function getRecommendationSentencesApi(
@@ -78,6 +93,19 @@ export function sendRecommendationApi(
 ) {
   return apiClient.post<RecommendationSendResponseDto, RecommendationSendRequestDto>(
     API_ENDPOINTS.RECOMMENDATION_SEND,
+    request,
+    {
+      accessToken,
+    },
+  )
+}
+
+export function recordRecommendationApi(
+  request: RecommendationRecordRequestDto,
+  accessToken?: string | null,
+) {
+  return apiClient.post<RecommendationRecordResponseDto, RecommendationRecordRequestDto>(
+    API_ENDPOINTS.RECOMMENDATION_RECORD,
     request,
     {
       accessToken,

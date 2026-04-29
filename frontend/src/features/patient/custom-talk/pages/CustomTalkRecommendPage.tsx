@@ -1,68 +1,32 @@
-import { type CSSProperties, useEffect } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../../app/router/routePaths'
+import useReturnToTalkMainAfterDelay from '../../shared/hooks/useReturnToTalkMainAfterDelay'
 import CustomTalkContextPanel from '../components/CustomTalkContextPanel'
-import CustomTalkStageLayout from '../components/CustomTalkStageLayout'
-import {
-  customTalkErrorNoticeStyle,
-  customTalkLoadingNoticeStyle,
-  customTalkPanelStyle,
-  customTalkSuccessNoticeStyle,
-} from '../components/customTalkUi'
-import { CUSTOM_TALK_CATEGORY_POOL } from '../mocks/customCategoryPool.mock'
+import CustomTalkEntryLayout from '../components/CustomTalkEntryLayout'
+import useAutoDismissCustomTalkError from '../hooks/useAutoDismissCustomTalkError'
 import { useCustomTalkStore } from '../store/customTalkStore'
-import { buildCustomTalkDraftPreview } from '../utils/generateCustomSentences'
-
-const centerStackStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '12px',
-}
-
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: '#223247',
-  fontSize: '18px',
-  fontWeight: 900,
-}
-
-const sectionTextStyle: CSSProperties = {
-  margin: 0,
-  color: '#65778f',
-  fontSize: '14px',
-  fontWeight: 600,
-  lineHeight: 1.6,
-}
-
-const selectedSentenceStyle: CSSProperties = {
-  padding: '16px 18px',
-  borderRadius: '20px',
-  backgroundColor: '#eef8f1',
-  border: '1px solid #cce4d2',
-  color: '#3f6e4c',
-  fontSize: '15px',
-  fontWeight: 800,
-  lineHeight: 1.6,
-}
+import { useDwellFeedback } from '../../input/hooks/useDwellFeedback'
+import usePatientNavigateWithFeedback from '../../input/hooks/usePatientNavigateWithFeedback'
+import { filterSelectableRecommendedSentences } from '../utils/recommendedSentenceGuards'
 
 function getVisibleSentences(sentences: string[]) {
-  const fallbackSentences = [
-    '지금은 잘 모르겠어요.',
-    '조금만 기다려 주세요.',
-  ]
-  const visible = [...sentences]
-
-  fallbackSentences.forEach(sentence => {
-    if (visible.length < 2 && !visible.includes(sentence)) {
-      visible.push(sentence)
-    }
-  })
-
-  return visible.slice(0, 2)
+  return filterSelectableRecommendedSentences(sentences).slice(0, 3)
 }
 
+type CustomTalkRecommendTrackingId =
+  | 'custom-talk-recommend-option-1'
+  | 'custom-talk-recommend-option-2'
+  | 'custom-talk-recommend-option-3'
+  | 'custom-talk-recommend-compose'
+  | 'custom-talk-recommend-keyboard'
+  | 'custom-talk-recommend-back'
+
 export default function CustomTalkRecommendPage() {
-  const navigate = useNavigate()
+  const navigateWithFeedback = usePatientNavigateWithFeedback()
+  const dwellFeedback = useDwellFeedback<CustomTalkRecommendTrackingId>({
+    enabled: true,
+  })
   const context = useCustomTalkStore(state => state.context)
   const conversationLog = useCustomTalkStore(state => state.conversationLog)
   const draft = useCustomTalkStore(state => state.draft)
@@ -73,94 +37,147 @@ export default function CustomTalkRecommendPage() {
   const loadRecommendedSentences = useCustomTalkStore(state => state.loadRecommendedSentences)
   const selectRecommendedSentence = useCustomTalkStore(state => state.selectRecommendedSentence)
   const startCompose = useCustomTalkStore(state => state.startCompose)
+  const openKeyboard = useCustomTalkStore(state => state.openKeyboard)
+  const resetCustomTalkSession = useCustomTalkStore(state => state.resetCustomTalkSession)
+  const hasCategoryKey = Boolean(draft.categoryKey)
+  const isActionLocked =
+    status === 'loading' ||
+    status === 'refreshing' ||
+    status === 'submitting' ||
+    status === 'completed'
+  const isRecommendationLoading = status === 'loading' || status === 'refreshing'
 
-  if (!draft.categoryKey) {
+  useReturnToTalkMainAfterDelay(Boolean(completionMessage), {
+    onAfterNavigate: resetCustomTalkSession,
+  })
+  useAutoDismissCustomTalkError(errorMessage)
+
+  useEffect(() => {
+    if (!hasCategoryKey || recommendedSentences.length > 0) {
+      return
+    }
+
+    void loadRecommendedSentences(draft.categoryKey)
+  }, [draft.categoryKey, hasCategoryKey, loadRecommendedSentences, recommendedSentences.length])
+
+  if (!hasCategoryKey) {
     return <Navigate to={ROUTE_PATHS.PATIENT_CUSTOM_TALK} replace />
   }
 
-  useEffect(() => {
-    if (recommendedSentences.length === 0) {
-      void loadRecommendedSentences(draft.categoryKey)
-    }
-  }, [draft.categoryKey, loadRecommendedSentences, recommendedSentences.length])
-
-  const categoryLabel =
-    CUSTOM_TALK_CATEGORY_POOL.find(item => item.key === draft.categoryKey)?.title ?? '맞춤대화'
   const visibleSentences = getVisibleSentences(recommendedSentences)
+  const centerStatusTone = isRecommendationLoading
+    ? 'loading'
+    : errorMessage
+      ? 'error'
+      : completionMessage
+        ? 'success'
+        : 'default'
+  const centerStatusLabel =
+    centerStatusTone === 'loading'
+      ? '불러오는 중'
+      : centerStatusTone === 'error'
+        ? '안내'
+        : centerStatusTone === 'success'
+          ? '완료'
+          : undefined
+  const centerStatusMessage = isRecommendationLoading
+    ? '추천 문장을 불러오는 중입니다.'
+    : errorMessage || completionMessage || null
+
+  const handleStartCompose = async () => {
+    await startCompose()
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
+  }
+
+  const handleOpenKeyboard = () => {
+    openKeyboard('recommend')
+    navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK_KEYBOARD)
+  }
 
   return (
-    <CustomTalkStageLayout
-      code="PAT-CUSTOM-002"
-      title="추천 문장 선택"
-      description="가운데 채팅은 확인만 하고, 양쪽 네 버튼으로만 선택합니다."
-      stepLabel={`${categoryLabel} 추천 문장`}
-      leftTop={{
+    <CustomTalkEntryLayout
+      title="추천문장"
+      topLeft={{
         title: visibleSentences[0] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
-        tone: 'sky',
+        description: '',
+        tone: 'sand',
         onSelect: () => {
           if (visibleSentences[0]) {
             void selectRecommendedSentence(visibleSentences[0])
           }
         },
-        disabled: !visibleSentences[0],
+        disabled: !visibleSentences[0] || isActionLocked,
+        loading: isRecommendationLoading && !visibleSentences[0],
+        loadingLabel: 'AI 추천 생성 중',
+        trackingId: 'custom-talk-recommend-option-1',
+        confirmUntilTts: true,
       }}
-      leftBottom={{
+      topCenter={{
         title: visibleSentences[1] ?? '추천 문장 준비 중',
-        description: '이 문장으로 바로 답변합니다.',
-        tone: 'sand',
+        description: '',
+        tone: 'sky',
         onSelect: () => {
           if (visibleSentences[1]) {
             void selectRecommendedSentence(visibleSentences[1])
           }
         },
-        disabled: !visibleSentences[1],
+        disabled: !visibleSentences[1] || isActionLocked,
+        loading: isRecommendationLoading && !visibleSentences[1],
+        loadingLabel: 'AI 추천 생성 중',
+        trackingId: 'custom-talk-recommend-option-2',
+        confirmUntilTts: true,
       }}
-      rightTop={{
-        title: '단어로 표현하기',
-        description: '추천 문장 대신 단어를 조합해서 표현합니다.',
-        tone: 'mint',
-        onSelect: async () => {
-          await startCompose()
-          navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK_COMPOSE)
-        },
-      }}
-      rightBottom={{
-        title: '뒤로가기',
-        description: '맞춤대화 첫 화면으로 돌아갑니다.',
+      topRight={{
+        title: visibleSentences[2] ?? '추천 문장 준비 중',
+        description: '',
         tone: 'slate',
-        onSelect: () => navigate(ROUTE_PATHS.PATIENT_CUSTOM_TALK),
+        onSelect: () => {
+          if (visibleSentences[2]) {
+            void selectRecommendedSentence(visibleSentences[2])
+          }
+        },
+        disabled: !visibleSentences[2] || isActionLocked,
+        loading: isRecommendationLoading && !visibleSentences[2],
+        loadingLabel: 'AI 추천 생성 중',
+        trackingId: 'custom-talk-recommend-option-3',
+        confirmUntilTts: true,
       }}
+      bottomLeft={{
+        title: '형태소 말하기',
+        description: '',
+        tone: 'sand',
+        onSelect: () => {
+          void handleStartCompose()
+        },
+        disabled: isActionLocked,
+        trackingId: 'custom-talk-recommend-compose',
+      }}
+      bottomCenter={{
+        title: '직접 말해요',
+        description: '',
+        tone: 'mint',
+        onSelect: handleOpenKeyboard,
+        disabled: isActionLocked,
+        trackingId: 'custom-talk-recommend-keyboard',
+      }}
+      bottomRight={{
+        title: '뒤로가기',
+        description: '카테고리 선택 화면으로 돌아갑니다.',
+        tone: 'slate',
+        onSelect: () => navigateWithFeedback(ROUTE_PATHS.PATIENT_CUSTOM_TALK),
+        trackingId: 'custom-talk-recommend-back',
+      }}
+      dwellFeedback={dwellFeedback}
+      gridTemplateRows="minmax(0, 1fr) minmax(72px, 0.28fr) minmax(0, 1fr)"
       centerChildren={
-        <div style={centerStackStyle}>
-          <CustomTalkContextPanel
-            context={context}
-            conversationLog={conversationLog}
-            previewText={buildCustomTalkDraftPreview(draft)}
-          />
-
-          {status === 'loading' ? (
-            <div style={customTalkLoadingNoticeStyle}>추천 문장을 준비하는 중입니다.</div>
-          ) : null}
-          {errorMessage ? <div style={customTalkErrorNoticeStyle}>{errorMessage}</div> : null}
-          {completionMessage ? (
-            <div style={customTalkSuccessNoticeStyle}>{completionMessage}</div>
-          ) : null}
-
-          <section style={customTalkPanelStyle}>
-            <h3 style={sectionTitleStyle}>{categoryLabel} 기준 추천 문장</h3>
-            <p style={sectionTextStyle}>
-              이 화면에서는 가운데를 누르지 않고, 왼쪽 두 버튼 또는 오른쪽 위 버튼만 사용합니다.
-            </p>
-            {draft.selectedRecommendedSentence ? (
-              <div style={selectedSentenceStyle}>{draft.selectedRecommendedSentence}</div>
-            ) : (
-              <div style={customTalkLoadingNoticeStyle}>
-                아직 선택한 문장이 없습니다.
-              </div>
-            )}
-          </section>
-        </div>
+        <CustomTalkContextPanel
+          context={context}
+          conversationLog={conversationLog}
+          mode="entry"
+          statusLabel={centerStatusLabel}
+          statusMessage={centerStatusMessage}
+          statusTone={centerStatusTone}
+        />
       }
     />
   )

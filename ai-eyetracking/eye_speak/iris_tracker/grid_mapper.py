@@ -144,9 +144,9 @@ class GridMapper:
 
     def _cell_default(self, rx: float, ry: float) -> int:
         if self._rows == 2 and self._cols == 3:
-            if rx > 0.55:
+            if rx < 0.45:
                 col = 0
-            elif rx < 0.45:
+            elif rx > 0.55:
                 col = 2
             else:
                 col = 1

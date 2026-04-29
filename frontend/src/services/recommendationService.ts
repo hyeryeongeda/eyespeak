@@ -1,21 +1,10 @@
-import {
-  fetchComposeWords as fetchComposeWordsMock,
-  fetchGeneratedCustomSentences as fetchGeneratedCustomSentencesMock,
-  fetchRecommendedCustomSentences as fetchRecommendedCustomSentencesMock,
-  fetchVisibleCustomCategories as fetchVisibleCustomCategoriesMock,
-  submitCustomTalkUtterance as submitCustomTalkUtteranceMock,
-} from '../features/patient/custom-talk/services/customTalkMockService'
-import { CUSTOM_TALK_CATEGORY_POOL } from '../features/patient/custom-talk/mocks/customCategoryPool.mock'
 import type {
-  ComposeStep,
-  CustomCategoryKey,
-  CustomTalkContextSummary,
-  CustomTalkDraft,
-} from '../features/patient/custom-talk/types'
-import type { PatientChatMessage, PatientSuggestedResponse } from '../types/chat'
+  PatientChatMessage,
+  PatientSuggestedResponse,
+} from '../types/chat'
+import type { AudioPlaybackHandle } from '../types/tts'
 import type {
   RecommendationCategoryKey,
-  RecommendationComposeStep,
   RecommendationReplyDto,
   RecommendationRepliesRequestDto,
   RecommendationReplyHistoryItemDto,
@@ -25,40 +14,28 @@ import type {
 import { createServiceFailure } from '../utils/errorMapper'
 import { getActiveAuthSession } from './authSessionRegistry'
 import { getActiveAiApiMode } from './aiServiceConfig'
+import { getActiveApiMode } from '../config/env'
 import {
-  composeRecommendationApi,
-  getRecommendationCategoriesApi,
+  getReplyCategoriesApi,
   getRecommendationRepliesApi,
   getRecommendationSentencesApi,
-  getRecommendationWordsApi,
-  sendRecommendationApi,
+  recordRecommendationApi,
 } from './recommendationApi'
+import { playSynthesizeTts } from './ttsService'
+import { dispatchPatientChatMessage } from './patientChatDispatch'
 import { mockSendPatientReply, type MockSendPatientReplyInput, type MockSendPatientReplyResult } from './mockPatientChatService'
 import { buildMockSuggestedResponses } from './mockSuggestionService'
-
-const timestampFormatter = new Intl.DateTimeFormat('sv-SE', {
-  dateStyle: 'short',
-  timeStyle: 'medium',
-})
-
-const knownCategoryKeys = new Set(
-  CUSTOM_TALK_CATEGORY_POOL.map(category => category.key),
-)
+import { submitMockPatientUtterance } from './mockPatientUtteranceService'
+import { RECOMMENDATION_CATEGORY_CATALOG } from './recommendationCategoryCatalog'
+import { getMockRecommendationSentences } from './recommendationSentenceMocks'
 
 function getAccessToken() {
   return getActiveAuthSession()?.accessToken ?? null
 }
 
-function mapContextToRecentMessages(context: CustomTalkContextSummary | null | undefined) {
-  return context?.recentMessages ?? []
-}
-
-function mapCustomTalkCategoryKey(value: CustomCategoryKey): RecommendationCategoryKey {
-  return value
-}
-
-function mapComposeStep(value: ComposeStep): RecommendationComposeStep {
-  return value
+function normalizeOptionalText(value?: string | null) {
+  const normalizedValue = value?.trim()
+  return normalizedValue ? normalizedValue : undefined
 }
 
 function mapReplySource(value: RecommendationReplyDto['source']): RecommendationReplySource {
@@ -82,30 +59,49 @@ function mapRecommendedReplies(replies: RecommendationReplyDto[]): PatientSugges
   }))
 }
 
-function mapVisibleCategoryKeys(input: Array<{ key: string }>): CustomCategoryKey[] {
-  return input
-    .map(category => category.key)
-    .filter((key): key is CustomCategoryKey => knownCategoryKeys.has(key as CustomCategoryKey))
+function mapRecentConversation(messages: PatientChatMessage[], activeMessageId?: string) {
+  const recentMessages = messages
+    .filter(message => message.id !== activeMessageId)
+    .slice(-6)
+    .map(message => {
+      const content = message.content.trim()
+
+      return content ? `${message.sender}: ${content}` : ''
+    })
+    .filter(Boolean)
+
+  return recentMessages.length > 0 ? recentMessages : undefined
 }
 
-function buildComposeRequest(draft: CustomTalkDraft) {
-  return {
-    categoryKey: draft.categoryKey
-      ? mapCustomTalkCategoryKey(draft.categoryKey)
-      : undefined,
-    subject: draft.subject,
-    object: draft.object,
-    predicate: draft.predicate,
-    punctuation: draft.punctuation,
-  }
+function mapRecommendedSentences(
+  messageId: string,
+  categoryKey: RecommendationCategoryKey,
+  sentences: string[],
+): PatientSuggestedResponse[] {
+  const seenLabels = new Set<string>()
+
+  return sentences
+    .map(sentence => sentence.trim())
+    .filter(label => {
+      if (!label || seenLabels.has(label)) {
+        return false
+      }
+
+      seenLabels.add(label)
+      return true
+    })
+    .slice(0, 4)
+    .map((label, index) => ({
+      id: `${messageId}-${categoryKey}-${index + 1}`,
+      label,
+      intentKey: categoryKey,
+      source: 'category' as const,
+      rank: index + 1,
+    }))
 }
 
 function getSubmittedAt(value?: string) {
   return value ?? new Date().toISOString()
-}
-
-function getDisplayTimestamp(value?: string) {
-  return timestampFormatter.format(value ? new Date(value) : new Date())
 }
 
 function mapReplyTypeToSendSource(
@@ -114,116 +110,222 @@ function mapReplyTypeToSendSource(
   return value
 }
 
-export async function fetchVisibleCustomCategories(input: {
-  refreshCount: number
-  shouldFail?: boolean
-  context: CustomTalkContextSummary | null
+function normalizeUtteranceText(text: string) {
+  return text.trim()
+}
+
+const QUIET_PATIENT_CHAT_SEND_ERROR =
+  '지금은 바로 반영되지 않았습니다. 잠시 후 다시 시도해 주세요.'
+
+function normalizePatientChatDispatchError(error?: string) {
+  if (!error) {
+    return QUIET_PATIENT_CHAT_SEND_ERROR
+  }
+
+  if (
+    error.includes('실시간 채팅 연결이 아직 준비되지 않았습니다') ||
+    error.includes('실시간 채팅 전송에 실패했습니다')
+  ) {
+    return QUIET_PATIENT_CHAT_SEND_ERROR
+  }
+
+  return error
+}
+
+function mapUtteranceSourceToMessageType(
+  source: 'recommended' | 'generated' | 'manual',
+): 'text' | 'manual_text' | 'word_combination' {
+  if (source === 'generated') {
+    return 'word_combination'
+  }
+
+  if (source === 'manual') {
+    return 'manual_text'
+  }
+
+  return 'text'
+}
+
+function normalizeMockUtteranceSource(
+  source: RecommendationSendSource,
+): 'recommended' | 'generated' | 'manual' {
+  if (source === 'recommended' || source === 'generated') {
+    return source
+  }
+
+  return 'manual'
+}
+
+async function sendPatientChatNow(input: {
+  text: string
+  type?: 'text' | 'suggested_reply' | 'manual_text' | 'word_combination'
+  contentType?: 'TEXT' | 'PHRASE' | 'EXPRESSION'
+  phraseId?: number | null
+  exprId?: number | null
+  replyToId?: string
 }) {
+  const result = await dispatchPatientChatMessage({
+    text: input.text,
+    type: input.type,
+    replyToId: input.replyToId,
+    contentType: input.contentType ?? 'TEXT',
+    phraseId: input.phraseId,
+    exprId: input.exprId,
+  })
+
+  if (!result.success || !result.message) {
+    throw new Error(normalizePatientChatDispatchError(result.error))
+  }
+
+  if (!result.success || !result.message) {
+    throw new Error(result.error ?? '실시간 채팅 전송에 실패했습니다.')
+  }
+
+  return result.message
+}
+
+function recordRecommendationInBackground(input: {
+  text: string
+  source: RecommendationSendSource
+  replyToId?: string
+}) {
+  void input.source
+  void input.replyToId
+
   if (getActiveAiApiMode() !== 'real') {
-    return fetchVisibleCustomCategoriesMock(input)
+    return
   }
 
-  const response = await getRecommendationCategoriesApi(getAccessToken())
-  const visibleKeys = mapVisibleCategoryKeys(response.categories)
-
-  if (visibleKeys.length > 0) {
-    return visibleKeys
-  }
-
-  return fetchVisibleCustomCategoriesMock({
-    ...input,
-    shouldFail: false,
+  void recordRecommendationApi(
+    {
+      text: input.text,
+    },
+    getAccessToken(),
+  ).catch(error => {
+    console.warn('Recommendation record sync failed after patient chat send.', error)
   })
 }
 
-export async function fetchRecommendedCustomSentences(input: {
-  categoryKey: CustomCategoryKey
-  shouldFail?: boolean
-  context?: CustomTalkContextSummary | null
+export async function fetchSuggestedReplyCategories(input: {
+  message: PatientChatMessage
+  history: PatientChatMessage[]
 }) {
   if (getActiveAiApiMode() !== 'real') {
-    return fetchRecommendedCustomSentencesMock(input)
+    return RECOMMENDATION_CATEGORY_CATALOG.map(category => ({
+      key: category.key,
+      title: category.title,
+      description: category.description,
+      hint: category.hint,
+    }))
   }
 
-  const response = await getRecommendationSentencesApi(
-    {
-      categoryKey: mapCustomTalkCategoryKey(input.categoryKey),
-      guardianMessage: input.context?.guardianMessage,
-      recentMessages: mapContextToRecentMessages(input.context),
-    },
+  const response = await getReplyCategoriesApi(
+    { message: input.message.content },
     getAccessToken(),
   )
 
-  return response.sentences
+  return response.categories.map(cat => ({
+    key: cat as RecommendationCategoryKey,
+    title: cat,
+    description: response.sentimentMap[cat] ?? '중립',
+    hint: response.intentMap[cat] ?? '기타',
+  }))
 }
 
-export async function fetchComposeWords(input: {
-  categoryKey?: CustomCategoryKey
-  step: ComposeStep
-  refreshCount: number
-  shouldFail?: boolean
+export async function fetchSuggestedSentences(input: {
+  categoryKey: RecommendationCategoryKey
+  message: PatientChatMessage
+  history: PatientChatMessage[]
 }) {
   if (getActiveAiApiMode() !== 'real') {
-    return fetchComposeWordsMock(input)
+    if (input.message.meta?.suggestionMode === 'failure') {
+      throw new Error('추천 문장을 불러오지 못했습니다. 다시 시도해 주세요.')
+    }
+
+    if (input.message.meta?.suggestionMode === 'empty') {
+      return []
+    }
+
+    const sentences = getMockRecommendationSentences(input.categoryKey)
+
+    return mapRecommendedSentences(input.message.id, input.categoryKey, sentences)
   }
 
-  const response = await getRecommendationWordsApi(
-    {
-      categoryKey: input.categoryKey
-        ? mapCustomTalkCategoryKey(input.categoryKey)
-        : undefined,
-      step: mapComposeStep(input.step),
-      refreshCount: input.refreshCount,
-    },
-    getAccessToken(),
-  )
-
-  return response.words
-}
-
-export async function fetchGeneratedCustomSentences(input: {
-  draft: CustomTalkDraft
-  shouldFail?: boolean
-  context?: CustomTalkContextSummary | null
-}) {
-  if (getActiveAiApiMode() !== 'real') {
-    return fetchGeneratedCustomSentencesMock(input)
+  const recentMessages = mapRecentConversation(input.history, input.message.id)
+  const request = {
+    categoryKey: input.categoryKey,
+    guardianMessage: normalizeOptionalText(input.message.content),
+    recentMessages,
   }
+  const response = await getRecommendationSentencesApi(request, getAccessToken())
 
-  const response = await composeRecommendationApi(
-    {
-      ...buildComposeRequest(input.draft),
-      guardianMessage: input.context?.guardianMessage,
-      recentMessages: mapContextToRecentMessages(input.context),
-    },
-    getAccessToken(),
-  )
-
-  return response.sentences
+  return mapRecommendedSentences(input.message.id, input.categoryKey, response.sentences)
 }
 
-export async function submitCustomTalkUtterance(input: {
+export async function submitPatientUtterance(input: {
   text: string
   shouldFail?: boolean
-  source: 'recommended' | 'generated' | 'manual'
+  source: RecommendationSendSource
 }) {
-  if (getActiveAiApiMode() !== 'real') {
-    return submitCustomTalkUtteranceMock(input)
+  const normalizedText = normalizeUtteranceText(input.text)
+
+  if (!normalizedText) {
+    throw new Error('전송할 문장이 비어 있습니다.')
   }
 
-  const response = await sendRecommendationApi(
+  if (getActiveApiMode() !== 'real') {
+    const mockSource = normalizeMockUtteranceSource(input.source)
+    const mockResponse = await submitMockPatientUtterance({
+      ...input,
+      text: normalizedText,
+      source: mockSource,
+    })
+
+    const message = await sendPatientChatNow({
+      text: normalizedText,
+      type: mapUtteranceSourceToMessageType(mockSource),
+    })
+
+    return {
+      success: true,
+      id: message.id ?? mockResponse.id,
+      submittedAt: getSubmittedAt(mockResponse.submittedAt),
+    }
+  }
+
+  const recordResponse = await recordRecommendationApi(
     {
-      text: input.text,
-      source: input.source,
+      text: normalizedText,
     },
     getAccessToken(),
   )
+
+  const message = await sendPatientChatNow({
+    text: normalizedText,
+    type: mapUtteranceSourceToMessageType(normalizeMockUtteranceSource(input.source)),
+    contentType: 'EXPRESSION',
+    exprId: recordResponse.expressionId,
+  })
 
   return {
     success: true,
-    id: response.messageId ?? `recommendation-${input.source}-${Date.now()}`,
-    submittedAt: getSubmittedAt(response.submittedAt),
+    id: message.id ?? `recommendation-${input.source}-${Date.now()}`,
+    submittedAt: getSubmittedAt(message.createdAt),
   }
+}
+
+export async function playPatientUtteranceTts(input: {
+  text: string
+}): Promise<AudioPlaybackHandle | null> {
+  const normalizedText = normalizeUtteranceText(input.text)
+
+  if (!normalizedText) {
+    throw new Error('재생할 문장이 비어 있습니다.')
+  }
+
+  return playSynthesizeTts({
+    text: normalizedText,
+  })
 }
 
 export async function fetchSuggestedReplies(input: {
@@ -246,29 +348,28 @@ export async function fetchSuggestedReplies(input: {
 export async function sendPatientReply(
   input: MockSendPatientReplyInput,
 ): Promise<MockSendPatientReplyResult> {
-  if (getActiveAiApiMode() !== 'real') {
+  if (getActiveApiMode() !== 'real') {
     return mockSendPatientReply(input)
   }
 
   try {
-    const response = await sendRecommendationApi(
-      {
-        text: input.content,
-        source: mapReplyTypeToSendSource(input.type),
-        replyToId: input.replyToId,
-      },
-      getAccessToken(),
-    )
+    const message = await sendPatientChatNow({
+      text: input.content,
+      type: input.type,
+      replyToId: input.replyToId,
+    })
+
+    recordRecommendationInBackground({
+      text: input.content,
+      source: mapReplyTypeToSendSource(input.type),
+      replyToId: input.replyToId,
+    })
 
     return {
       success: true,
       message: {
-        id: response.messageId ?? `patient-reply-${Date.now()}`,
-        sender: 'patient',
+        ...message,
         type: input.type,
-        content: input.content,
-        createdAt: getDisplayTimestamp(response.submittedAt),
-        status: 'replied',
         replyToId: input.replyToId,
       },
     }

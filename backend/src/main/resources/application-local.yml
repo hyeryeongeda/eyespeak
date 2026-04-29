@@ -30,7 +30,9 @@ ai:
   server:
     url: ${AI_SERVER_URL:http://eyespeak-ai-caregiver:5003}
   tts:
-    url: ${AI_TTS_URL:http://eyespeak-ai-tts:8000}
+    url: ${AI_TTS_URL:https://5c2phf6m1owinh-8000.proxy.runpod.net}
+  internal:
+    api-key: ${AI_INTERNAL_API_KEY:eyespeak-ai-internal-2026-s14e205}
 
 logging:
   level:

@@ -12,23 +12,32 @@ services:
     restart: unless-stopped
     expose:
       - "8000"
+    volumes:
+      # 공유 모델 (호스트에 배치 필요: best_model.pth, config.json, vocab.json, dvae.pth, mel_stats.pth)
+      - ${TTS_MODEL_PATH:-../checkpoints/shared}:/app/checkpoints/shared:ro
+      # 환자별 레퍼런스 음성 (컨테이너 내부에서 read/write)
+      - tts-speaker-refs:/app/speaker_refs
     networks:
       - dev-net
       - prod-net
     deploy:
       resources:
         limits:
-          cpus: '1.0'
-          memory: 2G
+          cpus: '2.0'
+          memory: 8G
         reservations:
-          cpus: '0.5'
-          memory: 512M
+          cpus: '1.0'
+          memory: 4G
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 120s
+      start_period: 180s
     logging:
       driver: "json-file"
       options:
@@ -36,7 +45,7 @@ services:
         max-file: "3"
 
   ai-caregiver:
-    build: ../caregiver_partner_package
+    build: ../ai-recommend
     container_name: eyespeak-ai-caregiver
     restart: unless-stopped
     expose:
@@ -64,6 +73,25 @@ services:
       options:
         max-size: "50m"
         max-file: "3"
+
+  ai-eyetracking:
+    build:
+      context: ../ai-eyetracking
+      dockerfile: Dockerfile
+    container_name: eyespeak-ai-eyetracking
+    ports:
+      - "5000:5000"
+    volumes:
+      - eyetracking-calibration:/app/calibration_data
+    restart: unless-stopped
+    networks:
+      - dev-net
+      - prod-net
+
+volumes:
+  tts-speaker-refs:
+    name: tts-speaker-refs
+  eyetracking-calibration:
 
 networks:
   dev-net:

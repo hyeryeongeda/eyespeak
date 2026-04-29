@@ -9,5 +9,8 @@ public interface RoutineSlotTagRepository extends JpaRepository<RoutineSlotTag, 
 
     List<RoutineSlotTag> findByMatchingId(Long matchingId);
 
+    /** 매칭 + 시간대로 활동 조회 (스케줄 hint용) */
+    List<RoutineSlotTag> findByMatchingIdAndTimeSlotId(Long matchingId, Long timeSlotId);
+
     void deleteByMatchingId(Long matchingId);
 }

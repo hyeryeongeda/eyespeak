@@ -1,0 +1,142 @@
+import { apiClient } from '../../../../services/apiClient'
+import { API_ENDPOINTS } from '../../../../services/apiEndpoints'
+import type { AuthSession } from '../../../../types/auth'
+import { createServiceFailure } from '../../../../utils/errorMapper'
+
+interface CallCreateRequest {
+  matchingId: number
+  type: 'NORMAL' | 'SOS'
+}
+
+interface CallCreateResponse {
+  callId: number
+  matchingId: number
+  type: string
+  status: string
+  senderId: number
+  timestamp: string
+}
+
+export interface PatientCallRequestResult {
+  success: boolean
+  remainingMs: number
+  requestedAt: number | null
+  callId?: number
+  message?: string
+}
+
+type AudioContextWindow = Window & {
+  webkitAudioContext?: typeof AudioContext
+}
+
+let sharedAudioContext: AudioContext | null = null
+
+function getAudioContext() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const AudioContextConstructor =
+    window.AudioContext ?? (window as AudioContextWindow).webkitAudioContext
+
+  if (!AudioContextConstructor) {
+    return null
+  }
+
+  if (!sharedAudioContext) {
+    sharedAudioContext = new AudioContextConstructor()
+  }
+
+  return sharedAudioContext
+}
+
+export async function playPatientSirenSound(durationMs = 1800) {
+  const audioContext = getAudioContext()
+
+  if (!audioContext) {
+    return
+  }
+
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume()
+  }
+
+  const oscillator = audioContext.createOscillator()
+  const gainNode = audioContext.createGain()
+  const startAt = audioContext.currentTime
+  const stopAt = startAt + durationMs / 1000
+  const sweepIntervalSeconds = 0.2
+
+  oscillator.type = 'sawtooth'
+  oscillator.connect(gainNode)
+  gainNode.connect(audioContext.destination)
+
+  for (let time = startAt, step = 0; time <= stopAt; time += sweepIntervalSeconds, step += 1) {
+    oscillator.frequency.setValueAtTime(step % 2 === 0 ? 740 : 1080, time)
+  }
+
+  gainNode.gain.setValueAtTime(0.0001, startAt)
+  gainNode.gain.exponentialRampToValueAtTime(0.16, startAt + 0.05)
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, stopAt)
+
+  oscillator.start(startAt)
+  oscillator.stop(stopAt)
+
+  oscillator.onended = () => {
+    oscillator.disconnect()
+    gainNode.disconnect()
+  }
+}
+
+export async function requestPatientCall(
+  matchingId: number,
+  callType: 'NORMAL' | 'SOS',
+  session: Pick<AuthSession, 'accessToken'> | null = null,
+): Promise<PatientCallRequestResult> {
+  if (!session?.accessToken) {
+    return {
+      success: false,
+      remainingMs: 0,
+      requestedAt: null,
+      message: '인증 정보가 없습니다.',
+    }
+  }
+
+  if (matchingId == null) {
+    return {
+      success: false,
+      remainingMs: 0,
+      requestedAt: null,
+      message: '매칭 정보가 없습니다.',
+    }
+  }
+
+  const requestedAt = Date.now()
+
+  if (callType === 'SOS') {
+    await playPatientSirenSound()
+  }
+
+  try {
+    const response = await apiClient.post<CallCreateResponse, CallCreateRequest>(
+      API_ENDPOINTS.CALL_CREATE,
+      { matchingId, type: callType },
+      { accessToken: session.accessToken },
+    )
+
+    return {
+      success: true,
+      remainingMs: 0,
+      requestedAt,
+      callId: response?.callId,
+    }
+  } catch (error) {
+    const failure = createServiceFailure(error, '호출 전송에 실패했습니다.')
+    return {
+      success: false,
+      remainingMs: 0,
+      requestedAt,
+      message: failure.message,
+    }
+  }
+}

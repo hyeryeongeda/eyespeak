@@ -1,5 +1,6 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../router/routePaths'
+import { CareStompProvider } from '../../features/care/context/CareStompContext'
 
 const NAV_ITEMS = [
   { icon: '🏠', label: '홈', path: ROUTE_PATHS.CARE_HOME },
@@ -13,6 +14,7 @@ export default function CareLayout() {
   const { pathname } = useLocation()
 
   return (
+    <CareStompProvider>
     <div className="flex flex-col bg-[#FEFEFE] overflow-hidden h-full">
       <div className="flex-1 overflow-hidden">
         <Outlet />
@@ -39,5 +41,6 @@ export default function CareLayout() {
         })}
       </nav>
     </div>
+    </CareStompProvider>
   )
 }

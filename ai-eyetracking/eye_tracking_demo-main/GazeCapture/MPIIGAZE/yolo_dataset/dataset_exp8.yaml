@@ -1,7 +1,0 @@
-path: C:/Users/SSAFY/Desktop/GAZE-CAPTURE/GazeCapture/MPIIGAZE/yolo_dataset
-train: train_100k_i1.txt
-val: val.txt
-nc: 2
-names:
-  0: right_eye
-  1: left_eye

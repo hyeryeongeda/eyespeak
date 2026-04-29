@@ -2,6 +2,8 @@ import { apiClient } from './apiClient'
 import { API_ENDPOINTS } from './apiEndpoints'
 import type {
   AuthResponseDto,
+  EmailCheckRequestDto,
+  EmailCheckResponseDto,
   GuardianSignupRequestDto,
   LoginRequestDto,
   LogoutRequestDto,
@@ -10,6 +12,10 @@ import type {
   RefreshRequestDto,
   WithdrawRequestDto,
 } from '../types/auth'
+
+export function checkEmailApi(request: EmailCheckRequestDto) {
+  return apiClient.post<EmailCheckResponseDto, EmailCheckRequestDto>(API_ENDPOINTS.AUTH_CHECK_EMAIL, request)
+}
 
 export function loginApi(request: LoginRequestDto) {
   return apiClient.post<AuthResponseDto, LoginRequestDto>(API_ENDPOINTS.AUTH_LOGIN, request)

@@ -57,4 +57,9 @@ public class Expression {
         this.sentiment = sentiment;
         this.category = category;
     }
+
+    /** 마지막 사용 시각 갱신 (표현 재사용 시 호출) */
+    public void updateLastUsed(LocalDateTime time) {
+        this.lastUsed = time;
+    }
 }

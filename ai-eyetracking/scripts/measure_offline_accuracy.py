@@ -29,8 +29,14 @@ def main():
         sys.exit(1)
 
     import cv2
-    from pipeline import GazePipeline
-    from model import yaw_pitch_to_cell
+    from eye_speak.pipeline import GazePipeline
+
+    def yaw_pitch_to_cell(yaw_deg, pitch_deg, yaw_range=25.0, pitch_range=20.0, rows=2, cols=3):
+        ny = max(0.0, min(1.0, (yaw_deg + yaw_range) / (2 * yaw_range)))
+        np_ = max(0.0, min(1.0, (pitch_deg + pitch_range) / (2 * pitch_range)))
+        col = max(0, min(cols - 1, int(ny * (cols - 1) + 0.5)))
+        row = max(0, min(rows - 1, int(np_ * (rows - 1) + 0.5)))
+        return row * cols + col
 
     print(f"파이프라인 초기화 중... (checkpoint={args.checkpoint or '없음'})")
     pipeline = GazePipeline(checkpoint_path=args.checkpoint)

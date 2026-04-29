@@ -13,20 +13,35 @@ import {
   getNextComposeStep,
   getPreviousComposeStep,
   initializeCustomTalkKeyboard,
-  saveComposeSelection,
 } from '../services/customTalkMockService'
 import {
   fetchComposeWords,
   fetchGeneratedCustomSentences,
   fetchRecommendedCustomSentences,
   fetchVisibleCustomCategories,
+  playCustomTalkUtteranceTts,
   submitCustomTalkUtterance,
-} from '../../../../services/recommendationService'
+} from '../services/customTalkRecommendationService'
+import type { AudioPlaybackHandle } from '../../../../types/tts'
 import {
   getKeyboardCharPage,
   getKeyboardGroupPage,
   getKeyboardRootPage,
 } from '../utils/keyboardNavigator'
+import {
+  createEmptyKeyboardComposition,
+  applyKeyboardConsonantSelection,
+  applyKeyboardVowelSelection,
+  appendKeyboardText,
+  deleteKeyboardInput,
+  finalizeKeyboardComposition,
+  hasPendingKeyboardComposition,
+  resolveKeyboardManualInput,
+} from '../utils/hangulComposer'
+import {
+  filterSelectableRecommendedSentences,
+  isBlockedRecommendedSentence,
+} from '../utils/recommendedSentenceGuards'
 
 const composeStepKeyMap: Record<
   ComposeStep,
@@ -37,6 +52,8 @@ const composeStepKeyMap: Record<
   predicate: 'predicate',
   punctuation: 'punctuation',
 }
+
+const composeStepOrder: ComposeStep[] = ['subject', 'object', 'predicate', 'punctuation']
 
 const initialMockFlags: CustomTalkMockFlags = {
   failCategoryLoadOnce: false,
@@ -62,6 +79,8 @@ const initialComposeOptions = {
   punctuation: [] as string[],
 }
 
+const initialKeyboardComposition = createEmptyKeyboardComposition()
+
 const composeRefreshCounts: Record<ComposeStep, number> = {
   subject: 0,
   object: 0,
@@ -70,32 +89,91 @@ const composeRefreshCounts: Record<ComposeStep, number> = {
 }
 
 let refreshCategoryCount = 0
+let activeCustomTalkAudioPlayback: AudioPlaybackHandle | null = null
 const timestampFormatter = new Intl.DateTimeFormat('sv-SE', {
   timeStyle: 'medium',
 })
 
+function stopActiveCustomTalkAudioPlayback() {
+  activeCustomTalkAudioPlayback?.cleanup()
+  activeCustomTalkAudioPlayback = null
+}
+
+function logCustomTalkTtsFailure(scope: 'recommended' | 'generated' | 'manual', error: unknown) {
+  console.warn(`[custom-talk] ${scope} tts failed after successful submit`, error)
+}
+
+function normalizeContextMessage(value?: string | null) {
+  const content = value?.trim()
+  return content ? content : null
+}
+
+function parseContextConversationMessage(message: string) {
+  const trimmedMessage = normalizeContextMessage(message)
+
+  if (!trimmedMessage) {
+    return null
+  }
+
+  const guardianMatch = trimmedMessage.match(/^guardian\s*:\s*(.+)$/i)
+  if (guardianMatch) {
+    return {
+      sender: 'guardian' as const,
+      content: guardianMatch[1].trim(),
+    }
+  }
+
+  const patientMatch = trimmedMessage.match(/^patient\s*:\s*(.+)$/i)
+  if (patientMatch) {
+    return {
+      sender: 'patient' as const,
+      content: patientMatch[1].trim(),
+    }
+  }
+
+  return {
+    sender: 'system' as const,
+    content: trimmedMessage,
+  }
+}
+
 function buildConversationLog(context: CustomTalkContextSummary) {
   const logs: CustomTalkConversationLogItem[] = []
 
-  if (context.guardianMessage) {
-    logs.push({
-      id: 'custom-guardian-current',
-      sender: 'guardian',
-      content: context.guardianMessage,
-      kind: 'context',
-      createdAt: timestampFormatter.format(new Date()),
-    })
-  }
-
   context.recentMessages.forEach((message, index) => {
+    const parsedMessage = parseContextConversationMessage(message)
+
+    if (!parsedMessage) {
+      return
+    }
+
     logs.push({
       id: `custom-context-${index + 1}`,
-      sender: message.startsWith('환자') ? 'patient' : 'guardian',
-      content: message,
+      sender: parsedMessage.sender,
+      content: parsedMessage.content,
       kind: 'context',
       createdAt: timestampFormatter.format(new Date()),
     })
   })
+
+  const guardianMessage = normalizeContextMessage(context.guardianMessage)
+  const latestContextLog = logs[logs.length - 1]
+
+  if (
+    guardianMessage &&
+    !(
+      latestContextLog?.sender === 'guardian' &&
+      latestContextLog.content === guardianMessage
+    )
+  ) {
+    logs.push({
+      id: 'custom-guardian-current',
+      sender: 'guardian',
+      content: guardianMessage,
+      kind: 'context',
+      createdAt: timestampFormatter.format(new Date()),
+    })
+  }
 
   return logs
 }
@@ -117,6 +195,27 @@ function getKeyboardRootOptions() {
   return rootPage.options
 }
 
+function getKeyboardGroupPageForMenu(
+  rootMenu: Exclude<KeyboardRootMenu, 'ending'>,
+  page: number,
+  keyboardComposition: CustomTalkState['keyboardComposition'],
+) {
+  return getKeyboardGroupPage(rootMenu, page, {
+    composition: keyboardComposition,
+  })
+}
+
+function getKeyboardCharPageForMenu(
+  rootMenu: KeyboardRootMenu,
+  groupId: string | undefined,
+  page: number,
+  keyboardComposition: CustomTalkState['keyboardComposition'],
+) {
+  return getKeyboardCharPage(rootMenu, groupId, page, {
+    composition: keyboardComposition,
+  })
+}
+
 function getRootKeyboardState() {
   return {
     keyboardStatus: 'root' as const,
@@ -125,6 +224,243 @@ function getRootKeyboardState() {
       canGoNext: false,
     },
     keyboardOptions: getKeyboardRootOptions(),
+    keyboardErrorMessage: null,
+  }
+}
+
+function getRootKeyboardStateWithEntrySource(
+  entrySource?: CustomTalkState['keyboardNavigation']['entrySource'],
+) {
+  const rootKeyboardState = getRootKeyboardState()
+
+  return {
+    ...rootKeyboardState,
+    keyboardNavigation: {
+      ...rootKeyboardState.keyboardNavigation,
+      entrySource,
+    },
+  }
+}
+
+function buildVowelSelectionState(
+  state: Pick<CustomTalkState, 'keyboardNavigation'>,
+  keyboardCompositionOrInitial: CustomTalkState['keyboardComposition'] | string,
+) {
+  const keyboardComposition =
+    typeof keyboardCompositionOrInitial === 'string'
+      ? {
+          stage: 'vowel' as const,
+          initialConsonant: keyboardCompositionOrInitial,
+          medialVowel: null,
+          finalConsonant: null,
+          vowel: null,
+        }
+      : keyboardCompositionOrInitial
+  const nextPage = getKeyboardGroupPage('vowel', 0, {
+    composition: keyboardComposition,
+  })
+
+  return {
+    keyboardStatus: 'group_select' as const,
+    keyboardNavigation: {
+      ...state.keyboardNavigation,
+      currentRootMenu: 'vowel' as const,
+      currentGroupId: undefined,
+      currentPage: 0,
+      canGoNext: nextPage.canGoNext,
+    },
+    keyboardOptions: nextPage.options,
+    keyboardComposition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildFinalConsonantSelectionState(
+  state: Pick<CustomTalkState, 'keyboardNavigation'>,
+  keyboardCompositionOrInitial: CustomTalkState['keyboardComposition'] | string,
+  medialVowel?: string,
+) {
+  const keyboardComposition =
+    typeof keyboardCompositionOrInitial === 'string'
+      ? {
+          stage: 'final_consonant' as const,
+          initialConsonant: keyboardCompositionOrInitial,
+          medialVowel: medialVowel ?? null,
+          finalConsonant: null,
+          vowel: medialVowel ?? null,
+        }
+      : keyboardCompositionOrInitial
+  const nextPage = getKeyboardGroupPageForMenu('consonant', 0, keyboardComposition)
+
+  return {
+    keyboardStatus: 'group_select' as const,
+    keyboardNavigation: {
+      ...state.keyboardNavigation,
+      currentRootMenu: 'consonant' as const,
+      currentGroupId: undefined,
+      currentPage: 0,
+      canGoNext: nextPage.canGoNext,
+    },
+    keyboardOptions: nextPage.options,
+    keyboardComposition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildKeyboardStateFromComposition(
+  state: Pick<CustomTalkState, 'keyboardNavigation'>,
+  keyboardComposition: CustomTalkState['keyboardComposition'],
+) {
+  if (
+    keyboardComposition.stage === 'vowel' &&
+    keyboardComposition.initialConsonant
+  ) {
+    return buildVowelSelectionState(state, keyboardComposition)
+  }
+
+  if (
+    keyboardComposition.stage === 'final_consonant' &&
+    keyboardComposition.initialConsonant &&
+    keyboardComposition.medialVowel
+  ) {
+    return buildFinalConsonantSelectionState(state, keyboardComposition)
+  }
+
+  return {
+    ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+    keyboardComposition,
+  }
+}
+
+function buildKeyboardCharSelectionUpdate(
+  state: CustomTalkState,
+  value: string,
+) {
+  const currentRootMenu = state.keyboardNavigation.currentRootMenu
+
+  if (!currentRootMenu) {
+    return state
+  }
+
+  const currentInput = {
+    confirmedText: state.draft.manualInput,
+    composition: state.keyboardComposition,
+  }
+
+  if (currentRootMenu === 'consonant') {
+    const nextInput = applyKeyboardConsonantSelection(currentInput, value)
+
+    if (
+      nextInput.composition.stage === 'vowel' &&
+      nextInput.composition.initialConsonant
+    ) {
+      return {
+        draft: {
+          ...state.draft,
+          manualInput: nextInput.confirmedText,
+        },
+        ...buildVowelSelectionState(state, nextInput.composition),
+      }
+    }
+
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...buildKeyboardStateFromComposition(state, nextInput.composition),
+      keyboardErrorMessage: null,
+    }
+  }
+
+  if (currentRootMenu === 'vowel') {
+    const nextInput = applyKeyboardVowelSelection(currentInput, value)
+
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...buildKeyboardStateFromComposition(state, nextInput.composition),
+      keyboardErrorMessage: null,
+    }
+  }
+
+  const nextInput = appendKeyboardText(currentInput, value)
+
+  return {
+    draft: {
+      ...state.draft,
+      manualInput: nextInput.confirmedText,
+    },
+    ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+    keyboardComposition: nextInput.composition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildSkipKeyboardFinalConsonantUpdate(state: CustomTalkState) {
+  if (
+    state.keyboardComposition.stage !== 'final_consonant' ||
+    !state.keyboardComposition.initialConsonant ||
+    !state.keyboardComposition.medialVowel ||
+    state.keyboardComposition.finalConsonant
+  ) {
+    return state
+  }
+
+  const nextInput = finalizeKeyboardComposition({
+    confirmedText: state.draft.manualInput,
+    composition: state.keyboardComposition,
+  })
+
+  return {
+    draft: {
+      ...state.draft,
+      manualInput: nextInput.confirmedText,
+    },
+    ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+    keyboardComposition: nextInput.composition,
+    keyboardErrorMessage: null,
+  }
+}
+
+function buildDeleteLastManualCharUpdate(state: CustomTalkState) {
+  const nextInput = deleteKeyboardInput({
+    confirmedText: state.draft.manualInput,
+    composition: state.keyboardComposition,
+  })
+
+  if (hasPendingKeyboardComposition(nextInput.composition)) {
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...buildKeyboardStateFromComposition(state, nextInput.composition),
+      keyboardErrorMessage: null,
+    }
+  }
+
+  if (hasPendingKeyboardComposition(state.keyboardComposition)) {
+    return {
+      draft: {
+        ...state.draft,
+        manualInput: nextInput.confirmedText,
+      },
+      ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
+      keyboardComposition: nextInput.composition,
+      keyboardErrorMessage: null,
+    }
+  }
+
+  return {
+    draft: {
+      ...state.draft,
+      manualInput: nextInput.confirmedText,
+    },
+    keyboardComposition: nextInput.composition,
+    keyboardStatus: 'editing' as const,
     keyboardErrorMessage: null,
   }
 }
@@ -147,11 +483,109 @@ function appendConversationLog(
   ]
 }
 
+function buildSelectedWordsForStep(draft: CustomTalkDraft, step: ComposeStep) {
+  const subject = draft.subject?.trim()
+  const object = draft.object?.trim()
+
+  if (step === 'object') {
+    if (!subject) {
+      return undefined
+    }
+
+    return {
+      subject,
+    }
+  }
+
+  if (step === 'predicate') {
+    const selectedWords: {
+      subject?: string
+      object?: string
+    } = {}
+
+    if (subject) {
+      selectedWords.subject = subject
+    }
+
+    if (object) {
+      selectedWords.object = object
+    }
+
+    if (selectedWords.subject === undefined && selectedWords.object === undefined) {
+      return undefined
+    }
+
+    return selectedWords
+  }
+
+  return undefined
+}
+
+function resetComposeRefreshCounts() {
+  composeRefreshCounts.subject = 0
+  composeRefreshCounts.object = 0
+  composeRefreshCounts.predicate = 0
+  composeRefreshCounts.punctuation = 0
+}
+
+function resetComposeRefreshCountsFrom(step: ComposeStep) {
+  const startIndex = composeStepOrder.indexOf(step)
+
+  composeStepOrder.slice(startIndex).forEach(composeStep => {
+    composeRefreshCounts[composeStep] = 0
+  })
+}
+
+function buildDraftWithComposeSelection(
+  draft: CustomTalkDraft,
+  step: ComposeStep,
+  value?: string,
+): CustomTalkDraft {
+  const stepIndex = composeStepOrder.indexOf(step)
+  const normalizedValue = value?.trim()
+  const punctuationValue =
+    normalizedValue === '.' || normalizedValue === '!' || normalizedValue === '?'
+      ? normalizedValue
+      : undefined
+  const nextDraft: CustomTalkDraft = {
+    ...draft,
+    selectedGeneratedSentence: undefined,
+  }
+
+  composeStepOrder.slice(stepIndex).forEach(composeStep => {
+    nextDraft[composeStepKeyMap[composeStep]] = undefined
+  })
+
+  if (step === 'punctuation') {
+    nextDraft.punctuation = punctuationValue
+  } else {
+    nextDraft[composeStepKeyMap[step] as 'subject' | 'object' | 'predicate'] = normalizedValue
+  }
+
+  return nextDraft
+}
+
+function buildComposeOptionsAfterSelection(
+  composeOptions: Record<ComposeStep, string[]>,
+  step: ComposeStep,
+) {
+  const stepIndex = composeStepOrder.indexOf(step)
+  const nextOptions = {
+    ...composeOptions,
+  }
+
+  composeStepOrder.slice(stepIndex + 1).forEach(composeStep => {
+    nextOptions[composeStep] = []
+  })
+
+  return nextOptions
+}
+
 export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   isInitialized: false,
   context: null,
   conversationLog: [],
-  visibleCategoryKeys: [],
+  visibleCategories: [],
   recommendedSentences: [],
   composeStep: 'subject',
   composeOptions: initialComposeOptions,
@@ -162,6 +596,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     currentPage: 0,
     canGoNext: false,
   },
+  keyboardComposition: initialKeyboardComposition,
   keyboardOptions: [],
   status: 'idle',
   errorMessage: null,
@@ -180,7 +615,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       contextOverride ?? state.context ?? undefined,
     )
     const mergedContext = mergeContext(state.context, nextContext)
-    const visibleCategoryKeys = await fetchVisibleCustomCategories({
+    const visibleCategories = await fetchVisibleCustomCategories({
       refreshCount: refreshCategoryCount,
       context: mergedContext,
     })
@@ -188,11 +623,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     set({
       isInitialized: true,
       context: mergedContext,
-      conversationLog:
-        state.conversationLog.length > 0
-          ? state.conversationLog
-          : buildConversationLog(mergedContext),
-      visibleCategoryKeys,
+      conversationLog: buildConversationLog(mergedContext),
+      visibleCategories,
       status: 'visible',
       errorMessage: null,
     })
@@ -208,14 +640,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     })
 
     try {
-      const visibleCategoryKeys = await fetchVisibleCustomCategories({
+      const visibleCategories = await fetchVisibleCustomCategories({
         refreshCount: refreshCategoryCount,
         context,
         shouldFail: mockFlags.failCategoryLoadOnce,
       })
 
       set(state => ({
-        visibleCategoryKeys,
+        visibleCategories,
         status: 'visible',
         errorMessage: null,
         mockFlags: {
@@ -239,14 +671,22 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectCategory: categoryKey => {
-    set(state => ({
+    resetComposeRefreshCounts()
+
+    set(() => ({
       draft: {
-        ...state.draft,
         categoryKey,
+        subject: undefined,
+        object: undefined,
+        predicate: undefined,
+        punctuation: undefined,
         selectedRecommendedSentence: undefined,
         selectedGeneratedSentence: undefined,
+        manualInput: '',
       },
       recommendedSentences: [],
+      composeStep: 'subject',
+      composeOptions: initialComposeOptions,
       generatedSentences: [],
       completionMessage: null,
       errorMessage: null,
@@ -276,9 +716,11 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         shouldFail: state.mockFlags.failRecommendedLoadOnce,
         context: state.context,
       })
+      const selectableRecommendedSentences =
+        filterSelectableRecommendedSentences(recommendedSentences)
 
       set(currentState => ({
-        recommendedSentences,
+        recommendedSentences: selectableRecommendedSentences,
         status: 'visible',
         errorMessage: null,
         mockFlags: {
@@ -302,14 +744,38 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectRecommendedSentence: async text => {
     const state = get()
+    const normalizedText = text.trim()
+
+    if (state.status === 'submitting' || state.status === 'loading') {
+      return false
+    }
+
+    if (!normalizedText) {
+      set({
+        status: 'error',
+        errorMessage: '전송할 문장이 비어 있습니다.',
+      })
+      return false
+    }
+
+    if (isBlockedRecommendedSentence(normalizedText)) {
+      set({
+        status: 'visible',
+        errorMessage: '추천 문장이 아직 준비되지 않았습니다. 다시 추천받기 또는 형태소로 표현하기를 선택해 주세요.',
+      })
+      return false
+    }
+
     set({
       status: 'submitting',
       errorMessage: null,
     })
 
     try {
+      stopActiveCustomTalkAudioPlayback()
+
       await submitCustomTalkUtterance({
-        text,
+        text: normalizedText,
         source: 'recommended',
         shouldFail: state.mockFlags.failSubmitOnce,
       })
@@ -317,21 +783,32 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       set(currentState => ({
         draft: {
           ...currentState.draft,
-          selectedRecommendedSentence: text,
+          selectedRecommendedSentence: normalizedText,
         },
         conversationLog: appendConversationLog(
           currentState.conversationLog,
           'patient',
-          text,
+          normalizedText,
           'utterance',
         ),
         status: 'completed',
-        completionMessage: `추천 문장 발화를 반영했습니다: ${text}`,
+        errorMessage: null,
+        completionMessage: `추천 문장을 발화했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
           failSubmitOnce: false,
         },
       }))
+
+      void playCustomTalkUtteranceTts({
+        text: normalizedText,
+      })
+        .then(handle => {
+          activeCustomTalkAudioPlayback = handle
+        })
+        .catch(error => {
+          logCustomTalkTtsFailure('recommended', error)
+        })
 
       return true
     } catch (error) {
@@ -351,8 +828,21 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   startCompose: async () => {
     const state = get()
+    resetComposeRefreshCounts()
+
     set({
+      draft: {
+        ...state.draft,
+        subject: undefined,
+        object: undefined,
+        predicate: undefined,
+        punctuation: undefined,
+        selectedGeneratedSentence: undefined,
+      },
       composeStep: 'subject',
+      composeOptions: initialComposeOptions,
+      generatedSentences: [],
+      completionMessage: null,
       status: 'loading',
       errorMessage: null,
     })
@@ -404,6 +894,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
         categoryKey: state.draft.categoryKey,
         step,
         refreshCount: composeRefreshCounts[step],
+        selectedWords: buildSelectedWordsForStep(state.draft, step),
         shouldFail: state.mockFlags.failComposeLoadOnce,
       })
 
@@ -435,57 +926,58 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectComposeWord: async (step, value) => {
-    const state = get()
+    resetComposeRefreshCountsFrom(step)
+    const nextStep = getNextComposeStep(step)
+
     set({
       status: 'selecting',
       errorMessage: null,
     })
 
-    try {
-      await saveComposeSelection({
-        step,
-        value,
-        shouldFail: state.mockFlags.failComposeSaveOnce,
-      })
+    set(currentState => ({
+      draft: buildDraftWithComposeSelection(currentState.draft, step, value),
+      composeOptions: buildComposeOptionsAfterSelection(currentState.composeOptions, step),
+      generatedSentences: [],
+      completionMessage: null,
+      composeStep: nextStep ?? currentState.composeStep,
+      status: 'visible',
+      errorMessage: null,
+      mockFlags: {
+        ...currentState.mockFlags,
+        failComposeSaveOnce: false,
+      },
+    }))
 
-      const draftKey = composeStepKeyMap[step]
-      const nextStep = getNextComposeStep(step)
-
-      set(currentState => ({
-        draft: {
-          ...currentState.draft,
-          [draftKey]: value,
-        },
-        composeStep: nextStep ?? currentState.composeStep,
-        status: 'visible',
-        errorMessage: null,
-        mockFlags: {
-          ...currentState.mockFlags,
-          failComposeSaveOnce: false,
-        },
-      }))
-
-      if (nextStep && get().composeOptions[nextStep].length === 0) {
-        await get().refreshComposeStep(nextStep)
-      }
-
-      return nextStep === null
-    } catch (error) {
-      set(currentState => ({
-        status: 'error',
-        errorMessage:
-          error instanceof Error ? error.message : '선택 내용을 저장하지 못했습니다.',
-        mockFlags: {
-          ...currentState.mockFlags,
-          failComposeSaveOnce: false,
-        },
-      }))
-      return false
+    if (nextStep && get().composeOptions[nextStep].length === 0) {
+      await get().refreshComposeStep(nextStep)
     }
+
+    return nextStep === null
   },
 
   skipComposeStep: async step => {
-    return get().selectComposeWord(step, '')
+    resetComposeRefreshCountsFrom(step)
+    const nextStep = getNextComposeStep(step)
+
+    set(currentState => ({
+      draft: buildDraftWithComposeSelection(currentState.draft, step),
+      composeOptions: buildComposeOptionsAfterSelection(currentState.composeOptions, step),
+      generatedSentences: [],
+      completionMessage: null,
+      composeStep: nextStep ?? currentState.composeStep,
+      status: 'visible',
+      errorMessage: null,
+      mockFlags: {
+        ...currentState.mockFlags,
+        failComposeSaveOnce: false,
+      },
+    }))
+
+    if (nextStep && get().composeOptions[nextStep].length === 0) {
+      await get().refreshComposeStep(nextStep)
+    }
+
+    return nextStep === null
   },
 
   goBackComposeStep: () => {
@@ -558,14 +1050,30 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectGeneratedSentence: async text => {
     const state = get()
+    const normalizedText = text.trim()
+
+    if (state.status === 'submitting' || state.status === 'loading') {
+      return false
+    }
+
+    if (!normalizedText) {
+      set({
+        status: 'error',
+        errorMessage: '전송할 문장이 비어 있습니다.',
+      })
+      return false
+    }
+
     set({
       status: 'submitting',
       errorMessage: null,
     })
 
     try {
+      stopActiveCustomTalkAudioPlayback()
+
       await submitCustomTalkUtterance({
-        text,
+        text: normalizedText,
         source: 'generated',
         shouldFail: state.mockFlags.failSubmitOnce,
       })
@@ -573,21 +1081,32 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       set(currentState => ({
         draft: {
           ...currentState.draft,
-          selectedGeneratedSentence: text,
+          selectedGeneratedSentence: normalizedText,
         },
         conversationLog: appendConversationLog(
           currentState.conversationLog,
           'patient',
-          text,
+          normalizedText,
           'utterance',
         ),
         status: 'completed',
-        completionMessage: `생성 문장 발화를 반영했습니다: ${text}`,
+        errorMessage: null,
+        completionMessage: `생성 문장을 발화했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
           failSubmitOnce: false,
         },
       }))
+
+      void playCustomTalkUtteranceTts({
+        text: normalizedText,
+      })
+        .then(handle => {
+          activeCustomTalkAudioPlayback = handle
+        })
+        .catch(error => {
+          logCustomTalkTtsFailure('generated', error)
+        })
 
       return true
     } catch (error) {
@@ -605,18 +1124,23 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     }
   },
 
-  openKeyboard: entrySource => {
-    set({
+  openKeyboard: (entrySource, seedText) => {
+    set(state => ({
+      draft: {
+        ...state.draft,
+        manualInput: seedText ?? '',
+      },
       keyboardStatus: 'idle',
       keyboardNavigation: {
         entrySource,
         currentPage: 0,
         canGoNext: false,
       },
+      keyboardComposition: initialKeyboardComposition,
       keyboardOptions: [],
       keyboardErrorMessage: null,
       completionMessage: null,
-    })
+    }))
   },
 
   initializeKeyboard: async () => {
@@ -632,11 +1156,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       })
 
       set(currentState => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: currentState.keyboardNavigation.entrySource,
-        },
+        ...getRootKeyboardStateWithEntrySource(currentState.keyboardNavigation.entrySource),
+        keyboardComposition: initialKeyboardComposition,
         mockFlags: {
           ...currentState.mockFlags,
           failKeyboardInitOnce: false,
@@ -657,7 +1178,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   selectKeyboardRootMenu: menu => {
     if (menu === 'ending') {
-      const nextPage = getKeyboardCharPage(menu, undefined, 0)
+      const nextPage = getKeyboardCharPageForMenu(menu, undefined, 0, get().keyboardComposition)
 
       if (!nextPage) {
         set({
@@ -682,7 +1203,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       return
     }
 
-    const nextPage = getKeyboardGroupPage(menu, 0)
+    const nextPage = getKeyboardGroupPageForMenu(menu, 0, get().keyboardComposition)
 
     set(state => ({
       keyboardStatus: 'group_select',
@@ -699,7 +1220,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardGroup: groupId => {
-    const { currentRootMenu } = get().keyboardNavigation
+    const { keyboardComposition, keyboardNavigation } = get()
+    const { currentRootMenu } = keyboardNavigation
 
     if (!currentRootMenu || currentRootMenu === 'ending') {
       set({
@@ -709,7 +1231,12 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
       return
     }
 
-    const nextPage = getKeyboardCharPage(currentRootMenu, groupId, 0)
+    const nextPage = getKeyboardCharPageForMenu(
+      currentRootMenu,
+      groupId,
+      0,
+      keyboardComposition,
+    )
 
     if (!nextPage) {
       set({
@@ -733,31 +1260,15 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   selectKeyboardChar: value => {
-    const { keyboardNavigation } = get()
+    set(state => buildKeyboardCharSelectionUpdate(state, value))
+  },
 
-    set(state => ({
-      draft: {
-        ...state.draft,
-        manualInput: `${state.draft.manualInput}${value}`,
-      },
-      keyboardStatus: 'typing',
-      keyboardErrorMessage: null,
-    }))
-
-    if (keyboardNavigation.currentRootMenu === 'ending') {
-      // TODO: 끝표시 입력 후 루트 복귀 / 직전 상태 유지 정책 확정
-      set(state => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: state.keyboardNavigation.entrySource,
-        },
-      }))
-    }
+  skipKeyboardFinalConsonant: () => {
+    set(state => buildSkipKeyboardFinalConsonantUpdate(state))
   },
 
   goKeyboardNextPage: () => {
-    const { keyboardNavigation } = get()
+    const { keyboardComposition, keyboardNavigation } = get()
     const nextPageIndex = keyboardNavigation.currentPage + 1
 
     if (!keyboardNavigation.currentRootMenu) {
@@ -770,14 +1281,16 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
     const nextPage =
       keyboardNavigation.currentGroupId || keyboardNavigation.currentRootMenu === 'ending'
-        ? getKeyboardCharPage(
+        ? getKeyboardCharPageForMenu(
             keyboardNavigation.currentRootMenu,
             keyboardNavigation.currentGroupId,
             nextPageIndex,
+            keyboardComposition,
           )
-        : getKeyboardGroupPage(
+        : getKeyboardGroupPageForMenu(
             keyboardNavigation.currentRootMenu as Exclude<KeyboardRootMenu, 'ending'>,
             nextPageIndex,
+            keyboardComposition,
           )
 
     if (!nextPage || nextPage.options.length === 0) {
@@ -799,14 +1312,18 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   goKeyboardBack: () => {
-    const { keyboardNavigation } = get()
+    const { keyboardComposition, keyboardNavigation } = get()
 
     if (keyboardNavigation.currentGroupId) {
       const currentRootMenu = keyboardNavigation.currentRootMenu as Exclude<
         KeyboardRootMenu,
         'ending'
       >
-      const nextPage = getKeyboardGroupPage(currentRootMenu, 0)
+      const nextPage = getKeyboardGroupPageForMenu(
+        currentRootMenu,
+        0,
+        keyboardComposition,
+      )
 
       set(state => ({
         keyboardStatus: 'group_select',
@@ -825,11 +1342,7 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
     if (keyboardNavigation.currentRootMenu) {
       set(state => ({
-        ...getRootKeyboardState(),
-        keyboardNavigation: {
-          ...getRootKeyboardState().keyboardNavigation,
-          entrySource: state.keyboardNavigation.entrySource,
-        },
+        ...getRootKeyboardStateWithEntrySource(state.keyboardNavigation.entrySource),
       }))
       return { shouldExit: false }
     }
@@ -841,19 +1354,21 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
   },
 
   deleteLastManualChar: () => {
-    set(state => ({
-      draft: {
-        ...state.draft,
-        manualInput: state.draft.manualInput.slice(0, -1),
-      },
-      keyboardStatus: 'editing',
-      keyboardErrorMessage: null,
-    }))
+    set(state => buildDeleteLastManualCharUpdate(state))
   },
 
   submitManualInput: async () => {
-    const { draft, mockFlags } = get()
-    const text = draft.manualInput.trim()
+    const { draft, keyboardComposition, mockFlags, keyboardStatus } = get()
+    const resolvedManualInput = resolveKeyboardManualInput(draft.manualInput, keyboardComposition)
+    const text = resolvedManualInput.trim()
+
+    if (
+      keyboardStatus === 'loading' ||
+      keyboardStatus === 'submitting' ||
+      keyboardStatus === 'completed'
+    ) {
+      return false
+    }
 
     if (!text) {
       set({
@@ -893,6 +1408,8 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
     })
 
     try {
+      stopActiveCustomTalkAudioPlayback()
+
       await submitCustomTalkUtterance({
         text,
         source: 'manual',
@@ -906,16 +1423,30 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
           text,
           'utterance',
         ),
+        draft: {
+          ...currentState.draft,
+          manualInput: resolvedManualInput,
+        },
         keyboardStatus: 'completed',
-        completionMessage: `직접 입력 발화를 반영했습니다: ${text}`,
+        keyboardComposition: initialKeyboardComposition,
+        keyboardErrorMessage: null,
+        completionMessage: `직접 입력 문장을 발화했습니다: ${text}`,
         mockFlags: {
           ...currentState.mockFlags,
           failSubmitOnce: false,
         },
       }))
 
-      // TODO: call patient utterance API
-      // TODO: trigger TTS playback
+      void playCustomTalkUtteranceTts({
+        text,
+      })
+        .then(handle => {
+          activeCustomTalkAudioPlayback = handle
+        })
+        .catch(error => {
+          logCustomTalkTtsFailure('manual', error)
+        })
+
       // TODO: persist history / favorites candidate
       return true
     } catch (error) {
@@ -948,16 +1479,14 @@ export const useCustomTalkStore = create<CustomTalkState>((set, get) => ({
 
   resetCustomTalkSession: () => {
     refreshCategoryCount = 0
-    composeRefreshCounts.subject = 0
-    composeRefreshCounts.object = 0
-    composeRefreshCounts.predicate = 0
-    composeRefreshCounts.punctuation = 0
+    resetComposeRefreshCounts()
+    stopActiveCustomTalkAudioPlayback()
 
     set({
       isInitialized: false,
       context: null,
       conversationLog: [],
-      visibleCategoryKeys: [],
+      visibleCategories: [],
       recommendedSentences: [],
       composeStep: 'subject',
       composeOptions: initialComposeOptions,

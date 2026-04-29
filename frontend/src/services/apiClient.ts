@@ -1,34 +1,68 @@
 import axios from 'axios'
 import type { AxiosError } from 'axios'
-import { ApiError, type ApiRequestOptions, type ApiSource, type ApiTransport } from '../types/api'
-import type { AuthResponseDto, AuthSession, RefreshRequestDto } from '../types/auth'
+import { getApiBaseUrl, getApiWithCredentials } from '../config/env'
+import { ApiError, type ApiRequestOptions } from '../types/api'
+import type { AuthResponseDto, AuthSession } from '../types/auth'
+import { applyActiveAuthSession, getActiveAuthSession } from './authSessionRegistry'
 import { API_ENDPOINTS } from './apiEndpoints'
 import { mapAuthResponseToSession } from './authSessionMapper'
-import { applyActiveAuthSession, getActiveAuthSession } from './authSessionRegistry'
-import { setStoredEntryMode, setStoredRole, storeGuardianSessionExitReason } from './authStorage'
-import { mockApiTransport } from './mockAuthApi'
 
-type ApiMode = 'real' | 'mock'
-
-const API_MODE: ApiMode =
-  import.meta.env.VITE_API_MODE === 'real' || import.meta.env.VITE_AUTH_API_MODE === 'real'
-    ? 'real'
-    : 'mock'
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
-const DEFAULT_WITH_CREDENTIALS = import.meta.env.VITE_API_WITH_CREDENTIALS === 'true'
+const DEFAULT_WITH_CREDENTIALS = getApiWithCredentials()
 
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: getApiBaseUrl(),
   timeout: 8000,
   withCredentials: DEFAULT_WITH_CREDENTIALS,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
 })
 
 type InternalRequestOptions<TBody = unknown> = ApiRequestOptions<TBody> & {
-  skipGuardianRefreshRetry?: boolean
+  skipAuthRefresh?: boolean
 }
 
-function getApiSource(): ApiSource {
-  return API_MODE === 'real' ? 'api' : 'mock'
+const AUTH_REFRESH_FAILED = Symbol('AUTH_REFRESH_FAILED')
+
+let activeSessionRefreshPromise: Promise<AuthSession | null> | null = null
+
+function shouldInvalidateActiveSession(
+  error: ApiError,
+  options: InternalRequestOptions,
+) {
+  if (options.skipAuthInvalidation) {
+    return false
+  }
+
+  if (error.statusCode !== 401) {
+    return false
+  }
+
+  return getActiveAuthSession() !== null
+}
+
+function isAuthRefreshRequest(options: InternalRequestOptions) {
+  return options.url === API_ENDPOINTS.AUTH_REFRESH
+}
+
+function shouldAttemptAuthRefresh(
+  error: ApiError,
+  options: InternalRequestOptions,
+) {
+  if (options.skipAuthRefresh) {
+    return false
+  }
+
+  if (error.statusCode !== 401) {
+    return false
+  }
+
+  if (isAuthRefreshRequest(options)) {
+    return false
+  }
+
+  return typeof getActiveAuthSession()?.refreshToken === 'string'
 }
 
 function unwrapApiEnvelope<TResponse>(value: unknown) {
@@ -42,12 +76,20 @@ function unwrapApiEnvelope<TResponse>(value: unknown) {
     return envelope.data as TResponse
   }
 
-  // 일부 백엔드 응답이 payload를 cal 키로 내려주는 케이스 호환.
   if ('cal' in envelope) {
     return envelope.cal as TResponse
   }
 
   return value as TResponse
+}
+
+function readApiResponseTextField(value: unknown, fieldName: 'message' | 'code') {
+  if (!value || typeof value !== 'object') {
+    return undefined
+  }
+
+  const fieldValue = (value as Record<string, unknown>)[fieldName]
+  return typeof fieldValue === 'string' && fieldValue.trim() ? fieldValue : undefined
 }
 
 function toApiError(error: unknown) {
@@ -56,24 +98,34 @@ function toApiError(error: unknown) {
   }
 
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ message?: string; code?: string }>
+    const axiosError = error as AxiosError<unknown>
     const statusCode = axiosError.response?.status ?? 500
+    const isNetworkError = !axiosError.response
+    const responseMessage = readApiResponseTextField(axiosError.response?.data, 'message')
+    const responseCode = readApiResponseTextField(axiosError.response?.data, 'code')
+    const code = responseCode ?? (isNetworkError ? 'NETWORK_ERROR' : undefined)
 
     return new ApiError({
       statusCode,
       source: 'api',
       message:
-        axiosError.response?.data?.message ??
+        responseMessage ??
+        (isNetworkError ? '네트워크 연결 상태를 확인한 뒤 다시 시도해주세요.' : undefined) ??
         axiosError.message ??
         'API request failed.',
-      code: axiosError.response?.data?.code,
-      details: axiosError.response?.data,
+      code,
+      details: isNetworkError
+        ? {
+            axiosCode: axiosError.code,
+            isNetworkError: true,
+          }
+        : axiosError.response?.data,
     })
   }
 
   return new ApiError({
     statusCode: 500,
-    source: getApiSource(),
+    source: 'api',
     message: error instanceof Error ? error.message : 'Unexpected error occurred.',
     details: error,
   })
@@ -92,128 +144,95 @@ function buildHeaders(
   return Object.keys(nextHeaders).length > 0 ? nextHeaders : undefined
 }
 
-const realApiTransport: ApiTransport = {
-  async request<TResponse, TBody>(options: ApiRequestOptions<TBody>) {
+async function refreshActiveSession() {
+  if (activeSessionRefreshPromise) {
+    return activeSessionRefreshPromise
+  }
+
+  const currentSession = getActiveAuthSession()
+
+  if (!currentSession?.refreshToken) {
+    applyActiveAuthSession(null)
+    return null
+  }
+
+  activeSessionRefreshPromise = (async () => {
     try {
       const response = await axiosInstance.request({
-        method: options.method,
-        url: options.url,
-        data: options.data,
-        params: options.params,
-        headers: buildHeaders(options.accessToken, options.headers),
-        responseType: options.responseType,
-        withCredentials: options.withCredentials ?? DEFAULT_WITH_CREDENTIALS,
-      })
-
-      return unwrapApiEnvelope<TResponse>(response.data)
-    } catch (error) {
-      throw toApiError(error)
-    }
-  },
-}
-
-const activeTransport = API_MODE === 'real' ? realApiTransport : mockApiTransport
-let guardianRefreshPromise: Promise<AuthSession | null> | null = null
-
-function callTransport<TResponse, TBody = unknown>(options: InternalRequestOptions<TBody>) {
-  const { skipGuardianRefreshRetry: _skipGuardianRefreshRetry, ...transportOptions } = options
-  return activeTransport.request<TResponse, TBody>(transportOptions)
-}
-
-function getGuardianRetrySession<TBody>(
-  options: InternalRequestOptions<TBody>,
-): AuthSession | null {
-  if (options.skipGuardianRefreshRetry || options.url === API_ENDPOINTS.AUTH_REFRESH) {
-    return null
-  }
-
-  if (!options.accessToken) {
-    return null
-  }
-
-  const session = getActiveAuthSession()
-
-  if (!session || session.role !== 'guardian' || !session.refreshToken) {
-    return null
-  }
-
-  return session
-}
-
-async function refreshGuardianSession(): Promise<AuthSession | null> {
-  if (guardianRefreshPromise) {
-    return guardianRefreshPromise
-  }
-
-  guardianRefreshPromise = (async () => {
-    const session = getActiveAuthSession()
-
-    if (!session || session.role !== 'guardian' || !session.refreshToken) {
-      return null
-    }
-
-    try {
-      const response = await callTransport<AuthResponseDto, RefreshRequestDto>({
         method: 'POST',
         url: API_ENDPOINTS.AUTH_REFRESH,
         data: {
-          refreshToken: session.refreshToken,
+          refreshToken: currentSession.refreshToken,
         },
-        skipGuardianRefreshRetry: true,
+        withCredentials: DEFAULT_WITH_CREDENTIALS,
       })
 
-      const nextSession = mapAuthResponseToSession(response)
+      const nextSession = mapAuthResponseToSession(
+        unwrapApiEnvelope<AuthResponseDto>(response.data),
+        currentSession.authMode,
+      )
+
       applyActiveAuthSession(nextSession)
       return nextSession
     } catch {
-      setStoredRole('guardian')
-      setStoredEntryMode('login')
-      storeGuardianSessionExitReason('refresh-failed')
       applyActiveAuthSession(null)
       return null
     } finally {
-      guardianRefreshPromise = null
+      activeSessionRefreshPromise = null
     }
   })()
 
-  return guardianRefreshPromise
+  return activeSessionRefreshPromise
 }
 
-async function requestWithGuardianRefreshRetry<TResponse, TBody = unknown>(
+async function retryRequestWithRefreshedSession<TResponse, TBody = unknown>(
   options: InternalRequestOptions<TBody>,
-) {
+): Promise<TResponse | typeof AUTH_REFRESH_FAILED> {
+  const refreshedSession = await refreshActiveSession()
+
+  if (!refreshedSession?.accessToken) {
+    return AUTH_REFRESH_FAILED
+  }
+
+  return callTransport<TResponse, TBody>({
+    ...options,
+    accessToken: refreshedSession.accessToken,
+    skipAuthRefresh: true,
+  })
+}
+
+async function callTransport<TResponse, TBody = unknown>(
+  options: InternalRequestOptions<TBody>,
+): Promise<TResponse> {
   try {
-    return await callTransport<TResponse, TBody>(options)
-  } catch (error) {
-    if (!(error instanceof ApiError) || error.statusCode !== 401) {
-      throw error
-    }
-
-    const guardianSession = getGuardianRetrySession(options)
-
-    if (!guardianSession) {
-      throw error
-    }
-
-    if (guardianSession.accessToken && guardianSession.accessToken !== options.accessToken) {
-      return callTransport<TResponse, TBody>({
-        ...options,
-        accessToken: guardianSession.accessToken,
-        skipGuardianRefreshRetry: true,
-      })
-    }
-
-    const refreshedSession = await refreshGuardianSession()
-
-    if (!refreshedSession?.accessToken) {
-      throw error
-    }
-
-    return callTransport<TResponse, TBody>({
-      ...options,
-      accessToken: refreshedSession.accessToken,
-      skipGuardianRefreshRetry: true,
+    const response = await axiosInstance.request({
+      method: options.method,
+      url: options.url,
+      data: options.data,
+      params: options.params,
+      headers: buildHeaders(options.accessToken, options.headers),
+      responseType: options.responseType,
+      withCredentials: options.withCredentials ?? DEFAULT_WITH_CREDENTIALS,
     })
+
+    return unwrapApiEnvelope<TResponse>(response.data)
+  } catch (error) {
+    const apiError = toApiError(error)
+
+    if (shouldAttemptAuthRefresh(apiError, options)) {
+      const retryResult: TResponse | typeof AUTH_REFRESH_FAILED =
+        await retryRequestWithRefreshedSession<TResponse, TBody>(options)
+
+      if (retryResult !== AUTH_REFRESH_FAILED) {
+        return retryResult
+      }
+    }
+
+    if (shouldInvalidateActiveSession(apiError, options)) {
+      applyActiveAuthSession(null)
+    }
+
+    throw apiError
   }
 }
 
@@ -221,18 +240,34 @@ type SimpleRequestOptions<TBody = unknown> = Omit<ApiRequestOptions<TBody>, 'met
 
 export const apiClient = {
   request<TResponse, TBody = unknown>(options: ApiRequestOptions<TBody>) {
-    return requestWithGuardianRefreshRetry<TResponse, TBody>(options)
+    return callTransport<TResponse, TBody>(options)
   },
   get<TResponse>(url: string, options?: SimpleRequestOptions<never>) {
-    return requestWithGuardianRefreshRetry<TResponse, never>({
+    return callTransport<TResponse, never>({
       method: 'GET',
       url,
       ...options,
     })
   },
   post<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
-    return requestWithGuardianRefreshRetry<TResponse, TBody>({
+    return callTransport<TResponse, TBody>({
       method: 'POST',
+      url,
+      data,
+      ...options,
+    })
+  },
+  put<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
+    return callTransport<TResponse, TBody>({
+      method: 'PUT',
+      url,
+      data,
+      ...options,
+    })
+  },
+  patch<TResponse, TBody = unknown>(url: string, data?: TBody, options?: SimpleRequestOptions<TBody>) {
+    return callTransport<TResponse, TBody>({
+      method: 'PATCH',
       url,
       data,
       ...options,
@@ -243,7 +278,7 @@ export const apiClient = {
     data?: TBody,
     options?: SimpleRequestOptions<TBody>,
   ) {
-    return requestWithGuardianRefreshRetry<TResponse, TBody>({
+    return callTransport<TResponse, TBody>({
       method: 'DELETE',
       url,
       data,
@@ -252,10 +287,4 @@ export const apiClient = {
   },
 }
 
-export function getActiveApiMode() {
-  return API_MODE
-}
-
-export function getApiBaseUrl() {
-  return API_BASE_URL
-}
+export { getActiveApiMode, getApiBaseUrl } from '../config/env'

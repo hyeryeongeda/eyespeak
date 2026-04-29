@@ -56,7 +56,18 @@ public class GlobalExceptionHandler {
     }
 
     /*
-     * 3. 그 외 모든 예외
+     * 3. 엔티티 검증 실패 (Builder 등에서 IllegalArgumentException 던질 때)
+     * - 잘못된 입력이므로 400 Bad Request 로 응답
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    protected ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException e) {
+        return ResponseEntity
+                .status(ErrorCode.INVALID_INPUT.getStatus())
+                .body(ErrorResponse.of(ErrorCode.INVALID_INPUT));
+    }
+
+    /*
+     * 4. 그 외 모든 예외
      * - BusinessException 도 아니고 Validation 에러도 아닌 예상하지 못한 모든 예외
      */
     @ExceptionHandler(Exception.class)

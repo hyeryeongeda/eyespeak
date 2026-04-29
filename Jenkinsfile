@@ -139,8 +139,15 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.dev'
                             }
 
-                            // Makefile의 dev-app-up 실행
-                            sh "make dev-app-up"
+                            // FCM 서비스 계정 키 복사 (Secret File)
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY_FILE')]) {
+                                sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
+                            }
+
+                            // YouTube API 키 주입 후 dev-app-up 실행
+                            withCredentials([string(credentialsId: 'vite-youtube-api-key', variable: 'VITE_YOUTUBE_API_KEY')]) {
+                                sh 'export VITE_YOUTUBE_API_KEY=$VITE_YOUTUBE_API_KEY && make dev-app-up'
+                            }
                         }
                     }
                     post {
@@ -287,8 +294,15 @@ pipeline {
                                 sh 'cp $ENV_FILE backend/.env.prod'
                             }
 
-                            // Makefile의 prod-app-up 실행
-                            sh "make prod-app-up"
+                            // FCM 서비스 계정 키 복사 (Secret File)
+                            withCredentials([file(credentialsId: 'fcm-secret-key', variable: 'FCM_KEY_FILE')]) {
+                                sh 'cp $FCM_KEY_FILE backend/src/main/resources/firebase-service-account.json'
+                            }
+
+                            // YouTube API 키 주입 후 prod-app-up 실행
+                            withCredentials([string(credentialsId: 'vite-youtube-api-key', variable: 'VITE_YOUTUBE_API_KEY')]) {
+                                sh 'export VITE_YOUTUBE_API_KEY=$VITE_YOUTUBE_API_KEY && make prod-app-up'
+                            }
                         }
                     }
                     post {
@@ -391,6 +405,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh 'docker image prune -f || true'
+                sh 'docker builder prune -f || true'
             }
         }
     }
