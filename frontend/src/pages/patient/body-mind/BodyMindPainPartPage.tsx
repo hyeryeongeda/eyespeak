@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
@@ -7,6 +7,8 @@ import type {
   PainAreaKey,
   PainAreaRouteState,
 } from '../../../features/patient/body-mind/types/bodyMind'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
+import { useGazeInputStore } from '../../../features/patient/input/stores/gazeInputStore'
 import {
   getStoredPainAreaSelection,
   storePainAreaSelection,
@@ -16,13 +18,22 @@ import {
   getPainAreaGroupByKey,
   getPainAreaOptionByKey,
 } from './bodyMindMock'
-import { getPainAreaModelByKey } from './bodyMindPainModels'
+import { getFullBodyModelUrl, getPainAreaModelByKey } from './bodyMindPainModels'
+import type { BodyViewOffset } from './components/BodyMindPainGuideCard'
 import BodyMindFixedGrid from './components/BodyMindFixedGrid'
 import BodyMindLayout from './components/BodyMindLayout'
 import BodyMindOptionCard from './components/BodyMindOptionCard'
 import BodyMindPainGuideCard from './components/BodyMindPainGuideCard'
 
 const PREVIEW_DELAY_MS = 220
+
+const GROUP_VIEW_OFFSETS: Record<string, BodyViewOffset> = {
+  upper_body: { y: 1.1, z: 2.6 },
+  middle_body: { y: 0.35, z: 2.85 },
+  lower_body: { y: -0.8, z: 3.25 },
+}
+
+const REAR_VIEW_PARTS: PainAreaKey[] = ['waist', 'hip']
 
 export default function BodyMindPainPartPage() {
   const navigate = useNavigate()
@@ -44,6 +55,39 @@ export default function BodyMindPainPartPage() {
   const navigationTimeoutRef = useRef<number | null>(null)
   const [status, setStatus] = useState<BodyMindUiStatus>('visible')
   const [selectedAreaKey, setSelectedAreaKey] = useState<PainAreaKey | null>(initialAreaKey)
+  const [hoveredAreaKey, setHoveredAreaKey] = useState<PainAreaKey | null>(null)
+
+  const gazePoint = useGazeInputStore(state => state.point)
+
+  useEffect(() => {
+    if (!gazePoint) {
+      setHoveredAreaKey(null)
+      return
+    }
+
+    const elements = document.elementsFromPoint(gazePoint.clientX, gazePoint.clientY)
+
+    for (const el of elements) {
+      if (!(el instanceof HTMLElement)) continue
+      const tracked = el.closest<HTMLElement>('[data-tracking-id]')
+      if (!tracked) continue
+      const id = tracked.dataset.trackingId as PainAreaKey | undefined
+      if (id && group?.options.some(opt => opt.key === id)) {
+        setHoveredAreaKey(id)
+        return
+      }
+    }
+
+    setHoveredAreaKey(null)
+  }, [gazePoint, group])
+
+  const handleGazeEnter = useCallback((areaKey: PainAreaKey) => {
+    setHoveredAreaKey(areaKey)
+  }, [])
+
+  const handleGazeLeave = useCallback(() => {
+    setHoveredAreaKey(null)
+  }, [])
 
   useEffect(
     () => () => {
@@ -58,9 +102,22 @@ export default function BodyMindPainPartPage() {
     return <Navigate to={ROUTE_PATHS.PATIENT_BODY_MIND_PAIN_AREA} replace />
   }
 
+  usePatientPageCellMapping([
+    group.options[0]?.key ?? null,
+    null,
+    group.options[1]?.key ?? null,
+    group.options[2]?.key ?? null,
+    group.options[3]?.key ?? null,
+    'body-mind-pain-part-back',
+  ])
+
   const selectedArea =
     getPainAreaOptionByKey(selectedAreaKey) ?? getPainAreaOptionByKey(group.options[0]?.key ?? null)
-  const selectedModel = getPainAreaModelByKey(selectedArea?.key)
+  const fullBodyUrl = getFullBodyModelUrl()
+  const viewOffset = GROUP_VIEW_OFFSETS[group.key] ?? null
+  const hoveredModel = getPainAreaModelByKey(hoveredAreaKey)
+  const highlightModelUrl = hoveredModel?.modelUrl ?? null
+  const guideRotationY = hoveredAreaKey && REAR_VIEW_PARTS.includes(hoveredAreaKey) ? Math.PI : 0
   const [primaryLeftTop, primaryTopRight, primaryLeftBottom, primaryBottomCenter] = group.options
 
   const handleSelectArea = (areaKey: PainAreaKey) => {
@@ -94,11 +151,11 @@ export default function BodyMindPainPartPage() {
   return (
     <BodyMindLayout
       code="PAT-BM-004A"
-      title="세부 부위 선택"
-      description={`${group.label} 안에서 아픈 부위를 하나 더 구체적으로 고릅니다.`}
+      title={`${group.label} 통증 부위`}
+      description={`${group.label}에서 아픈 부위를 하나 더 구체적으로 선택합니다.`}
       status={status}
       contextLabel={selectedArea ? `현재 선택: ${selectedArea.label}` : group.label}
-      feedbackText="세부 부위를 선택하면 중앙 가이드가 바뀌고 통증 상세 단계로 이동합니다."
+      feedbackText="부위를 선택하면 통증 상세 문구 화면으로 이동합니다."
     >
       <BodyMindFixedGrid
         primaryCards={[
@@ -107,38 +164,43 @@ export default function BodyMindPainPartPage() {
             title={primaryLeftTop.label}
             description={primaryLeftTop.description}
             tone={primaryLeftTop.tone}
-            badge="세부 부위"
+            badge="통증 부위"
+            trackingId={primaryLeftTop.key}
             selected={selectedArea?.key === primaryLeftTop.key}
             onSelect={() => handleSelectArea(primaryLeftTop.key)}
+            onGazeEnter={() => handleGazeEnter(primaryLeftTop.key)}
+            onGazeLeave={handleGazeLeave}
           />,
-          selectedModel ? (
-            <BodyMindPainGuideCard
-              key={selectedModel.key}
-              badge="상세 가이드"
-              modelUrl={selectedModel.modelUrl}
-              fallbackModelUrl={selectedModel.fallbackModelUrl}
-              headerText={`${selectedArea?.label ?? group.options[0]?.label} 부위를 중앙에서 확인할 수 있습니다.`}
-            />
-          ) : (
-            <BodyMindOptionCard key="pain-guide-fallback" title="상세 가이드" tone="slate" />
-          ),
+          <BodyMindPainGuideCard
+            key={`guide-${group.key}`}
+            modelUrl={fullBodyUrl}
+            highlightModelUrl={highlightModelUrl}
+            rotationY={guideRotationY}
+            viewOffset={viewOffset}
+          />,
           <BodyMindOptionCard
             key={primaryLeftBottom.key}
             title={primaryLeftBottom.label}
             description={primaryLeftBottom.description}
             tone={primaryLeftBottom.tone}
-            badge="세부 부위"
+            badge="통증 부위"
+            trackingId={primaryLeftBottom.key}
             selected={selectedArea?.key === primaryLeftBottom.key}
             onSelect={() => handleSelectArea(primaryLeftBottom.key)}
+            onGazeEnter={() => handleGazeEnter(primaryLeftBottom.key)}
+            onGazeLeave={handleGazeLeave}
           />,
           <BodyMindOptionCard
             key={primaryBottomCenter.key}
             title={primaryBottomCenter.label}
             description={primaryBottomCenter.description}
             tone={primaryBottomCenter.tone}
-            badge="세부 부위"
+            badge="통증 부위"
+            trackingId={primaryBottomCenter.key}
             selected={selectedArea?.key === primaryBottomCenter.key}
             onSelect={() => handleSelectArea(primaryBottomCenter.key)}
+            onGazeEnter={() => handleGazeEnter(primaryBottomCenter.key)}
+            onGazeLeave={handleGazeLeave}
           />,
         ]}
         topRightCard={
@@ -146,17 +208,21 @@ export default function BodyMindPainPartPage() {
             title={primaryTopRight.label}
             description={primaryTopRight.description}
             tone={primaryTopRight.tone}
-            badge="세부 부위"
+            badge="통증 부위"
+            trackingId={primaryTopRight.key}
             selected={selectedArea?.key === primaryTopRight.key}
             onSelect={() => handleSelectArea(primaryTopRight.key)}
+            onGazeEnter={() => handleGazeEnter(primaryTopRight.key)}
+            onGazeLeave={handleGazeLeave}
           />
         }
         bottomRightCard={
           <BodyMindOptionCard
-            title="뒤로가기"
-            description="통증 메인으로"
+            title="← 뒤로가기"
+            description="통증 범위 선택으로 이동"
             tone="slate"
             badge="고정 위치"
+            trackingId="body-mind-pain-part-back"
             onSelect={handleBack}
           />
         }

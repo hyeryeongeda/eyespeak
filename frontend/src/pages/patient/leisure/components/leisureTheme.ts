@@ -38,11 +38,11 @@ export const leisureCardBaseStyle: CSSProperties = {
   borderRadius: '28px',
   border: '1px solid rgba(203, 214, 228, 0.95)',
   boxShadow: '0 20px 46px rgba(66, 86, 113, 0.12)',
-  padding: '20px',
+  padding: '22px',
   boxSizing: 'border-box',
   display: 'flex',
   flexDirection: 'column',
-  gap: '12px',
+  gap: '14px',
   transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
 }
 
@@ -62,27 +62,27 @@ export const leisurePillStyle: CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  minHeight: '32px',
+  minHeight: '36px',
   width: 'fit-content',
-  padding: '0 14px',
+  padding: '0 16px',
   borderRadius: '999px',
   backgroundColor: 'rgba(255, 255, 255, 0.9)',
   color: '#54667c',
-  fontSize: '13px',
+  fontSize: '15px',
   fontWeight: 800,
   letterSpacing: '-0.01em',
   boxShadow: '0 8px 16px rgba(90, 109, 133, 0.08)',
 }
 
 export const leisureInteractiveCss = `
-  .leisure-interactive:hover:not(:disabled),
-  .leisure-interactive:focus-visible:not(:disabled) {
+  html:not([data-patient-mode='true']) .leisure-interactive:hover:not(:disabled),
+  html:not([data-patient-mode='true']) .leisure-interactive:focus-visible:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 28px 54px rgba(66, 86, 113, 0.16);
     outline: none;
   }
 
-  .leisure-interactive:active:not(:disabled) {
+  html:not([data-patient-mode='true']) .leisure-interactive:active:not(:disabled) {
     transform: translateY(0);
   }
 `

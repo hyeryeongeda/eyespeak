@@ -84,6 +84,42 @@ public enum ErrorCode {
             "호출 정보를 찾을 수 없습니다"),
     // → 호출 수락/거절 시 해당 호출이 없을 때
 
+    // ====== CHAT (채팅) ======
+
+    CHAT_INVALID_CONTENT_TYPE(HttpStatus.BAD_REQUEST, "CHAT-551",
+            "유효하지 않은 메시지 타입입니다"),
+    // → contentType이 null이거나 지원하지 않는 타입
+
+    CHAT_TEXT_EMPTY(HttpStatus.BAD_REQUEST, "CHAT-552",
+            "텍스트 메시지 내용이 비어있습니다"),
+    // → contentType이 TEXT인데 text 필드가 null 또는 빈 문자열
+
+    CHAT_PHRASE_ID_REQUIRED(HttpStatus.BAD_REQUEST, "CHAT-553",
+            "문구 ID가 필요합니다"),
+    // → contentType이 PHRASE인데 phraseId가 null
+
+    CHAT_EXPRESSION_ID_REQUIRED(HttpStatus.BAD_REQUEST, "CHAT-554",
+            "표현 ID가 필요합니다"),
+    // → contentType이 EXPRESSION인데 expressionId가 null
+
+    CHAT_MATCHING_MISMATCH(HttpStatus.FORBIDDEN, "CHAT-555",
+            "본인의 매칭이 아닌 채팅에는 접근할 수 없습니다"),
+    // → 요청자의 매칭 ID와 요청한 매칭 ID가 불일치 (남의 채팅 조회 시도)
+
+    // ====== FCM (푸시 알림) ======
+
+    FCM_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "FCM-561",
+            "FCM 푸시 알림 전송에 실패하였습니다"),
+    // → Firebase 서버 장애, 네트워크 문제 등 (로그만 남기고 예외 전파하지 않음)
+
+    FCM_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM-562",
+            "FCM 토큰이 등록되어 있지 않습니다"),
+    // → 상대방의 fcmToken이 null인 경우
+
+    FCM_USER_NOT_FOUND(HttpStatus.NOT_FOUND, "FCM-563",
+            "FCM 토큰을 등록할 사용자를 찾을 수 없습니다"),
+    // → FCM 토큰 등록/삭제 시 해당 userId의 사용자가 없는 경우
+
     // ====== COMMUNICATION (의사소통) ======
     // 특화소통 카테고리, 표현, 불편부위
 
@@ -187,7 +223,23 @@ public enum ErrorCode {
             "환자 설정을 찾을 수 없습니다"),
 
     INVALID_PRESET_VALUE(HttpStatus.BAD_REQUEST, "SETTING-1102",
-            "허용되지 않는 설정값입니다");
+            "허용되지 않는 설정값입니다"),
+
+    // ====== MOOD (기분 기록) ======
+
+    MOOD_ALREADY_RECORDED(HttpStatus.CONFLICT, "MOOD-1201",
+            "오늘의 기분은 이미 등록되었습니다"),
+    // → 같은 날 기분 중복 등록 시도 (daily_mood 유니크 제약)
+
+    // ====== AI INTERNAL (AI 서버 내부 API) ======
+
+    AI_CLASSIFY_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "AI-703",
+            "AI 문장 분류에 실패하였습니다"),
+    // → AI 서버의 /expressions/classify 호출 실패 시
+
+    AI_INTERNAL_UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AI-704",
+            "내부 API 인증에 실패하였습니다");
+    // → /ai/** 경로에 X-AI-API-Key 헤더가 없거나 불일치 시
 
 
     // enum 필드: 각 에러 코드는 이 3가지를 가짐

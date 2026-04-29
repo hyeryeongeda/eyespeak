@@ -6,15 +6,18 @@ package e205.eyespeak.domain.auth.controller;
  * - POST /auth/patients         : 환자 회원가입 (팀코드 기반)
  * - POST /auth/login            : 로그인 (caregiver/GUARDIAN/PATIENT 지원)
  * - POST /auth/refresh          : 토큰 갱신
+ * - POST /auth/reset-password   : 비밀번호 재설정
  * - POST /auth/log-out          : 로그아웃
  */
 
 import e205.eyespeak.domain.auth.dto.request.EmailCheckRequest;
 import e205.eyespeak.domain.auth.dto.request.GuardianSignupRequest;
 import e205.eyespeak.domain.auth.dto.request.LoginRequest;
+import e205.eyespeak.domain.auth.dto.request.PasswordResetRequest;
 import e205.eyespeak.domain.auth.dto.request.PatientSignupRequest;
 import e205.eyespeak.domain.auth.dto.request.RefreshRequest;
 import e205.eyespeak.domain.auth.dto.response.AuthResponse;
+import e205.eyespeak.domain.auth.dto.response.PasswordResetResponse;
 import e205.eyespeak.domain.auth.dto.response.PatientSignupResponse;
 import e205.eyespeak.domain.auth.service.AuthService;
 import e205.eyespeak.global.common.ApiResponse;
@@ -66,6 +69,13 @@ public class AuthController {
     public ResponseEntity<ApiResponse<AuthResponse>> refresh(
             @Valid @RequestBody RefreshRequest request) {
         AuthResponse response = authService.refresh(request);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<PasswordResetResponse>> resetPassword(
+            @Valid @RequestBody PasswordResetRequest request) {
+        PasswordResetResponse response = authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 

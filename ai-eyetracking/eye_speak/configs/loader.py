@@ -17,8 +17,18 @@ _ENV_SPEC: Final[
     ("YAW_OFFSET_DEG", ("grid", "yaw_offset_deg"), "float"),
     ("USE_GAZE_REFINER", ("smoothing", "use_gaze_refiner"), "bool_01"),
     ("REFINER_TYPE", ("smoothing", "refiner_type"), "str"),
-    ("ONE_EURO_MIN_CUTOFF", ("smoothing", "one_euro_min_cutoff"), "float"),
-    ("ONE_EURO_BETA", ("smoothing", "one_euro_beta"), "float"),
+    ("ONE_EURO_MIN_CUTOFF_X", ("smoothing", "one_euro_min_cutoff_x"), "float"),
+    ("ONE_EURO_BETA_X", ("smoothing", "one_euro_beta_x"), "float"),
+    ("ONE_EURO_MIN_CUTOFF_Y", ("smoothing", "one_euro_min_cutoff_y"), "float"),
+    ("ONE_EURO_BETA_Y", ("smoothing", "one_euro_beta_y"), "float"),
+    ("SCREEN_HOLD_MS", ("smoothing", "screen_hold_ms"), "float"),
+    ("SCREEN_OUTLIER_DISTANCE", ("smoothing", "screen_outlier_distance"), "float"),
+    (
+        "SCREEN_FALLBACK_JUMP_MARGIN",
+        ("smoothing", "screen_fallback_jump_margin"),
+        "float",
+    ),
+    ("READINESS_VALID_STREAK", ("smoothing", "readiness_valid_streak"), "int"),
     ("BLINK_EAR_THRESHOLD", ("smoothing", "blink_ear_threshold"), "float"),
     ("HEAD_POSE_WEIGHT", ("weights", "head_pose_weight"), "float"),
     ("IRIS_GAZE_WEIGHT", ("weights", "iris_gaze_weight"), "float"),
@@ -35,6 +45,10 @@ _ENV_SPEC: Final[
     ("BLINK_HISTORY_TTL_SEC", ("trigger", "blink_history_ttl_sec"), "float"),
     ("CALIB_SAVE_DIR", ("paths", "calib_save_dir"), "str"),
     ("DWELL_TIME_SEC", ("trigger", "dwell_time_sec"), "float"),
+    ("RUNTIME_POLL_INTERVAL_MS", ("runtime", "poll_interval_ms"), "int"),
+    ("FRAME_MAX_WIDTH", ("runtime", "frame_max_width"), "int"),
+    ("FRAME_JPEG_QUALITY", ("runtime", "frame_jpeg_quality"), "float"),
+    ("RUNTIME_LERP_FACTOR", ("runtime", "lerp_factor"), "float"),
 )
 
 

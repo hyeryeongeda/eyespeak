@@ -72,8 +72,7 @@ class GazePipeline(HybridTracker):
 
     def reset_filters(self) -> None:
         """캘리·스무딩·트리거·온라인 학습 초기화."""
-        self._one_euro.reset()
-        self._mapper.reset_stabilizer()
+        self._reset_runtime_state(reset_trigger=True)
         self._calibrated = False
         self._poly = PolynomialCalibrator()
         bth = float(self._cfg["smoothing"]["blink_ear_threshold"])
@@ -86,14 +85,21 @@ class GazePipeline(HybridTracker):
 
     def save_calibration(self, user_id: str) -> bool:
         if not self._calibrated or not self._poly.is_fitted:
+            logger.error(
+                "save_calibration BLOCKED: _calibrated=%s, poly_fitted=%s",
+                self._calibrated,
+                self._poly.is_fitted,
+            )
             return False
         if not user_id or "/" in user_id or "\\" in user_id or ".." in user_id:
+            logger.error("save_calibration BLOCKED: invalid user_id=%r", user_id)
             return False
         save_dir = Path(str(self._cfg["paths"]["calib_save_dir"]))
         save_dir.mkdir(parents=True, exist_ok=True)
         try:
             cx, cy = self._poly.export_coefficients()
         except RuntimeError:
+            logger.error("save_calibration BLOCKED: export_coefficients failed")
             return False
         bth_snap = float(
             self.iris_normalizer.blink_threshold
@@ -146,8 +152,7 @@ class GazePipeline(HybridTracker):
             if self._cal_refiner.sample_count >= 3:
                 self._cal_refiner.fit()
             self._calibrated = True
-            self._mapper.reset_stabilizer()
-            self._one_euro.reset()
+            self._reset_runtime_state()
             logger.info("캘리 로드: %s", filepath)
             return True
         except Exception as exc:

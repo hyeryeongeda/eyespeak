@@ -38,9 +38,11 @@ public class JwtFilter extends OncePerRequestFilter {
                                 List.of(new SimpleGrantedAuthority("ROLE_" + role))
                         );
                 SecurityContextHolder.getContext().setAuthentication(auth);
+            } else {
+                // JWT 만료/무효 → 401 반환하여 프론트가 자동 토큰 갱신 후 재시도하도록 유도
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
-            // validateToken이 false면 인증 없이 다음 필터로 넘어감
-            // → permitAll URL이면 통과, 인증 필요 URL이면 403
         }
 
         filterChain.doFilter(request, response);

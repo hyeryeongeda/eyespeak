@@ -1,25 +1,22 @@
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
+import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTE_PATHS } from '../../../app/router/routePaths'
 import { useAuth } from '../../../features/auth/hooks/useAuth'
-import PatientCallOverlay from './PatientCallOverlay'
+import DwellFeedbackBadge from '../../../features/patient/input/components/DwellFeedbackBadge'
 import {
-  getPatientCallCooldownSeconds,
-  getRemainingPatientCallCooldownMs,
+  isDwellFeedbackTargetActive,
+  useDwellFeedback,
+  type DwellFeedbackViewModel,
+} from '../../../features/patient/input/hooks/useDwellFeedback'
+import usePatientPageCellMapping from '../../../features/patient/input/hooks/usePatientPageCellMapping'
+import {
   requestMockPatientCall,
 } from '../../../services/patientCallService'
-import { requestPatientRecalibration } from '../../../services/calibration/patientCalibrationService'
 import type { PatientCallFlowStatus } from '../../../types/patientCall'
-import { useTracking } from '../../../hooks/useTracking'
-import { useDwell, type DwellPhase } from '../../../hooks/useDwell'
-import {
-  getActivationDelayPreset,
-  getDwellTimePreset,
-} from '../../../services/careSettingService'
-import { submitActiveEyeTrackingSelectionFeedback } from '../../../services/eyeTrackingSelectionFeedbackService'
-import { ACTIVATION_DELAY_OPTIONS, DWELL_TIME_OPTIONS } from '../../../types/care'
+import PatientCallOverlay from './PatientCallOverlay'
 
-type PatientMainTrackingTargetId = 'talk' | 'call' | 'leisure'
+type PatientMainTargetId = 'talk' | 'call' | 'leisure'
 
 type FeatureCardProps = {
   badge: string
@@ -27,14 +24,11 @@ type FeatureCardProps = {
   description: string
   background: string
   className: string
-  trackingId?: PatientMainTrackingTargetId
-  trackingFocused?: boolean
-  dwellPhase?: DwellPhase
-  dwellProgress?: number
-  dwellRemainingMs?: number
   onSelect?: () => void
   disabled?: boolean
   centered?: boolean
+  trackingId?: PatientMainTargetId
+  dwellFeedback?: DwellFeedbackViewModel<PatientMainTargetId>
 }
 
 function FeatureCard({
@@ -43,18 +37,20 @@ function FeatureCard({
   description,
   background,
   className,
-  trackingId,
-  trackingFocused = false,
-  dwellPhase = 'idle',
-  dwellProgress = 0,
-  dwellRemainingMs = 0,
   onSelect,
   disabled = false,
   centered = false,
+  trackingId,
+  dwellFeedback,
 }: FeatureCardProps) {
   const isInteractive = typeof onSelect === 'function'
-  const showTrackingFeedback = Boolean(trackingId) && trackingFocused
   const cardClassName = isInteractive ? `${className} patient-main-interactive` : className
+  const shouldShowDwellFeedback =
+    isInteractive &&
+    isDwellFeedbackTargetActive(
+      dwellFeedback ?? { activeTargetId: null, phase: 'idle', progress: 0, remainingMs: 0 },
+      trackingId,
+    )
   const content = (
     <>
       <span style={{ ...badgeStyle, alignSelf: centered ? 'center' : 'flex-start' }}>{badge}</span>
@@ -82,22 +78,9 @@ function FeatureCard({
           lineHeight: 1.35,
           textAlign: centered ? 'center' : 'left',
         }}
-        >
+      >
         {description}
       </p>
-      {showTrackingFeedback ? (
-        <div style={trackingPanelStyle}>
-          <p style={trackingLabelStyle}>{getTrackingStatusCopy(dwellPhase, dwellRemainingMs)}</p>
-          <div style={trackingBarStyle}>
-            <div
-              style={{
-                ...trackingBarFillStyle,
-                width: `${Math.max(8, Math.round(dwellProgress * 100))}%`,
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
     </>
   )
 
@@ -114,12 +97,6 @@ function FeatureCard({
           alignItems: centered ? 'center' : 'flex-start',
           justifyContent: centered ? 'center' : 'flex-start',
           textAlign: centered ? 'center' : 'left',
-          ...(trackingFocused
-            ? {
-                borderColor: '#8ab6de',
-                boxShadow: '0 28px 52px rgba(93, 142, 199, 0.2)',
-              }
-            : null),
         }}
       >
         {content}
@@ -131,11 +108,10 @@ function FeatureCard({
     <button
       type="button"
       className={cardClassName}
+      data-tracking-id={trackingId && !disabled ? trackingId : undefined}
       onClick={onSelect}
       disabled={disabled}
       aria-label={`${title} 카드`}
-      data-tracking-id={trackingId && !disabled ? trackingId : undefined}
-      data-gaze-selection={trackingId && !disabled ? 'local' : undefined}
       style={{
         ...featureCardBase,
         background,
@@ -144,19 +120,21 @@ function FeatureCard({
         width: '100%',
         appearance: 'none',
         textDecoration: 'none',
-        cursor: isInteractive && !disabled ? 'pointer' : 'default',
+        cursor: !disabled ? 'pointer' : 'default',
         opacity: disabled ? 0.7 : 1,
+        position: 'relative',
         alignItems: centered ? 'center' : 'flex-start',
         justifyContent: centered ? 'center' : 'flex-start',
         textAlign: centered ? 'center' : 'left',
-        ...(trackingFocused
-          ? {
-              borderColor: '#8ab6de',
-              boxShadow: '0 28px 52px rgba(93, 142, 199, 0.24)',
-            }
-          : null),
       }}
     >
+      {shouldShowDwellFeedback && dwellFeedback ? (
+        <DwellFeedbackBadge
+          phase={dwellFeedback.phase}
+          progress={dwellFeedback.progress}
+          remainingMs={dwellFeedback.remainingMs}
+        />
+      ) : null}
       {content}
     </button>
   )
@@ -222,12 +200,6 @@ const topBarActionRowStyle: CSSProperties = {
   flexWrap: 'wrap',
 }
 
-const recalibrationButtonStyle: CSSProperties = {
-  ...logoutButtonStyle,
-  border: '1px solid rgba(111, 147, 199, 0.28)',
-  color: '#44648a',
-}
-
 const featureGridStyle: CSSProperties = {
   display: 'grid',
   gap: '10px',
@@ -264,51 +236,10 @@ const badgeStyle: CSSProperties = {
   boxShadow: '0 6px 16px rgba(115, 129, 180, 0.08)',
 }
 
-const trackingPanelStyle: CSSProperties = {
-  width: '100%',
-  marginTop: '14px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '8px',
-}
-
-const trackingLabelStyle: CSSProperties = {
-  margin: 0,
-  color: '#45688d',
-  fontSize: '13px',
-  fontWeight: 800,
-}
-
-const trackingBarStyle: CSSProperties = {
-  width: '100%',
-  height: '8px',
-  borderRadius: '999px',
-  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  overflow: 'hidden',
-}
-
-const trackingBarFillStyle: CSSProperties = {
-  height: '100%',
-  borderRadius: '999px',
-  background: 'linear-gradient(90deg, #7ea8d7 0%, #5d8ec7 100%)',
-  transition: 'width 0.08s linear',
-}
-
 const responsiveStyle = `
   .patient-main-grid {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     grid-template-rows: repeat(2, minmax(0, 1fr));
-  }
-
-  .patient-main-interactive:hover:not(:disabled),
-  .patient-main-interactive:focus-visible:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: 0 28px 46px rgba(121, 139, 176, 0.18);
-    outline: none;
-  }
-
-  .patient-main-interactive:active:not(:disabled) {
-    transform: translateY(0);
   }
 
   .patient-main-full {
@@ -322,131 +253,64 @@ const responsiveStyle = `
   }
 `
 
-function formatSecondsText(milliseconds: number) {
-  const seconds = milliseconds / 1000
-
-  if (seconds <= 0) {
-    return '0.0초'
-  }
-
-  return `${seconds.toFixed(1)}초`
-}
-
-function getTrackingStatusCopy(phase: DwellPhase, remainingMs: number) {
-  if (phase === 'locking') {
-    return `입력 잠금 해제까지 ${formatSecondsText(remainingMs)}`
-  }
-
-  if (phase === 'dwelling') {
-    return `선택 확정까지 ${formatSecondsText(remainingMs)}`
-  }
-
-  if (phase === 'triggered') {
-    return '선택 확정'
-  }
-
-  return '시선 입력 대기'
-}
-
 export default function PatientMainPage() {
   const navigate = useNavigate()
   const { logout, user } = useAuth()
+  const isMouseLogoutIntentRef = useRef(false)
+  const dwellFeedback = useDwellFeedback<PatientMainTargetId>({
+    enabled: true,
+  })
   const [callStatus, setCallStatus] = useState<PatientCallFlowStatus>('idle')
-  const [cooldownSeconds, setCooldownSeconds] = useState(0)
-  const [dwellDurationMs, setDwellDurationMs] = useState(DWELL_TIME_OPTIONS.default.value)
-  const [activationDelayMs, setActivationDelayMs] =
-    useState(ACTIVATION_DELAY_OPTIONS.medium.value)
-  const gridRef = useRef<HTMLDivElement | null>(null)
 
-  const patientId = user?.id ?? 'patient-guest'
-  const isOverlayVisible =
-    callStatus === 'requesting' || callStatus === 'success' || callStatus === 'cooldown'
+  usePatientPageCellMapping([
+    'talk',
+    'talk',
+    'talk',
+    callStatus === 'requesting' ? null : 'call',
+    callStatus === 'requesting' ? null : 'call',
+    'leisure',
+  ] as const)
+
+  const isOverlayVisible = callStatus === 'requesting' || callStatus === 'success'
   const overlayStatus = isOverlayVisible ? callStatus : null
-  const trackingEnabled = !isOverlayVisible
-
-  const { hoveredTargetId, isPointerInside, inputSource } = useTracking<PatientMainTrackingTargetId>({
-    containerRef: gridRef,
-    enabled: trackingEnabled,
-  })
-  const isGazeSelectionActive = inputSource === 'gaze'
-
-  const dwellState = useDwell<PatientMainTrackingTargetId>({
-    hoveredTargetId: isGazeSelectionActive ? hoveredTargetId : null,
-    dwellDurationMs,
-    activationDelayMs,
-    disabled: !trackingEnabled,
-    onCommit: targetId => {
-      handleSelectTarget(targetId, 'gaze')
-    },
-  })
 
   const trackingStatusText = useMemo(() => {
     if (isOverlayVisible) {
-      return '호출 상태 안내 중에는 시선 선택을 잠시 멈춥니다.'
+      return '호출 상태 안내가 열려 있습니다.'
     }
 
-    if (dwellState.activeTargetId && dwellState.phase !== 'idle') {
-      return getTrackingStatusCopy(dwellState.phase, dwellState.remainingMs)
-    }
+    return '시선을 카드 위에 머무르면 선택되고, 더블 블링크로 글로벌 메뉴를 열고 닫을 수 있습니다.'
+  }, [isOverlayVisible])
 
-    if (inputSource === 'pointer' && isPointerInside) {
-      return '\uB9C8\uC6B0\uC2A4\uB85C \uD074\uB9AD\uD558\uAC70\uB098 \uC2DC\uC120\uC744 \uACE0\uC815\uD574 \uC120\uD0DD\uD558\uC138\uC694.'
-    }
-
-    if (isPointerInside) {
-      return `포인터를 유지하면 ${formatSecondsText(dwellDurationMs)} 뒤 선택됩니다.`
-    }
-
-    return `포인터를 카드 위에 올리면 입력 잠금 ${formatSecondsText(
-      activationDelayMs,
-    )} 후 dwell 선택이 시작됩니다.`
-  }, [
-    activationDelayMs,
-    dwellDurationMs,
-    dwellState.activeTargetId,
-    dwellState.phase,
-    dwellState.remainingMs,
-    inputSource,
-    isOverlayVisible,
-    isPointerInside,
-  ])
-
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate(ROUTE_PATHS.HOME, { replace: true })
   }
 
-  const handleRecalibration = () => {
-    requestPatientRecalibration(user)
-    navigate(ROUTE_PATHS.PATIENT_CALIBRATION)
+  const handleLogoutPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    isMouseLogoutIntentRef.current = event.pointerType === 'mouse'
   }
 
-  function closeCallOverlay() {
-    setCallStatus('idle')
-    setCooldownSeconds(0)
+  const handleLogoutClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (!isMouseLogoutIntentRef.current || event.detail === 0) {
+      isMouseLogoutIntentRef.current = false
+      return
+    }
+
+    isMouseLogoutIntentRef.current = false
+    void handleLogout()
   }
 
   async function requestPatientCall() {
-    const result = await requestMockPatientCall(patientId)
-
-    if (!result.success) {
-      setCooldownSeconds(Math.ceil(result.remainingMs / 1000))
-      setCallStatus('cooldown')
-      return
+    try {
+      await requestMockPatientCall(user!.matchingId!, user!.accessToken)
+      setCallStatus('success')
+    } catch {
+      setCallStatus('idle')
     }
-
-    setCallStatus('success')
   }
 
   function handleSelectCall() {
-    const remainingMs = getRemainingPatientCallCooldownMs(patientId)
-
-    if (remainingMs > 0) {
-      setCooldownSeconds(getPatientCallCooldownSeconds(patientId))
-      setCallStatus('cooldown')
-      return
-    }
-
     setCallStatus('requesting')
 
     window.setTimeout(() => {
@@ -454,14 +318,7 @@ export default function PatientMainPage() {
     }, 0)
   }
 
-  function handleSelectTarget(
-    targetId: PatientMainTrackingTargetId,
-    source: 'pointer' | 'gaze',
-  ) {
-    if (source === 'gaze') {
-      submitActiveEyeTrackingSelectionFeedback()
-    }
-
+  function handleSelectTarget(targetId: PatientMainTargetId) {
     if (targetId === 'talk') {
       navigate(ROUTE_PATHS.PATIENT_TALK_MAIN)
       return
@@ -476,72 +333,12 @@ export default function PatientMainPage() {
   }
 
   useEffect(() => {
-    let isMounted = true
-
-    const loadTrackingPresets = async () => {
-      try {
-        const [dwellPresetResult, activationDelayResult] = await Promise.all([
-          getDwellTimePreset(),
-          getActivationDelayPreset(),
-        ])
-
-        if (!isMounted) {
-          return
-        }
-
-        if (dwellPresetResult.success) {
-          setDwellDurationMs(DWELL_TIME_OPTIONS[dwellPresetResult.data].value)
-        }
-
-        if (activationDelayResult.success) {
-          setActivationDelayMs(ACTIVATION_DELAY_OPTIONS[activationDelayResult.data].value)
-        }
-      } catch {
-        // Preset fetch is non-blocking. Keep default timing values when it fails.
-      }
-    }
-
-    void loadTrackingPresets()
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
-
-  useEffect(() => {
-    if (callStatus !== 'cooldown') {
-      return
-    }
-
-    const syncCooldown = () => {
-      const nextCooldownSeconds = getPatientCallCooldownSeconds(patientId)
-
-      if (nextCooldownSeconds <= 0) {
-        setCallStatus('idle')
-        setCooldownSeconds(0)
-        return
-      }
-
-      setCooldownSeconds(nextCooldownSeconds)
-    }
-
-    syncCooldown()
-
-    const timerId = window.setInterval(syncCooldown, 500)
-
-    return () => {
-      window.clearInterval(timerId)
-    }
-  }, [callStatus, patientId])
-
-  useEffect(() => {
     if (callStatus !== 'success') {
       return
     }
 
     const timerId = window.setTimeout(() => {
       setCallStatus('idle')
-      setCooldownSeconds(0)
     }, 2500)
 
     return () => {
@@ -560,66 +357,67 @@ export default function PatientMainPage() {
               <p style={trackingTextStyle}>{trackingStatusText}</p>
             </div>
             <div style={topBarActionRowStyle}>
-              <button type="button" onClick={handleRecalibration} style={recalibrationButtonStyle}>
-                재캘리브레이션
-              </button>
-              <button type="button" onClick={handleLogout} style={logoutButtonStyle}>
+              <button
+                type="button"
+                onPointerDown={handleLogoutPointerDown}
+                onClick={handleLogoutClick}
+                onPointerLeave={() => {
+                  isMouseLogoutIntentRef.current = false
+                }}
+                onPointerCancel={() => {
+                  isMouseLogoutIntentRef.current = false
+                }}
+                onBlur={() => {
+                  isMouseLogoutIntentRef.current = false
+                }}
+                style={logoutButtonStyle}
+                data-gaze-selection="mouse-only"
+              >
                 로그아웃
               </button>
             </div>
           </div>
 
-          <div ref={gridRef} className="patient-main-grid" style={featureGridStyle}>
+          <div
+            className="patient-main-grid"
+            style={featureGridStyle}
+            ref={dwellFeedback.setContainerElement}
+          >
             <FeatureCard
               className="patient-main-card patient-main-full"
-              badge="주기능"
+              badge="대화"
               title="대화"
-              description="렛츠고우!"
+              description="표현하기와 보호자 응답 화면으로 이동합니다."
               background="linear-gradient(135deg, #edf1ff 0%, #e5ebff 100%)"
-              trackingId="talk"
-              trackingFocused={dwellState.activeTargetId === 'talk'}
-              dwellPhase={dwellState.activeTargetId === 'talk' ? dwellState.phase : 'idle'}
-              dwellProgress={dwellState.activeTargetId === 'talk' ? dwellState.progress : 0}
-              dwellRemainingMs={
-                dwellState.activeTargetId === 'talk' ? dwellState.remainingMs : 0
-              }
               centered
-              onSelect={() => handleSelectTarget('talk', 'pointer')}
+              onSelect={() => handleSelectTarget('talk')}
+              trackingId="talk"
+              dwellFeedback={dwellFeedback}
             />
 
             <FeatureCard
               className="patient-main-card patient-main-half"
-              badge="즉시 행동"
+              badge="즉시 호출"
               title="호출"
-              description="보호자를 호출해요"
+              description="보호자를 호출합니다."
               background="linear-gradient(135deg, #fff6d7 0%, #fff1bf 100%)"
-              trackingId="call"
-              trackingFocused={dwellState.activeTargetId === 'call'}
-              dwellPhase={dwellState.activeTargetId === 'call' ? dwellState.phase : 'idle'}
-              dwellProgress={dwellState.activeTargetId === 'call' ? dwellState.progress : 0}
-              dwellRemainingMs={
-                dwellState.activeTargetId === 'call' ? dwellState.remainingMs : 0
-              }
-              onSelect={() => handleSelectTarget('call', 'pointer')}
+              onSelect={() => handleSelectTarget('call')}
               disabled={callStatus === 'requesting'}
               centered
+              trackingId="call"
+              dwellFeedback={dwellFeedback}
             />
 
             <FeatureCard
               className="patient-main-card patient-main-half"
-              badge="휴식"
+              badge="여가"
               title="여가"
-              description="음악 · 유튜브 · 뉴스"
+              description="음악과 영상 추천 화면으로 이동합니다."
               background="linear-gradient(135deg, #eff7f0 0%, #ebf8f6 100%)"
-              trackingId="leisure"
-              trackingFocused={dwellState.activeTargetId === 'leisure'}
-              dwellPhase={dwellState.activeTargetId === 'leisure' ? dwellState.phase : 'idle'}
-              dwellProgress={dwellState.activeTargetId === 'leisure' ? dwellState.progress : 0}
-              dwellRemainingMs={
-                dwellState.activeTargetId === 'leisure' ? dwellState.remainingMs : 0
-              }
               centered
-              onSelect={() => handleSelectTarget('leisure', 'pointer')}
+              onSelect={() => handleSelectTarget('leisure')}
+              trackingId="leisure"
+              dwellFeedback={dwellFeedback}
             />
           </div>
         </div>
@@ -628,9 +426,7 @@ export default function PatientMainPage() {
       {overlayStatus ? (
         <PatientCallOverlay
           status={overlayStatus}
-          message="보호자에게 호출 신호가 전송되었습니다."
-          cooldownSeconds={cooldownSeconds}
-          onClose={closeCallOverlay}
+          message="보호자에게 호출 신호를 전송했습니다."
         />
       ) : null}
     </>

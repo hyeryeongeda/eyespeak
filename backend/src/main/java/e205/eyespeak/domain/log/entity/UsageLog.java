@@ -1,6 +1,6 @@
 package e205.eyespeak.domain.log.entity;
 
-import e205.eyespeak.domain.communication.entity.Phrase;
+import e205.eyespeak.domain.category.entity.Phrase;
 import e205.eyespeak.domain.matching.entity.Matching;
 import e205.eyespeak.domain.recommendation.entity.Expression;
 import e205.eyespeak.domain.routine.entity.TimeSlot;
@@ -64,6 +64,26 @@ public class UsageLog {
     public UsageLog(Matching matching, Phrase phrase, Expression expression,
                     String content, TimeSlot timeSlot, MoodType moodType,
                     Integer moodLevel, LocalDateTime usedAt) {
+
+        // phraseId / exprId / content 중 정확히 1개만 있어야 함
+        int sourceCount = (phrase != null ? 1 : 0)
+                + (expression != null ? 1 : 0)
+                + (content != null && !content.isBlank() ? 1 : 0);
+        if (sourceCount != 1) {
+            throw new IllegalArgumentException(
+                    "phrase, expression, content 중 정확히 1개만 값이 있어야 합니다 (현재: " + sourceCount + "개)");
+        }
+
+        // moodLevel은 1~5 범위
+        if (moodLevel != null && (moodLevel < 1 || moodLevel > 5)) {
+            throw new IllegalArgumentException("moodLevel은 1~5 범위여야 합니다 (현재: " + moodLevel + ")");
+        }
+
+        // moodLevel은 moodType이 있을 때만 유효
+        if (moodLevel != null && moodType == null) {
+            throw new IllegalArgumentException("moodLevel은 moodType이 있을 때만 설정할 수 있습니다");
+        }
+
         this.matching = matching;
         this.phrase = phrase;
         this.expression = expression;

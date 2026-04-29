@@ -1,56 +1,65 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getDailySummaries } from '../../services/careSettingService'
-import type { DailySummary } from '../../types/care'
+import { getMonthlyRecords, getDailyRecord } from '../../services/careSettingService'
+import type { MonthlyRecordDay, DailyRecordResponse } from '../../types/care'
 import { ROUTE_PATHS } from '../../app/router/routePaths'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
-
-const MOOD_LABELS: Record<string, string> = {
-  SAD: '슬픔',
-  HAPPY: '행복',
-  CALM: '평온',
-  JOYFUL: '기쁨',
-  ANXIOUS: '불안',
-  ANGRY: '화남',
-  TIRED: '피곤',
-}
 
 export default function RecordsPage() {
   const navigate = useNavigate()
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth() + 1)
-  const [summaries, setSummaries] = useState<DailySummary[]>([])
+  const [monthlyDays, setMonthlyDays] = useState<MonthlyRecordDay[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [dailyDetail, setDailyDetail] = useState<DailyRecordResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDailyLoading, setIsDailyLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const yearMonth = `${year}-${String(month).padStart(2, '0')}`
-
   useEffect(() => {
-    const fetchSummaries = async () => {
+    const fetchMonthly = async () => {
       setIsLoading(true)
       setError(null)
       try {
-        const res = await getDailySummaries(yearMonth)
-        if (res.success) setSummaries(res.data)
+        const res = await getMonthlyRecords(year, month)
+        if (res.success) setMonthlyDays(res.data)
       } catch {
         setError('소통 기록을 불러오지 못했습니다.')
       } finally {
         setIsLoading(false)
       }
     }
-    fetchSummaries()
-  }, [yearMonth])
+    fetchMonthly()
+  }, [year, month])
 
-  const summaryMap = useMemo(() => {
-    const map: Record<string, DailySummary> = {}
-    summaries.forEach(s => {
-      map[s.date] = s
+  useEffect(() => {
+    if (!selectedDate) {
+      setDailyDetail(null)
+      return
+    }
+    const fetchDaily = async () => {
+      setIsDailyLoading(true)
+      try {
+        const res = await getDailyRecord(selectedDate)
+        if (res.success) setDailyDetail(res.data)
+      } catch {
+        setDailyDetail(null)
+      } finally {
+        setIsDailyLoading(false)
+      }
+    }
+    fetchDaily()
+  }, [selectedDate])
+
+  const dayMap = useMemo(() => {
+    const map: Record<string, MonthlyRecordDay> = {}
+    monthlyDays.forEach(d => {
+      map[d.date] = d
     })
     return map
-  }, [summaries])
+  }, [monthlyDays])
 
   // 캘린더 날짜 계산
   const calendarDays = useMemo(() => {
@@ -82,8 +91,6 @@ export default function RecordsPage() {
 
   const formatDateStr = (day: number) =>
     `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-
-  const selectedSummary = selectedDate ? (summaryMap[selectedDate] ?? null) : null
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -142,7 +149,7 @@ export default function RecordsPage() {
               if (day === null) return <div key={`empty-${idx}`} className="h-[52px]" />
 
               const dateStr = formatDateStr(day)
-              const summary = summaryMap[dateStr]
+              const dayRecord = dayMap[dateStr]
               const isSelected = selectedDate === dateStr
               const isToday =
                 day === today.getDate() &&
@@ -163,14 +170,14 @@ export default function RecordsPage() {
                   }`}
                 >
                   <span className={`text-[14px] ${isSelected ? 'font-bold' : ''}`}>{day}</span>
-                  {summary && (
+                  {dayRecord && (
                     <div className="flex items-center gap-0.5 mt-0.5">
                       <span
                         className={`text-[10px] ${isSelected ? 'text-white/70' : 'text-[#718096]'}`}
                       >
-                        {summary.totalExpressions}
+                        {dayRecord.totalCount}
                       </span>
-                      {summary.hasSos && (
+                      {dayRecord.hasSos && (
                         <span className="w-[6px] h-[6px] rounded-full bg-red-500 shrink-0" />
                       )}
                     </div>
@@ -188,50 +195,42 @@ export default function RecordsPage() {
               {month}월 {Number(selectedDate.split('-')[2])}일 상세
             </h3>
 
-            {selectedSummary ? (
+            {isDailyLoading ? (
+              <p className="text-[14px] text-[#718096] text-center py-4">불러오는 중...</p>
+            ) : dailyDetail ? (
               <>
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] text-[#718096]">총 표현 횟수</span>
                   <span className="text-[15px] font-bold text-[#3D405B]">
-                    {selectedSummary.totalExpressions}번
+                    {dailyDetail.totalExpressionCount}번
                   </span>
                 </div>
-
-                {selectedSummary.mood && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-[14px] text-[#718096]">기분</span>
-                    <span className="text-[14px] text-[#3D405B]">
-                      {MOOD_LABELS[selectedSummary.mood.type] ?? selectedSummary.mood.type} (Lv.
-                      {selectedSummary.mood.level})
-                    </span>
-                  </div>
-                )}
 
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] text-[#718096]">보호자 호출</span>
                   <span className="text-[14px] text-[#3D405B]">
-                    {selectedSummary.normalCallCount}번
+                    {dailyDetail.normalCallCount}번
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-[14px] text-[#718096]">SOS 호출</span>
                   <span
-                    className={`text-[14px] font-bold ${selectedSummary.sosCallCount > 0 ? 'text-red-500' : 'text-[#3D405B]'}`}
+                    className={`text-[14px] font-bold ${dailyDetail.sosCallCount > 0 ? 'text-red-500' : 'text-[#3D405B]'}`}
                   >
-                    {selectedSummary.sosCallCount}번
+                    {dailyDetail.sosCallCount}번
                   </span>
                 </div>
 
-                {selectedSummary.topPhrases.length > 0 && (
+                {dailyDetail.topExpressions.length > 0 && (
                   <div className="flex flex-col gap-1.5 mt-1">
                     <span className="text-[14px] text-[#718096]">가장 많이 한 표현</span>
-                    {selectedSummary.topPhrases.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between pl-2">
+                    {dailyDetail.topExpressions.map(expr => (
+                      <div key={expr.rank} className="flex items-center justify-between pl-2">
                         <span className="text-[13px] text-[#3D405B]">
-                          {i + 1}. {p.content}
+                          {expr.rank}. {expr.content}
                         </span>
-                        <span className="text-[12px] text-[#A0AEC0]">{p.count}회</span>
+                        <span className="text-[12px] text-[#A0AEC0]">{expr.count}회</span>
                       </div>
                     ))}
                   </div>

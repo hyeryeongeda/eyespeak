@@ -1,20 +1,23 @@
-import { registerPatientInfoApi } from './patientApi'
+import { resolveApiSource } from '../config/env'
 import type { AuthSession } from '../types/auth'
+import type { ServiceResult } from '../types/api'
 import type {
   PatientGenderApiValue,
   PatientProfileFormValues,
   RegisterPatientInfoRequestDto,
   RegisterPatientInfoResponseDto,
 } from '../types/patient'
-import type { ServiceResult } from '../types/api'
 import { createServiceFailure } from '../utils/errorMapper'
+import { registerPatientInfoMockApi } from './mockAuthApi'
+import { registerPatientInfoApi } from './patientApi'
 
 export interface RegisterPatientInfoInput {
   patientProfile: PatientProfileFormValues
 }
 
-export function mapPatientGenderToApiValue(gender: PatientProfileFormValues['gender']): PatientGenderApiValue {
-  // TODO(BE): 실제 백엔드 gender enum/필드명 확정 시 이 mapper에서만 교체.
+export function mapPatientGenderToApiValue(
+  gender: PatientProfileFormValues['gender'],
+): PatientGenderApiValue {
   return gender === 'female' ? 'F' : 'M'
 }
 
@@ -30,20 +33,21 @@ export function mapPatientInfoInputToRequest(
 
 export async function registerPatientInfo(
   input: RegisterPatientInfoInput,
-  guardianSession: Pick<AuthSession, 'accessToken'>,
+  guardianSession: Pick<AuthSession, 'accessToken' | 'authMode'>,
 ): Promise<ServiceResult<RegisterPatientInfoResponseDto>> {
   try {
-    const response = await registerPatientInfoApi(
-      mapPatientInfoInputToRequest(input),
-      guardianSession.accessToken,
-    )
+    const request = mapPatientInfoInputToRequest(input)
+    const response =
+      guardianSession.authMode === 'mock'
+        ? await registerPatientInfoMockApi(request, guardianSession.accessToken)
+        : await registerPatientInfoApi(request, guardianSession.accessToken)
 
     return {
       success: true,
-      source: guardianSession.accessToken.startsWith('mock-') ? 'mock' : 'api',
+      source: resolveApiSource(guardianSession.authMode),
       data: response,
     }
   } catch (error) {
-    return createServiceFailure(error, '환자 기본 정보 저장에 실패했습니다.')
+    return createServiceFailure(error, '환자 정보 등록에 실패했습니다.')
   }
 }

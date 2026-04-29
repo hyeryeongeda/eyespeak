@@ -50,35 +50,35 @@ services:
   # ===========================================================================
   # Redis Cache (Dev)
   # ===========================================================================
-  dev-redis:
-    image: redis:7-alpine
-    container_name: eyespeak-redis-dev
-    restart: always
-    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
-    expose:
-      - "6379"
-    environment:
-      TZ: Asia/Seoul
-    networks:
-      - dev-net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.25'
-          memory: 128M
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "50m"
-        max-file: "3"
+#  dev-redis:
+#    image: redis:7-alpine
+#    container_name: eyespeak-redis-dev
+#    restart: always
+#    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+#    expose:
+#      - "6379"
+#    environment:
+#      TZ: Asia/Seoul
+#    networks:
+#      - dev-net
+#    deploy:
+#      resources:
+#        limits:
+#          cpus: '0.5'
+#          memory: 256M
+#        reservations:
+#          cpus: '0.25'
+#          memory: 128M
+#    healthcheck:
+#      test: ["CMD", "redis-cli", "ping"]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 5
+#    logging:
+#      driver: "json-file"
+#      options:
+#        max-size: "50m"
+#        max-file: "3"
 
   # ===========================================================================
   # RabbitMQ Message Broker (Dev)

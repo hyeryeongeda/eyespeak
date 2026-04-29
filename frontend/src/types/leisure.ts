@@ -2,6 +2,8 @@ export type LeisureCardTone = 'sky' | 'sand' | 'mint' | 'rose' | 'slate'
 
 export type LeisureCategoryId = 'sports' | 'news' | 'music' | 'radio' | 'audiobook'
 
+export type LeisureShortcutKind = 'content' | 'category'
+
 export type LeisureMainStatus =
   | 'idle'
   | 'loading'
@@ -48,8 +50,6 @@ export type LeisureViewStatus =
   | LeisurePlayerStatus
   | LeisureOverlayStatus
 
-export type LeisureMockScenario = 'success' | 'empty' | 'error' | 'loading'
-
 export interface LeisureCategory {
   id: LeisureCategoryId
   label: string
@@ -58,22 +58,35 @@ export interface LeisureCategory {
   accentColor: string
 }
 
+export interface LeisureShortcut {
+  id: string
+  title: string
+  description: string
+  tone: LeisureCardTone
+  badgeLabel: string
+  kind: LeisureShortcutKind
+  contentId: string | null
+  categoryId: LeisureCategoryId | null
+  categoryLabel: string | null
+}
+
 export interface LeisureContent {
   id: string
   title: string
   channelName: string
   thumbnailUrl: string
   embedUrl: string
-  categoryId: LeisureCategoryId
+  youtubeUrl: string
+  videoId: string
+  categoryId: LeisureCategoryId | null
+  categoryLabel: string | null
   tags: string[]
   description: string
   durationLabel?: string
 }
 
 export interface LeisureMainPayload {
-  categories: LeisureCategory[]
-  featuredContent: LeisureContent | null
-  registeredContents: LeisureContent[]
+  shortcutCards: LeisureShortcut[]
 }
 
 export interface LeisureCategoryPayload {
@@ -86,3 +99,19 @@ export interface LeisurePlayerRouteState {
   fromLabel?: string
   categoryId?: LeisureCategoryId
 }
+
+export interface LeisureContentResponseDto {
+  id: number
+  name: string
+  url: string | null
+  category: LeisureCategoryId | null
+  categoryName: string | null
+}
+
+export interface LeisureContentCreateRequestDto {
+  name: string
+  url: string | null
+  category: LeisureCategoryId | null
+}
+
+export type LeisureContentUpdateRequestDto = LeisureContentCreateRequestDto

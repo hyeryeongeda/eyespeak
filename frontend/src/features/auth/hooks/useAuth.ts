@@ -9,6 +9,9 @@ export function useAuth() {
   const refreshSession = useAuthStore(state => state.refreshSession)
   const setSession = useAuthStore(state => state.setSession)
   const clearSession = useAuthStore(state => state.clearSession)
+  const patientPostAuth = useAuthStore(state => state.patientPostAuth)
+  const setPatientPostAuth = useAuthStore(state => state.setPatientPostAuth)
+  const clearPatientPostAuth = useAuthStore(state => state.clearPatientPostAuth)
 
   return {
     isAuthenticated,
@@ -19,6 +22,9 @@ export function useAuth() {
     refreshSession,
     setSession,
     clearSession,
+    patientPostAuth,
+    setPatientPostAuth,
+    clearPatientPostAuth,
   }
 }
 

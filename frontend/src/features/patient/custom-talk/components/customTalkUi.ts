@@ -25,7 +25,7 @@ export const customTalkButtonStyle: CSSProperties = {
   border: '1px solid #cfd9e2',
   backgroundColor: '#ffffff',
   color: '#31455e',
-  fontSize: '15px',
+  fontSize: '17px',
   fontWeight: 800,
   cursor: 'pointer',
 }
@@ -39,7 +39,7 @@ export const customTalkPrimaryButtonStyle: CSSProperties = {
 export const customTalkNoticeStyle: CSSProperties = {
   padding: '16px 18px',
   borderRadius: '20px',
-  fontSize: '14px',
+  fontSize: '16px',
   fontWeight: 700,
   lineHeight: 1.55,
 }
@@ -63,4 +63,21 @@ export const customTalkLoadingNoticeStyle: CSSProperties = {
   backgroundColor: '#f6f9fc',
   border: '1px solid #dce6ed',
   color: '#607389',
+}
+
+export const customTalkQuietNoticeStyle: CSSProperties = {
+  ...customTalkNoticeStyle,
+  backgroundColor: '#f6f9fc',
+  border: '1px solid #dce6ed',
+  color: '#607389',
+}
+
+const quietNoticeMessages = new Set([
+  '지금은 바로 반영되지 않았습니다. 잠시 후 다시 시도해 주세요.',
+])
+
+export function getCustomTalkNoticeStyle(message: string) {
+  return quietNoticeMessages.has(message)
+    ? customTalkQuietNoticeStyle
+    : customTalkErrorNoticeStyle
 }

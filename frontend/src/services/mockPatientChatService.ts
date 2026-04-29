@@ -50,7 +50,6 @@ let outgoingMessageSequence = 0
 
 export const PATIENT_CHAT_RESPONSE_TIMEOUT_MS = import.meta.env.DEV ? 8000 : 25000
 export const PATIENT_CHAT_SUGGESTION_DELAY_MS = 500
-export const PATIENT_CHAT_DEV_PANEL_ENABLED = false
 
 export const PATIENT_CHAT_MESSAGE_PRESETS: PatientChatPreset[] = [
   {

@@ -35,13 +35,13 @@ function getCellStyle(): CSSProperties {
 
 const titleStyle: CSSProperties = {
   margin: 0,
-  fontSize: 'clamp(1.15rem, 2vw, 1.5rem)',
+  fontSize: 'clamp(3.5rem, 6vw, 4.75rem)',
   fontWeight: 900,
 }
 
 const descriptionStyle: CSSProperties = {
   margin: '10px 0 0',
-  fontSize: '14px',
+  fontSize: '16px',
   fontWeight: 600,
   color: '#66788f',
   lineHeight: 1.45,
